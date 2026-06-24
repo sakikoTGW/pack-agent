@@ -8,11 +8,12 @@
 [![license](https://img.shields.io/npm/l/@sakikotgw/pack-agent.svg)](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)
 [![bun](https://img.shields.io/badge/bun-%3E%3D1.1.0-black?logo=bun)](https://bun.sh)
 
-将**一个 agent**（skills / rules / MCP）打成便携 `.pack.json`，**检测并安装**到本机所有 harness — Claude Code、Codex、OpenClaw、Hermes 等。
+将**一个 agent**（skills / rules / MCP）打成便携 `.pack.json`，在本机**检测到的 harness** 上安装（默认多家；可用 `--runtime` 只装一家）。
 
 ```bash
 npm install @sakikotgw/pack-agent
-packagent detect
+packagent detect          # 先看会装到哪几家
+packagent install foo.pack.json --runtime claude-code   # 只装 Claude Code
 ```
 
 > CLI：`packagent` · 别名：`agent-pack` · schema：`ccui-pack/v0.2`
@@ -114,11 +115,21 @@ packagent export --all              # legacy：全项目扫描
 
 ```bash
 packagent detect
+# 输出 Detected / Will install to —— 只有「在场」的 harness 才会装（不是全世界所有工具）
+
 packagent install .agent-pack/exports/my-agent.pack.json
 
-# 一条命令：export + install
-packagent sync --agent my-agent
+# 只装一家（推荐：明确目标时）
+packagent install .agent-pack/exports/my-agent.pack.json --runtime claude-code
+packagent install .agent-pack/exports/my-agent.pack.json --runtime codex
+
+# 一条命令：export + install（同样可用 --runtime）
+packagent sync --agent my-agent --runtime codex
 ```
+
+**默认行为**：对本机 **detect 到的** 每个 harness 各投射一份（跳过 `cursor`、`generic-agents`）。  
+例如同时有 Claude Code + Codex 配置 → skill 会进 `.claude/skills` **和** `.agents/skills`。  
+只想装一家 → **必须加 `--runtime`**。
 
 ### 4. 卸载
 
@@ -203,7 +214,7 @@ packagent eject --name my-agent
 | `windsurf` | `.windsurf/skills` | — | `.windsurf/mcp_config.json` |
 | `github-copilot` | — | `.github/copilot-instructions.md` | `.vscode/mcp.json` |
 
-install 时自动投射到**所有检测到的** harness；可用 `--runtime` 只装一家。
+install 时默认投射到 **`packagent detect` 列出的 Will install to**（本机在场 harness）；可用 **`--runtime <id>`** 只装一家。
 
 ---
 

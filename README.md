@@ -8,11 +8,12 @@
 [![license](https://img.shields.io/npm/l/@sakikotgw/pack-agent.svg)](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)
 [![bun](https://img.shields.io/badge/bun-%3E%3D1.1.0-black?logo=bun)](https://bun.sh)
 
-Pack **one agent** (skills / rules / MCP) into a portable `.pack.json`, then **detect & install** to every harness on the machine — Claude Code, Codex, OpenClaw, Hermes, and more.
+Pack **one agent** (skills / rules / MCP) into a portable `.pack.json`, then install on harnesses **detected on this machine** (multiple by default; use `--runtime` for one target).
 
 ```bash
 npm install @sakikotgw/pack-agent
-packagent detect
+packagent detect          # see which harnesses will receive the pack
+packagent install foo.pack.json --runtime claude-code   # single target
 ```
 
 > CLI: `packagent` · alias: `agent-pack` · schema: `ccui-pack/v0.2`
@@ -114,11 +115,21 @@ packagent export --all              # legacy: full-project scan
 
 ```bash
 packagent detect
+# Shows Detected / Will install to — only harnesses present on THIS machine
+
 packagent install .agent-pack/exports/my-agent.pack.json
 
-# one-shot: export + install
-packagent sync --agent my-agent
+# Single harness (recommended when you know the target)
+packagent install .agent-pack/exports/my-agent.pack.json --runtime claude-code
+packagent install .agent-pack/exports/my-agent.pack.json --runtime codex
+
+# One-shot export + install (also accepts --runtime)
+packagent sync --agent my-agent --runtime codex
 ```
+
+**Default behavior**: project the pack to **each detected harness** (skips `cursor`, `generic-agents`).  
+If both Claude Code and Codex are present, skills land in `.claude/skills` **and** `.agents/skills`.  
+To install to **one** harness only → pass **`--runtime`**.
 
 ### 4. Uninstall
 
@@ -203,7 +214,7 @@ Full example: [mcp/config.example.json](mcp/config.example.json)
 | `windsurf` | `.windsurf/skills` | — | `.windsurf/mcp_config.json` |
 | `github-copilot` | — | `.github/copilot-instructions.md` | `.vscode/mcp.json` |
 
-Install projects to **all detected** harnesses by default; use `--runtime` for a single target.
+By default, install targets harnesses listed under **`Will install to`** in `packagent detect`. Use **`--runtime <id>`** to install to a single harness.
 
 ---
 

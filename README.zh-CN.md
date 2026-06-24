@@ -1,8 +1,8 @@
-# pack-agent
+# Agent Modpack
 
 **[English](README.md)** | **中文**
 
-> **像安装 Minecraft 整合包一样组装 agent。**
+> **像装 MC 整合包一样，装你的 agent。**
 
 [![npm version](https://img.shields.io/npm/v/@sakikotgw/pack-agent.svg)](https://www.npmjs.com/package/@sakikotgw/pack-agent)
 [![license](https://img.shields.io/npm/l/@sakikotgw/pack-agent.svg)](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)
@@ -16,20 +16,20 @@ packagent detect          # 先看会装到哪几家
 packagent install foo.pack.json --runtime claude-code   # 只装 Claude Code
 ```
 
-> CLI：`packagent` · 别名：`agent-pack` · schema：`ccui-pack/v0.2`
+> CLI：`packagent` · npm：`@sakikotgw/pack-agent` · schema：`ccui-pack/v0.2`
 
 ---
 
 ## 为什么需要这个
 
-| 痛点 | pack-agent 怎么做 |
+| 痛点 | Agent Modpack |
 |------|-------------------|
 | 换电脑 / 换工具要重配 skill、MCP | 打成**便携 bundle**，拷走 `.pack.json` 即可 install |
 | 一个项目里有多个 agent 角色 | `.agent-pack/agents.yaml` 定义边界，`export --agent` 只封一个 |
 | 装完不知道卸哪了 | **install-ledger** + `packagent eject --name` 按记录卸载 |
 | 只想发部分 skill 给同事 | `pack --skills` / `--manifest` 选件封包 |
 
-类比 Minecraft：**harness = 游戏版本**，**pack = 整合包**，**packagent = 启动器** — 选版本、选整合包、一键组装 agent。
+类比 Minecraft：**harness = 游戏版本**，**pack = 整合包**，**packagent = 启动器** — 选版本、选整合包，装你的 agent。
 
 ---
 

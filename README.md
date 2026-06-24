@@ -1,8 +1,8 @@
-# pack-agent
+# Agent Modpack
 
 **English** | **[中文](README.zh-CN.md)**
 
-> **Assemble agents like installing Minecraft modpacks.**
+> **Install your agent like an MC modpack.**
 
 [![npm version](https://img.shields.io/npm/v/@sakikotgw/pack-agent.svg)](https://www.npmjs.com/package/@sakikotgw/pack-agent)
 [![license](https://img.shields.io/npm/l/@sakikotgw/pack-agent.svg)](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)
@@ -16,11 +16,11 @@ packagent detect          # see which harnesses will receive the pack
 packagent install foo.pack.json --runtime claude-code   # single target
 ```
 
-> CLI: `packagent` · alias: `agent-pack` · schema: `ccui-pack/v0.2`
+> CLI: `packagent` · npm: `@sakikotgw/pack-agent` · schema: `ccui-pack/v0.2`
 
 ---
 
-## Why pack-agent
+## Why Agent Modpack
 
 | Pain | What we do |
 |------|------------|
@@ -29,7 +29,7 @@ packagent install foo.pack.json --runtime claude-code   # single target
 | No clean uninstall after install | **install-ledger** + `packagent eject --name` |
 | Share only some skills with teammates | `pack --skills` / `--manifest` selective export |
 
-Think Minecraft: **harness = game version**, **pack = modpack**, **packagent = launcher** — pick a version, pick a pack, assemble your agent.
+Think Minecraft: **harness = game version**, **pack = modpack**, **packagent = launcher** — pick a version, pick a pack, install your agent.
 
 ---
 

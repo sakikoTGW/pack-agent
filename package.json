@@ -1,7 +1,7 @@
 {
   "name": "@sakikotgw/pack-agent",
   "version": "0.2.0",
-  "description": "Assemble agents like installing Minecraft modpacks — pack skills/rules/MCP, install to detected harnesses",
+  "description": "Agent Modpack — install your agent like an MC modpack (skills/rules/MCP portable packs)",
   "type": "module",
   "files": [
     "bin",
@@ -26,6 +26,8 @@
     ".": "./src/index.ts"
   },
   "keywords": [
+    "agent-modpack",
+    "modpack",
     "packagent",
     "agent",
     "claude-code",

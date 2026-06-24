@@ -6,10 +6,12 @@ description: Pack and install agent configs as portable modpacks. Use when the u
 # Agent Modpack — 像装 MC 整合包一样，装你的 agent
 
 ```
-  用户说的话（input₁） → prefunction（skills/rules/MCP/hooks…） → fixed_input（input₂） → LLM
+  Harness（Claude Code / OpenClaw / Codex …）跑 loop
+       └─ 加载 prefunction：skills / rules / MCP / 经验罐头
+            └─ 拼成 fixed_input → LLM
 ```
 
-MCP、skills、rules 只改 **fixed_input**，LLM 还是那个 function。整合包把 prefunction 链标准化成 `.pack.json`。  
+**Harness** = 运行时壳。**Prefunction** = pack 里可搬运的配置（skill、rule、MCP…）。整合包封 prefunction，adapter 挂到各 harness。  
 **选 agent → 封包 → install（默认本机 detect 到的 harness；`--runtime` 只装一家）。**
 
 ## 你要帮用户做的三件事

@@ -24,61 +24,67 @@ packagent install foo.pack.json --runtime claude-code   # 只装 Claude Code
 
 ## 为什么
 
-### Prefunction
-
-Agent 就是一条管道：
+### 三层：Harness · Agent · Prefunction
 
 ```
-  用户说的话（input₁）
+  用户这一轮（input₁）
        │
        ▼
-  skills / rules / MCP / hooks / Hermes / OpenClaw …   ← 整合包封这层
+  ┌─ Harness ─────────────────────────────────────┐
+  │  Claude Code / OpenClaw / Codex / Hermes …     │  ← 跑 loop、执行 tool、拼请求
+  │       │                                        │
+  │       ├─ 加载 pack 里的 prefunction            │  ← 整合包封这层
+  │       │     skills / rules / MCP / 经验罐头     │
+  │       └─ harness 自带装配（各家的 inject 顺序）  │  ← 录瓶口可抓，adapter 投射
+  └────────────────────────────────────────────────┘
        │
        ▼
-  fixed_input（input₂）  ──►  LLM  ──►  模型回的话
+  fixed_input（input₂）  ──►  LLM  ──►  回复
+       │
+       ▼
+  Harness 跑 tool、下一轮…
 ```
 
-MCP、skills、rules 只改喂进模型的 **fixed_input**，LLM 还是那个 function。  
-Hermes、OpenClaw（龙虾）、各家 hook、上下文拼装，都是 **prefunction**：input₁ 先加工成 input₂，再进模型。
+**Harness** = 运行时壳。Claude Code、OpenClaw（龙虾）、Codex、Hermes 在这一层 — 像 MC 的 1.20 / Forge，管目录、注入时机、tool 权限、多轮 loop。  
+**Agent** = 在某个 harness 上选定的**角色**：`agents.yaml` 圈定用哪些 skill、rule、MCP。  
+**Prefunction** = agent 里**能打进 pack、搬走的那部分**：skills、rules、MCP、经验罐头。它们不动模型权重，只影响 harness 拼出来的 **fixed_input**。
 
-agent 除模型权重外，剩下一律是在拼 **fixed_input**。  
-整合包把这条链标准化成 `.pack.json`——MC 整合包列 mods 那种。
+OpenClaw 和 skill 不在一层：OpenClaw **跑** agent；skill **被加载进** OpenClaw，参与拼 prompt。
 
-发给你：`packagent install`，配 API，启动。同一 harness、同一模型，逼近同一套 fixed_input。  
+整合包 = 一个 agent 的 prefunction 快照。`.pack.json` + bundle，MC 整合包列 mods 那种。
+
+发给你：`packagent install`，配 API，在同一 harness、同一模型下，逼近同一套 fixed_input。  
 PCL 下整合包 → 导入 → 开玩。
 
 ### 加载方式
 
-Prefunction 内容进 bundle。各 harness 装载口各自一套：
+Prefunction 进 bundle；**怎么挂到 harness 上** 各有一套：
 
-- 目录：`.claude/skills`、`.cursor/rules/*.mdc`、`AGENTS.md`…
-- 注入：SessionStart、system-reminder、第几轮追加
-- 权限：MCP 白名单、tool 批准
+- 目录：`.claude/skills`、`.agents/skills`、`.cursor/rules/*.mdc`…
+- 注入：SessionStart、system-reminder、第几轮才追加 skill 正文
+- 权限：MCP 白名单、tool 要不要批准
 
-Hermes、OpenClaw、OpenCode、Claude Code、Codex 可共用一份 pack；**往哪写、何时注入、谁能调工具** 靠 adapter。
+一份 pack 可投射到多家 harness；adapter 负责 **往哪写、何时 inject、谁能调工具**。
 
 两件事：
 
-1. **统一度量衡** — `.pack.json` + bundle，可版本、可 eject。
-2. **录瓶口** — 抓发给模型的请求体（prompt、tool schema、装配、loop）；装回去用 experience / rules 还原 fixed_input。缺录标 L1。
+1. **统一度量衡** — `.pack.json` + bundle，prefunction 可版本、可 eject。
+2. **录瓶口** — 抓 harness 最终发给模型的请求体（prompt、tool schema、装配顺序）；装回去用 experience / rules 补 fixed_input。缺录标 L1。
 
-### Harness = 游戏版本
+### `packagent` = 启动器
 
-Claude Code、Codex、Cursor = harness，MC 的 1.20 / Forge 那种。选定版本即可。  
-`packagent` = PCL：detect → 选 pack → install / eject。一份 `.pack.json` 投射多家 harness。
+detect harness → 选 pack → install / eject。一份 `.pack.json` 经 adapter 写进各 harness 的装载口。
 
 ### export / install
 
 ```
-  prefunction 文件          （可选）瓶口录制
-         └──────── export ────────┘
-                    │
-               .pack.json
-                    │
-         install ───┴───► 各 harness 目录 + hook/rules 还原
+  prefunction（skills/rules/MCP/罐头）   （可选）瓶口录制
+              └──────── export ──────────┘
+                          │
+                     .pack.json
+                          │
+              install ────┴───► adapter → 各 harness 目录
 ```
-
-prefunction 整合包，adapter 写加载口。
 
 ---
 
@@ -108,9 +114,10 @@ prefunction 整合包，adapter 写加载口。
 
 | 概念 | 含义 |
 |------|------|
-| **Harness** | 容器：Claude Code、Codex、Cursor… 决定 skill/MCP 放哪 |
-| **Agent** | 角色：一组 skills + rules + MCP（在 `agents.yaml` 里定义） |
-| **Pack** | 某一个 agent 的快照；`export --agent` 只封一个角色 |
+| **Harness** | 运行时壳：Claude Code、OpenClaw、Codex… 跑 loop、拼请求、管 tool |
+| **Agent** | 角色：在某个 harness 上圈定的 skills + rules + MCP（`agents.yaml`） |
+| **Prefunction** | agent 里可打包的部分：skills、rules、MCP、经验罐头 |
+| **Pack** | 某一个 agent 的 prefunction 快照；`export --agent` 只封一个角色 |
 | **Bundle** | pack 内嵌的文件内容；跨机器 install 需要 bundle |
 
 ---

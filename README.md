@@ -24,61 +24,67 @@ packagent install foo.pack.json --runtime claude-code   # single target
 
 ## Why
 
-### Prefunction
-
-An agent is a pipeline:
+### Three layers: Harness · Agent · Prefunction
 
 ```
-  user message (input₁)
+  user turn (input₁)
        │
        ▼
-  skills / rules / MCP / hooks / Hermes / OpenClaw …   ← modpack captures this
+  ┌─ Harness ─────────────────────────────────────┐
+  │  Claude Code / OpenClaw / Codex / Hermes …     │  ← loop, tools, request assembly
+  │       │                                        │
+  │       ├─ loads prefunctions from the pack      │  ← modpack captures this
+  │       │     skills / rules / MCP / experiences │
+  │       └─ harness-native assembly (per product) │  ← wire capture + adapters
+  └────────────────────────────────────────────────┘
        │
        ▼
   fixed_input (input₂)  ──►  LLM  ──►  reply
+       │
+       ▼
+  Harness runs tools, next turn…
 ```
 
-MCP, skills, and rules only change **fixed_input** going into the model. The LLM function stays the same.  
-Hermes, OpenClaw, harness hooks, context assembly — all **prefunctions**: input₁ becomes input₂, then the model runs.
+**Harness** = runtime shell. Claude Code, OpenClaw, Codex, Hermes live here — like MC 1.20 / Forge: paths, inject timing, tool permissions, multi-turn loop.  
+**Agent** = a **role** on one harness: which skills, rules, MCP — bound in `agents.yaml`.  
+**Prefunction** = the **packable slice** of that agent: skills, rules, MCP, experience jars. They do not change model weights; they change how the harness builds **fixed_input**.
 
-Everything in an agent except model weights shapes **fixed_input**.  
-A modpack standardizes that chain as `.pack.json` — MC modpack listing mods.
+OpenClaw **runs** the agent; a skill **loads into** it and joins prompt assembly.
 
-Ship it: `packagent install`, API key, launch. Same harness + same model → same fixed_input, approximately.  
+A modpack = one agent’s prefunction snapshot — `.pack.json` + bundle, MC modpack style.
+
+Ship it: `packagent install`, API key, same harness + same model → same fixed_input, approximately.  
 PCL: download modpack → import → play.
 
 ### Loading
 
-Prefunction content goes in the bundle. Each harness has its own mount points:
+Prefunctions go in the bundle; **how they mount on a harness** varies:
 
-- Paths: `.claude/skills`, `.cursor/rules/*.mdc`, `AGENTS.md`, …
-- Injection: SessionStart, system-reminder, turn N append
+- Paths: `.claude/skills`, `.agents/skills`, `.cursor/rules/*.mdc`, …
+- Injection: SessionStart, system-reminder, which turn pulls skill body
 - Permissions: MCP allowlists, tool approval
 
-Hermes, OpenClaw, OpenCode, Claude Code, Codex can share one pack; **where to write, when to inject, who may call tools** — adapters.
+One pack, many harnesses — adapters handle **where to write, when to inject, who may call tools**.
 
 Two jobs:
 
-1. **One schema** — `.pack.json` + bundle, versioned, ejectable.
-2. **Wire capture** — record the request body (prompt, tool schema, assembly, loop); replay via experience / rules to restore fixed_input. Missing capture → mark L1.
+1. **One schema** — `.pack.json` + bundle; versioned, ejectable prefunctions.
+2. **Wire capture** — record the final request body (prompt, tool schema, assembly order); replay via experience / rules for fixed_input. Missing capture → L1.
 
-### Harness = game version
+### `packagent` = launcher
 
-Claude Code, Codex, Cursor = harnesses, like MC 1.20 / Forge. Pick a version.  
-`packagent` = PCL: detect → pick pack → install / eject. One `.pack.json` projects to many harnesses.
+Detect harness → pick pack → install / eject. Adapters write mount points per harness.
 
 ### export / install
 
 ```
-  prefunction files          (optional) wire capture
-         └──────── export ────────┘
-                    │
-               .pack.json
-                    │
-         install ───┴───► per-harness dirs + hook/rules replay
+  prefunctions (skills/rules/MCP/jars)   (optional) wire capture
+              └──────── export ──────────┘
+                          │
+                     .pack.json
+                          │
+              install ────┴───► adapter → per-harness dirs
 ```
-
-Prefunction modpack. Adapters write mount points.
 
 ---
 
@@ -108,10 +114,11 @@ Prefunction modpack. Adapters write mount points.
 
 | Term | Meaning |
 |------|---------|
-| **Harness** | Container (Claude Code, Codex, Cursor…) — owns skill/MCP paths |
-| **Agent** | Role — a set of skills + rules + MCP (defined in `agents.yaml`) |
-| **Pack** | Snapshot of one agent; `export --agent` packs one role |
-| **Bundle** | Embedded file contents inside the pack — required for cross-machine install |
+| **Harness** | Runtime shell: Claude Code, OpenClaw, Codex… — loop, request assembly, tools |
+| **Agent** | Role on one harness: skills + rules + MCP (`agents.yaml`) |
+| **Prefunction** | Packable slice: skills, rules, MCP, experience jars |
+| **Pack** | One agent’s prefunction snapshot; `export --agent` packs one role |
+| **Bundle** | Embedded file contents — required for cross-machine install |
 
 ---
 

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "agent-pack": {
+      "command": "bun",
+      "args": ["node_modules/@sakikotgw/pack-agent/mcp/server.ts"],
+      "env": {
+        "AGENT_PACK_CWD": "."
+      }
+    }
+  }
+}

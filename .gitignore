@@ -1,0 +1,5 @@
+node_modules/
+.ccui/
+.agent-pack/exports/
+*.tgz
+.DS_Store

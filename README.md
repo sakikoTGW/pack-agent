@@ -2,7 +2,7 @@
 
 **English** | **[中文](README.zh-CN.md)**
 
-**Agent modpack — define one agent, export a portable pack, install to any harness.**
+> **Assemble agents like installing Minecraft modpacks.**
 
 [![npm version](https://img.shields.io/npm/v/@sakikotgw/pack-agent.svg)](https://www.npmjs.com/package/@sakikotgw/pack-agent)
 [![license](https://img.shields.io/npm/l/@sakikotgw/pack-agent.svg)](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)
@@ -29,7 +29,7 @@ packagent install foo.pack.json --runtime claude-code   # single target
 | No clean uninstall after install | **install-ledger** + `packagent eject --name` |
 | Share only some skills with teammates | `pack --skills` / `--manifest` selective export |
 
-Think Minecraft: **harness = game version**, **pack = modpack**, **packagent = launcher**.
+Think Minecraft: **harness = game version**, **pack = modpack**, **packagent = launcher** — pick a version, pick a pack, assemble your agent.
 
 ---
 

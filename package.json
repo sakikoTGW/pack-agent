@@ -1,7 +1,7 @@
 {
   "name": "@sakikotgw/pack-agent",
   "version": "0.2.0",
-  "description": "Install agent packs to any harness — detect runtime, project skills/rules/MCP",
+  "description": "Assemble agents like installing Minecraft modpacks — pack skills/rules/MCP, install to detected harnesses",
   "type": "module",
   "files": [
     "bin",
@@ -12,6 +12,7 @@
     "vendor",
     "docs",
     "README.md",
+    "README.zh-CN.md",
     "LICENSE"
   ],
   "bin": {

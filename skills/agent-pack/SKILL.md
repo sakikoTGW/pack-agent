@@ -5,7 +5,11 @@ description: Pack and install agent configs as portable modpacks. Use when the u
 ---
 # Agent Modpack — 像装 MC 整合包一样，装你的 agent
 
-把 agent 配置当成 **modpack**：L1 文件（skills/rules/MCP）+ L2 上下文（system prompt / tool schema / reminders）。  
+```
+  用户说的话（input₁） → prefunction（skills/rules/MCP/hooks…） → fixed_input（input₂） → LLM
+```
+
+MCP、skills、rules 只改 **fixed_input**，LLM 还是那个 function。整合包把 prefunction 链标准化成 `.pack.json`。  
 **选 agent → 封包 → install（默认本机 detect 到的 harness；`--runtime` 只装一家）。**
 
 ## 你要帮用户做的三件事
@@ -156,23 +160,21 @@ agent-pack pack --skills brainstorming verification-before-completion --harness 
 3. **L2 harness**（复刻必需，但**禁止臆造**）：
    - 有 `.ccui/packs/*.pack.json` 或 `.agent-pack/capture/*.json` → 读最新，取 `harness` + `assembly` + `model`
    - 或用户明确给出「这就是我要复刻的系统提示原文」→ 填入 `harness.base_system_prompt`
-   - **拿不到就留空**，`meta.fidelity: "L1"`，并告诉用户：没有 prompt 只能搬文件，行为不会一样  
+   - **拿不到就留空**，`meta.fidelity: "L1"`
 4. **便携化**：把每个 skill/rule 文件内容嵌进 `bundle.files`（`skills/<名>/...`、`rules/<名>`）  
 5. 给用户 pack 路径；若可执行 CLI，再跑 `agent-pack install <pack>`
 
 ---
 
-## 什么是「整个 input」（复刻时要整什么）
+## 保真度（L1–L4）
 
-| 层 | 进 pack 的字段 | 装完去哪（各 harness 能读多少算多少） |
-|----|----------------|--------------------------------------|
+| 层 | 进 pack | install 后 |
+|----|---------|------------|
 | L1 | knowledge + tools.mcp | `.claude/skills`、`.agents/skills`、`.mcp.json` 等 |
-| L2 | harness.base_system_prompt, tool_schemas, system_reminders | `.claude/rules/*-harness.md`、`AGENTS.md` 标记块；sidecar：`.agent-pack/applied/*-tool-schemas.json` |
-| L3 | assembly.* | 暂写入 pack；**完整复刻需代理瓶口**（未来） |
-| L4 | loop.* | pack 记录；引擎支持度因 harness 而异 |
+| L2 | harness：prompt / tool_schemas / reminders | rules 块或 experience 罐头 + hook |
+| L3+ | assembly / loop | 写入 pack，adapter 尽力投射 |
 
-**结论**：要「像同一个 agent」，**L1 + L2 至少要进包**；L3+ 是逼近不是魔法。
-
+L1 = prefunction 文件。L2+ = 瓶口录制，缺录标 L1。换模型行为会漂移。
 ---
 
 ## 和用户协作：选件对话模板
@@ -187,8 +189,8 @@ agent-pack pack --skills brainstorming verification-before-completion --harness 
 
 ## 纪律
 
-- **不臆造 harness 内容** — 没有来源就不填 L2  
-- **选件默认显式** — 用户说「只要 X Y」就只封 X Y  
-- **安装 ≠ 换模型** — 换模型行为必漂移，pack 保证的是配置与 prompt 可搬运
+- harness 内容只来自抓包草稿或用户给的原文；缺就标 L1  
+- 用户说「只要 X Y」就只封 X Y  
+- 换模型行为会漂移；pack 标 L1–L4，配置可搬
 
 规范：`docs/PACK_SPEC.md` · CLI：`packages/pack-cli`

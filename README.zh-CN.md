@@ -4,6 +4,8 @@
 
 > **像装 MC 整合包一样，装你的 agent。**
 
+**Agent Modpack** — 像装 MC 整合包一样**导出 / 导入**你的 agent：定义角色、打成 `.pack.json`，用 `packagent install` 装进 Claude Code / Codex 等 harness。
+
 [![npm version](https://img.shields.io/npm/v/@sakikotgw/pack-agent.svg)](https://www.npmjs.com/package/@sakikotgw/pack-agent)
 [![license](https://img.shields.io/npm/l/@sakikotgw/pack-agent.svg)](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)
 [![bun](https://img.shields.io/badge/bun-%3E%3D1.1.0-black?logo=bun)](https://bun.sh)
@@ -20,7 +22,67 @@ packagent install foo.pack.json --runtime claude-code   # 只装 Claude Code
 
 ---
 
-## 为什么需要这个
+## 为什么
+
+### Prefunction
+
+Agent 就是一条管道：
+
+```
+  用户说的话（input₁）
+       │
+       ▼
+  skills / rules / MCP / hooks / Hermes / OpenClaw …   ← 整合包封这层
+       │
+       ▼
+  fixed_input（input₂）  ──►  LLM  ──►  模型回的话
+```
+
+MCP、skills、rules 只改喂进模型的 **fixed_input**，LLM 还是那个 function。  
+Hermes、OpenClaw（龙虾）、各家 hook、上下文拼装，都是 **prefunction**：input₁ 先加工成 input₂，再进模型。
+
+agent 除模型权重外，剩下一律是在拼 **fixed_input**。  
+整合包把这条链标准化成 `.pack.json`——MC 整合包列 mods 那种。
+
+发给你：`packagent install`，配 API，启动。同一 harness、同一模型，逼近同一套 fixed_input。  
+PCL 下整合包 → 导入 → 开玩。
+
+### 加载方式
+
+Prefunction 内容进 bundle。各 harness 装载口各自一套：
+
+- 目录：`.claude/skills`、`.cursor/rules/*.mdc`、`AGENTS.md`…
+- 注入：SessionStart、system-reminder、第几轮追加
+- 权限：MCP 白名单、tool 批准
+
+Hermes、OpenClaw、OpenCode、Claude Code、Codex 可共用一份 pack；**往哪写、何时注入、谁能调工具** 靠 adapter。
+
+两件事：
+
+1. **统一度量衡** — `.pack.json` + bundle，可版本、可 eject。
+2. **录瓶口** — 抓发给模型的请求体（prompt、tool schema、装配、loop）；装回去用 experience / rules 还原 fixed_input。缺录标 L1。
+
+### Harness = 游戏版本
+
+Claude Code、Codex、Cursor = harness，MC 的 1.20 / Forge 那种。选定版本即可。  
+`packagent` = PCL：detect → 选 pack → install / eject。一份 `.pack.json` 投射多家 harness。
+
+### export / install
+
+```
+  prefunction 文件          （可选）瓶口录制
+         └──────── export ────────┘
+                    │
+               .pack.json
+                    │
+         install ───┴───► 各 harness 目录 + hook/rules 还原
+```
+
+prefunction 整合包，adapter 写加载口。
+
+---
+
+## 常见场景
 
 | 痛点 | Agent Modpack |
 |------|-------------------|
@@ -28,8 +90,6 @@ packagent install foo.pack.json --runtime claude-code   # 只装 Claude Code
 | 一个项目里有多个 agent 角色 | `.agent-pack/agents.yaml` 定义边界，`export --agent` 只封一个 |
 | 装完不知道卸哪了 | **install-ledger** + `packagent eject --name` 按记录卸载 |
 | 只想发部分 skill 给同事 | `pack --skills` / `--manifest` 选件封包 |
-
-类比 Minecraft：**harness = 游戏版本**，**pack = 整合包**，**packagent = 启动器** — 选版本、选整合包，装你的 agent。
 
 ---
 
@@ -50,8 +110,8 @@ packagent install foo.pack.json --runtime claude-code   # 只装 Claude Code
 |------|------|
 | **Harness** | 容器：Claude Code、Codex、Cursor… 决定 skill/MCP 放哪 |
 | **Agent** | 角色：一组 skills + rules + MCP（在 `agents.yaml` 里定义） |
-| **Pack** | 某一个 agent 的快照（**不是**整仓 skill dump） |
-| **Bundle** | pack 内嵌的文件内容 — 没 bundle 不能跨机器装 |
+| **Pack** | 某一个 agent 的快照；`export --agent` 只封一个角色 |
+| **Bundle** | pack 内嵌的文件内容；跨机器 install 需要 bundle |
 
 ---
 
@@ -115,7 +175,7 @@ packagent export --all              # legacy：全项目扫描
 
 ```bash
 packagent detect
-# 输出 Detected / Will install to —— 只有「在场」的 harness 才会装（不是全世界所有工具）
+# 输出 Detected / Will install to —— 只装本机 detect 到的 harness
 
 packagent install .agent-pack/exports/my-agent.pack.json
 
@@ -237,7 +297,7 @@ Schema：**`ccui-pack/v0.2`** · 完整规范 → [docs/PACK_SPEC.md](docs/PACK_
 | `harness` / `assembly` / `model` | L2–L3 抓包蒸馏（可选） |
 | `bundle.files[]` | **便携核心** — 内嵌 skill/rule 全文 |
 | `resolution` | packContentHash、agentPackCli 版本锁 |
-| `meta.fidelity` | `L1` \| `L2` \| … — 诚实标注保真度 |
+| `meta.fidelity` | `L1` \| `L2` \| … — 保真度标注 |
 
 </details>
 
@@ -250,7 +310,7 @@ Schema：**`ccui-pack/v0.2`** · 完整规范 → [docs/PACK_SPEC.md](docs/PACK_
 | **L2** | prompt / tool schema / reminders | `captureAs=skill` → rules；`experience` → 经验罐头 + hook |
 | **L3+** | 装配顺序 / loop | 写入 pack，尽力投射 |
 
-换模型行为会漂移 — pack 保证**配置可搬**，不承诺完美克隆闭源 harness。
+换模型行为会漂移。pack 标 L1–L4，配置可搬。
 
 </details>
 

@@ -4,6 +4,8 @@
 
 > **Install your agent like an MC modpack.**
 
+**Agent Modpack** — **Export / import** your agent like an MC modpack: define a role, ship a `.pack.json`, run `packagent install` into Claude Code, Codex, and other harnesses.
+
 [![npm version](https://img.shields.io/npm/v/@sakikotgw/pack-agent.svg)](https://www.npmjs.com/package/@sakikotgw/pack-agent)
 [![license](https://img.shields.io/npm/l/@sakikotgw/pack-agent.svg)](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)
 [![bun](https://img.shields.io/badge/bun-%3E%3D1.1.0-black?logo=bun)](https://bun.sh)
@@ -20,7 +22,67 @@ packagent install foo.pack.json --runtime claude-code   # single target
 
 ---
 
-## Why Agent Modpack
+## Why
+
+### Prefunction
+
+An agent is a pipeline:
+
+```
+  user message (input₁)
+       │
+       ▼
+  skills / rules / MCP / hooks / Hermes / OpenClaw …   ← modpack captures this
+       │
+       ▼
+  fixed_input (input₂)  ──►  LLM  ──►  reply
+```
+
+MCP, skills, and rules only change **fixed_input** going into the model. The LLM function stays the same.  
+Hermes, OpenClaw, harness hooks, context assembly — all **prefunctions**: input₁ becomes input₂, then the model runs.
+
+Everything in an agent except model weights shapes **fixed_input**.  
+A modpack standardizes that chain as `.pack.json` — MC modpack listing mods.
+
+Ship it: `packagent install`, API key, launch. Same harness + same model → same fixed_input, approximately.  
+PCL: download modpack → import → play.
+
+### Loading
+
+Prefunction content goes in the bundle. Each harness has its own mount points:
+
+- Paths: `.claude/skills`, `.cursor/rules/*.mdc`, `AGENTS.md`, …
+- Injection: SessionStart, system-reminder, turn N append
+- Permissions: MCP allowlists, tool approval
+
+Hermes, OpenClaw, OpenCode, Claude Code, Codex can share one pack; **where to write, when to inject, who may call tools** — adapters.
+
+Two jobs:
+
+1. **One schema** — `.pack.json` + bundle, versioned, ejectable.
+2. **Wire capture** — record the request body (prompt, tool schema, assembly, loop); replay via experience / rules to restore fixed_input. Missing capture → mark L1.
+
+### Harness = game version
+
+Claude Code, Codex, Cursor = harnesses, like MC 1.20 / Forge. Pick a version.  
+`packagent` = PCL: detect → pick pack → install / eject. One `.pack.json` projects to many harnesses.
+
+### export / install
+
+```
+  prefunction files          (optional) wire capture
+         └──────── export ────────┘
+                    │
+               .pack.json
+                    │
+         install ───┴───► per-harness dirs + hook/rules replay
+```
+
+Prefunction modpack. Adapters write mount points.
+
+---
+
+## Common scenarios
 
 | Pain | What we do |
 |------|------------|
@@ -28,8 +90,6 @@ packagent install foo.pack.json --runtime claude-code   # single target
 | Multiple agent roles in one repo | Boundaries in `.agent-pack/agents.yaml`; `export --agent` packs one |
 | No clean uninstall after install | **install-ledger** + `packagent eject --name` |
 | Share only some skills with teammates | `pack --skills` / `--manifest` selective export |
-
-Think Minecraft: **harness = game version**, **pack = modpack**, **packagent = launcher** — pick a version, pick a pack, install your agent.
 
 ---
 
@@ -50,7 +110,7 @@ Think Minecraft: **harness = game version**, **pack = modpack**, **packagent = l
 |------|---------|
 | **Harness** | Container (Claude Code, Codex, Cursor…) — owns skill/MCP paths |
 | **Agent** | Role — a set of skills + rules + MCP (defined in `agents.yaml`) |
-| **Pack** | Snapshot of **one** agent (not a full-project skill dump) |
+| **Pack** | Snapshot of one agent; `export --agent` packs one role |
 | **Bundle** | Embedded file contents inside the pack — required for cross-machine install |
 
 ---
@@ -250,7 +310,7 @@ Schema: **`ccui-pack/v0.2`** · full spec → [docs/PACK_SPEC.md](docs/PACK_SPEC
 | **L2** | prompt / tool schema / reminders | `captureAs=skill` → rules; `experience` → jar + hook |
 | **L3+** | assembly order / loop | Stored in pack, best-effort projection |
 
-Behavior drifts when the model changes — packs guarantee **portable config**, not a perfect clone of closed harnesses.
+Model swap → behavior drifts. Packs label L1–L4; config travels.
 
 </details>
 

@@ -1,6 +1,8 @@
 # pack-agent
 
-**Agent 整合包（modpack）— 定义一个 agent，打成便携包，装到任意 harness。**
+**English** | **[中文](README.zh-CN.md)**
+
+**Agent modpack — define one agent, export a portable pack, install to any harness.**
 
 [![npm version](https://img.shields.io/npm/v/@sakikotgw/pack-agent.svg)](https://www.npmjs.com/package/@sakikotgw/pack-agent)
 [![license](https://img.shields.io/npm/l/@sakikotgw/pack-agent.svg)](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)
@@ -17,50 +19,50 @@ packagent detect
 
 ---
 
-## 为什么需要这个
+## Why pack-agent
 
-| 痛点 | pack-agent 怎么做 |
-|------|-------------------|
-| 换电脑 / 换工具要重配 skill、MCP | 打成 **便携 bundle**，拷走 `.pack.json` 即可 install |
-| 一个项目里有多个 agent 角色 | `.agent-pack/agents.yaml` 定义边界，`export --agent` 只封一个 |
-| 装完不知道卸哪了 | **install-ledger** + `packagent eject --name` 按记录卸载 |
-| 只想发部分 skill 给同事 | `pack --skills` / `--manifest` 选件封包 |
+| Pain | What we do |
+|------|------------|
+| Re-configure skills/MCP when switching machines or tools | **Portable bundle** — copy `.pack.json`, run `install` |
+| Multiple agent roles in one repo | Boundaries in `.agent-pack/agents.yaml`; `export --agent` packs one |
+| No clean uninstall after install | **install-ledger** + `packagent eject --name` |
+| Share only some skills with teammates | `pack --skills` / `--manifest` selective export |
 
-类比 Minecraft：**harness = 游戏版本**，**pack = 整合包**，**packagent = 启动器**。
+Think Minecraft: **harness = game version**, **pack = modpack**, **packagent = launcher**.
 
 ---
 
-## 核心概念
+## Core concepts
 
 ```
   agents.yaml          export --agent        .pack.json          install
  ┌─────────────┐      ──────────────►   ┌──────────────┐    ──────────────►  Claude Code
- │ packer      │                        │ bundle 内嵌   │                     Codex
- │ debugger    │                        │ skills/rules  │                     OpenClaw …
- └─────────────┘                        │ mcp + hash    │
+ │ packer      │                        │ embedded      │                     Codex
+ │ debugger    │                        │ bundle        │                     OpenClaw …
+ └─────────────┘                        │ skills/mcp    │
        ▲                                └──────────────┘
-       │ 一个 harness 里可有多个 agent
-       └── 裸 export 无 --agent → 拒绝（agent-required）
+       │ many agents per harness
+       └── bare export without --agent → rejected (agent-required)
 ```
 
-| 概念 | 含义 |
-|------|------|
-| **Harness** | 容器：Claude Code、Codex、Cursor… 决定 skill/MCP 放哪 |
-| **Agent** | 角色：一组 skills + rules + MCP（在 `agents.yaml` 里定义） |
-| **Pack** | 某一个 agent 的快照（**不是**整仓 skill dump） |
-| **Bundle** | pack 内嵌的文件内容 — 没 bundle 不能跨机器装 |
+| Term | Meaning |
+|------|---------|
+| **Harness** | Container (Claude Code, Codex, Cursor…) — owns skill/MCP paths |
+| **Agent** | Role — a set of skills + rules + MCP (defined in `agents.yaml`) |
+| **Pack** | Snapshot of **one** agent (not a full-project skill dump) |
+| **Bundle** | Embedded file contents inside the pack — required for cross-machine install |
 
 ---
 
-## 安装
+## Install
 
-**需要 [Bun](https://bun.sh) ≥ 1.1.0**（CLI/MCP 为 TypeScript，由 Bun 执行）。
+**Requires [Bun](https://bun.sh) ≥ 1.1.0** (CLI/MCP run TypeScript via Bun).
 
 ```bash
-# 项目内
+# project-local
 npm install @sakikotgw/pack-agent
 
-# 全局
+# global
 npm install -g @sakikotgw/pack-agent
 
 packagent --help
@@ -69,12 +71,12 @@ packagent detect
 
 ---
 
-## 快速开始
+## Quick start
 
-### 1. 定义 agent
+### 1. Define an agent
 
 ```bash
-packagent agents init    # 生成 .agent-pack/agents.yaml
+packagent agents init    # creates .agent-pack/agents.yaml
 packagent agents list
 ```
 
@@ -85,40 +87,40 @@ schema: agent-pack/agents/v1
 agents:
   my-agent:
     author: you
-    description: What this agent does (shown on the pack)
-    runtime: codex                    # 扫描 skills 的主 harness
+    description: Shown on the exported pack
+    runtime: codex                    # primary harness for skill scan
     skills: [agent-pack, my-skill]
     rules: [AGENTS.md]
     mcp: [agent-pack]
     captureAs: experience           # skill | experience (default: experience)
 ```
 
-### 2. 打包
+### 2. Export (pack)
 
 ```bash
 packagent export --agent my-agent
 # → .agent-pack/exports/my-agent.pack.json
 ```
 
-其他方式：
+Alternatives:
 
 ```bash
 packagent pack --skills brainstorming,verification-before-completion
 packagent pack --manifest .agent-pack/select.json
-packagent export --all              # legacy：全项目扫描
+packagent export --all              # legacy: full-project scan
 ```
 
-### 3. 安装
+### 3. Install
 
 ```bash
 packagent detect
 packagent install .agent-pack/exports/my-agent.pack.json
 
-# 或一条命令：export + install
+# one-shot: export + install
 packagent sync --agent my-agent
 ```
 
-### 4. 卸载
+### 4. Uninstall
 
 ```bash
 packagent eject --name my-agent
@@ -126,19 +128,19 @@ packagent eject --name my-agent
 
 ---
 
-## Claude Code 自举
+## Claude Code bootstrap
 
-把下面贴给 Claude Code，或手动配置 MCP：
+Paste the prompt below into Claude Code, or configure MCP manually:
 
 <details>
-<summary><strong>给 Claude 的 setup prompt（点击展开）</strong></summary>
+<summary><strong>Setup prompt for Claude (click to expand)</strong></summary>
 
 ```text
-1. npm install @sakikotgw/pack-agent  （需要本机已装 Bun）
-2. 在 .mcp.json 加入 agent-pack MCP（见下方 JSON）
-3. packagent agents init → 扫描项目 skills，帮我填写 agents.yaml
-4. packagent sync --agent <id> 完成自举
-之后我说「打包 agent X」时，请用 pack_export(agent=X) 或 packagent export --agent X
+1. npm install @sakikotgw/pack-agent (Bun must be installed)
+2. Add agent-pack MCP to .mcp.json (JSON below)
+3. packagent agents init → scan project skills and help fill agents.yaml
+4. packagent sync --agent <id> to bootstrap
+When I say "pack agent X", use pack_export(agent=X) or packagent export --agent X
 ```
 
 </details>
@@ -155,43 +157,43 @@ packagent eject --name my-agent
 }
 ```
 
-完整示例：[mcp/config.example.json](mcp/config.example.json)
+Full example: [mcp/config.example.json](mcp/config.example.json)
 
-### MCP 工具
+### MCP tools
 
-| 工具 | 作用 |
-|------|------|
-| `pack_detect` | 检测在场 harness |
-| `pack_scan` | 扫描 skills / rules / MCP |
-| `pack_export` | 导出 `.pack.json`（支持 `agent` 参数） |
-| `pack_install` | 安装已有 pack |
-| `pack_sync` | export + install |
-| `pack_select` | 选件封包 |
-| `pack_eject` | 按 ledger 卸载 |
-| `pack_status` | lock / ledger / experiences |
-
----
-
-## CLI 命令
-
-| 命令 | 说明 |
-|------|------|
-| `packagent agents list \| init` | 查看 / 初始化 agent 定义 |
-| `packagent export --agent <id>` | 导出单个 agent（**推荐**） |
-| `packagent pack --skills …` | 选件封包 |
-| `packagent install <file>` | 安装 pack |
-| `packagent sync --agent <id>` | export + install |
-| `packagent detect` | 列出检测到的 harness |
-| `packagent eject --name <pack>` | 卸载 |
-| `packagent status` | lock / ledger 状态 |
-| `packagent diff` | 对比 pack 或 lock |
+| Tool | Purpose |
+|------|---------|
+| `pack_detect` | Detect present harnesses |
+| `pack_scan` | Scan skills / rules / MCP |
+| `pack_export` | Write `.pack.json` (supports `agent`) |
+| `pack_install` | Install an existing pack |
+| `pack_sync` | Export + install |
+| `pack_select` | Selective pack |
+| `pack_eject` | Uninstall via ledger |
+| `pack_status` | Lock / ledger / experiences |
 
 ---
 
-## 支持的 Harness
+## CLI commands
 
-| id | skills | rules | MCP 配置 |
-|----|--------|-------|----------|
+| Command | Description |
+|---------|-------------|
+| `packagent agents list \| init` | List / init agent definitions |
+| `packagent export --agent <id>` | Export one agent (**recommended**) |
+| `packagent pack --skills …` | Selective pack |
+| `packagent install <file>` | Install pack |
+| `packagent sync --agent <id>` | Export + install |
+| `packagent detect` | List detected harnesses |
+| `packagent eject --name <pack>` | Uninstall |
+| `packagent status` | Lock / ledger status |
+| `packagent diff` | Diff packs or locks |
+
+---
+
+## Supported harnesses
+
+| id | skills | rules | MCP config |
+|----|--------|-------|------------|
 | `claude-code` | `.claude/skills` | `CLAUDE.md` | `.mcp.json` |
 | `codex` | `.agents/skills` | `AGENTS.md` | `.codex/config.toml` |
 | `opencode` | `.opencode/skills` | `AGENTS.md` | `opencode.json` |
@@ -201,54 +203,54 @@ packagent eject --name my-agent
 | `windsurf` | `.windsurf/skills` | — | `.windsurf/mcp_config.json` |
 | `github-copilot` | — | `.github/copilot-instructions.md` | `.vscode/mcp.json` |
 
-install 时自动投射到**所有检测到的** harness；可用 `--runtime` 只装一家。
+Install projects to **all detected** harnesses by default; use `--runtime` for a single target.
 
 ---
 
-## 整合包格式（`.pack.json`）
+## Pack format (`.pack.json`)
 
-Schema：**`ccui-pack/v0.2`** · 完整规范 → [docs/PACK_SPEC.md](docs/PACK_SPEC.md)
+Schema: **`ccui-pack/v0.2`** · full spec → [docs/PACK_SPEC.md](docs/PACK_SPEC.md)
 
 <details>
-<summary><strong>顶层字段一览（点击展开）</strong></summary>
+<summary><strong>Top-level fields (click to expand)</strong></summary>
 
-| 字段 | 说明 |
-|------|------|
+| Field | Description |
+|-------|-------------|
 | `schema` | `ccui-pack/v0.2` |
-| `name` / `version` / `author` / `description` | 包身份 |
-| `agent` | `{ id, harness? }` — 对应 agents.yaml 里的 agent |
-| `runtime` | 导出时主 harness |
-| `knowledge.skills[]` / `rules[]` | L1 清单 + version + contentHash |
-| `tools.mcp[]` | MCP server 定义 |
-| `experiences[]` | L2 经验罐头（SessionStart 注入） |
-| `harness` / `assembly` / `model` | L2–L3 抓包蒸馏（可选） |
-| `bundle.files[]` | **便携核心** — 内嵌 skill/rule 全文 |
-| `resolution` | packContentHash、agentPackCli 版本锁 |
-| `meta.fidelity` | `L1` \| `L2` \| … — 诚实标注保真度 |
+| `name` / `version` / `author` / `description` | Pack identity |
+| `agent` | `{ id, harness? }` — matches `agents.yaml` |
+| `runtime` | Primary harness used at export |
+| `knowledge.skills[]` / `rules[]` | L1 manifest + version + contentHash |
+| `tools.mcp[]` | MCP server definitions |
+| `experiences[]` | L2 experience jars (SessionStart injection) |
+| `harness` / `assembly` / `model` | L2–L3 capture distill (optional) |
+| `bundle.files[]` | **Portable core** — embedded skill/rule bodies |
+| `resolution` | packContentHash, agentPackCli lock |
+| `meta.fidelity` | `L1` \| `L2` \| … — honest fidelity label |
 
 </details>
 
 <details>
-<summary><strong>保真度分层（点击展开）</strong></summary>
+<summary><strong>Fidelity layers (click to expand)</strong></summary>
 
-| 层 | 内容 | install 后 |
-|----|------|------------|
-| **L1** | skills / rules / MCP | 各 harness 原生目录 |
-| **L2** | prompt / tool schema / reminders | `captureAs=skill` → rules；`experience` → 经验罐头 + hook |
-| **L3+** | 装配顺序 / loop | 写入 pack，尽力投射 |
+| Layer | Content | After install |
+|-------|---------|---------------|
+| **L1** | skills / rules / MCP | Native harness directories |
+| **L2** | prompt / tool schema / reminders | `captureAs=skill` → rules; `experience` → jar + hook |
+| **L3+** | assembly order / loop | Stored in pack, best-effort projection |
 
-换模型行为会漂移 — pack 保证**配置可搬**，不承诺完美克隆闭源 harness。
+Behavior drifts when the model changes — packs guarantee **portable config**, not a perfect clone of closed harnesses.
 
 </details>
 
 <details>
-<summary><strong>项目侧目录（点击展开）</strong></summary>
+<summary><strong>Project layout (click to expand)</strong></summary>
 
 ```
 .agent-pack/
-  agents.yaml          # agent 定义
-  exports/*.pack.json  # 导出产物
-  applied/<pack>.json  # 安装清单
+  agents.yaml          # agent definitions
+  exports/*.pack.json  # export output
+  applied/<pack>.json  # install manifest
   applied/<pack>-ledger.json
   lock.json
   experiences/
@@ -259,7 +261,7 @@ Schema：**`ccui-pack/v0.2`** · 完整规范 → [docs/PACK_SPEC.md](docs/PACK_
 </details>
 
 <details>
-<summary><strong>JSON 骨架示例（点击展开）</strong></summary>
+<summary><strong>JSON skeleton (click to expand)</strong></summary>
 
 ```jsonc
 {
@@ -286,7 +288,7 @@ Schema：**`ccui-pack/v0.2`** · 完整规范 → [docs/PACK_SPEC.md](docs/PACK_
 
 ---
 
-## 开发
+## Development
 
 ```bash
 git clone https://github.com/sakikoTGW/pack-agent.git
@@ -295,17 +297,17 @@ bun install
 bun test
 ```
 
-Monorepo 上游：[sakikoTGW/CCui](https://github.com/sakikoTGW/CCui) `packages/pack-cli`
+Upstream monorepo: [sakikoTGW/CCui](https://github.com/sakikoTGW/CCui) `packages/pack-cli`
 
 ---
 
-## 链接
+## Links
 
 | | |
 |---|---|
 | **npm** | https://www.npmjs.com/package/@sakikotgw/pack-agent |
 | **Issues** | https://github.com/sakikoTGW/pack-agent/issues |
-| **规范** | [docs/PACK_SPEC.md](docs/PACK_SPEC.md) |
+| **Spec** | [docs/PACK_SPEC.md](docs/PACK_SPEC.md) |
 
 ## License
 

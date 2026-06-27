@@ -2,7 +2,7 @@
 
 **English** | **[中文](DEVELOPERS.zh-CN.md)**
 
-npm: `@sakikotgw/pack-agent` · CLI: `packagent` · Schema: `ccui-pack/v0.2`  
+npm: `@sakikotgw/pack-agent` · CLI: `packagent` · Schema: v0.2  
 Full pack spec → [PACK_SPEC.md](PACK_SPEC.md)
 
 ---
@@ -149,7 +149,7 @@ Types: `PackDoc` · `InstallReport` · `InstallOpts` · `CaptureDeliver` · `Con
 **`.agent-pack/agents.yaml`** — schema `agent-pack/agents/v1`  
 Fields: `author` · `description` · `runtime` · `skills` · `rules` · `mcp` · `captureAs` · `modules`
 
-**`.pack.json`** — schema `ccui-pack/v0.2`  
+**`.pack.json`** — schema v0.2 (see [PACK_SPEC.md](PACK_SPEC.md) for the `schema` field value)  
 Key fields: `agent` · `knowledge` · `tools.mcp` · `experiences` · `harness` · `bundle.files` · `meta.fidelity`
 
 **Harness ids**: `claude-code` · `codex` · `opencode` · `openclaw` · `hermes` · `gemini-cli` · `windsurf` · `github-copilot` · `astrbot`  

@@ -1,6 +1,6 @@
-# ccui-pack 规范（整合包格式）
+# Pack 规范（`.pack.json` 格式）
 
-> **Schema**：`ccui-pack/v0.2`（export 默认）· 读取兼容 v0.1  
+> **Schema 字段值**：`ccui-pack/v0.2`（export 默认，读取兼容 v0.1）  
 > **工具**：Agent Modpack / `packagent`
 
 把一个 agent 的 prefunction（skills、rules、MCP，及可选瓶口录制）序列化成 `.pack.json`，经 adapter 投射到各 harness。
@@ -25,7 +25,7 @@ Prefunction 进 pack；harness 决定怎么加载。详见 [README](../README.zh
 | Minecraft | Agent Modpack |
 |-----------|---------------|
 | 游戏版本（1.20 / Forge） | Harness（Claude Code、Codex、OpenClaw…） |
-| 整合包（mods） | `ccui-pack`：skills + rules + MCP + 可选瓶口段 |
+| 整合包（mods） | `.pack.json`：skills + rules + MCP + 可选瓶口段 |
 | 启动器（PCL） | `packagent` |
 
 **L1** — 磁盘上的 skills / rules / MCP，export 进 `knowledge` + `bundle.files`。  
@@ -57,17 +57,17 @@ Prefunction 进 pack；harness 决定怎么加载。详见 [README](../README.zh
   "name": "string",                  // 整合包名
   "version": "string",
 
-  // —— 你装的（L1，文件搬运）——
+  // L1 — skills / rules / MCP
   "knowledge": {
     "skills": [ { "name": "string", "source": "path|git|registry", "ref": "string" } ],
     "rules":  [ { "name": "string", "format": "mdc|claude-md|agents-md", "ref": "string" } ]
   },
   "tools": {
     "mcp": [ { "name": "string", "type": "stdio|sse|http", "command?": "string", "args?": [], "url?": "string", "env?": {} } ],
-    "builtin_map": [ { "name": "string", "mapTo": "string" } ]   // 引擎内置工具 → CCui 工具的映射
+    "builtin_map": [ { "name": "string", "mapTo": "string" } ]   // harness 内置 tool → MCP tool 映射
   },
 
-  // —— 引擎的（L2–L4，抓包蒸馏）——
+  // L2–L4 — 瓶口 capture（可选）
   "harness": {
     "base_system_prompt": "string",                 // 引擎自带系统提示（含其注入的一切文本）
     "tool_schemas": [ { "name": "string", "description": "string", "input_schema": {} } ],
@@ -107,9 +107,9 @@ Prefunction 进 pack；harness 决定怎么加载。详见 [README](../README.zh
 ## 3. 三个动词
 
 ```
-抓(Capture)  代理在瓶口录请求体 → 蒸馏 harness/assembly/model
-封(Package)  归一化成上面的 schema
-放(Run/Project)  ① CCui 原生跑（AgentSession 执行）  ② 投射到别的"版本"（写入其原生目录）或注入（代理 system 追加）
+抓(Capture)  瓶口录请求体 → harness / assembly / model
+封(Package)  归一化进 schema，写入 .pack.json
+装(Install)  packagent → adapter 写各 harness 目录；experience 走 hook 注入
 ```
 
 ---
@@ -180,7 +180,7 @@ v0.1 只有 `name` + 扁平列表；v0.2 为**可复现、可比对**的 modpack
 | 安装路径 | `.claude/skills`、rules/AGENTS.md | `.agent-pack/experiences/*.exp.json` |
 | CLI | `--capture-as skill` | `--capture-as experience`（默认） |
 
-经验罐头带 `offset` 字段，使用中可微调，**不回写 skill 树**。安装时 `projectExperienceToHarnesses` 按 harness 适配表接 SessionStart / pre_llm hook（Claude/Codex/Gemini/Hermes/OpenClaw 等）；CCUI 另可选 `src/agent-pack/sessionContext.ts`。
+经验罐头带 `offset` 字段，使用中可微调，**不回写 skill 树**。安装时 `projectExperienceToHarnesses` 按 harness 适配表接 SessionStart / pre_llm hook（Claude / Codex / Gemini / Hermes / OpenClaw 等）。
 
 ### 5.7 可选模块 + pack.ignore
 
@@ -194,7 +194,7 @@ v0.1 只有 `name` + 扁平列表；v0.2 为**可复现、可比对**的 modpack
 **pack.ignore**（`.agent-pack/pack.ignore`，gitignore 语法）：
 
 - `#` 注释；`**` / `*` 通配；`!pattern` 反选
-- 默认排除 `.env`、`node_modules/**`、`.ccui/packs/**`、`MEMORY.md` 等
+- 默认排除 `.env`、`node_modules/**`、`.agent-pack/capture/**`、`MEMORY.md` 等
 - 要打包 memory：在 `modules.memory: true` 且从 ignore 中删掉对应行
 
 ### 5.8 卸载（eject）与 install-ledger

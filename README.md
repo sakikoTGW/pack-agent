@@ -18,7 +18,7 @@ packagent detect          # see which harnesses will receive the pack
 packagent install foo.pack.json --runtime claude-code   # single target
 ```
 
-> CLI: `packagent` · npm: `@sakikotgw/pack-agent` · schema: `ccui-pack/v0.2` · [Developer guide](docs/DEVELOPERS.md)
+> CLI: `packagent` · npm: `@sakikotgw/pack-agent` · schema: v0.2 · [Developer guide](docs/DEVELOPERS.md)
 
 ---
 
@@ -287,14 +287,14 @@ By default, install targets harnesses listed under **`Will install to`** in `pac
 
 ## Pack format (`.pack.json`)
 
-Schema: **`ccui-pack/v0.2`** · full spec → [docs/PACK_SPEC.md](docs/PACK_SPEC.md)
+Schema: **v0.2** (see `schema` field in [PACK_SPEC.md](docs/PACK_SPEC.md)) · full spec → [docs/PACK_SPEC.md](docs/PACK_SPEC.md)
 
 <details>
 <summary><strong>Top-level fields (click to expand)</strong></summary>
 
 | Field | Description |
 |-------|-------------|
-| `schema` | `ccui-pack/v0.2` |
+| `schema` | pack schema v0.2 |
 | `name` / `version` / `author` / `description` | Pack identity |
 | `agent` | `{ id, harness? }` — matches `agents.yaml` |
 | `runtime` | Primary harness used at export |
@@ -374,8 +374,6 @@ cd pack-agent
 bun install
 bun test
 ```
-
-Upstream monorepo: [sakikoTGW/CCui](https://github.com/sakikoTGW/CCui) `packages/pack-cli`
 
 ---
 

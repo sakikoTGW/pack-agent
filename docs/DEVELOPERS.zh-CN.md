@@ -2,7 +2,7 @@
 
 **[English](DEVELOPERS.md)** | **中文**
 
-npm：`@sakikotgw/pack-agent` · CLI：`packagent` · Schema：`ccui-pack/v0.2`  
+npm：`@sakikotgw/pack-agent` · CLI：`packagent` · Schema：v0.2  
 完整 pack 规范 → [PACK_SPEC.md](PACK_SPEC.md)
 
 ---
@@ -364,7 +364,7 @@ agents:
 
 ## `.pack.json` 速查
 
-Schema：`ccui-pack/v0.2`
+Schema：v0.2（JSON 里 `schema` 字段的具体字符串见 [PACK_SPEC.md](PACK_SPEC.md)）
 
 | 字段 | 说明 |
 |------|------|

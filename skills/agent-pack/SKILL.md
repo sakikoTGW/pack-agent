@@ -151,16 +151,16 @@ agent-pack pack --skills brainstorming verification-before-completion --harness 
 
 **自举**：`sync` / `export` / `install` 默认会把 **agent-pack 本 skill** 打进包并装到各 harness（除非 `--no-bootstrap`）。
 
-**版本（v0.2）**：export/sync 写 `ccui-pack/v0.2`，每个 skill/MCP 带 `version` + `contentHash`/`configHash`；`.agent-pack/lock.json` 记录解析锁。
+**版本（v0.2）**：export/sync 写 schema v0.2，每个 skill/MCP 带 `version` + `contentHash`/`configHash`；`.agent-pack/lock.json` 记录解析锁。
 
 ---
 
 ## 模式 C：无 CLI — 用文件工具自打包
 
-1. 按 `docs/PACK_SPEC.md` schema 写 `ccui-pack/v0.1` JSON  
+1. 按 `docs/PACK_SPEC.md` 写 pack JSON（schema v0.2）  
 2. **L1**：只收录用户选的 skills（整个 `<name>/` 目录含 SKILL.md）、rules、mcp  
 3. **L2 harness**（可选）：
-   - 有 `.ccui/packs/*.pack.json` 或 `.agent-pack/capture/*.json` → 读最新，取 `harness` + `assembly` + `model`
+   - 有 `.agent-pack/capture/*.json` → 读最新，取 `harness` + `assembly` + `model`
    - 或用户给出系统提示原文 → 填入 `harness.base_system_prompt`
    - 没有来源 → 留空，`meta.fidelity: "L1"`
 4. **便携化**：把每个 skill/rule 文件内容嵌进 `bundle.files`（`skills/<名>/...`、`rules/<名>`）  

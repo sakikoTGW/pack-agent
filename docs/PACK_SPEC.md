@@ -1,57 +1,51 @@
 # ccui-pack 规范（整合包格式）
 
-> **版本**：v0.1（草案）
-> **状态**：随抓包蒸馏引擎同步演进
-> **一句话**：把"一个 agent"打成可克隆、可加载、可跨运行时投射的整合包。
+> **Schema**：`ccui-pack/v0.2`（export 默认）· 读取兼容 v0.1  
+> **工具**：Agent Modpack / `packagent`
+
+把一个 agent 的 prefunction（skills、rules、MCP，及可选瓶口录制）序列化成 `.pack.json`，经 adapter 投射到各 harness。
 
 ---
 
-## 纲领（产品定位 · 不可动摇）
+## 概述
 
-> **CCui 是「可装载的 harness 运行时」（Harness Runtime）；整合包是它的「可加载模块」。**
+| 概念 | 说明 |
+|------|------|
+| **Harness** | Claude Code、OpenClaw、Codex 等 — 跑 loop、拼请求、管 tool |
+| **Agent** | `agents.yaml` 里圈定的角色（skill / rule / MCP 清单） |
+| **Pack** | 某一 agent 的快照文件（`.pack.json` + 内嵌 `bundle`） |
+| **packagent** | detect → export / install → ledger / eject |
 
-- 别人的 harness 是 **固件（firmware）**：Codex/Cursor 的 harness 焊死在产品里，撬不动，永远只能是「一个」agent。
-- CCui 的 harness 是 **可加载模块的运行时**：能在运行时把整合包 `insmod` 进去——不换 agent、不换模型，靠**装弹匣**改变行为。
-- 类比：**Linux 内核 + 可加载内核模块（.ko）**。内核 = CCui，harness = 可编程执行层（审查/路由/loop/verify 的总装配），整合包 = 热装进去的「行为调校」。
-
-**护城河只有一句**：别人能抄走文件（skills/MCP/rules 是 commodity），抄不走**调校**——因为调校（`ccui` 行为契约段）只在 CCui 的 harness 里复现。他们的 harness 没有「装载口」，整合包对他们是死字段。
-
-**最锋利的用法**：让同一个普通模型，靠装不同的包变成不同领域专家——区别不在模型，在 harness 调校。这是固定 harness 产品结构上做不到的。
-
-**判据**：每加一个功能问一句——这是在加固「调校可装载」，还是在退化成「文件可搬运」？前者做深，后者够用即止。
+Prefunction 进 pack；harness 决定怎么加载。详见 [README](../README.zh-CN.md#为什么)。
 
 ---
 
 ## 0. 心智模型
 
-参照 PCL / MultiMC：
+| Minecraft | Agent Modpack |
+|-----------|---------------|
+| 游戏版本（1.20 / Forge） | Harness（Claude Code、Codex、OpenClaw…） |
+| 整合包（mods） | `ccui-pack`：skills + rules + MCP + 可选瓶口段 |
+| 启动器（PCL） | `packagent` |
 
-| Minecraft | CCui |
-|-----------|------|
-| 游戏版本（1.20 / Forge） | 运行时引擎：Cursor / openclaw / Claude Code（闭源，不克隆，只当"版本"） |
-| 整合包（mods） | **ccui-pack**：skills + MCP + rules + 引擎脚手架 |
-| 启动器（PCL） | CCui：选版本 × 选整合包 × 选实例，一键起；也能原生跑 pack |
-
-关键拆分：
-
-- **你装的（文件搬运，L1）**：skills / rules / MCP 配置 —— 开放格式，跨版本直接搬。
-- **引擎自己的（抓包蒸馏，L2–L4）**：base system prompt / 工具 schema / system-reminder / 上下文装配配方 / 循环节奏 —— 闭源运行时不写在文件里，**唯一来源是发给模型的请求体（瓶口）**。
+**L1** — 磁盘上的 skills / rules / MCP，export 进 `knowledge` + `bundle.files`。  
+**L2–L4** — prompt、tool schema、装配顺序、loop；多在 harness 内部，来源是发给模型的请求体（瓶口 capture）。
 
 ---
 
 ## 1. 保真度阶梯
 
-克隆不是 0/1，是分层逼近。每个 pack 必须在 `meta.fidelity` 标注达到哪层。
+分层标注，写入 `meta.fidelity`。
 
 | 层 | 内容 | 来源 | 能否 100% |
 |----|------|------|-----------|
-| **L1** 配置 | skills / rules / MCP | 文件搬 | ✅ |
-| **L2** 脚手架 | base prompt + 工具 schema + system-reminder | 抓包（单次请求） | ✅（同模型时） |
-| **L3** 装配 | 上下文拼装顺序 / 包裹格式 / 截断 / 注入时机 | 抓包（多轮差分） | 接近 |
-| **L4** 循环 | loop / hooks / 重试 / subagent | 抓包节奏 + 重建 | 部分 |
-| **L5** 模型本体 | 权重 | —— | ❌ 只能记参数 |
+| **L1** 配置 | skills / rules / MCP | 文件 / bundle | ✅ |
+| **L2** 脚手架 | base prompt + tool schema + reminders | 瓶口 capture | ✅（同模型时） |
+| **L3** 装配 | 上下文顺序 / 包裹格式 / 注入时机 | 多轮 capture | 接近 |
+| **L4** 循环 | loop / hooks / subagent | capture + 重建 | 部分 |
+| **L5** 模型 | 权重 | — | ❌ 仅记参数 |
 
-**承重真话**：目标模型拿不到时（它跑 Opus、你跑 DeepSeek），"一模一样"在数学上不可能——`function(llm)` 本身换了。能做到的是 **L1–L4 全克隆 + 同模型 → 行为无限逼近**。
+换模型时行为会漂移。同 harness、同模型下 L1–L4 尽量逼近；缺 capture 标 L1。
 
 ---
 
@@ -120,11 +114,11 @@
 
 ---
 
-## 4. 边界与纪律
+## 4. 边界与约定
 
-- **隔离**：投射到某版本是在改它的共享目录，必须写"安装清单"，支持一键干净卸载，不污染用户真实 `.cursor`/`.claude`。
-- **合法性**：抓取闭源运行时的 base prompt 属灰区（对方 IP / ToS）。仅用于本地互操作，默认不分享含他人脚手架的 pack。
-- **行为克隆 ≠ 逐比特**：对外只承诺"行为逼近"，禁止宣传"完美克隆"。
+- **隔离**：install 改 harness 共享目录时写 ledger（`.agent-pack/applied/*-ledger.json`），`eject` 按记录卸载。
+- **合法性**：pack 含抓包 prompt 时注意来源方 IP / ToS；对外分享前自行确认。
+- **保真度**：`meta.fidelity` 与 pack 内容一致；换模型预期行为漂移。
 
 ---
 
@@ -219,17 +213,17 @@ v0.1 只有 `name` + 扁平列表；v0.2 为**可复现、可比对**的 modpack
 | `conflict` | 无 origin 标记或归属别的包 → 默认跳过，``--force`` 强删 |
 | `partial` | 权限/占用导致删不干净 |
 
-少件时看 `report.remediation`，不必整包 panic。
+少件时看 `report.remediation`。
 
-### 5.9 自搓 skill / 无法「下载」
+### 5.9 便携 bundle（跨机器 install）
 
-agent-pack **没有 skill 应用商店**。自搓 skill 要可迁移，必须：
+跨机器 install 需要 `bundle.files` 内嵌 skill/rule 全文（export 时 `embedPortableFiles`）。
 
-1. **export/sync 时 `embedPortableFiles`** → `bundle.files` 内嵌整棵 `skills/<name>/`
-2. 或把依赖 skill **一并选进 pack**（`requires[]` 只认：包内 bundled / 本机已有 / 目标机已装）
-3. 仅写 `ref` 不 embed → 换机器 install 会 fail，提示 re-export
+1. export / sync 默认 embed → `bundle.files`
+2. 或把依赖 skill 一并选进 pack（`requires[]` 认：包内 bundled / 本机已有 / 目标机已装）
+3. 仅 `ref`、无 embed → 换机器 install 会失败，需 re-export
 
-`requires[]` 安装前校验；``--force-requires`` / MCP `force_requires` 可跳过。
+`requires[]` 安装前校验；`--force-requires` / MCP `force_requires` 可跳过。
 
 ### 5.10 MCP server（agent 主入口）
 

@@ -159,10 +159,10 @@ agent-pack pack --skills brainstorming verification-before-completion --harness 
 
 1. 按 `docs/PACK_SPEC.md` schema 写 `ccui-pack/v0.1` JSON  
 2. **L1**：只收录用户选的 skills（整个 `<name>/` 目录含 SKILL.md）、rules、mcp  
-3. **L2 harness**（复刻必需，但**禁止臆造**）：
+3. **L2 harness**（可选）：
    - 有 `.ccui/packs/*.pack.json` 或 `.agent-pack/capture/*.json` → 读最新，取 `harness` + `assembly` + `model`
-   - 或用户明确给出「这就是我要复刻的系统提示原文」→ 填入 `harness.base_system_prompt`
-   - **拿不到就留空**，`meta.fidelity: "L1"`
+   - 或用户给出系统提示原文 → 填入 `harness.base_system_prompt`
+   - 没有来源 → 留空，`meta.fidelity: "L1"`
 4. **便携化**：把每个 skill/rule 文件内容嵌进 `bundle.files`（`skills/<名>/...`、`rules/<名>`）  
 5. 给用户 pack 路径；若可执行 CLI，再跑 `agent-pack install <pack>`
 
@@ -184,15 +184,15 @@ L1 = prefunction 文件。L2+ = 瓶口录制，缺录标 L1。换模型行为会
 1. 列出当前项目有的：`skills` 目录名、`rules`、`mcp` 名（用 list/read，或让用户 paste `agent-pack detect` 输出）  
 2. 问：「要全装还是只装哪几个？」  
 3. 写 `.agent-pack/select.json` → `agent-pack pack --manifest ... --install`  
-4. 若用户要复刻：**问是否有抓包草稿，或请用户 paste 系统提示**；不要编造 prompt  
+4. 若用户要 L2：**问是否有 capture 草稿，或请用户 paste 系统提示**；无来源则标 L1
 5. 回报：`export 路径`、`projected harness 列表`、fidelity（L1/L2）
 
 ---
 
-## 纪律
+## 约定
 
-- harness 内容只来自抓包草稿或用户给的原文；缺就标 L1  
+- `harness` 段只来自 capture 或用户提供的原文；缺则标 L1  
 - 用户说「只要 X Y」就只封 X Y  
-- 换模型行为会漂移；pack 标 L1–L4，配置可搬
+- 换模型行为会漂移；pack 标 L1–L4
 
 规范：`docs/PACK_SPEC.md` · CLI：`packages/pack-cli`

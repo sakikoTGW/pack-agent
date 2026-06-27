@@ -18,7 +18,7 @@ packagent detect          # see which harnesses will receive the pack
 packagent install foo.pack.json --runtime claude-code   # single target
 ```
 
-> CLI: `packagent` · npm: `@sakikotgw/pack-agent` · schema: `ccui-pack/v0.2`
+> CLI: `packagent` · npm: `@sakikotgw/pack-agent` · schema: `ccui-pack/v0.2` · [Developer guide](docs/DEVELOPERS.md)
 
 ---
 
@@ -386,6 +386,7 @@ Upstream monorepo: [sakikoTGW/CCui](https://github.com/sakikoTGW/CCui) `packages
 | **npm** | https://www.npmjs.com/package/@sakikotgw/pack-agent |
 | **Issues** | https://github.com/sakikoTGW/pack-agent/issues |
 | **Spec** | [docs/PACK_SPEC.md](docs/PACK_SPEC.md) |
+| **Developers** | [docs/DEVELOPERS.md](docs/DEVELOPERS.md) · [中文](docs/DEVELOPERS.zh-CN.md) |
 
 ## License
 

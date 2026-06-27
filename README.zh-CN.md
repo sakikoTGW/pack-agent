@@ -18,7 +18,7 @@ packagent detect          # 先看会装到哪几家
 packagent install foo.pack.json --runtime claude-code   # 只装 Claude Code
 ```
 
-> CLI：`packagent` · npm：`@sakikotgw/pack-agent` · schema：`ccui-pack/v0.2`
+> CLI：`packagent` · npm：`@sakikotgw/pack-agent` · schema：`ccui-pack/v0.2` · [开发者文档](docs/DEVELOPERS.zh-CN.md)
 
 ---
 
@@ -386,6 +386,7 @@ Monorepo 上游：[sakikoTGW/CCui](https://github.com/sakikoTGW/CCui) `packages/
 | **npm** | https://www.npmjs.com/package/@sakikotgw/pack-agent |
 | **Issues** | https://github.com/sakikoTGW/pack-agent/issues |
 | **规范** | [docs/PACK_SPEC.md](docs/PACK_SPEC.md) |
+| **开发者** | [docs/DEVELOPERS.zh-CN.md](docs/DEVELOPERS.zh-CN.md) · [English](docs/DEVELOPERS.md) |
 
 ## License
 

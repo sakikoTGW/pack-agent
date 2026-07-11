@@ -1,0 +1,7 @@
+# Default pack exclusions (gitignore syntax)
+.env
+.env.*
+node_modules/**
+MEMORY.md
+.agent-pack/capture/**
+.agent-pack/transcripts/**

@@ -1,0 +1,36 @@
+{
+  "schema": "agent-pack/lock/v1",
+  "packName": "packer",
+  "packVersion": "0.2.0",
+  "packContentHash": "sha256:2147b1e4193b3ad7cc4e964bfe4ae8f0346a9a94d3c79e3c33935b85f7e54b5e",
+  "lockedAt": "2026-07-11T12:25:15.493Z",
+  "agentPackCli": "0.2.0",
+  "captureDeliver": "experience",
+  "components": {
+    "skills": {
+      "agent-pack": {
+        "version": "0.2.0",
+        "contentHash": "sha256:a1c8c22e6987edfe6156d676321b17fe511f011d7eef75b063f1da1c18d68b59",
+        "ref": "E:\\pack-agent\\skills\\agent-pack",
+        "fileCount": 1
+      }
+    },
+    "rules": {},
+    "mcp": {
+      "codegraph": {
+        "version": "0.0.0",
+        "configHash": "sha256:a50eb9521f88879e8d2f79359eccdf9a4dca870fbffcf0ed0ac1e8b88bf967b1",
+        "package": "codegraph"
+      },
+      "shell-exec": {
+        "version": "0.0.0",
+        "configHash": "sha256:37d9064bbf963c90e402dfaccb316add91f9f2091d736f20ef0f2fd48e044c67",
+        "package": "node"
+      }
+    },
+    "experiences": {},
+    "hooks": {},
+    "subagents": {},
+    "memory": {}
+  }
+}

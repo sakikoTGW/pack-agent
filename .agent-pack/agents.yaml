@@ -1,0 +1,10 @@
+schema: agent-pack/agents/v1
+
+agents:
+  packer:
+    author: pack-agent
+    description: Agent Modpack packer — export/install portable modpacks
+    runtime: claude-code
+    skills:
+      - agent-pack
+    captureAs: experience

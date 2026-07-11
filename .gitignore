@@ -1,0 +1,9 @@
+# Packagent standalone project
+.agent-pack/exports/
+.agent-pack/applied/
+.agent-pack/lock.json
+.claude/
+.ccui/
+node_modules/
+*.tgz
+.DS_Store

@@ -1,0 +1,64 @@
+{
+  "name": "@sakikotgw/pack-agent",
+  "version": "0.2.0",
+  "description": "Agent Modpack — install your agent like an MC modpack (skills/rules/MCP portable packs)",
+  "type": "module",
+  "files": [
+    "bin",
+    "src",
+    "mcp",
+    "skills",
+    "scripts",
+    "vendor",
+    "docs",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "packagent": "bin/packagent.js",
+    "packagent-mcp": "bin/packagent-mcp.js",
+    "agent-pack": "bin/agent-pack.js",
+    "agent-pack-mcp": "bin/agent-pack-mcp.js"
+  },
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "keywords": [
+    "agent-modpack",
+    "modpack",
+    "packagent",
+    "agent",
+    "claude-code",
+    "codex",
+    "mcp",
+    "skills",
+    "modpack"
+  ],
+  "license": "MIT",
+  "author": "sakikotgw",
+  "homepage": "https://github.com/sakikoTGW/pack-agent#readme",
+  "bugs": {
+    "url": "https://github.com/sakikoTGW/pack-agent/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sakikoTGW/pack-agent.git"
+  },
+  "scripts": {
+    "install-pack": "bun run src/cli.ts install",
+    "detect": "bun run src/cli.ts detect",
+    "mcp": "bun run mcp/server.ts",
+    "test": "bun run test/install.ts && bun run test/portable-ab.ts && bun run test/conflict.ts && bun run test/transcript-distill.ts && bun run test/agent-profile.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "*",
+    "json5": "^2.2.3",
+    "yaml": "^2.8.0",
+    "zod": "*"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}

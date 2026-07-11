@@ -1,0 +1,3 @@
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Help me pack skills for Claude Code"}]}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"I'll scan your project skills and export a portable pack."}]}}
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Use agent-pack and verify install on codex"}]}}

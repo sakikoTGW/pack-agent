@@ -1,0 +1,20 @@
+{
+  "schema": "ccui-pack/v0.2",
+  "name": "demo",
+  "version": "0.1.0",
+  "runtime": { "id": "claude-code", "label": "Claude Code", "verified": true },
+  "knowledge": {
+    "skills": [{ "name": "demo", "source": "bundled", "version": "0.1.0" }]
+  },
+  "tools": { "mcp": [] },
+  "meta": { "fidelity": "L1", "source": "test-fixture" },
+  "bundle": {
+    "portable": true,
+    "files": [
+      {
+        "path": "skills/demo/SKILL.md",
+        "content": "---\nname: demo\ndescription: install smoke test skill\n---\n# demo\n\nPackagent install test marker.\n"
+      }
+    ]
+  }
+}

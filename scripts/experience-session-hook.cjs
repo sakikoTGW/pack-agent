@@ -28,6 +28,11 @@ function formatBlock(exp) {
 }
 
 function emptyOut() {
+  const hookStyle = process.env.AGENT_PACK_HOOK_STYLE || 'claude'
+  // Hermes 的 shell-hook 协议里，"空/不认识的 JSON" 本来就等于静默 no-op（见
+  // agent/shell_hooks.py 文档字符串），{} 就够了，不需要伪造 hookSpecificOutput 那套形状。
+  if (hookStyle === 'hermes') return {}
+  if (hookStyle === 'cursor') return { additional_context: '' }
   return {
     hookSpecificOutput: {
       hookEventName: hookEvent,
@@ -74,6 +79,12 @@ function main() {
   const hookStyle = process.env.AGENT_PACK_HOOK_STYLE || 'claude'
   if (hookStyle === 'cursor') {
     process.stdout.write(JSON.stringify({ additional_context: additionalContext }))
+    return
+  }
+  // Hermes pre_llm_call 的 wire 协议（agent/shell_hooks.py 文档字符串实测核实）：
+  // stdout 必须是 {"context": "..."}，不认识别的形状（包括 Claude 风格的 hookSpecificOutput）。
+  if (hookStyle === 'hermes') {
+    process.stdout.write(JSON.stringify({ context: additionalContext }))
     return
   }
 

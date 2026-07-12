@@ -9,7 +9,6 @@ import {
 import { PACK_APPLY_SKIP } from '../src/project.js'
 import { buildPackFromProject, exportPackFromProject } from '../src/export.js'
 import { installPackFile } from '../src/install.js'
-import { PackConflictError } from '../src/errors.js'
 import { syncPack } from '../src/sync.js'
 import { packFromProject } from '../src/pack.js'
 import { diffLockFiles, diffPackFiles, formatDiffReport } from '../src/diff.js'
@@ -21,11 +20,12 @@ import {
   toInstallOpts,
   toSyncOpts,
   toolError,
-  toolConflictResult,
   type McpPackOpts,
 } from './util.js'
 import { ejectPack, packStatus } from '../src/eject.js'
 import { applyExperienceOffset } from '../src/experience.js'
+import { describePackFile } from '../src/show.js'
+import { buildPackCatalog } from '../src/catalog.js'
 
 export async function handlePackDetect(args: { cwd?: string }) {
   const cwd = resolveProjectCwd(args.cwd)
@@ -116,36 +116,24 @@ export async function handlePackInstall(args: McpPackOpts & { pack_path: string 
   const cwd = resolveProjectCwd(args.cwd)
   if (!args.pack_path?.trim()) return toolError('pack_path is required')
   const abs = resolve(cwd, args.pack_path)
-  try {
-    const report = await installPackFile(cwd, abs, toInstallOpts(args))
-    return jsonToolResult({ ok: report.ok, cwd, pack_path: abs, report })
-  } catch (e) {
-    if (e instanceof PackConflictError) {
-      return toolConflictResult(e)
-    }
-    throw e
-  }
+  // 错误统一在 server.ts 注册层用 withToolErrorBoundary 兜底（PackConflictError → 结构化 conflict；
+  // 其它异常 → toolError），这里不用再自己 try/catch。
+  const report = await installPackFile(cwd, abs, toInstallOpts(args))
+  return jsonToolResult({ ok: report.ok, cwd, pack_path: abs, report })
 }
 
 export async function handlePackSync(
   args: McpPackOpts & { from?: string; name?: string },
 ) {
   const cwd = resolveProjectCwd(args.cwd)
-  try {
-    const report = await syncPack(cwd, toSyncOpts(args))
-    return jsonToolResult({
-      ok: report.ok,
-      cwd,
-      exportPath: report.exportPath,
-      projected: report.projected,
-      report,
-    })
-  } catch (e) {
-    if (e instanceof PackConflictError) {
-      return toolConflictResult(e)
-    }
-    throw e
-  }
+  const report = await syncPack(cwd, toSyncOpts(args))
+  return jsonToolResult({
+    ok: report.ok,
+    cwd,
+    exportPath: report.exportPath,
+    projected: report.projected,
+    report,
+  })
 }
 
 export async function handlePackSelect(
@@ -237,6 +225,22 @@ export async function handlePackStatus(args: { cwd?: string; state_dir?: string 
   const cwd = resolveProjectCwd(args.cwd)
   const status = await packStatus(cwd, args.state_dir)
   return jsonToolResult({ ok: true, ...status })
+}
+
+/** 装之前先看清楚"包里有什么"——像 CurseForge 装整合包前看 mod 列表 */
+export async function handlePackShow(args: { cwd?: string; pack_path: string }) {
+  const cwd = resolveProjectCwd(args.cwd)
+  if (!args.pack_path?.trim()) return toolError('pack_path is required')
+  const abs = resolve(cwd, args.pack_path)
+  const show = await describePackFile(abs)
+  return jsonToolResult({ ok: true, cwd, pack_path: abs, ...show })
+}
+
+/** 这个项目里"装了哪些整合包 / 导出过哪些整合包"——像启动器的实例列表 */
+export async function handlePackList(args: { cwd?: string; state_dir?: string }) {
+  const cwd = resolveProjectCwd(args.cwd)
+  const catalog = await buildPackCatalog(cwd, args.state_dir)
+  return jsonToolResult({ ok: true, ...catalog })
 }
 
 export async function handlePackExperienceOffset(args: {

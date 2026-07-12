@@ -15,7 +15,7 @@ import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
 import JSON5 from 'json5'
 
-export type McpFormat = 'json-mcpServers' | 'json-mcp' | 'json-openclaw' | 'toml-mcp_servers' | 'yaml-mcp_servers'
+export type McpFormat = 'json-mcpServers' | 'json-mcp' | 'toml-mcp_servers' | 'yaml-mcp_servers'
 
 export type SkillDir = { token: string; nested?: boolean } // nested: <dir>/*/skills/<name>/SKILL.md（AstrBot 插件内置）
 export type RuleSrc =
@@ -45,6 +45,14 @@ export type RuntimeScan = {
 
 export const RUNTIME_ADAPTERS: RuntimeAdapter[] = [
   {
+    // 复查（2026-07-12，跑在真实 Cursor 里，直接读本机 ~/.cursor 现场核实）：
+    // - `~/.cursor/skills` ✅ 用户自装的第三方 skill（跟本机装的 sts2-modding、cnb-* 等一致）。
+    //   注意跟 `~/.cursor/skills-cursor` 别搞混——那个是 Cursor 自己的托管/同步目录
+    //   （带 .cursor-managed-skills-manifest.json），不是我们该写的地方。
+    // - `.cursor/rules/*.mdc` ✅ 真实 frontmatter 是 description/globs/alwaysApply，逐字段核对过。
+    // - `~/.cursor/mcp.json` ✅ 顶层就是 { mcpServers: {...} }，标准包装，跟假设一致。
+    // - `.cursor/hooks.json` ✅（见 experience-projection.ts）：{version, hooks:{sessionStart:[...]}}
+    //   跟真实文件逐字段核对过。
     id: 'cursor',
     label: 'Cursor',
     verified: true,
@@ -58,7 +66,7 @@ export const RUNTIME_ADAPTERS: RuntimeAdapter[] = [
       { token: '.cursor/mcp.json', format: 'json-mcpServers' },
       { token: '~/.cursor/mcp.json', format: 'json-mcpServers' },
     ],
-    note: 'Cursor IDE：skills/rules/MCP + `.cursor/hooks.json` sessionStart 经验注入（非 rules）',
+    note: 'Cursor IDE：skills/rules/MCP + `.cursor/hooks.json` sessionStart 经验注入（非 rules）——全部字段已对着本机真实文件核实。',
   },
   {
     id: 'claude-code',
@@ -116,29 +124,47 @@ export const RUNTIME_ADAPTERS: RuntimeAdapter[] = [
     ],
   },
   {
-    // 见 docs/HARNESS_RESEARCH.md §3：OpenClaw 配置是 JSON5 ~/.openclaw/openclaw.json，
-    // MCP 在 mcp.servers（嵌套），不是顶层 mcpServers —— 现有 json-mcpServers 解析会漏读。
+    // 实测纠正（2026-07-12，openclaw 2026.3.2 + mcporter 0.7.3 CLI 现场验证）：
+    // openclaw.json **没有** `mcp`/`mcp.servers` 这个 schema 键——之前的假设是错的。
+    // `openclaw config validate` 对着一份带 mcp.servers 的真实配置直接报
+    // "Unrecognized key: mcp"，`openclaw doctor --fix` 会把整个 mcp 键删掉。
+    // OpenClaw 的 MCP 工具走内置 mcporter（README core skill 列表里的 "mcporter" 就是它），
+    // mcporter 默认读写项目根 config/mcporter.json，schema 跟标准 mcpServers 一样带包装层——
+    // `mcporter list --config <file>` 实测过：`{ mcpServers: {...} }` 能正常加载，裸的
+    // `{ name: {...} }`（没有 mcpServers 包装）会被 Zod 拒绝（"expected record, received undefined"）。
     id: 'openclaw',
     label: 'OpenClaw',
-    verified: false,
+    verified: true,
     detect: ['~/.openclaw/openclaw.json', '~/.openclaw', 'openclaw.json'],
+    // 扫描来源（导出时读取已有 skill）：真实路径是 agent workspace 下的 skills/
+    // （默认 ~/.openclaw/workspace/skills，可在 openclaw.json 的 agents.defaults.workspace 改），
+    // 不是项目相对的 .agents/skills——那是 codex/opencode 的约定，OpenClaw 从不读。
+    // 装的时候不写文件到这个全局单例目录，走 skills.load.extraDirs 注册（见 project.ts openclaw 分支）。
     skills: [
-      { token: '.agents/skills' },
-      { token: '~/.agents/skills' },
+      { token: '~/.openclaw/workspace/skills' },
     ],
     rules: [
       { kind: 'file', token: 'AGENTS.md', format: 'agents-md' },
     ],
     mcp: [
-      { token: 'openclaw.json', format: 'json-openclaw' },
-      { token: '~/.openclaw/openclaw.json', format: 'json-openclaw' },
+      { token: 'config/mcporter.json', format: 'json-mcpServers' },
     ],
-    note: 'OpenClaw：skills 从 {workspace}/.agents/skills、~/.agents/skills 加载（已核实，✅）；MCP 在 ~/.openclaw/openclaw.json 的 mcp.servers（JSON5）；瓶口 models.providers.*.baseUrl。见 HARNESS_RESEARCH.md §3。',
+    note: 'OpenClaw：skill 目录是全局单例 agent workspace（默认 ~/.openclaw/workspace/skills，可配置），装的时候走 skills.load.extraDirs 注册而非直接落地（已用真实 CLI + 官方文档核实，✅）；MCP 走内置 mcporter，读写项目根 config/mcporter.json，标准 { mcpServers: {...} } 包装（已用真实 mcporter CLI 核实，✅）；瓶口 models.providers.*.baseUrl。',
   },
   {
-    // 据本机源码 E:\hermes-agent-main 核实（HARNESS_RESEARCH.md §4）：
-    // skills 分类嵌套 ~/.hermes/skills/<cat>/<name>/SKILL.md，且原生支持 skills.external_dirs；
-    // MCP=config.yaml mcp_servers(yaml)；瓶口=model.base_url + model.provider: custom。
+    // 复查（2026-07-12，对着本机 E:\hermes-agent-main 源码逐项核实，非纯猜测）：
+    // - skills.external_dirs（hermes_cli/config.py + agent/skill_utils.py）✅ 字段名/结构一致，
+    //   且 hermes 自己只认「实际存在」的目录，死路径不会报错（只是没用）。
+    // - config.yaml 顶层 mcp_servers: {name: {command/args/env/url, enabled}}（hermes_cli/mcp_config.py）
+    //   ✅ 结构完全一致，没有 type/transport 字段（跟 mcporter 的 type 字段不一样，这边别加）。
+    // - **发现并修复的真 bug**：pre_llm_call shell hook 的 wire 协议（agent/shell_hooks.py 文档字符串）
+    //   要求 stdout 是 {"context": "..."}；之前 experience-session-hook.cjs 默认吐 Claude 风格
+    //   {hookSpecificOutput:{...}}，Hermes 认不出，静默当空注入——配置写对了但内容从没真的进过
+    //   上下文。已加 AGENT_PACK_HOOK_STYLE=hermes 分支修复。
+    // - **未解决的操作性限制**（非 bug，是 Hermes 的安全设计）：shell hook 首次触发要交互 consent
+    //   （~/.hermes/shell-hooks-allowlist.json），没有 TTY 会直接跳过。要免交互需要用户自己在
+    //   config.yaml 设 hooks_auto_accept: true，或跑时带 --accept-hooks / HERMES_ACCEPT_HOOKS=1——
+    //   agent-pack 不能也不该单方面绕过这层信任许可，只能在 install 报告里提醒用户。
     id: 'hermes',
     label: 'Hermes (Nous)',
     verified: true,
@@ -446,14 +472,9 @@ function parseJsonLoose(text: string): Record<string, unknown> | null {
 function parseJsonMcp(text: string, format: McpFormat): ScannedMcp[] {
   const json = parseJsonLoose(text)
   if (!json) return []
-  // OpenClaw：mcp.servers（嵌套）；标准：顶层 mcpServers；json-mcp：顶层 mcp
-  let servers: Record<string, Record<string, unknown>>
-  if (format === 'json-openclaw') {
-    servers = ((json.mcp as Record<string, unknown> | undefined)?.servers || {}) as Record<string, Record<string, unknown>>
-  } else {
-    const key = format === 'json-mcp' ? 'mcp' : 'mcpServers'
-    servers = (json[key] || {}) as Record<string, Record<string, unknown>>
-  }
+  // 标准：顶层 mcpServers（json-mcpServers，包括 mcporter.json/OpenClaw）；json-mcp：顶层 mcp。
+  const key = format === 'json-mcp' ? 'mcp' : 'mcpServers'
+  const servers = (json[key] || {}) as Record<string, Record<string, unknown>>
   return Object.entries(servers).map(([name, cfg]) => {
     const command = cfg.command
     const cmdStr = Array.isArray(command) ? String(command[0]) : typeof command === 'string' ? command : undefined

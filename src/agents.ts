@@ -8,8 +8,12 @@ import YAML from 'yaml'
 import type { CaptureDeliver } from './types.js'
 import type { PackModules } from './modules.js'
 import type { PackSelectManifest } from './select.js'
-import { PackConflictError } from './errors.js'
+import { PackConflictError, buildFileErrorDetail } from './errors.js'
 import { DEFAULT_STATE_DIR } from './project.js'
+
+function isEnoent(e: unknown): boolean {
+  return Boolean(e && typeof e === 'object' && (e as NodeJS.ErrnoException).code === 'ENOENT')
+}
 
 export type AgentProfile = {
   id: string
@@ -38,18 +42,48 @@ export function agentsYamlPath(cwd: string, stateDir = DEFAULT_STATE_DIR): strin
   return join(cwd, stateDir, DEFAULT_AGENTS_REL)
 }
 
+/**
+ * 读 agents.yaml —— **不存在**（ENOENT）才当「无 registry」返回 null，
+ * 让调用方走「agents init」的引导。文件**存在但解析失败**（YAML 语法错等）
+ * 绝不能悄悄当成"没有"——那样用户会被 requireAgentOrSelection 误导去 `agents init`，
+ * 覆盖/掩盖一个其实已经写了内容、只是有语法错的文件。
+ */
 export async function loadAgentsRegistry(cwd: string, stateDir = DEFAULT_STATE_DIR): Promise<AgentsRegistry | null> {
   const path = agentsYamlPath(cwd, stateDir)
+  let text: string
   try {
-    const text = await fs.readFile(path, 'utf8')
-    const doc = YAML.parse(text) as AgentsRegistry | null
-    if (!doc || typeof doc !== 'object' || !doc.agents || typeof doc.agents !== 'object') {
-      return null
-    }
-    return { schema: doc.schema ?? 'agent-pack/agents/v1', agents: doc.agents }
-  } catch {
+    text = await fs.readFile(path, 'utf8')
+  } catch (e) {
+    if (isEnoent(e)) return null
+    throw new PackConflictError(
+      buildFileErrorDetail({
+        kind: 'file-invalid',
+        what: 'agents.yaml',
+        path,
+        cause: e as Error,
+        help: [`fix the read error at \`${path}\` (permissions? disk?), or delete it and run \`agent-pack agents init\``],
+      }),
+    )
+  }
+  let doc: AgentsRegistry | null
+  try {
+    doc = YAML.parse(text) as AgentsRegistry | null
+  } catch (e) {
+    throw new PackConflictError(
+      buildFileErrorDetail({
+        kind: 'file-invalid',
+        what: 'agents.yaml',
+        path,
+        cause: e as Error,
+        help: [`fix the YAML syntax at \`${path}\``, `or back it up and run \`agent-pack agents init\` to regenerate a template`],
+      }),
+    )
+  }
+  if (!doc || typeof doc !== 'object' || !doc.agents || typeof doc.agents !== 'object') {
+    // 语法上合法的 YAML，只是没有 agents: 段——视为「还没定义任何 agent」，不是错误。
     return null
   }
+  return { schema: doc.schema ?? 'agent-pack/agents/v1', agents: doc.agents }
 }
 
 export function listAgentProfiles(registry: AgentsRegistry): AgentProfile[] {

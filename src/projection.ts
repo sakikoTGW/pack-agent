@@ -13,7 +13,6 @@ import JSON5 from 'json5'
 export type McpFormat =
   | 'json-mcpServers'
   | 'json-mcp'
-  | 'json5-openclaw'
   | 'yaml-mcp_servers'
   | 'toml-mcp_servers'
 
@@ -52,7 +51,14 @@ async function exists(p: string): Promise<boolean> {
 export function mcpTargetFor(runtime: string, cwd: string): McpTarget {
   switch (runtime) {
     case 'openclaw':
-      return { absFile: join(home(), '.openclaw', 'openclaw.json'), projectLocal: false, format: 'json5-openclaw' }
+      // 实测纠正（openclaw 2026.3.2 + mcporter 0.7.3 CLI 现场验证）：openclaw.json 根本没有
+      // `mcp`/`mcp.servers` 这个 schema 键——`openclaw config validate` 直接报
+      // "Unrecognized key: mcp"，`openclaw doctor --fix` 会把它整个删掉。
+      // OpenClaw 的 MCP 工具走内置 mcporter（README core skill 列表里的 "mcporter" 就是它），
+      // mcporter 默认读写项目根 config/mcporter.json，schema 跟标准 mcpServers 一致——
+      // 用 `mcporter list --config <file>` 实测验证过：`{ mcpServers: {...} }` 能被正确加载，
+      // 裸的 `{ name: {...} }`（没有 mcpServers 包装）会被 Zod 拒绝（"expected record, received undefined"）。
+      return { absFile: join(cwd, 'config', 'mcporter.json'), projectLocal: true, format: 'json-mcpServers' }
     case 'hermes':
       return { absFile: join(home(), '.hermes', 'config.yaml'), projectLocal: false, format: 'yaml-mcp_servers' }
     case 'astrbot':
@@ -214,33 +220,6 @@ export async function mergeMcp(
     return out
   }
 
-  if (target.format === 'json5-openclaw') {
-    const raw = await fs.readFile(target.absFile, 'utf8')
-    const json = (JSON5.parse(raw) || {}) as { mcp?: { servers?: McpServers } }
-    if (!json.mcp || typeof json.mcp !== 'object') json.mcp = {}
-    if (!json.mcp.servers || typeof json.mcp.servers !== 'object') json.mcp.servers = {}
-    for (const n of names) {
-      const cfg = { ...servers[n] }
-      if (!cfg.url && !cfg.transport) cfg.transport = 'stdio'
-      const prev = json.mcp.servers[n]
-      if (prev) {
-        if (mcpEntryEqual(prev as Record<string, unknown>, cfg as Record<string, unknown>)) {
-          out.unchanged.push(n)
-          continue
-        }
-        const action = handleMcpConflict(n)
-        if (action === 'skip') {
-          out.unchanged.push(n)
-          continue
-        }
-      }
-      json.mcp.servers[n] = cfg
-      out.added.push(n)
-    }
-    if (out.added.length) await fs.writeFile(target.absFile, `${JSON.stringify(json, null, 2)}\n`, 'utf8')
-    return out
-  }
-
   if (target.format === 'yaml-mcp_servers') {
     const raw = await fs.readFile(target.absFile, 'utf8')
     const doc = (yamlParse(raw) || {}) as { mcp_servers?: McpServers }
@@ -292,10 +271,6 @@ export async function unmergeMcp(absFile: string, format: McpFormat, names: stri
     const json = JSON.parse(await fs.readFile(absFile, 'utf8')) as { mcp?: McpServers }
     if (json.mcp) for (const n of names) delete json.mcp[n]
     await fs.writeFile(absFile, `${JSON.stringify(json, null, 2)}\n`, 'utf8')
-  } else if (format === 'json5-openclaw') {
-    const json = JSON5.parse(await fs.readFile(absFile, 'utf8')) as { mcp?: { servers?: McpServers } }
-    if (json.mcp?.servers) for (const n of names) delete json.mcp.servers[n]
-    await fs.writeFile(absFile, `${JSON.stringify(json, null, 2)}\n`, 'utf8')
   } else if (format === 'yaml-mcp_servers') {
     const doc = (yamlParse(await fs.readFile(absFile, 'utf8')) || {}) as { mcp_servers?: McpServers }
     if (doc.mcp_servers) for (const n of names) delete doc.mcp_servers[n]
@@ -324,5 +299,41 @@ export async function removeHermesExternalDir(configAbs: string, skillsAbs: stri
   if (doc.skills?.external_dirs) {
     doc.skills.external_dirs = doc.skills.external_dirs.filter(d => d !== skillsAbs)
     await fs.writeFile(configAbs, yamlStringify(doc), 'utf8')
+  }
+}
+
+/**
+ * OpenClaw 实测纠正（2026-07-12，openclaw 2026.3.2 CLI + docs/concepts/agent-workspace.md 现场核实）：
+ * OpenClaw 的 skill 目录是 `agents.defaults.workspace`（默认 `~/.openclaw/workspace`）下的
+ * `skills/`，跟 hermes 的 `~/.hermes/skills` 一样是**全局单例**、不认项目相对路径的
+ * `.agents/skills`——之前那套假设从没被真 CLI 验证过。
+ *
+ * 直接把项目的 skill 文件塞进用户那个私有、常年 git 备份的 agent workspace 里显然不对——
+ * 那是"agent 的家"，不是"这个项目的临时挂载点"。OpenClaw 自己在 `skills.load.extraDirs`
+ * （`~/.openclaw/openclaw.json`）里提供了专门的"额外扫描目录"机制，跟 hermes 的
+ * `skills.external_dirs` 是同一个思路——用这个，不动 workspace 本身。
+ */
+export async function addOpenClawExtraSkillDir(configAbs: string, skillsAbs: string): Promise<boolean> {
+  if (!(await exists(configAbs))) return false
+  const doc = (JSON5.parse(await fs.readFile(configAbs, 'utf8')) || {}) as {
+    skills?: { load?: { extraDirs?: string[] } }
+  }
+  if (!doc.skills || typeof doc.skills !== 'object') doc.skills = {}
+  if (!doc.skills.load || typeof doc.skills.load !== 'object') doc.skills.load = {}
+  const list = Array.isArray(doc.skills.load.extraDirs) ? doc.skills.load.extraDirs : []
+  if (!list.includes(skillsAbs)) list.push(skillsAbs)
+  doc.skills.load.extraDirs = list
+  await fs.writeFile(configAbs, `${JSON.stringify(doc, null, 2)}\n`, 'utf8')
+  return true
+}
+
+export async function removeOpenClawExtraSkillDir(configAbs: string, skillsAbs: string): Promise<void> {
+  if (!(await exists(configAbs))) return
+  const doc = (JSON5.parse(await fs.readFile(configAbs, 'utf8')) || {}) as {
+    skills?: { load?: { extraDirs?: string[] } }
+  }
+  if (doc.skills?.load?.extraDirs) {
+    doc.skills.load.extraDirs = doc.skills.load.extraDirs.filter(d => d !== skillsAbs)
+    await fs.writeFile(configAbs, `${JSON.stringify(doc, null, 2)}\n`, 'utf8')
   }
 }

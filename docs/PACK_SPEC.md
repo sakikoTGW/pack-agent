@@ -182,6 +182,14 @@ v0.1 只有 `name` + 扁平列表；v0.2 为**可复现、可比对**的 modpack
 
 经验罐头带 `offset` 字段，使用中可微调，**不回写 skill 树**。安装时 `projectExperienceToHarnesses` 按 harness 适配表接 SessionStart / pre_llm hook（Claude / Codex / Gemini / Hermes / OpenClaw 等）。
 
+**默认只写当前项目**：每个 harness 有 project 槶（`.claude/settings.json` 等）和 user 槶（`~/.claude/settings.json` 等）两种注入口。install/sync/pack **默认只接 project 槶**；user 槶（会影响该 harness 上*所有*项目）需显式传 `--global-config`（CLI）/ `allow_global_config`（MCP）才写。同理，Hermes `skills.external_dirs` 和 OpenClaw `skills.load.extraDirs`（都是写进各自全局配置文件、注册一个指向 `.agent-pack/applied-skills/` 的 staging 目录，而不是直接把文件塞进对方的全局 skills 目录）也走这个开关。这是历史事故换来的默认值：早期版本无条件写 user 槶，导致每次装/卸临时目录都会在 `~/.hermes/config.yaml` 里攒一条再也没人清的死路径。
+
+**OpenClaw 专项说明（2026-07-12 用真实 CLI 现场核实纠正）**：早期版本假设 OpenClaw 从 `~/.openclaw/openclaw.json` 的 `mcp.servers` 读 MCP、从项目相对的 `.agents/skills` 读 skill——两条都是错的，`openclaw config validate`/`openclaw doctor --fix` 会直接把 `mcp` 键当无效字段删掉，`openclaw skills list` 也根本不扫 `.agents/skills`。已用真实 `openclaw`/`mcporter` CLI（含隔离 `--profile` 测试）验证纠正：MCP 走 `config/mcporter.json`（标准 `{ mcpServers: {...} }` 包装，交给内置的 mcporter 管理）；skill 走 `skills.load.extraDirs` 注册 staging 目录，不直接写进用户的私有 agent workspace。
+
+**Hermes 专项说明（2026-07-12 对着本机 `E:\hermes-agent-main` 源码逐项核实）**：`skills.external_dirs`、`config.yaml` 顶层 `mcp_servers` 两条原有假设都是对的，字段结构跟源码（`hermes_cli/config.py`、`hermes_cli/mcp_config.py`）一致。但**发现并修复了一个真 bug**：`pre_llm_call` shell hook 的 wire 协议要求 stdout 输出 `{"context": "..."}`（`agent/shell_hooks.py` 文档字符串实测核实），之前 `experience-session-hook.cjs` 不分 harness 一律吐 Claude 风格的 `{hookSpecificOutput:{...}}`，Hermes 认不出这个形状，会当"不认识的 JSON"静默处理成空注入——hook 配置写对了，装的时候也报"成功"，但经验罐头内容从来没有真正进过 Hermes 的对话上下文。现在 `hookCommand()` 对 `hook-yaml`（Hermes）槶位会传 `AGENT_PACK_HOOK_STYLE=hermes`，脚本据此输出正确形状。
+
+另有一条**不是 bug、但会让人以为没生效**的操作性限制：Hermes 的 shell hook 首次触发前要求交互 consent（写进 `~/.hermes/shell-hooks-allowlist.json`），没有 TTY 的场景（比如 gateway 常驻进程）会直接跳过并打 warning。免交互需要用户自己在 `config.yaml` 设 `hooks_auto_accept: true`，或运行时带 `--accept-hooks` / `HERMES_ACCEPT_HOOKS=1`——这是 Hermes 自己的安全设计（信任许可），agent-pack 不会也不该单方面绕过，只会在 `install` 报告的 `notes[]` 字段里提醒用户去做这一步。
+
 ### 5.7 可选模块 + pack.ignore
 
 **模块**（`project.yaml` → `modules:`，CLI `--modules hooks,memory` 或 `--no-memory`）：

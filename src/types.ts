@@ -170,6 +170,13 @@ export type InstallOpts = {
   forceRequires?: boolean
   /** 装完后写入 agent-pack MCP 到 .mcp.json / .cursor/mcp.json */
   bootstrapMcp?: boolean
+  /**
+   * 是否允许写用户全局配置：经验罐头 SessionStart hook（~/.claude/settings.json 等）、
+   * Hermes skills.external_dirs、OpenClaw/Hermes 全局 MCP servers 合并。
+   * 默认 false：install 只影响当前项目，不会悄悄改用户在所有项目里的 harness 行为
+   * （历史上这是真实发生过的 bug：临时测试目录被写进 ~/.hermes/config.yaml 且从不清理）。
+   */
+  allowGlobalConfig?: boolean
 }
 
 export type RuntimeInstallReport = {
@@ -197,6 +204,8 @@ export type InstallReport = {
   experiences?: Array<{ id: string; path: string }>
   /** 经验罐头接上的 harness 注入点（SessionStart / pre_llm 等） */
   experienceHooks?: string[]
+  /** 配置写对了，但还需要用户手动做一步才会真的生效（例如 Hermes shell-hook 的一次性 consent） */
+  notes?: string[]
   captureDeliver?: CaptureDeliver
   hooks?: string[]
   subagents?: string[]

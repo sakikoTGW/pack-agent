@@ -4,9 +4,9 @@
 import { promises as fs } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import type { McpFormat } from './projection.js'
-import { removeHermesExternalDir, unmergeMcp } from './projection.js'
+import { removeHermesExternalDir, removeOpenClawExtraSkillDir, unmergeMcp } from './projection.js'
 import { unwireExperienceHooks } from './experience-projection.js'
-import { removeAgentPackMcpBootstrap } from './mcp-bootstrap.js'
+import { removeAgentPackMcpBootstrap, mcpBootstrapTargets } from './mcp-bootstrap.js'
 import {
   readInstallLedger,
   packSafeName,
@@ -15,7 +15,6 @@ import {
   type InstallLedgerItem,
 } from './install-ledger.js'
 import { packMarker, readSkillOriginMarker, removeMarkedBlock, SKILL_ORIGIN_FILE } from './markers.js'
-import { removeAgentPackMcpBootstrap, mcpBootstrapTargets } from './mcp-bootstrap.js'
 
 export type EjectItemStatus = 'removed' | 'missing' | 'skipped' | 'conflict' | 'partial'
 
@@ -42,6 +41,10 @@ export type EjectOpts = {
   force?: boolean
   /** 保留 ledger 供审计 */
   keepLedger?: boolean
+}
+
+function isEnoentError(e: unknown): boolean {
+  return Boolean(e && typeof e === 'object' && (e as NodeJS.ErrnoException).code === 'ENOENT')
 }
 
 async function exists(p: string): Promise<boolean> {
@@ -302,6 +305,16 @@ export async function ejectPack(cwd: string, opts: EjectOpts = {}): Promise<Ejec
         items.push({ kind: 'hermes-external', path: item.path, status: 'removed' })
         break
       }
+      case 'openclaw-external': {
+        const configAbs = String(item.meta?.configAbs || '')
+        if (configAbs && (await exists(configAbs))) {
+          await removeOpenClawExtraSkillDir(configAbs, absPath(cwd, item.path))
+        }
+        const staging = absPath(cwd, item.path)
+        if (await exists(staging)) await fs.rm(staging, { recursive: true, force: true })
+        items.push({ kind: 'openclaw-external', path: item.path, status: 'removed' })
+        break
+      }
       case 'staging': {
         const abs = absPath(cwd, item.path)
         if (await exists(abs)) await fs.rm(abs, { recursive: true, force: true })
@@ -391,9 +404,13 @@ function ledgerPath(cwd: string, packName: string, stateDir: string): string {
 export async function packStatus(cwd: string, stateDir = '.agent-pack'): Promise<Record<string, unknown>> {
   const lockPath = join(cwd, stateDir, 'lock.json')
   let lock: Record<string, unknown> | null = null
+  const warnings: string[] = []
   try {
     lock = JSON.parse(await fs.readFile(lockPath, 'utf8')) as Record<string, unknown>
-  } catch {
+  } catch (e) {
+    // ENOENT（真的没装过）和"文件存在但读不懂"要分开——否则用户会以为从没装过，
+    // 实际上是 lock.json 被手动改坏了。
+    if (!isEnoentError(e)) warnings.push(`${lockPath}: ${(e as Error).message}`)
     lock = null
   }
   const packName = String(lock?.packName || 'unnamed-pack')
@@ -404,11 +421,17 @@ export async function packStatus(cwd: string, stateDir = '.agent-pack'): Promise
   } catch {
     /* none */
   }
+  // lock.json is project-wide singular — only reflects the most recent install/export.
+  // If multiple agents/packs are installed in this project, list them all here (see `agent-pack list`).
+  const { listInstalledPacks } = await import('./catalog.js')
+  const installedResult = await listInstalledPacks(cwd, stateDir)
   return {
     cwd,
     stateDir,
     lock,
     ledger: ledger ? { packName: ledger.packName, itemCount: ledger.items.length, installedAt: ledger.installedAt } : null,
+    installedPacks: installedResult.packs,
+    warnings: [...warnings, ...installedResult.warnings],
     experiences: expIndex,
     mcpBootstrap: mcpBootstrapTargets(cwd).map(t => t.absFile),
   }

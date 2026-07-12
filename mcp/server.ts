@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 /**
- * agent-pack MCP server — agent 主入口（替代 Bash CLI hook）。
+ * agent-pack MCP server -- main entry point for agents (replaces the Bash CLI hook).
  *
- * Cursor / Claude Code 配置示例：
+ * Cursor / Claude Code config example:
  * {
  *   "mcpServers": {
  *     "agent-pack": {
@@ -27,7 +27,10 @@ import {
   handlePackEject,
   handlePackExperienceOffset,
   handlePackStatus,
+  handlePackShow,
+  handlePackList,
 } from './handlers.js'
+import { withToolErrorBoundary } from './util.js'
 
 const captureAsSchema = z.enum(['skill', 'experience']).optional()
 
@@ -43,12 +46,18 @@ const commonPackFields = {
   modules: z.array(z.string()).optional().describe('Module toggles: skills,hooks,memory,...'),
   state_dir: z.string().optional().describe('State directory (default .agent-pack)'),
   on_conflict: conflictSchema.describe('On file/MCP conflict: stop (default), skip, or replace'),
+  allow_global_config: z
+    .boolean()
+    .optional()
+    .describe(
+      'Also write user-global harness config: experience SessionStart hooks (~/.claude/settings.json etc.), Hermes skills.external_dirs, OpenClaw/Hermes global MCP servers. Affects ALL projects on this machine. Default false: project-scoped only.',
+    ),
 }
 
 export function createServer(): McpServer {
   const server = new McpServer({
     name: 'agent-pack-mcp-server',
-    version: '0.2.0',
+    version: '0.3.0',
   })
 
   server.registerTool(
@@ -61,7 +70,7 @@ export function createServer(): McpServer {
         cwd: commonPackFields.cwd,
       },
     },
-    async args => handlePackDetect(args),
+    withToolErrorBoundary(handlePackDetect),
   )
 
   server.registerTool(
@@ -75,7 +84,7 @@ export function createServer(): McpServer {
         runtime: commonPackFields.runtime,
       },
     },
-    async args => handlePackScan(args),
+    withToolErrorBoundary(handlePackScan),
   )
 
   server.registerTool(
@@ -89,7 +98,7 @@ export function createServer(): McpServer {
         dry_run: z.boolean().optional().describe('Build pack in memory only, do not write file'),
       },
     },
-    async args => handlePackExport(args),
+    withToolErrorBoundary(handlePackExport),
   )
 
   server.registerTool(
@@ -102,7 +111,7 @@ export function createServer(): McpServer {
         pack_path: z.string().describe('Path to pack.json relative to cwd or absolute'),
       },
     },
-    async args => handlePackInstall(args),
+    withToolErrorBoundary(handlePackInstall),
   )
 
   server.registerTool(
@@ -110,14 +119,14 @@ export function createServer(): McpServer {
     {
       title: 'Sync (export + install)',
       description:
-        'Full pipeline: scan → portable pack → install to detected harnesses. Or install-only with from=existing pack.',
+        'Full pipeline: scan -> portable pack -> install to detected harnesses. Or install-only with from=existing pack.',
       inputSchema: {
         ...commonPackFields,
         name: z.string().optional(),
         from: z.string().optional().describe('Existing pack path; skip export when set'),
       },
     },
-    async args => handlePackSync(args),
+    withToolErrorBoundary(handlePackSync),
   )
 
   server.registerTool(
@@ -136,7 +145,7 @@ export function createServer(): McpServer {
         with_harness: z.boolean().optional().describe('Same as capture_as=skill for capture merge'),
       },
     },
-    async args => handlePackSelect(args),
+    withToolErrorBoundary(handlePackSelect),
   )
 
   server.registerTool(
@@ -150,7 +159,7 @@ export function createServer(): McpServer {
         right: z.string().describe('Second pack or lock path'),
       },
     },
-    async args => handlePackDiff(args),
+    withToolErrorBoundary(handlePackDiff),
   )
 
   server.registerTool(
@@ -158,14 +167,14 @@ export function createServer(): McpServer {
     {
       title: 'Eject / uninstall pack',
       description:
-        'Reverse install using install-ledger. Missing files → status missing (partial OK). force=true removes conflict skill dirs.',
+        'Reverse install using install-ledger. Missing files -> status missing (partial OK). force=true removes conflict skill dirs.',
       inputSchema: {
         cwd: commonPackFields.cwd,
         pack_name: z.string().optional().describe('Defaults from lock.json'),
         force: z.boolean().optional(),
       },
     },
-    async args => handlePackEject(args),
+    withToolErrorBoundary(handlePackEject),
   )
 
   server.registerTool(
@@ -178,7 +187,35 @@ export function createServer(): McpServer {
         state_dir: commonPackFields.state_dir,
       },
     },
-    async args => handlePackStatus(args),
+    withToolErrorBoundary(handlePackStatus),
+  )
+
+  server.registerTool(
+    'pack_show',
+    {
+      title: 'Show pack contents',
+      description:
+        "Inspect a .pack.json before installing: skills/rules/MCP/experiences with descriptions, fidelity, portability. Like browsing a modpack's mod list on CurseForge before downloading it.",
+      inputSchema: {
+        cwd: commonPackFields.cwd,
+        pack_path: z.string().describe('Path to pack.json relative to cwd or absolute'),
+      },
+    },
+    withToolErrorBoundary(handlePackShow),
+  )
+
+  server.registerTool(
+    'pack_list',
+    {
+      title: 'List packs in this project',
+      description:
+        'List every pack exported to .agent-pack/exports/ and every pack currently installed (via install-ledger) in this project -- like a modpack launcher\'s "my instances" screen. Use before pack_show/pack_install to see what already exists.',
+      inputSchema: {
+        cwd: commonPackFields.cwd,
+        state_dir: commonPackFields.state_dir,
+      },
+    },
+    withToolErrorBoundary(handlePackList),
   )
 
   server.registerTool(
@@ -195,7 +232,7 @@ export function createServer(): McpServer {
         reminders: z.array(z.string()).optional(),
       },
     },
-    async args => handlePackExperienceOffset(args),
+    withToolErrorBoundary(handlePackExperienceOffset),
   )
 
   return server

@@ -11,6 +11,27 @@ import JSON5 from 'json5'
 import { parse as yamlParse, stringify as yamlStringify } from 'yaml'
 import { RUNTIME_ADAPTERS } from './adapters.js'
 import { loadExperienceInjection } from './experience-loader.js'
+import { PackConflictError, buildFileErrorDetail } from './errors.js'
+
+/**
+ * 解析目标 harness 配置失败时**绝不能**当成空文件重写——那样会把用户文件里
+ * 本来存在的 permissions/env/其它 hooks 全部静默抹掉，只剩下我们这一个 hook。
+ * 统一在这里 abort，调用方（wireSlot）据此把该 slot 记进 skipped，装其它 slot 不受影响。
+ */
+function throwConfigParseError(absPath: string, cause: Error): never {
+  throw new PackConflictError(
+    buildFileErrorDetail({
+      kind: 'file-invalid',
+      what: 'harness config (experience hook target)',
+      path: absPath,
+      cause,
+      help: [
+        `fix the syntax at \`${absPath}\` — agent-pack refuses to overwrite a file it can't parse`,
+        `or remove/back up the file and retry`,
+      ],
+    }),
+  )
+}
 
 export const EXPERIENCE_HOOK_MARKER = 'agent-pack/experience-session-hook'
 
@@ -29,6 +50,11 @@ export type ExperienceInjectSlot = {
   kind: ExperienceInjectKind
   /** 配置文件不存在时是否创建（项目内优先 true；全局 ~/. 默认 false） */
   createIfMissing: boolean
+  /**
+   * project = 只影响当前项目（安全默认）；user = 写用户全局配置（如 ~/.claude/settings.json），
+   * 会在**所有**该 harness 项目里生效。默认不写 user 槽位，除非显式 includeGlobal。
+   */
+  scope: 'project' | 'user'
 }
 
 /** 各 harness 经验注入槽 — 每个 RUNTIME_ADAPTERS.id 至少一条 */
@@ -40,6 +66,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'sessionStart',
     kind: 'cursor-hooks',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'cursor',
@@ -48,6 +75,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'sessionStart',
     kind: 'cursor-hooks',
     createIfMissing: false,
+    scope: 'user',
   },
   {
     runtime: 'claude-code',
@@ -56,6 +84,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'claude-code',
@@ -64,6 +93,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: false,
+    scope: 'user',
   },
   {
     runtime: 'codex',
@@ -72,6 +102,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'codex',
@@ -80,6 +111,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'codex',
@@ -88,6 +120,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: false,
+    scope: 'user',
   },
   {
     runtime: 'opencode',
@@ -96,6 +129,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'opencode',
@@ -104,6 +138,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'opencode',
@@ -112,6 +147,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: false,
+    scope: 'user',
   },
   {
     runtime: 'openclaw',
@@ -120,6 +156,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json5',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'openclaw',
@@ -128,6 +165,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json5',
     createIfMissing: false,
+    scope: 'user',
   },
   {
     runtime: 'hermes',
@@ -136,6 +174,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'pre_llm_call',
     kind: 'hook-yaml',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'hermes',
@@ -144,6 +183,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'pre_llm_call',
     kind: 'hook-yaml',
     createIfMissing: false,
+    scope: 'user',
   },
   {
     runtime: 'astrbot',
@@ -152,6 +192,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'sidecar',
     kind: 'sidecar-markdown',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'gemini-cli',
@@ -160,6 +201,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'gemini-cli',
@@ -168,6 +210,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: false,
+    scope: 'user',
   },
   {
     runtime: 'windsurf',
@@ -176,6 +219,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'github-copilot',
@@ -184,6 +228,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: true,
+    scope: 'project',
   },
   {
     runtime: 'generic-agents',
@@ -192,6 +237,7 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     hookEvent: 'SessionStart',
     kind: 'hook-json',
     createIfMissing: true,
+    scope: 'project',
   },
 ]
 
@@ -224,15 +270,26 @@ async function exists(p: string): Promise<boolean> {
   }
 }
 
-function hookCommand(stateDir: string, slot: ExperienceInjectSlot): string {
-  const rel = `${stateDir}/bin/experience-session-hook.cjs`.replace(/\\/g, '/')
+/**
+ * Hook 命令必须用绝对路径：harness 读取 **project** 配置时 cwd 通常等于项目根，
+ * 相对路径凑巧能跑；但读取 **user** 全局配置（~/.claude/settings.json 等）时，
+ * harness 可能在任意目录启动 —— 相对路径会指向别的项目甚至不存在的文件，
+ * 导致每次 SessionStart 都报错。绝对路径两种 scope 下都正确。
+ */
+function hookCommand(cwd: string, stateDir: string, slot: ExperienceInjectSlot): string {
+  const abs = join(cwd, stateDir, 'bin', 'experience-session-hook.cjs').replace(/\\/g, '/')
   const parts: string[] = []
   if (slot.kind === 'cursor-hooks') parts.push('AGENT_PACK_HOOK_STYLE=cursor')
+  // 实测纠正（2026-07-12，对着 E:\hermes-agent-main 源码 agent/shell_hooks.py 现场核实）：
+  // Hermes 的 pre_llm_call shell hook 期望 stdout 是 {"context": "..."}；我们默认输出的
+  // Claude 风格 {hookSpecificOutput:{...}} 对 Hermes 来说是"不认识的 JSON"，会被当空注入
+  // 静默吞掉——写对了 config.yaml 但经验罐头从来没真的进过 Hermes 的上下文。
+  if (slot.kind === 'hook-yaml') parts.push('AGENT_PACK_HOOK_STYLE=hermes')
   const ev = slot.hookEvent
   if (ev !== 'SessionStart' && ev !== 'sessionStart') {
     parts.push(`AGENT_PACK_HOOK_EVENT=${ev}`)
   }
-  parts.push(`node ${rel}`)
+  parts.push(`node "${abs}"`)
   return parts.join(' ')
 }
 
@@ -269,8 +326,8 @@ async function mergeJsonHooks(
   if (await exists(absPath)) {
     try {
       doc = JSON.parse(await fs.readFile(absPath, 'utf8')) as Record<string, unknown>
-    } catch {
-      doc = {}
+    } catch (e) {
+      throwConfigParseError(absPath, e as Error)
     }
   }
   const hooksRoot = (doc.hooks ?? {}) as Record<string, unknown>
@@ -307,8 +364,8 @@ async function mergeJson5Hooks(
   if (await exists(absPath)) {
     try {
       doc = JSON5.parse(await fs.readFile(absPath, 'utf8')) as Record<string, unknown>
-    } catch {
-      doc = {}
+    } catch (e) {
+      throwConfigParseError(absPath, e as Error)
     }
   }
   const hooksRoot = (doc.hooks ?? {}) as Record<string, unknown>
@@ -334,9 +391,8 @@ async function mergeYamlHermesHooks(
   if (await exists(absPath)) {
     try {
       doc = yamlParse(await fs.readFile(absPath, 'utf8')) as Record<string, unknown>
-    } catch {
-      if (!createIfMissing) return false
-      doc = {}
+    } catch (e) {
+      throwConfigParseError(absPath, e as Error)
     }
   }
   const hooksRoot = (doc.hooks ?? {}) as Record<string, unknown>
@@ -362,8 +418,8 @@ async function mergeCursorHooks(
   if (await exists(absPath)) {
     try {
       doc = JSON.parse(await fs.readFile(absPath, 'utf8')) as typeof doc
-    } catch {
-      doc = { version: 1, hooks: {} }
+    } catch (e) {
+      throwConfigParseError(absPath, e as Error)
     }
   }
   if (!doc.hooks) doc.hooks = {}
@@ -402,6 +458,8 @@ export async function ensureExperienceHookScript(cwd: string, stateDir = '.agent
 export type ExperienceProjectionReport = {
   wired: Array<{ runtime: string; label: string; config: string; event: string }>
   skipped: string[]
+  /** 写对了配置但还需要用户手动做一步才会真的生效——不是 bug，只是别让用户以为装完就完事了 */
+  notes: string[]
 }
 
 async function wireSlot(
@@ -409,7 +467,7 @@ async function wireSlot(
   stateDir: string,
   slot: ExperienceInjectSlot,
   injectionText: string,
-): Promise<{ ok: boolean; config?: string }> {
+): Promise<{ ok: boolean; config?: string; parseError?: string }> {
   if (slot.kind === 'sidecar-markdown') {
     if (!injectionText.trim()) return { ok: false }
     const abs = slot.resolvePath(cwd)
@@ -419,18 +477,25 @@ async function wireSlot(
   }
 
   const abs = slot.resolvePath(cwd)
-  const cmd = hookCommand(stateDir, slot)
-  let ok = false
-  if (slot.kind === 'hook-json') {
-    ok = await mergeJsonHooks(abs, slot.hookEvent, cmd, slot.createIfMissing)
-  } else if (slot.kind === 'hook-json5') {
-    ok = await mergeJson5Hooks(abs, slot.hookEvent, cmd, slot.createIfMissing)
-  } else if (slot.kind === 'hook-yaml') {
-    ok = await mergeYamlHermesHooks(abs, cmd, slot.createIfMissing)
-  } else if (slot.kind === 'cursor-hooks') {
-    ok = await mergeCursorHooks(abs, cmd, slot.createIfMissing)
+  const cmd = hookCommand(cwd, stateDir, slot)
+  try {
+    let ok = false
+    if (slot.kind === 'hook-json') {
+      ok = await mergeJsonHooks(abs, slot.hookEvent, cmd, slot.createIfMissing)
+    } else if (slot.kind === 'hook-json5') {
+      ok = await mergeJson5Hooks(abs, slot.hookEvent, cmd, slot.createIfMissing)
+    } else if (slot.kind === 'hook-yaml') {
+      ok = await mergeYamlHermesHooks(abs, cmd, slot.createIfMissing)
+    } else if (slot.kind === 'cursor-hooks') {
+      ok = await mergeCursorHooks(abs, cmd, slot.createIfMissing)
+    }
+    return ok ? { ok: true, config: abs } : { ok: false }
+  } catch (e) {
+    // 这个 harness 的配置解析失败——绝不能因为一个 slot 坏了就让其它 harness 也装不上。
+    // 记进 skipped 带上真实原因，剩下的 slot/runtime 继续走。
+    if (e instanceof PackConflictError) return { ok: false, parseError: e.message }
+    throw e
   }
-  return ok ? { ok: true, config: abs } : { ok: false }
 }
 
 /** 为已投射 / 在场的 harness 接 SessionStart / pre_llm / persona 经验注入 */
@@ -438,8 +503,9 @@ export async function projectExperienceToHarnesses(
   cwd: string,
   projectedRuntimes: string[],
   stateDir = '.agent-pack',
+  opts: { includeGlobal?: boolean } = {},
 ): Promise<ExperienceProjectionReport> {
-  const report: ExperienceProjectionReport = { wired: [], skipped: [] }
+  const report: ExperienceProjectionReport = { wired: [], skipped: [], notes: [] }
   const missingCoverage = validateExperienceAdapterCoverage()
   if (missingCoverage.length) {
     report.skipped.push(`coverage-gap (${missingCoverage.join(', ')})`)
@@ -450,9 +516,16 @@ export async function projectExperienceToHarnesses(
 
   await ensureExperienceHookScript(cwd, stateDir)
 
+  const includeGlobal = opts.includeGlobal ?? false
+  if (!includeGlobal) {
+    report.skipped.push('user-scope slots skipped (pass includeGlobal / --global-config to opt in)')
+  }
+
   const seen = new Set<string>()
   for (const runtime of projectedRuntimes) {
-    const slots = EXPERIENCE_INJECT_SLOTS.filter(s => s.runtime === runtime)
+    const slots = EXPERIENCE_INJECT_SLOTS.filter(
+      s => s.runtime === runtime && (includeGlobal || s.scope === 'project'),
+    )
     if (!slots.length) {
       report.skipped.push(`${runtime} (无经验注入槽)`)
       continue
@@ -477,6 +550,17 @@ export async function projectExperienceToHarnesses(
           config: result.config,
           event: slot.hookEvent,
         })
+        if (slot.kind === 'hook-yaml') {
+          // 实测纠正（对着 E:\hermes-agent-main 的 agent/shell_hooks.py 核实）：Hermes 对
+          // shell hook 有一次性 consent 门槛——写进 config.yaml 不代表会真的跑，第一次触发时
+          // 没有 TTY 会直接跳过并打 warning。要免交互，配置里加 hooks_auto_accept: true，
+          // 或跑的时候带 --accept-hooks / HERMES_ACCEPT_HOOKS=1。
+          report.notes.push(
+            `${runtime}: hook 已写入 config.yaml，但 Hermes 首次触发前需要交互确认（或设 hooks_auto_accept: true / HERMES_ACCEPT_HOOKS=1），否则会被静默跳过 —— 这不是 agent-pack 能单方面绕过的（涉及用户对 shell 命令的信任许可）`,
+          )
+        }
+      } else if (result.parseError) {
+        report.skipped.push(`${runtime}:${slot.label} — ${result.parseError.split('\n')[0]}`)
       }
     }
 
@@ -511,114 +595,6 @@ export async function projectExperienceToHarnesses(
     ),
     'utf8',
   )
-
-  return report
-}
-
-export type ExperienceUnwireReport = {
-  removed: Array<{ config: string; event: string }>
-  skipped: string[]
-}
-
-function hookEntryHasMarker(cmd: unknown): boolean {
-  if (!cmd || typeof cmd !== 'object') return false
-  const c = String((cmd as { command?: string }).command ?? '')
-  return c.includes('experience-session-hook')
-}
-
-async function stripJsonHooks(absPath: string, hookEvent: string): Promise<boolean> {
-  if (!(await exists(absPath))) return false
-  let doc: Record<string, unknown>
-  try {
-    doc = JSON.parse(await fs.readFile(absPath, 'utf8')) as Record<string, unknown>
-  } catch {
-    return false
-  }
-  const hooksRoot = (doc.hooks ?? {}) as Record<string, unknown>
-  const matchers = (hooksRoot[hookEvent] ?? []) as unknown[]
-  const filtered = matchers.filter(m => {
-    if (!m || typeof m !== 'object') return true
-    const inner = (m as { hooks?: unknown[] }).hooks ?? []
-    return !inner.some(h => hookEntryHasMarker(h))
-  })
-  if (filtered.length === matchers.length) return false
-  hooksRoot[hookEvent] = filtered
-  doc.hooks = hooksRoot
-  delete doc._agentPackExperience
-  await fs.writeFile(absPath, JSON.stringify(doc, null, 2), 'utf8')
-  return true
-}
-
-async function stripCursorHooks(absPath: string): Promise<boolean> {
-  if (!(await exists(absPath))) return false
-  let doc: { hooks?: { sessionStart?: unknown[] } }
-  try {
-    doc = JSON.parse(await fs.readFile(absPath, 'utf8')) as typeof doc
-  } catch {
-    return false
-  }
-  const list = doc.hooks?.sessionStart ?? []
-  const filtered = list.filter(h => !hookEntryHasMarker(h))
-  if (filtered.length === list.length) return false
-  if (!doc.hooks) doc.hooks = {}
-  doc.hooks.sessionStart = filtered
-  await fs.writeFile(absPath, JSON.stringify(doc, null, 2), 'utf8')
-  return true
-}
-
-async function stripYamlHermesHooks(absPath: string): Promise<boolean> {
-  if (!(await exists(absPath))) return false
-  let doc: Record<string, unknown>
-  try {
-    doc = yamlParse(await fs.readFile(absPath, 'utf8')) as Record<string, unknown>
-  } catch {
-    return false
-  }
-  const hooksRoot = (doc.hooks ?? {}) as Record<string, unknown>
-  const list = (hooksRoot.pre_llm_call ?? []) as unknown[]
-  const filtered = list.filter(e => !hookEntryHasMarker(e))
-  if (filtered.length === list.length) return false
-  hooksRoot.pre_llm_call = filtered
-  doc.hooks = hooksRoot
-  await fs.writeFile(absPath, yamlStringify(doc), 'utf8')
-  return true
-}
-
-/** 卸掉 experience-session-hook */
-export async function unwireExperienceHooks(
-  cwd: string,
-  stateDir = '.agent-pack',
-): Promise<ExperienceUnwireReport> {
-  const report: ExperienceUnwireReport = { removed: [], skipped: [] }
-  let wired: Array<{ config: string; event: string }> = []
-  try {
-    const man = JSON.parse(
-      await fs.readFile(join(cwd, stateDir, 'applied', 'experience-projection.json'), 'utf8'),
-    ) as { wired?: Array<{ config: string; event: string }> }
-    wired = (man.wired ?? []).map(w => ({ config: w.config, event: w.event }))
-  } catch {
-    for (const slot of EXPERIENCE_INJECT_SLOTS) {
-      if (slot.kind === 'sidecar-markdown') continue
-      wired.push({ config: slot.resolvePath(cwd), event: slot.hookEvent })
-    }
-  }
-
-  const seen = new Set<string>()
-  for (const w of wired) {
-    const key = `${w.config}#${w.event}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    let ok = false
-    if (w.event === 'sessionStart') {
-      ok = (await stripCursorHooks(w.config)) || (await stripJsonHooks(w.config, 'SessionStart'))
-    } else if (w.event === 'pre_llm_call') {
-      ok = await stripYamlHermesHooks(w.config)
-    } else {
-      ok = await stripJsonHooks(w.config, w.event || 'SessionStart')
-    }
-    if (ok) report.removed.push(w)
-    else report.skipped.push(w.config)
-  }
 
   return report
 }

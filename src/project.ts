@@ -17,11 +17,13 @@ import { materializePortableBundle, resolveRuleFile, resolveSkillDir } from './p
 import { writeAstrbotPlugin } from './astrbot.js'
 import {
   addHermesExternalDir,
+  addOpenClawExtraSkillDir,
   mcpTargetFor,
   mergeMcp,
   type McpFormat,
   type McpServers,
 } from './projection.js'
+import { homedir } from 'node:os'
 import { appendMarkedBlock, packMarker, readSkillOriginMarker, writeSkillOriginMarker } from './markers.js'
 import {
   buildSkillConflictDetail,
@@ -68,6 +70,7 @@ export type PackProjectManifest = {
     mcpFormat?: McpFormat
     astrbotPluginDirs?: string[]
     hermesExternalDir?: { configAbs: string; skillsAbs: string }
+    openclawExternalDir?: { configAbs: string; skillsAbs: string }
     harnessL2?: { path: string; kind: 'file' | 'append' }
     skipped: string[]
   }>
@@ -200,13 +203,21 @@ async function copySkillDir(
       return null
     }
     if (existing.packName !== origin.packName) {
+      // 两个不同名字的包都带了这个 skill，但内容逐字节相同（同一个 skill 被打进了两个整合包）——
+      // 这不是真冲突，就像两个 MC 整合包都塞了同一个 JEI.jar，装的时候不该报错。
+      // MCP 合并（projection.ts mergeMcp）早就是这个逻辑了；skill 这边补齐，保持两者一致。
+      if (origin.contentHash && existing.contentHash && origin.contentHash === existing.contentHash) {
+        return null
+      }
       return buildSkillConflictDetail({
         kind: 'skill-ownership',
         dest,
         skillName: origin.skillName,
         packName: origin.packName,
+        packVersion: origin.packVersion,
         runtime,
         ownerPack: existing.packName,
+        ownerVersion: existing.packVersion,
       })
     }
     if (
@@ -219,6 +230,7 @@ async function copySkillDir(
         dest,
         skillName: origin.skillName,
         packName: origin.packName,
+        packVersion: origin.packVersion,
         runtime,
         expectedHash: origin.contentHash,
         actualHash: existing.contentHash,
@@ -429,6 +441,7 @@ async function projectToRuntime(
   captureAs: CaptureDeliver | undefined,
   onConflict: ConflictPolicy,
   onResolved: (action: 'skip' | 'replace', detail: PackConflictDetail) => void,
+  allowGlobalConfig: boolean,
 ): Promise<RuntimeProjectReport & { manifest: PackProjectManifest['runtimes'][0] }> {
   const adapter = getAdapter(runtime)
   const label = adapter?.label || runtime
@@ -462,7 +475,12 @@ async function projectToRuntime(
       skipped.push(`astrbot-plugin (${(e as Error).message})`)
     }
   } else if (runtime === 'hermes') {
-    const stagingSkills = join(cwd, stateDir, 'applied-skills', packName.replace(/[^\w.-]+/g, '_'))
+    // 按 runtime 分目录（不能只用 packName）：一个项目可能同时检测到 hermes + openclaw，
+    // 两者都用「staging + 全局配置里的 external dirs/extraDirs 指针」这套机制——
+    // 如果目录名只按 packName 算，两个 runtime 会共享同一个 staging 目录，
+    // 后处理的那个会先 rm 再重建，把前一个刚写好的东西先删了再原样传回来（内容一样所以不出错，
+    // 但 ledger 里两条不同 kind 的记录指向同一个物理目录，eject 时归属含糊，纯属埋雷）。
+    const stagingSkills = join(cwd, stateDir, 'applied-skills', `${packName.replace(/[^\w.-]+/g, '_')}-${runtime}`)
     await fs.rm(stagingSkills, { recursive: true, force: true }).catch(() => {})
     await fs.mkdir(stagingSkills, { recursive: true })
     for (const s of assets.skills) {
@@ -480,10 +498,49 @@ async function projectToRuntime(
     }
     man.skills.push(...skills)
     man.skillsDir = stagingSkills
-    const target = mcpTargetFor('hermes', cwd)
-    const ok = await addHermesExternalDir(target.absFile, stagingSkills).catch(() => false)
-    if (ok) man.hermesExternalDir = { configAbs: target.absFile, skillsAbs: stagingSkills }
-    else if (skills.length) skipped.push('hermes external_dirs (config.yaml 不存在或未写入)')
+    if (allowGlobalConfig) {
+      const target = mcpTargetFor('hermes', cwd)
+      const ok = await addHermesExternalDir(target.absFile, stagingSkills).catch(() => false)
+      if (ok) man.hermesExternalDir = { configAbs: target.absFile, skillsAbs: stagingSkills }
+      else if (skills.length) skipped.push('hermes external_dirs (config.yaml 不存在或未写入)')
+    } else if (skills.length) {
+      skipped.push('hermes external_dirs skipped (global config; pass allowGlobalConfig / --global-config to opt in)')
+    }
+
+    const ruleRes = await projectRules(cwd, runtime, adapter!, ruleDir, assets.rules)
+    rules.push(...ruleRes.applied)
+    man.rules.push(...ruleRes.applied)
+    skipped.push(...ruleRes.skipped)
+  } else if (runtime === 'openclaw') {
+    // 同 hermes：OpenClaw 的 skill 目录是全局单例的 agent workspace（默认 ~/.openclaw/workspace/skills），
+    // 不认项目相对路径。项目里的 skill 先落地到 staging 目录，再通过 openclaw.json 的
+    // skills.load.extraDirs 注册（不直接写进用户的私有 workspace）。见 projection.ts 里的详细说明。
+    const stagingSkills = join(cwd, stateDir, 'applied-skills', `${packName.replace(/[^\w.-]+/g, '_')}-${runtime}`)
+    await fs.rm(stagingSkills, { recursive: true, force: true }).catch(() => {})
+    await fs.mkdir(stagingSkills, { recursive: true })
+    for (const s of assets.skills) {
+      const meta = skillOriginMeta(pack, packName, s.name)
+      const r = await copySkillDir(
+        s.dir,
+        join(stagingSkills, s.name),
+        meta,
+        onConflict,
+        onResolved,
+        runtime,
+      )
+      if (r === 'conflict-skipped') skipped.push(`skill:${s.name} (conflict, skipped)`)
+      else skills.push(s.name)
+    }
+    man.skills.push(...skills)
+    man.skillsDir = stagingSkills
+    if (allowGlobalConfig) {
+      const openclawConfigAbs = join(homedir(), '.openclaw', 'openclaw.json')
+      const ok = await addOpenClawExtraSkillDir(openclawConfigAbs, stagingSkills).catch(() => false)
+      if (ok) man.openclawExternalDir = { configAbs: openclawConfigAbs, skillsAbs: stagingSkills }
+      else if (skills.length) skipped.push('openclaw skills.load.extraDirs (openclaw.json 不存在或未写入)')
+    } else if (skills.length) {
+      skipped.push('openclaw skills.load.extraDirs skipped (global config; pass allowGlobalConfig / --global-config to opt in)')
+    }
 
     const ruleRes = await projectRules(cwd, runtime, adapter!, ruleDir, assets.rules)
     rules.push(...ruleRes.applied)
@@ -511,12 +568,16 @@ async function projectToRuntime(
   const servers = packMcpServers(pack)
   if (Object.keys(servers).length) {
     const target = mcpTargetFor(runtime, cwd)
-    const res = await mergeMcp(target, servers, { packName, runtime, onConflict, onResolved })
-    mcp.push(...res.added, ...res.unchanged)
-    man.mcp.push(...res.added, ...res.unchanged)
-    if (res.added.length) {
-      man.mcpFileAbs = res.file
-      man.mcpFormat = res.format
+    if (target.projectLocal || allowGlobalConfig) {
+      const res = await mergeMcp(target, servers, { packName, runtime, onConflict, onResolved })
+      mcp.push(...res.added, ...res.unchanged)
+      man.mcp.push(...res.added, ...res.unchanged)
+      if (res.added.length) {
+        man.mcpFileAbs = res.file
+        man.mcpFormat = res.format
+      }
+    } else {
+      skipped.push(`mcp:${Object.keys(servers).join(',')} skipped (global config ${target.absFile}; pass allowGlobalConfig / --global-config to opt in)`)
     }
   }
 
@@ -601,6 +662,7 @@ export async function projectPackToRuntimes(
       opts.captureAs,
       onConflict,
       onResolved,
+      opts.allowGlobalConfig ?? false,
     )
     runtimes.push(report)
     manifestRuntimes.push(report.manifest)

@@ -7,4 +7,5 @@ agents:
     runtime: claude-code
     skills:
       - agent-pack
+    mcp: []
     captureAs: experience

@@ -12,13 +12,23 @@
 
 Pack **one agent** (skills / rules / MCP) into a portable `.pack.json`, then install on harnesses **detected on this machine** (multiple by default; use `--runtime` for one target).
 
+**Fastest path — hand a `.pack.json` to any coding agent and say "install this":**
+
+```bash
+npx --package @sakikotgw/pack-agent -- pack-agent install foo.pack.json
+```
+
+No `npm install` step required — just Node + internet + [Bun](https://bun.sh) (missing Bun prints an install hint, not a stack trace). This is the actual "MC modpack" experience: one file, one sentence, the agent installs itself. `npx @sakikotgw/pack-agent ...` (no `--package`) also works on modern npm, but the explicit form above never depends on npx's bin auto-pick logic.
+
+Installing for repeated use instead of one-off:
+
 ```bash
 npm install @sakikotgw/pack-agent
 packagent detect          # see which harnesses will receive the pack
 packagent install foo.pack.json --runtime claude-code   # single target
 ```
 
-> CLI: `packagent` · npm: `@sakikotgw/pack-agent` · schema: v0.2 · [Developer guide](docs/DEVELOPERS.md)
+> CLI: `packagent` (aliases: `pack-agent`, `agent-pack`) · npm: `@sakikotgw/pack-agent` · schema: v0.2 · [Developer guide](docs/DEVELOPERS.md)
 
 ---
 
@@ -198,6 +208,8 @@ packagent sync --agent my-agent --runtime codex
 If both Claude Code and Codex are present, skills land in `.claude/skills` **and** `.agents/skills`.  
 To install to **one** harness only → pass **`--runtime`**.
 
+**Project-scoped by default**: install/sync only ever touch the current project directory. Some harnesses also have a *user-global* config (`~/.claude/settings.json`, `~/.hermes/config.yaml`, `~/.openclaw/openclaw.json`) — those are **never** written unless you pass `--global-config`. This keeps a throwaway/demo install from leaking hooks or MCP entries into every other project on your machine.
+
 ### 4. Uninstall
 
 ```bash
@@ -244,6 +256,8 @@ Full example: [mcp/config.example.json](mcp/config.example.json)
 | `pack_detect` | Detect present harnesses |
 | `pack_scan` | Scan skills / rules / MCP |
 | `pack_export` | Write `.pack.json` (supports `agent`) |
+| `pack_show` | Inspect a pack's contents before installing (mod-list style) |
+| `pack_list` | List packs exported/installed in this project (instance list) |
 | `pack_install` | Install an existing pack |
 | `pack_sync` | Export + install |
 | `pack_select` | Selective pack |
@@ -259,11 +273,13 @@ Full example: [mcp/config.example.json](mcp/config.example.json)
 | `packagent agents list \| init` | List / init agent definitions |
 | `packagent export --agent <id>` | Export one agent (**recommended**) |
 | `packagent pack --skills …` | Selective pack |
+| `packagent show <file>` | **Inspect a pack's contents before installing** — skills/rules/MCP/experiences with descriptions, like browsing a modpack's mod list |
+| `packagent list` | **List packs exported/installed in this project** — like a launcher's instance list |
 | `packagent install <file>` | Install pack |
 | `packagent sync --agent <id>` | Export + install |
 | `packagent detect` | List detected harnesses |
 | `packagent eject --name <pack>` | Uninstall |
-| `packagent status` | Lock / ledger status |
+| `packagent status` | Lock / ledger status (all installed packs, not just the last one) |
 | `packagent diff` | Diff packs or locks |
 
 ---
@@ -275,7 +291,7 @@ Full example: [mcp/config.example.json](mcp/config.example.json)
 | `claude-code` | `.claude/skills` | `CLAUDE.md` | `.mcp.json` |
 | `codex` | `.agents/skills` | `AGENTS.md` | `.codex/config.toml` |
 | `opencode` | `.opencode/skills` | `AGENTS.md` | `opencode.json` |
-| `openclaw` | `.agents/skills` | `AGENTS.md` | `openclaw.json` |
+| `openclaw` | `skills.load.extraDirs` (registered in `openclaw.json`, staged from `.agent-pack/applied-skills/`) | `AGENTS.md` | `config/mcporter.json` |
 | `hermes` | external_dirs | `AGENTS.md` | `~/.hermes/config.yaml` |
 | `gemini-cli` | `.gemini/skills` | `GEMINI.md` | `.gemini/settings.json` |
 | `windsurf` | `.windsurf/skills` | — | `.windsurf/mcp_config.json` |

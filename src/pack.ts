@@ -9,6 +9,8 @@ import { DEFAULT_STATE_DIR } from './project.js'
 
 export type PackOpts = ExportOpts & {
   install?: boolean
+  /** 转发给 installPack：是否允许写用户全局 harness 配置（默认 false） */
+  allowGlobalConfig?: boolean
 }
 
 export type PackReport = InstallReport & {

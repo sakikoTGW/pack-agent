@@ -66,9 +66,9 @@ function bundleHasBootstrap(pack: PackDoc): boolean {
 async function readCliPackageVersion(): Promise<string> {
   try {
     const raw = await fs.readFile(join(import.meta.dir, '..', 'package.json'), 'utf8')
-    return (JSON.parse(raw) as { version?: string }).version ?? '0.2.0'
+    return (JSON.parse(raw) as { version?: string }).version ?? '0.3.0'
   } catch {
-    return '0.2.0'
+    return '0.3.0'
   }
 }
 

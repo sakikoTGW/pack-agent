@@ -35,6 +35,8 @@ Commands:
   pack     Selective pack (--agent / --manifest / --skills) + optional --install
   export   Write pack only (requires --agent, --manifest, --skills, or --all)
   install  Install existing pack
+  show     Inspect a pack's contents before installing (mod-list style)
+  list     List packs exported/installed in this project (instance list)
   agents   List or init .agent-pack/agents.yaml
   diff     Compare two lock.json or pack.json files
   eject    Uninstall pack (ledger-based)
@@ -107,8 +109,9 @@ async function cmdSync(args: string[]): Promise<void> {
   agent-pack sync --from .agent-pack/exports/packer.pack.json`)
     process.exit(0)
   }
+  const allowGlobalConfig = hasFlag(args, '--global-config', '--global')
   const cwd = process.cwd()
-  const report = await syncPack(cwd, { from, runtime, name, onConflict, ...common })
+  const report = await syncPack(cwd, { from, runtime, name, onConflict, allowGlobalConfig, ...common })
   if (report.exported && report.exportPath) {
     console.error(`[export] ${report.exportPath}`)
     if (report.stats) {
@@ -146,8 +149,9 @@ async function cmdInstall(args: string[]): Promise<void> {
   const captureAs = parseCaptureAs(args)
   const modules = parseModulesArg(args)
   const onConflict = parseOnConflict(args)
+  const allowGlobalConfig = hasFlag(args, '--global-config', '--global')
   if (help || !path) {
-    console.log('Usage: agent-pack install <pack.json> [--runtime id] [--capture-as skill|experience] [--on-conflict stop|skip|replace] [--modules ...] [--no-bootstrap]')
+    console.log('Usage: agent-pack install <pack.json> [--runtime id] [--capture-as skill|experience] [--on-conflict stop|skip|replace] [--modules ...] [--no-bootstrap] [--global-config]')
     process.exit(help ? 0 : 1)
   }
   const cwd = process.cwd()
@@ -158,6 +162,7 @@ async function cmdInstall(args: string[]): Promise<void> {
     captureAs,
     modules,
     onConflict,
+    allowGlobalConfig,
   })
   console.log(JSON.stringify(report, null, 2))
   if (!report.ok) process.exit(1)
@@ -201,12 +206,14 @@ async function cmdPack(args: string[]): Promise<void> {
     }
   }
 
+  const allowGlobalConfig = hasFlag(args, '--global-config', '--global')
   const report = await packFromProject(cwd, {
     runtime,
     name,
     select,
     withHarness,
     install,
+    allowGlobalConfig,
     ...common,
   })
   console.error(`[pack] ${report.exportPath}`)
@@ -265,6 +272,36 @@ async function cmdStatus(args: string[]): Promise<void> {
   }
   const { packStatus } = await import('./eject.js')
   console.log(JSON.stringify(await packStatus(process.cwd()), null, 2))
+}
+
+async function cmdList(args: string[]): Promise<void> {
+  if (hasFlag(args, '--help', '-h')) {
+    console.log('Usage: agent-pack list [--json]\n  List packs exported/installed in this project — like a modpack launcher\'s instance list.')
+    process.exit(0)
+  }
+  const { buildPackCatalog, formatPackCatalog } = await import('./catalog.js')
+  const catalog = await buildPackCatalog(process.cwd())
+  if (hasFlag(args, '--json')) {
+    console.log(JSON.stringify(catalog, null, 2))
+    return
+  }
+  console.log(formatPackCatalog(catalog))
+}
+
+async function cmdShow(args: string[]): Promise<void> {
+  const { path, help } = parseArgs(args)
+  if (help || !path) {
+    console.log('Usage: agent-pack show <pack.json> [--json]\n  Inspect a pack\'s contents before installing — like browsing a modpack\'s mod list.')
+    process.exit(help ? 0 : 1)
+  }
+  const { describePackFile, formatPackShow } = await import('./show.js')
+  const abs = resolve(process.cwd(), path)
+  const show = await describePackFile(abs)
+  if (hasFlag(args, '--json')) {
+    console.log(JSON.stringify(show, null, 2))
+    return
+  }
+  console.log(formatPackShow(show))
 }
 
 async function cmdAgents(args: string[]): Promise<void> {
@@ -326,6 +363,12 @@ async function main(): Promise<void> {
       break
     case 'status':
       await cmdStatus(rest)
+      break
+    case 'list':
+      await cmdList(rest)
+      break
+    case 'show':
+      await cmdShow(rest)
       break
     case 'diff':
       await cmdDiff(rest)

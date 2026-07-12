@@ -1,6 +1,6 @@
 ---
 name: agent-pack
-version: 0.2.0
+version: 0.3.0
 description: Pack and install agent configs as portable modpacks. Use when the user wants to pack/export/sync skills, rules, MCP, or harness prompts; compose a partial pack from selection; or install a pack to all detected harnesses (Claude Code, Codex, etc.). Triggers include 打包、整合包、装包、sync、export pack、复刻 agent、把 prompt 打进包.
 ---
 # Agent Modpack — 像装 MC 整合包一样，装你的 agent
@@ -26,7 +26,27 @@ description: Pack and install agent configs as portable modpacks. Use when the u
 
 ---
 
-## 模式 A：MCP（agent 首选）
+## 零安装：用户直接甩给你一个 `.pack.json`，让你"自己装"
+
+用户说「装一下这个整合包」「把这个 pack.json 装上」并甩一个文件路径 —— **不需要先 `npm install`，不需要先配 MCP**。你（agent）有 shell 就直接跑：
+
+```bash
+npx --package @sakikotgw/pack-agent -- pack-agent install /path/to/foo.pack.json
+```
+
+（只需要 Node + 网络 + **Bun**，Bun 缺了会给清楚的装法提示，不会崩成一堆看不懂的 stack trace。用 `--package` 显式指定包名，别只写 `npx @sakikotgw/pack-agent ...`——scoped 包名跟 4 个 bin 名字都不完全匹配，npx 的自动选择在某些版本上会挑错/挑空，显式指定永远稳。）
+
+装完想让这份 pack 长期可用（不用每次都 npx）：
+
+```bash
+npm install @sakikotgw/pack-agent   # 之后就有本地 pack-agent / packagent 命令
+```
+
+**这就是"整合包"最终要落地的样子**：用户不需要懂 CLI 参数、不需要先搭 MCP，甩一个文件、说一句话，agent 自己看情况选 npx 还是本地命令，把包装上。装完用 `pack_show`/`packagent show` 把结果讲给用户听（见下方工具表），别只甩一段原始 JSON。
+
+---
+
+## 模式 A：MCP（agent 首选，装完 agent-pack 后可用）
 
 npm 安装后，在 Cursor / Claude Code 的 `.mcp.json` 里加入：
 
@@ -48,6 +68,8 @@ Monorepo 开发时 args 可改为 `packages/pack-cli/mcp/server.ts`。
 |------|------|
 | `pack_detect` | 检测在场 harness + 适配表 |
 | `pack_scan` | 扫描 skills / rules / MCP |
+| `pack_show` | **装前先看包里有什么**（skill/rule/mcp/经验罐头 + 描述）——用户问「这个包里有什么」先用这个，别直接甩原始 JSON |
+| `pack_list` | 这个项目导出过 / 装了哪些包——用户问「装了什么」先用这个，别只看 lock.json |
 | `pack_export` | 导出便携 pack（`dry_run` 可预览） |
 | `pack_install` | 安装已有 pack |
 | `pack_sync` | 扫描 → 封包 → 安装（或 `from` 只装） |
@@ -86,6 +108,10 @@ agent-pack export --name my-team-pack
 | **经验罐头** | `--capture-as experience` / `--experience`（**默认**） | `.agent-pack/experiences/` + **各 harness SessionStart hook** | 内化注入，**不是 skill**；install 自动接 Claude/Codex/Hermes 等 |
 
 L1（brainstorming 等 SKILL.md）始终是 **skill 约束**；只有抓包蒸馏内容才二选一。
+
+## 全局配置默认不动
+
+install/sync **默认只写当前项目**。经验罐头 SessionStart hook、Hermes `skills.external_dirs`、OpenClaw/Hermes 全局 MCP servers 这些**用户全局配置**（`~/.claude/...`、`~/.hermes/...`）默认跳过，除非用户显式要求「也装到全局 / 所有项目」，此时才加 `--global-config`（CLI）或 `allow_global_config: true`（MCP）。不确定就别加——临时项目装完随手删掉目录，全局配置里的坏链接不会自动清。
 
 ## 可选模块 + pack.ignore
 

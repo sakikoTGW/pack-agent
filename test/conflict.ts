@@ -128,6 +128,22 @@ try {
   if (!r2.ok) fail('idempotent reinstall should succeed')
   console.log('✓ idempotent same-pack reinstall')
 
+  // pack-a 和 pack-b 都是从同一个 src 导出的，skill 内容逐字节相同、contentHash 相同，
+  // 只是包名不同——就像两个 MC 整合包都塞了同一个 JEI.jar。这不该报冲突，
+  // 哪怕 on_conflict 是默认的 stop（否则任何"两个包共享一个 skill"的场景都装不上第二个包）。
+  const twoPack = join(root, 'two-pack-same-content')
+  await fs.mkdir(join(twoPack, '.claude'), { recursive: true })
+  await fs.writeFile(join(twoPack, 'CLAUDE.md'), '# two-pack\n', 'utf8')
+  await installPackFile(twoPack, packA, { noBootstrap: true, runtimes: ['claude-code'], bootstrapMcp: false })
+  const r3 = await installPackFile(twoPack, packB, {
+    noBootstrap: true,
+    runtimes: ['claude-code'],
+    bootstrapMcp: false,
+    // 故意不传 onConflict —— 默认 stop，验证「内容相同」根本不会走到冲突这一步
+  })
+  if (!r3.ok) fail('installing a second pack with byte-identical skill content must not conflict (default stop policy)')
+  console.log('✓ two packs, identical skill content, different pack name → no conflict')
+
   process.exit(0)
 } finally {
   await fs.rm(root, { recursive: true, force: true }).catch(() => {})

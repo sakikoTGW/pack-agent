@@ -5,6 +5,11 @@ import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import YAML from 'yaml'
 import { ensureDefaultPackIgnore } from './pack-ignore.js'
+import { PackConflictError, buildFileErrorDetail } from './errors.js'
+
+function isEnoent(e: unknown): boolean {
+  return Boolean(e && typeof e === 'object' && (e as NodeJS.ErrnoException).code === 'ENOENT')
+}
 
 export type PackProjectConfig = {
   schema?: string
@@ -24,7 +29,7 @@ export type PackProjectConfig = {
 
 const DEFAULT: PackProjectConfig = {
   schema: 'agent-pack/project/v1',
-  version: '0.2.0',
+  version: '0.3.0',
   channel: 'dev',
   packSchema: 'ccui-pack/v0.2',
   bootstrap: { skills: ['agent-pack'] },
@@ -42,12 +47,39 @@ const DEFAULT: PackProjectConfig = {
   },
 }
 
+/**
+ * 文件不存在（ENOENT）→ null，让调用方回退下一个来源 / 内置默认值，这是正常路径。
+ * 文件存在但 YAML 解析失败 → 直接抛错，绝不能悄悄回退成默认配置——
+ * 那样用户精心配置的 modules/constraints/policy 全部静默失效，且没有任何提示。
+ */
 async function readYamlFile(path: string): Promise<Record<string, unknown> | null> {
+  let text: string
   try {
-    const text = await fs.readFile(path, 'utf8')
+    text = await fs.readFile(path, 'utf8')
+  } catch (e) {
+    if (isEnoent(e)) return null
+    throw new PackConflictError(
+      buildFileErrorDetail({
+        kind: 'file-invalid',
+        what: 'project.yaml',
+        path,
+        cause: e as Error,
+        help: [`fix the read error at \`${path}\` (permissions? disk?)`],
+      }),
+    )
+  }
+  try {
     return YAML.parse(text) as Record<string, unknown>
-  } catch {
-    return null
+  } catch (e) {
+    throw new PackConflictError(
+      buildFileErrorDetail({
+        kind: 'file-invalid',
+        what: 'project.yaml',
+        path,
+        cause: e as Error,
+        help: [`fix the YAML syntax at \`${path}\``],
+      }),
+    )
   }
 }
 
@@ -91,7 +123,7 @@ export async function ensureAgentPackProjectYaml(cwd: string, stateDir = '.agent
   const doc: PackProjectConfig = {
     schema: 'agent-pack/project/v1',
     name,
-    version: '0.2.0',
+    version: '0.3.0',
     channel: 'dev',
     packSchema: 'ccui-pack/v0.2',
     bootstrap: { skills: ['agent-pack'] },

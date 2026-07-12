@@ -12,13 +12,23 @@
 
 将**一个 agent**（skills / rules / MCP）打成便携 `.pack.json`，在本机**检测到的 harness** 上安装（默认多家；可用 `--runtime` 只装一家）。
 
+**最快路径——把一个 `.pack.json` 甩给任意 coding agent，说一句「装一下这个」：**
+
+```bash
+npx --package @sakikotgw/pack-agent -- pack-agent install foo.pack.json
+```
+
+不需要先 `npm install`——只要 Node + 网络 + [Bun](https://bun.sh)（没装 Bun 会给清楚的安装提示，不是一堆 stack trace）。这才是"MC 整合包"真正该有的体验：一个文件、一句话，agent 自己把自己装成那样。现代 npm 上 `npx @sakikotgw/pack-agent ...`（不带 `--package`）通常也能用，但上面这条写法不依赖 npx 的 bin 自动选择逻辑，永远稳。
+
+要长期反复用而不是临时装一次：
+
 ```bash
 npm install @sakikotgw/pack-agent
 packagent detect          # 先看会装到哪几家
 packagent install foo.pack.json --runtime claude-code   # 只装 Claude Code
 ```
 
-> CLI：`packagent` · npm：`@sakikotgw/pack-agent` · schema：v0.2 · [开发者文档](docs/DEVELOPERS.zh-CN.md)
+> CLI：`packagent`（别名：`pack-agent`、`agent-pack`） · npm：`@sakikotgw/pack-agent` · schema：v0.2 · [开发者文档](docs/DEVELOPERS.zh-CN.md)
 
 ---
 
@@ -198,6 +208,8 @@ packagent sync --agent my-agent --runtime codex
 例如同时有 Claude Code + Codex 配置 → skill 会进 `.claude/skills` **和** `.agents/skills`。  
 只想装一家 → **必须加 `--runtime`**。
 
+**默认只动当前项目**：install/sync 只写项目目录本身。部分 harness 还有*用户全局*配置（`~/.claude/settings.json`、`~/.hermes/config.yaml`、`~/.openclaw/openclaw.json`）——这些**默认不写**，需显式加 `--global-config` 才会写。这样一次临时/演示安装就不会把 hook 或 MCP 条目悄悄漏进你机器上的其它所有项目。
+
 ### 4. 卸载
 
 ```bash
@@ -244,6 +256,8 @@ packagent eject --name my-agent
 | `pack_detect` | 检测在场 harness |
 | `pack_scan` | 扫描 skills / rules / MCP |
 | `pack_export` | 导出 `.pack.json`（支持 `agent` 参数） |
+| `pack_show` | **装前先看包里有什么**——skill/rule/MCP/经验罐头 + 描述，像装整合包前看 mod 列表 |
+| `pack_list` | **这个项目导出过/装了哪些整合包**——像启动器的"我的实例"列表 |
 | `pack_install` | 安装已有 pack |
 | `pack_sync` | export + install |
 | `pack_select` | 选件封包 |
@@ -259,11 +273,13 @@ packagent eject --name my-agent
 | `packagent agents list \| init` | 查看 / 初始化 agent 定义 |
 | `packagent export --agent <id>` | 导出单个 agent（**推荐**） |
 | `packagent pack --skills …` | 选件封包 |
+| `packagent show <file>` | **装前先看包内容**——像看整合包 mod 列表 |
+| `packagent list` | **列出本项目导出/已装的整合包**——像启动器实例列表 |
 | `packagent install <file>` | 安装 pack |
 | `packagent sync --agent <id>` | export + install |
 | `packagent detect` | 列出检测到的 harness |
 | `packagent eject --name <pack>` | 卸载 |
-| `packagent status` | lock / ledger 状态 |
+| `packagent status` | lock / ledger 状态（含所有已装 pack，不止最近一次） |
 | `packagent diff` | 对比 pack 或 lock |
 
 ---
@@ -275,7 +291,7 @@ packagent eject --name my-agent
 | `claude-code` | `.claude/skills` | `CLAUDE.md` | `.mcp.json` |
 | `codex` | `.agents/skills` | `AGENTS.md` | `.codex/config.toml` |
 | `opencode` | `.opencode/skills` | `AGENTS.md` | `opencode.json` |
-| `openclaw` | `.agents/skills` | `AGENTS.md` | `openclaw.json` |
+| `openclaw` | `skills.load.extraDirs`（写进 `openclaw.json`，staging 目录来自 `.agent-pack/applied-skills/`） | `AGENTS.md` | `config/mcporter.json` |
 | `hermes` | external_dirs | `AGENTS.md` | `~/.hermes/config.yaml` |
 | `gemini-cli` | `.gemini/skills` | `GEMINI.md` | `.gemini/settings.json` |
 | `windsurf` | `.windsurf/skills` | — | `.windsurf/mcp_config.json` |

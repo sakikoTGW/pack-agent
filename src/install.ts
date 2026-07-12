@@ -104,8 +104,10 @@ export async function installPack(cwd: string, pack: PackDoc, opts: InstallOpts 
     expInstalled.length > 0 ? resolveExperienceRuntimes(detected, projected, opts.runtimes ?? (opts.runtime ? [opts.runtime] : undefined)) : []
   const expProjection =
     expInstalled.length > 0
-      ? await projectExperienceToHarnesses(cwd, expRuntimes, stateDir)
-      : { wired: [], skipped: [] }
+      ? await projectExperienceToHarnesses(cwd, expRuntimes, stateDir, {
+          includeGlobal: opts.allowGlobalConfig ?? false,
+        })
+      : { wired: [], skipped: [], notes: [] }
   const extInstalled = await installExtendedModules(cwd, doc, stateDir)
   const lockPath = await writePackLock(cwd, doc, stateDir).catch(() => undefined)
 
@@ -126,6 +128,7 @@ export async function installPack(cwd: string, pack: PackDoc, opts: InstallOpts 
     lockPath,
     experiences: expInstalled.map(e => ({ id: e.id, path: e.path })),
     experienceHooks: expProjection.wired.map(w => `${w.runtime}:${w.config}#${w.event}`),
+    notes: expProjection.notes,
     captureDeliver: deliver,
     hooks: extInstalled.hooks,
     subagents: extInstalled.subagents,

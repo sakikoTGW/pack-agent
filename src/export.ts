@@ -34,14 +34,18 @@ import {
   resolveAgentForExport,
   requireAgentOrSelection,
 } from './agents.js'
-import { PackConflictError } from './errors.js'
+import { PackConflictError, buildFileErrorDetail } from './errors.js'
+
+function isEnoent(e: unknown): boolean {
+  return Boolean(e && typeof e === 'object' && (e as NodeJS.ErrnoException).code === 'ENOENT')
+}
 
 async function readAgentPackCliVersion(): Promise<string> {
   try {
     const raw = await fs.readFile(join(import.meta.dir, '..', 'package.json'), 'utf8')
-    return (JSON.parse(raw) as { version?: string }).version ?? '0.2.0'
+    return (JSON.parse(raw) as { version?: string }).version ?? '0.3.0'
   } catch {
-    return '0.2.0'
+    return '0.3.0'
   }
 }
 
@@ -71,11 +75,40 @@ export type ExportOpts = {
   allowFullScan?: boolean
 }
 
-async function readJson<T>(p: string): Promise<T | null> {
+/**
+ * 读 `--manifest <path>`。跟 agents.yaml 一样的原则：不存在 vs 解析失败必须分开报——
+ * 之前这里失败一律返回 null，selection 变成 undefined，然后 requireAgentOrSelection
+ * 会报「没有指定 agent」，完全掩盖了真实原因（manifest 路径打错了 / JSON 有语法错）。
+ */
+async function readJson<T>(p: string, what: string): Promise<T> {
+  let raw: string
   try {
-    return JSON.parse(await fs.readFile(p, 'utf8')) as T
-  } catch {
-    return null
+    raw = await fs.readFile(p, 'utf8')
+  } catch (e) {
+    throw new PackConflictError(
+      buildFileErrorDetail({
+        kind: isEnoent(e) ? 'file-not-found' : 'file-invalid',
+        what,
+        path: p,
+        cause: e as Error,
+        help: isEnoent(e)
+          ? [`check the path passed to --manifest`]
+          : [`fix the read error at \`${p}\` (permissions? disk?)`],
+      }),
+    )
+  }
+  try {
+    return JSON.parse(raw) as T
+  } catch (e) {
+    throw new PackConflictError(
+      buildFileErrorDetail({
+        kind: 'file-invalid',
+        what,
+        path: p,
+        cause: e as Error,
+        help: [`fix the JSON syntax at \`${p}\``],
+      }),
+    )
   }
 }
 
@@ -182,7 +215,7 @@ function scanToPack(scan: RuntimeScan, runtimeId: string, name: string, detected
   return {
     schema: 'ccui-pack/v0.1',
     name,
-    version: '0.2.0',
+    version: '0.3.0',
     runtime: { id: runtimeId, label: adapter?.label || runtimeId, verified: adapter?.verified ?? false },
     knowledge: {
       skills: dedupePackSkills(
@@ -245,7 +278,7 @@ export async function buildPackFromProject(cwd: string, opts: ExportOpts = {}): 
       opts.captureAs = resolved.profile.captureAs
     }
   } else if (opts.select) {
-    selection = typeof opts.select === 'string' ? await readJson<PackSelectManifest>(opts.select) ?? undefined : opts.select
+    selection = typeof opts.select === 'string' ? await readJson<PackSelectManifest>(opts.select, 'select manifest') : opts.select
   }
 
   requireAgentOrSelection({
@@ -315,7 +348,7 @@ export async function buildPackFromProject(cwd: string, opts: ExportOpts = {}): 
   }
 
   pack.modules = { ...modules }
-  pack.version = projectCfg.version ?? pack.version ?? '0.2.0'
+  pack.version = projectCfg.version ?? pack.version ?? '0.3.0'
   if (projectCfg.channel) pack.channel = projectCfg.channel
   pack = await embedPortableFiles(pack, cwd)
   pack = await embedExtendedBundleFiles(cwd, pack)

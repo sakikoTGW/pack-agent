@@ -18,6 +18,7 @@ export type LedgerItemKind =
   | 'sidecar'
   | 'astrbot-plugin'
   | 'hermes-external'
+  | 'openclaw-external'
   | 'extended-hook'
   | 'subagent'
   | 'memory'
@@ -60,6 +61,40 @@ export async function readInstallLedger(
   } catch {
     return null
   }
+}
+
+export type LedgerListResult = {
+  ledgers: InstallLedger[]
+  /** 打不开/解析失败的 ledger 文件——之前这里是静默 skip，装了什么东西说没就没了，
+   * 用户完全看不出"这项确实存在但坏了"和"从来没装过"的区别。 */
+  warnings: Array<{ path: string; error: string }>
+}
+
+/**
+ * 列出当前项目里**所有**已安装的 pack（不止最近一次）。
+ * `lock.json` 全项目唯一，只反映最后一次 install/export；多 agent 场景下
+ * 想知道"这个项目里到底装了哪些整合包"必须扫 ledger，而不是只看 lock。
+ */
+export async function listInstallLedgers(cwd: string, stateDir = '.agent-pack'): Promise<LedgerListResult> {
+  const dir = join(cwd, stateDir, 'applied')
+  let names: string[] = []
+  try {
+    names = await fs.readdir(dir)
+  } catch {
+    return { ledgers: [], warnings: [] }
+  }
+  const ledgers: InstallLedger[] = []
+  const warnings: Array<{ path: string; error: string }> = []
+  for (const n of names) {
+    if (!n.endsWith('-ledger.json')) continue
+    const p = join(dir, n)
+    try {
+      ledgers.push(JSON.parse(await fs.readFile(p, 'utf8')) as InstallLedger)
+    } catch (e) {
+      warnings.push({ path: p, error: (e as Error).message })
+    }
+  }
+  return { ledgers: ledgers.sort((a, b) => a.packName.localeCompare(b.packName)), warnings }
 }
 
 export async function writeInstallLedger(
@@ -133,6 +168,14 @@ export function buildInstallLedger(input: {
         runtime: rt.runtime,
         path: rt.hermesExternalDir.skillsAbs,
         meta: { configAbs: rt.hermesExternalDir.configAbs },
+      })
+    }
+    if (rt.openclawExternalDir) {
+      items.push({
+        kind: 'openclaw-external',
+        runtime: rt.runtime,
+        path: rt.openclawExternalDir.skillsAbs,
+        meta: { configAbs: rt.openclawExternalDir.configAbs },
       })
     }
   }

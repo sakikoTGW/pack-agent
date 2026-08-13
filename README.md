@@ -9,6 +9,7 @@
 [![npm version](https://img.shields.io/npm/v/@sakikotgw/pack-agent.svg)](https://www.npmjs.com/package/@sakikotgw/pack-agent)
 [![license](https://img.shields.io/npm/l/@sakikotgw/pack-agent.svg)](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)
 [![bun](https://img.shields.io/badge/bun-%3E%3D1.1.0-black?logo=bun)](https://bun.sh)
+[![dsh-plugin](https://img.shields.io/badge/topic-dsh--plugin-1f6feb)](https://github.com/topics/dsh-plugin)
 
 Pack **one agent** (skills / rules / MCP) into a portable `.pack.json`, then install on harnesses **detected on this machine** (multiple by default; use `--runtime` for one target).
 
@@ -31,6 +32,18 @@ packagent install foo.pack.json --runtime claude-code   # single target
 ```
 
 > CLI: `packagent` (aliases: `pack-agent`, `agent-pack`) · npm: `@sakikotgw/pack-agent` · schema: v0.2 · [Developer guide](docs/DEVELOPERS.md)
+
+### DeepSeek Harness plugin
+
+This package is a DSH `dsh.bundle`. Install the manager **once**:
+
+```sh
+dsh plugin --profile web add @sakikotgw/pack-agent
+```
+
+pnpm 9: add `-w` if you get `ERR_PNPM_ADDING_TO_ROOT`. Then project packs with `packagent dsh project` / `map` and allow them. Do not `dsh plugin add` each directory under `.agent-pack/modpacks/`.
+
+Discovery: GitHub topic [`dsh-plugin`](https://github.com/topics/dsh-plugin) ([official README](https://github.com/deepseek-ai/deepseek-harness/blob/master/README.md)).
 
 ---
 
@@ -402,6 +415,7 @@ bun test
 | | |
 |---|---|
 | **npm** | https://www.npmjs.com/package/@sakikotgw/pack-agent |
+| **DSH topic** | https://github.com/topics/dsh-plugin |
 | **Issues** | https://github.com/sakikoTGW/pack-agent/issues |
 | **Spec** | [docs/PACK_SPEC.md](docs/PACK_SPEC.md) |
 | **Developers** | [docs/DEVELOPERS.md](docs/DEVELOPERS.md) · [中文](docs/DEVELOPERS.zh-CN.md) |

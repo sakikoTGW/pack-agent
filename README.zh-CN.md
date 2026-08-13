@@ -9,6 +9,7 @@
 [![npm version](https://img.shields.io/npm/v/@sakikotgw/pack-agent.svg)](https://www.npmjs.com/package/@sakikotgw/pack-agent)
 [![license](https://img.shields.io/npm/l/@sakikotgw/pack-agent.svg)](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)
 [![bun](https://img.shields.io/badge/bun-%3E%3D1.1.0-black?logo=bun)](https://bun.sh)
+[![dsh-plugin](https://img.shields.io/badge/topic-dsh--plugin-1f6feb)](https://github.com/topics/dsh-plugin)
 
 将**一个 agent**（skills / rules / MCP / **commands** …）打成便携 **`.pack.zip` 整合包**（内含 `pack.json` + 实体文件 + `mcp.json`），在本机**检测到的 harness** 上安装（含 **Cursor**；可用 `--runtime` 只装一家）。
 
@@ -41,6 +42,18 @@ packagent install foo.pack.json --runtime claude-code   # 只装 Claude Code
 ```
 
 > CLI：`packagent`（别名：`pack-agent`、`agent-pack`） · npm：`@sakikotgw/pack-agent` · schema：v0.2 · [开发者文档](docs/DEVELOPERS.zh-CN.md) · [北极星](docs/NORTH_STAR.md) · [生态位](docs/ECOSYSTEM.md)
+
+### DeepSeek Harness 插件
+
+本包是 DSH `dsh.bundle`。宿主只装一次管理器：
+
+```sh
+dsh plugin --profile web add @sakikotgw/pack-agent
+```
+
+pnpm 9 若报 `ERR_PNPM_ADDING_TO_ROOT`，加 `-w`。然后用 `packagent dsh project` / `map` 投影整合包并 `allow`。不要把 `.agent-pack/modpacks/` 里的每个包再 `dsh plugin add`。
+
+发现入口：GitHub 话题 [`dsh-plugin`](https://github.com/topics/dsh-plugin)（[官方 README](https://github.com/deepseek-ai/deepseek-harness/blob/master/README.zh.md)）。
 
 ---
 
@@ -414,6 +427,7 @@ bun test
 | | |
 |---|---|
 | **npm** | https://www.npmjs.com/package/@sakikotgw/pack-agent |
+| **DSH 话题** | https://github.com/topics/dsh-plugin |
 | **Issues** | https://github.com/sakikoTGW/pack-agent/issues |
 | **规范** | [docs/PACK_SPEC.md](docs/PACK_SPEC.md) |
 | **开发者** | [docs/DEVELOPERS.zh-CN.md](docs/DEVELOPERS.zh-CN.md) · [English](docs/DEVELOPERS.md) |

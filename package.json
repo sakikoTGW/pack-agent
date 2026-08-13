@@ -56,7 +56,8 @@
     "skills",
     "modpack",
     "deepseek-harness",
-    "dsh"
+    "dsh",
+    "dsh-plugin"
   ],
   "license": "MIT",
   "author": "sakikotgw",

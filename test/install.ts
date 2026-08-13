@@ -2,10 +2,10 @@
 /** Multi-harness install smoke test */
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
-import { tmpdir } from 'node:os'
 import { installPackFile } from '../src/install.js'
+import { packTestTmp } from './tmp-root.js'
 
-const root = join(tmpdir(), `packagent-install-${Date.now()}`)
+const root = packTestTmp(`packagent-install-${Date.now()}`)
 await fs.mkdir(root, { recursive: true })
 
 await fs.mkdir(join(root, '.claude'), { recursive: true })

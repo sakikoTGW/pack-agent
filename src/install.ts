@@ -17,6 +17,7 @@ import {
 import { bootstrapAgentPackMcp } from './mcp-bootstrap.js'
 import { PackConflictError } from './errors.js'
 import { buildInstallLedger, writeInstallLedger } from './install-ledger.js'
+import { DSH_APPLY_NOTE } from './dsh-cordis.js'
 
 function aggregate(reports: InstallReport['runtimes']): Pick<InstallReport, 'skills' | 'rules' | 'mcp' | 'skipped'> {
   const skills = new Set<string>()
@@ -128,12 +129,16 @@ export async function installPack(cwd: string, pack: PackDoc, opts: InstallOpts 
     lockPath,
     experiences: expInstalled.map(e => ({ id: e.id, path: e.path })),
     experienceHooks: expProjection.wired.map(w => `${w.runtime}:${w.config}#${w.event}`),
-    notes: expProjection.notes,
+    notes: [
+      ...expProjection.notes,
+      ...(projected.includes('dsh') && !expProjection.notes.includes(DSH_APPLY_NOTE) ? [DSH_APPLY_NOTE] : []),
+    ],
     captureDeliver: deliver,
     hooks: extInstalled.hooks,
     subagents: extInstalled.subagents,
     memory: extInstalled.memory,
     settings: extInstalled.settings,
+    commands: extInstalled.commands,
     requiresCheck: { satisfied: requiresCheck.satisfied, missing: requiresCheck.missing },
     mcpBootstrap: mcpBoot.wired,
     conflictsResolved,
@@ -144,7 +149,11 @@ export async function installPack(cwd: string, pack: PackDoc, opts: InstallOpts 
     (runtimes.some(r => r.skills.length + r.rules.length + r.mcp.length > 0) ||
       expInstalled.length > 0 ||
       expProjection.wired.length > 0 ||
-      extInstalled.hooks.length + extInstalled.subagents.length + extInstalled.memory.length > 0)
+      extInstalled.hooks.length +
+        extInstalled.subagents.length +
+        extInstalled.memory.length +
+        extInstalled.commands.length >
+        0)
 
   partialReport.ok = ok
 
@@ -182,8 +191,16 @@ export async function installPack(cwd: string, pack: PackDoc, opts: InstallOpts 
 }
 
 export async function installPackFile(cwd: string, path: string, opts: InstallOpts = {}): Promise<InstallReport> {
-  const pack = await readPackFile(path)
-  return installPack(cwd, pack, opts)
+  const { resolvePackPath } = await import('./fetch-pack.js')
+  const resolved = await resolvePackPath(path)
+  try {
+    const pack = await readPackFile(resolved.path)
+    return await installPack(cwd, pack, opts)
+  } finally {
+    if (resolved.cleanup) {
+      await import('node:fs').then(fs => fs.promises.rm(resolved.cleanup!, { force: true }).catch(() => {}))
+    }
+  }
 }
 
 export { readPackFile } from './portable.js'

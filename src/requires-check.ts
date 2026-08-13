@@ -30,7 +30,7 @@ export function listPackSkillNames(pack: PackDoc): Set<string> {
 }
 
 async function readInstalledSkillVersion(cwd: string, skillName: string): Promise<string | undefined> {
-  for (const base of ['.claude/skills', '.agents/skills', '.cursor/skills', '.gemini/skills']) {
+  for (const base of ['.claude/skills', '.agents/skills', '.cursor/skills', '.gemini/skills', '.dsh/skills']) {
     const skillMd = join(cwd, base, skillName, 'SKILL.md')
     try {
       const content = await fs.readFile(skillMd, 'utf8')

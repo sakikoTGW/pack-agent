@@ -1,0 +1,51 @@
+# pack-agent unit → DeepSeek Harness。万物可打包：有的写目录，有的 insert 插件，未知插件走 pack.dsh.plugins[]。
+version: 1
+units:
+  skill:
+    emit: skills-dir
+    plugin: '@deepseek-ai/dsh-skill-filesystem'
+    insertIdPrefix: pack-agent-skills
+  mcp:
+    emit: cordis-insert
+    plugin: '@deepseek-ai/dsh-mcp-client'
+    insertIdPrefix: pack-agent-mcp
+  hooks:
+    emit: cordis-insert
+    plugin: '@deepseek-ai/dsh-hooks-claude-code'
+    insertIdPrefix: pack-agent-hooks
+  rules:
+    emit: instruction-files
+    plugin: '@deepseek-ai/dsh-agent-instructions'
+    note: bundle 写入 instructions/；DSH 读项目根 AGENTS.md / CLAUDE.md。
+  commands:
+    emit: commands-dir
+    plugin: '@deepseek-ai/dsh-commands'
+    note: markdown 斜杠指令进 commands/；DSH 进程内命令仍由插件 register。
+  persona:
+    emit: cordis-insert
+    plugin: '@deepseek-ai/dsh-persona'
+    insertIdPrefix: pack-agent-persona
+  preset:
+    emit: preset-meta
+    plugin: '@deepseek-ai/dsh-agent-presets'
+    note: 写出 preset.yml；完整 agent.cordis.yml 由 DSH 用户 preset 复制，bundle 只叠 patch。
+  plugins:
+    emit: cordis-insert-passthrough
+    plugin: '*'
+    note: pack.dsh.plugins[] 原样 insert，任意 @deepseek-ai/dsh-* 或第三方插件。
+  subagents:
+    emit: files
+    plugin: '@deepseek-ai/dsh-subagent'
+    note: bundle 写入 agents/
+  memory:
+    emit: files
+    plugin: '@deepseek-ai/dsh-session'
+    note: bundle 写入 memory/
+  settings:
+    emit: files
+    plugin: '@deepseek-ai/dsh-settings'
+    note: bundle 写入 settings/
+  experiences:
+    emit: hooks-json
+    plugin: '@deepseek-ai/dsh-hooks-claude-code'
+    insertIdPrefix: pack-agent-experience

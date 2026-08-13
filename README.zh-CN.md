@@ -10,15 +10,27 @@
 [![license](https://img.shields.io/npm/l/@sakikotgw/pack-agent.svg)](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)
 [![bun](https://img.shields.io/badge/bun-%3E%3D1.1.0-black?logo=bun)](https://bun.sh)
 
-将**一个 agent**（skills / rules / MCP）打成便携 `.pack.json`，在本机**检测到的 harness** 上安装（默认多家；可用 `--runtime` 只装一家）。
+将**一个 agent**（skills / rules / MCP / **commands** …）打成便携 **`.pack.zip` 整合包**（内含 `pack.json` + 实体文件 + `mcp.json`），在本机**检测到的 harness** 上安装（含 **Cursor**；可用 `--runtime` 只装一家）。
 
-**最快路径——把一个 `.pack.json` 甩给任意 coding agent，说一句「装一下这个」：**
+**北极星**：跨 harness **迁移** agent 能力——见 [docs/NORTH_STAR.md](docs/NORTH_STAR.md)。
+
+**最快路径——把一个 `.pack.zip` 甩给任意 coding agent，说一句「装一下这个」：**
 
 ```bash
-npx --package @sakikotgw/pack-agent -- pack-agent install foo.pack.json
+# 推荐（Windows / scoped 包也稳）
+npm exec --yes --package=@sakikotgw/pack-agent -- packagent install foo.pack.zip
+
+# 或已本地安装
+npm install @sakikotgw/pack-agent
+npx packagent install foo.pack.zip
+
+# 也可装远程包
+packagent install https://example.com/foo.pack.zip
 ```
 
-不需要先 `npm install`——只要 Node + 网络 + [Bun](https://bun.sh)（没装 Bun 会给清楚的安装提示，不是一堆 stack trace）。这才是"MC 整合包"真正该有的体验：一个文件、一句话，agent 自己把自己装成那样。现代 npm 上 `npx @sakikotgw/pack-agent ...`（不带 `--package`）通常也能用，但上面这条写法不依赖 npx 的 bin 自动选择逻辑，永远稳。
+不需要先 `npm install`——只要 Node + 网络 + [Bun](https://bun.sh)（没装 Bun 会给清楚的安装提示，不是一堆 stack trace）。这才是"MC 整合包"真正该有的体验：一个文件、一句话，agent 自己把自己装成那样。
+
+> Windows 实测（2026-07-18）：`npx --package @sakikotgw/pack-agent -- pack-agent …` 会报「不是内部或外部命令」；请用上面的 `-p … packagent` 写法，或 `npx --yes @sakikotgw/pack-agent …`。
 
 要长期反复用而不是临时装一次：
 
@@ -28,11 +40,13 @@ packagent detect          # 先看会装到哪几家
 packagent install foo.pack.json --runtime claude-code   # 只装 Claude Code
 ```
 
-> CLI：`packagent`（别名：`pack-agent`、`agent-pack`） · npm：`@sakikotgw/pack-agent` · schema：v0.2 · [开发者文档](docs/DEVELOPERS.zh-CN.md)
+> CLI：`packagent`（别名：`pack-agent`、`agent-pack`） · npm：`@sakikotgw/pack-agent` · schema：v0.2 · [开发者文档](docs/DEVELOPERS.zh-CN.md) · [北极星](docs/NORTH_STAR.md) · [生态位](docs/ECOSYSTEM.md)
 
 ---
 
 ## 为什么
+
+**APL 语言层**（写 `Pack.toml`、Kind/World/ABI）：愿景 [docs/APL_VISION.md](docs/APL_VISION.md) · 教程 [docs/BOOK.md](docs/BOOK.md) · 规范 [docs/LANGUAGE.md](docs/LANGUAGE.md)。新增 CLI：`packagent check` · `explain` · `build`（校验 / 人读摘要 / 产出 IR zip）。
 
 ### 三层：Harness · Agent · Prefunction
 
@@ -61,7 +75,7 @@ packagent install foo.pack.json --runtime claude-code   # 只装 Claude Code
 
 OpenClaw 和 skill 不在一层：OpenClaw **跑** agent；skill **被加载进** OpenClaw，参与拼 prompt。
 
-整合包 = 一个 agent 的 prefunction 快照。`.pack.json` + bundle，MC 整合包列 mods 那种。
+整合包 = 一个 agent 的 prefunction 快照。**主产物 `.pack.zip`**（`pack.json` + 实体 skills/rules + `mcp.json`），另留 `.pack.json` 兼容。
 
 发给你：`packagent install`，配 API，在同一 harness、同一模型下，逼近同一套 fixed_input。  
 PCL 下整合包 → 导入 → 开玩。
@@ -281,6 +295,7 @@ packagent eject --name my-agent
 | `packagent eject --name <pack>` | 卸载 |
 | `packagent status` | lock / ledger 状态（含所有已装 pack，不止最近一次） |
 | `packagent diff` | 对比 pack 或 lock |
+| `packagent dsh …` | 把包投影到 DeepSeek Harness：`.agent-pack/modpacks` + SQLite 注册表（project / map / allow） |
 
 ---
 
@@ -293,6 +308,7 @@ packagent eject --name my-agent
 | `opencode` | `.opencode/skills` | `AGENTS.md` | `opencode.json` |
 | `openclaw` | `skills.load.extraDirs`（写进 `openclaw.json`，staging 目录来自 `.agent-pack/applied-skills/`） | `AGENTS.md` | `config/mcporter.json` |
 | `hermes` | external_dirs | `AGENTS.md` | `~/.hermes/config.yaml` |
+| `dsh` | 投影目录 `.agent-pack/modpacks/<id>/`（`packagent dsh project` / `map`；会话只看见允许集） | `AGENTS.md` | 宿主只装一次管理器：`dsh plugin --profile web add @sakikotgw/pack-agent` |
 | `gemini-cli` | `.gemini/skills` | `GEMINI.md` | `.gemini/settings.json` |
 | `windsurf` | `.windsurf/skills` | — | `.windsurf/mcp_config.json` |
 | `github-copilot` | — | `.github/copilot-instructions.md` | `.vscode/mcp.json` |

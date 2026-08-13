@@ -81,6 +81,7 @@ const report = await installPackFile(cwd, outPath, { runtime: 'codex' })
 | `packagent eject [--name]` | 按 install-ledger 卸载 |
 | `packagent status` | lock / ledger / experiences |
 | `packagent diff <a> <b>` | 对比两个 pack 或 lock |
+| `packagent dsh compile\|project\|map\|index\|search\|allow\|deny\|list` | DeepSeek Harness 投影目录 + SQLite 注册表 |
 
 ### 常用 flags
 
@@ -402,6 +403,7 @@ Schema：v0.2（JSON 里 `schema` 字段的具体字符串见 [PACK_SPEC.md](PAC
 | `opencode` | `.opencode/skills`, `opencode.json` | ✓ |
 | `openclaw` | `.agents/skills`, `openclaw.json` | ✓ |
 | `hermes` | external_dirs, `~/.hermes/config.yaml` | ✓ |
+| `dsh` | `.dsh/skills`, `AGENTS.md`, `.dsh/agent-pack.cordis.yml` | ✓ |
 | `gemini-cli` | `.gemini/skills` | ✓ |
 | `windsurf` | `.windsurf/skills` | ✓ |
 | `github-copilot` | copilot-instructions | ✓ |

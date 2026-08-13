@@ -1,0 +1,10 @@
+{
+  "id": "agent.command",
+  "version": "1.0.0",
+  "traits": ["Describe", "Validate"],
+  "describe": { "title": "Agent Command", "summary": "Portable slash command directory" },
+  "layout": { "required": ["COMMAND.md"] },
+  "abi": { "exports": ["command"], "imports": [] },
+  "install": { "default": ".claude/commands/{{name}}" },
+  "portability": { "exclude": [] }
+}

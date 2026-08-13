@@ -15,10 +15,12 @@ Pack **one agent** (skills / rules / MCP) into a portable `.pack.json`, then ins
 **Fastest path — hand a `.pack.json` to any coding agent and say "install this":**
 
 ```bash
-npx --package @sakikotgw/pack-agent -- pack-agent install foo.pack.json
+npx --yes -p @sakikotgw/pack-agent packagent install foo.pack.json
 ```
 
-No `npm install` step required — just Node + internet + [Bun](https://bun.sh) (missing Bun prints an install hint, not a stack trace). This is the actual "MC modpack" experience: one file, one sentence, the agent installs itself. `npx @sakikotgw/pack-agent ...` (no `--package`) also works on modern npm, but the explicit form above never depends on npx's bin auto-pick logic.
+No `npm install` step required — just Node + internet + [Bun](https://bun.sh) (missing Bun prints an install hint, not a stack trace). This is the actual "MC modpack" experience: one file, one sentence, the agent installs itself.
+
+> Windows check (2026-07-18): `npx --package @sakikotgw/pack-agent -- pack-agent …` fails with “not recognized as a command”. Prefer `-p … packagent` above, or `npx --yes @sakikotgw/pack-agent …`.
 
 Installing for repeated use instead of one-off:
 
@@ -281,6 +283,7 @@ Full example: [mcp/config.example.json](mcp/config.example.json)
 | `packagent eject --name <pack>` | Uninstall |
 | `packagent status` | Lock / ledger status (all installed packs, not just the last one) |
 | `packagent diff` | Diff packs or locks |
+| `packagent dsh …` | Project/map/index/allow packs for DeepSeek Harness (`.agent-pack/modpacks` + SQLite catalog) |
 
 ---
 
@@ -293,6 +296,7 @@ Full example: [mcp/config.example.json](mcp/config.example.json)
 | `opencode` | `.opencode/skills` | `AGENTS.md` | `opencode.json` |
 | `openclaw` | `skills.load.extraDirs` (registered in `openclaw.json`, staged from `.agent-pack/applied-skills/`) | `AGENTS.md` | `config/mcporter.json` |
 | `hermes` | external_dirs | `AGENTS.md` | `~/.hermes/config.yaml` |
+| `dsh` | projected `.agent-pack/modpacks/<id>/` (`packagent dsh project` / `map`; session sees allow-list) | `AGENTS.md` | host installs pack-agent once: `dsh plugin --profile web add @sakikotgw/pack-agent` |
 | `gemini-cli` | `.gemini/skills` | `GEMINI.md` | `.gemini/settings.json` |
 | `windsurf` | `.windsurf/skills` | — | `.windsurf/mcp_config.json` |
 | `github-copilot` | — | `.github/copilot-instructions.md` | `.vscode/mcp.json` |

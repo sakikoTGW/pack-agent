@@ -5,9 +5,12 @@
  *   agent-pack sync              扫描当前项目 → 打便携包 → 装到所有在场 harness
  *   agent-pack sync --from x.pack.json
  *   agent-pack install x.pack.json
+ *   agent-pack upgrade x.pack.json --out ir.json
  *   agent-pack detect
  */
-import { resolve } from 'node:path'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { basename, dirname, extname, resolve } from 'node:path'
+import './tmp-root.js'
 import { collectListArg, hasFlag, parseAgentArg, parseAllowFullScan, parseCaptureAs, parseModulesArg, parseOnConflict } from './args.js'
 import { detectRuntimes, RUNTIME_ADAPTERS } from './adapters.js'
 import { exportPackFromProject } from './export.js'
@@ -15,6 +18,10 @@ import { installPackFile } from './install.js'
 import { PackConflictError } from './errors.js'
 import { syncPack } from './sync.js'
 import { PACK_APPLY_SKIP } from './project.js'
+import { formatDiag } from './lang/diagnostics.js'
+import { checkPackFile } from './lang/check.js'
+import { buildPackToml } from './lang/build.js'
+import { explainPackFile } from './lang/explain.js'
 import type { PackSelectManifest } from './select.js'
 
 function exportCommonArgs(args: string[]) {
@@ -35,9 +42,14 @@ Commands:
   pack     Selective pack (--agent / --manifest / --skills) + optional --install
   export   Write pack only (requires --agent, --manifest, --skills, or --all)
   install  Install existing pack
+  upgrade  Upgrade ccui-pack JSON to IR
   show     Inspect a pack's contents before installing (mod-list style)
   list     List packs exported/installed in this project (instance list)
   agents   List or init .agent-pack/agents.yaml
+  check    Check Pack.toml semantics
+  explain  Explain Pack.toml units and ABI summaries
+  build    Lower Pack.toml to IR and write .pack.zip
+  dsh      Project/index/allow packs for DeepSeek Harness (`.agent-pack/modpacks` + SQLite catalog)
   diff     Compare two lock.json or pack.json files
   eject    Uninstall pack (ledger-based)
   status   Show lock / ledger / experiences
@@ -56,17 +68,23 @@ function parseArgs(args: string[]): {
   from?: string
   runtime?: string
   name?: string
+  out?: string
   help?: boolean
 } {
   let path: string | undefined
   let from: string | undefined
   let runtime: string | undefined
   let name: string | undefined
+  let out: string | undefined
   for (let i = 0; i < args.length; i++) {
     const a = args[i]
     if (a === '--help' || a === '-h') return { help: true }
     if (a === '--runtime' || a === '-t') {
       runtime = args[++i]
+      continue
+    }
+    if (a === '--out' || a === '-o') {
+      out = args[++i]
       continue
     }
     if (a === '--from' || a === '-f') {
@@ -79,7 +97,7 @@ function parseArgs(args: string[]): {
     }
     if (!a.startsWith('-') && !path) path = a
   }
-  return { path, from, runtime, name }
+  return { path, from, runtime, name, out }
 }
 
 async function cmdDetect(): Promise<void> {
@@ -137,8 +155,9 @@ async function cmdExport(args: string[]): Promise<void> {
     process.exit(0)
   }
   const cwd = process.cwd()
-  const { pack, outPath, stats } = await exportPackFromProject(cwd, { runtime, name, ...common })
-  console.error(`[export] ${outPath}`)
+  const { pack, outPath, jsonPath, zipPath, stats } = await exportPackFromProject(cwd, { runtime, name, ...common })
+  console.error(`[export] ${zipPath}`)
+  console.error(`  json=${jsonPath}`)
   console.error(`  agent=${pack.agent?.id ?? '—'} author=${pack.author ?? '—'} skills=${stats.skills} rules=${stats.rules} mcp=${stats.mcp} bundle=${pack.bundle?.files?.length ?? 0}`)
   console.log(outPath)
 }
@@ -151,11 +170,11 @@ async function cmdInstall(args: string[]): Promise<void> {
   const onConflict = parseOnConflict(args)
   const allowGlobalConfig = hasFlag(args, '--global-config', '--global')
   if (help || !path) {
-    console.log('Usage: agent-pack install <pack.json> [--runtime id] [--capture-as skill|experience] [--on-conflict stop|skip|replace] [--modules ...] [--no-bootstrap] [--global-config]')
+    console.log('Usage: agent-pack install <pack.zip|pack.json|https://...> [--runtime id] [--capture-as skill|experience] [--on-conflict stop|skip|replace] [--modules ...] [--no-bootstrap] [--global-config]')
     process.exit(help ? 0 : 1)
   }
   const cwd = process.cwd()
-  const abs = resolve(cwd, path)
+  const abs = /^https?:\/\//i.test(path) ? path : resolve(cwd, path)
   const report = await installPackFile(cwd, abs, {
     ...(runtime ? { runtime } : {}),
     noBootstrap,
@@ -167,6 +186,31 @@ async function cmdInstall(args: string[]): Promise<void> {
   console.log(JSON.stringify(report, null, 2))
   if (!report.ok) process.exit(1)
   console.log(`\nOK: install → [${report.projected.join(', ')}]`)
+}
+
+async function cmdUpgrade(args: string[]): Promise<void> {
+  const { path, out, help } = parseArgs(args)
+  if (help || !path) {
+    console.log('Usage: agent-pack upgrade <pack.json> [--out ir.json]')
+    process.exit(help ? 0 : 1)
+  }
+
+  const { upgradePackDocToIr } = await import('./lang/upgrade.js')
+  const cwd = process.cwd()
+  const abs = resolve(cwd, path)
+  const input = JSON.parse(readFileSync(abs, 'utf8')) as unknown
+  const ir = upgradePackDocToIr(input)
+  const text = JSON.stringify(ir, null, 2)
+
+  if (out) {
+    const outPath = resolve(cwd, out)
+    mkdirSync(dirname(outPath), { recursive: true })
+    writeFileSync(outPath, `${text}\n`, 'utf8')
+    console.log(outPath)
+    return
+  }
+
+  console.log(text)
 }
 
 async function cmdPack(args: string[]): Promise<void> {
@@ -304,6 +348,55 @@ async function cmdShow(args: string[]): Promise<void> {
   console.log(formatPackShow(show))
 }
 
+async function cmdCheck(args: string[]): Promise<void> {
+  const { path, help } = parseArgs(args)
+  if (help || !path) {
+    console.log('Usage: agent-pack check <Pack.toml>')
+    process.exit(help ? 0 : 1)
+  }
+
+  const report = await checkPackFile(resolve(process.cwd(), path))
+  for (const diag of report.diagnostics) {
+    console.log(formatDiag(diag))
+  }
+  if (!report.ok) process.exit(1)
+  console.log('OK: check')
+}
+
+async function cmdBuild(args: string[]): Promise<void> {
+  const { path, out, help } = parseArgs(args)
+  if (help || !path) {
+    console.log('Usage: agent-pack build <Pack.toml> [--out path]')
+    process.exit(help ? 0 : 1)
+  }
+
+  const abs = resolve(process.cwd(), path)
+  const text = readFileSync(abs, 'utf8')
+  const defaultOut = resolve(dirname(abs), `${basename(abs, extname(abs)) || 'pack'}.pack.zip`)
+  const report = await buildPackToml(text, { out: out ? resolve(process.cwd(), out) : defaultOut })
+  for (const diag of report.diagnostics) {
+    console.log(formatDiag(diag))
+  }
+  if (!report.ok) process.exit(1)
+  if (report.zipPath) console.log(report.zipPath)
+  console.log('OK: build')
+}
+
+async function cmdExplain(args: string[]): Promise<void> {
+  const { path, help } = parseArgs(args)
+  if (help || !path) {
+    console.log('Usage: agent-pack explain <Pack.toml>')
+    process.exit(help ? 0 : 1)
+  }
+
+  const report = await explainPackFile(resolve(process.cwd(), path))
+  console.log(report.text)
+  for (const diag of report.diagnostics) {
+    console.error(formatDiag(diag))
+  }
+  if (!report.ok) process.exit(1)
+}
+
 async function cmdAgents(args: string[]): Promise<void> {
   const sub = args[0]
   const cwd = process.cwd()
@@ -370,6 +463,20 @@ async function main(): Promise<void> {
     case 'show':
       await cmdShow(rest)
       break
+    case 'check':
+      await cmdCheck(rest)
+      break
+    case 'build':
+      await cmdBuild(rest)
+      break
+    case 'dsh': {
+      const { runDshCli } = await import('../dsh-modpack/cli.js')
+      await runDshCli(rest)
+      break
+    }
+    case 'explain':
+      await cmdExplain(rest)
+      break
     case 'diff':
       await cmdDiff(rest)
       break
@@ -384,6 +491,9 @@ async function main(): Promise<void> {
       break
     case 'install':
       await cmdInstall(rest)
+      break
+    case 'upgrade':
+      await cmdUpgrade(rest)
       break
     case 'detect':
       await cmdDetect()

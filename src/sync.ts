@@ -42,15 +42,25 @@ export async function syncPack(cwd: string, opts: SyncOpts = {}): Promise<SyncRe
   let lockPath: string | undefined
 
   if (opts.from) {
-    exportPath = resolve(cwd, opts.from)
-    pack = await readPackFile(exportPath)
-    if (!opts.noBootstrap) {
-      pack = await injectBootstrapIntoPack(pack, cwd)
+    const { resolvePackPath, isRemotePackUrl } = await import('./fetch-pack.js')
+    const resolved = await resolvePackPath(isRemotePackUrl(opts.from) ? opts.from : resolve(cwd, opts.from))
+    exportPath = opts.from
+    try {
+      pack = await readPackFile(resolved.path)
+      if (!opts.noBootstrap) {
+        pack = await injectBootstrapIntoPack(pack, cwd)
+      }
+      const projectCfg = await loadPackProjectConfig(cwd, stateDir)
+      pack = await enrichPackVersions(cwd, pack)
+      pack.schema = projectCfg.packSchema ?? PACK_SCHEMA_V02
+      lockPath = await writePackLock(cwd, pack, stateDir)
+      const install = await installPack(cwd, pack, { ...opts, stateDir })
+      return { ...install, exportPath, exported, stats, lockPath }
+    } finally {
+      if (resolved.cleanup) {
+        await fs.rm(resolved.cleanup, { force: true }).catch(() => {})
+      }
     }
-    const projectCfg = await loadPackProjectConfig(cwd, stateDir)
-    pack = await enrichPackVersions(cwd, pack)
-    pack.schema = projectCfg.packSchema ?? PACK_SCHEMA_V02
-    lockPath = await writePackLock(cwd, pack, stateDir)
   } else {
     const ex = await exportPackFromProject(cwd, { ...opts, stateDir })
     pack = ex.pack

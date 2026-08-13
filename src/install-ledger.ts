@@ -23,6 +23,9 @@ export type LedgerItemKind =
   | 'subagent'
   | 'memory'
   | 'settings'
+  | 'command'
+  // legacy pre-Kind `.collab` installs still need eject compatibility
+  | 'collab'
   | 'mcp-bootstrap'
   | 'staging'
 
@@ -204,6 +207,9 @@ export function buildInstallLedger(input: {
   }
   for (const s of input.extInstalled?.settings ?? []) {
     items.push({ kind: 'settings', path: s })
+  }
+  for (const c of input.extInstalled?.commands ?? []) {
+    items.push({ kind: 'command', path: c })
   }
 
   for (const f of input.mcpBootstrapFiles ?? []) {

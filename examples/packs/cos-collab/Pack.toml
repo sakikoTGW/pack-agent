@@ -1,0 +1,6 @@
+edition = "2026"
+name = "cos-collab"
+
+[[unit]]
+kind = "cos.collab"
+ref = "."

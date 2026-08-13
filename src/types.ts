@@ -25,6 +25,12 @@ export type PackSkillEntry = {
   description?: string
   requires?: string[]
   deliverAs?: CaptureDeliver
+  /** 识别码；缺省用 name。预留，给发布/检索 */
+  id?: string
+  /** 发布者。预留 */
+  publisher?: string
+  /** 规范性标注。预留 */
+  spec?: string
 }
 
 export type PackRuleEntry = {
@@ -47,6 +53,9 @@ export type PackMcpEntry = {
   package?: string
   packageVersion?: string
   configHash?: string
+  id?: string
+  publisher?: string
+  spec?: string
 }
 
 export type PackExperience = {
@@ -97,6 +106,22 @@ export type PackSettingsEntry = {
   contentHash?: string
 }
 
+/** 斜杠指令 / slash command（Cursor `.cursor/commands`、Claude `.claude/commands`） */
+export type PackCommandEntry = {
+  name?: string
+  ref?: string
+  /** 来源 harness 目录提示 */
+  scope?: string
+  contentHash?: string
+}
+
+/** @deprecated Legacy pre-Kind `.collab/` payload kept for upgrade compatibility only. */
+export type PackCollabEntry = {
+  name?: string
+  ref?: string
+  contentHash?: string
+}
+
 export type PackResolution = {
   lockedAt?: string
   packContentHash?: string
@@ -142,6 +167,10 @@ export type PackDoc = {
   memory?: { files?: PackMemoryEntry[] }
   /** settings 片段（permissions/env，默认关） */
   settings?: { fragments?: PackSettingsEntry[] }
+  /** slash commands（默认开，跨 harness 迁移关键） */
+  commands?: { files?: PackCommandEntry[] }
+  /** @deprecated Legacy pre-Kind `.collab/` payload; new packs should use `cos.collab` Kind units. */
+  collab?: { files?: PackCollabEntry[] }
   /** 本包实际纳入的模块开关（快照） */
   modules?: PackModules
   tools?: { mcp?: PackMcpEntry[]; builtin_map?: Array<{ name?: string; mapTo?: string }> }
@@ -151,6 +180,38 @@ export type PackDoc = {
   resolution?: PackResolution
   meta?: Record<string, unknown>
   bundle?: { portable?: boolean; files?: Array<{ path: string; content: string }> }
+  /** DeepSeek Harness：任意 Cordis 插件都可进整合包 */
+  dsh?: PackDshLayer
+}
+
+export const PACK_MOD_SCHEMA = 'pack-agent.mod/v0'
+
+export type PackModKind = 'skill' | 'mcp' | 'plugin' | 'rule' | 'command' | 'hook'
+
+/** 整合包里的一份 mod。publisher / spec 现可空，给以后的发布与规范性标注。 */
+export type PackModManifest = {
+  schema: typeof PACK_MOD_SCHEMA
+  id: string
+  kind: PackModKind
+  name: string
+  publisher: string
+  version: string
+  spec: string
+  path: string
+}
+
+export type PackDshPlugin = {
+  id: string
+  name: string
+  config?: Record<string, unknown>
+  disabled?: boolean
+  inject?: string[]
+}
+
+export type PackDshLayer = {
+  persona?: string
+  preset?: { id?: string; name?: string; description?: string }
+  plugins?: PackDshPlugin[]
 }
 
 /** 冲突时：stop=停下并报错；skip=跳过该项；replace=覆盖 */
@@ -211,6 +272,7 @@ export type InstallReport = {
   subagents?: string[]
   memory?: string[]
   settings?: string[]
+  commands?: string[]
   requiresCheck?: { satisfied: unknown[]; missing: unknown[] }
   ledgerPath?: string
   mcpBootstrap?: string[]

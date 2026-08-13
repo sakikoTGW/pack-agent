@@ -2,8 +2,8 @@
 /** Conflict policy: stop / skip / replace */
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
-import { tmpdir } from 'node:os'
 import { exportPackFromProject } from '../src/export.js'
+import { packTestTmp } from './tmp-root.js'
 import { installPackFile } from '../src/install.js'
 import { PackConflictError } from '../src/errors.js'
 import { writeSkillOriginMarker } from '../src/markers.js'
@@ -27,7 +27,7 @@ async function expectConflict(label: string, fn: () => Promise<unknown>): Promis
   }
 }
 
-const root = join(tmpdir(), `pack-conflict-${Date.now()}`)
+const root = packTestTmp(`pack-conflict-${Date.now()}`)
 const src = join(root, 'src')
 const target = join(root, 'target')
 

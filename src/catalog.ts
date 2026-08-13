@@ -3,7 +3,7 @@
  * 纯读盘汇总，不改任何状态。
  */
 import { promises as fs } from 'node:fs'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { listInstallLedgers, type InstallLedger } from './install-ledger.js'
 import { readPackLock } from './lock.js'
 import { readPackFile } from './portable.js'
@@ -43,7 +43,19 @@ export type PackCatalog = {
 async function listPackFiles(dir: string): Promise<string[]> {
   try {
     const names = await fs.readdir(dir)
-    return names.filter(n => n.endsWith('.pack.json')).map(n => join(dir, n))
+    const zips = names.filter(n => n.endsWith('.pack.zip')).map(n => join(dir, n))
+    const jsons = names.filter(n => n.endsWith('.pack.json')).map(n => join(dir, n))
+    // 同名优先 zip
+    const byStem = new Map<string, string>()
+    for (const f of jsons) {
+      const stem = basename(f).replace(/\.pack\.json$/i, '')
+      byStem.set(stem, f)
+    }
+    for (const f of zips) {
+      const stem = basename(f).replace(/\.pack\.zip$/i, '')
+      byStem.set(stem, f)
+    }
+    return [...byStem.values()]
   } catch {
     return []
   }

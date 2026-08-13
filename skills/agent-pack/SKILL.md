@@ -1,7 +1,7 @@
 ---
 name: agent-pack
-version: 0.3.0
-description: Pack and install agent configs as portable modpacks. Use when the user wants to pack/export/sync skills, rules, MCP, or harness prompts; compose a partial pack from selection; or install a pack to all detected harnesses (Claude Code, Codex, etc.). Triggers include 打包、整合包、装包、sync、export pack、复刻 agent、把 prompt 打进包.
+version: 0.4.0
+description: Pack and install agent configs as portable modpacks. Use when the user wants to pack/export/sync skills, rules, MCP, commands, or harness prompts; compose a partial pack from selection; or install a pack (.pack.zip / .pack.json / URL) to detected harnesses (Claude Code, Cursor, Codex, etc.). Triggers include 打包、整合包、装包、sync、export pack、复刻 agent、把 prompt 打进包、迁移 agent.
 ---
 # Agent Modpack — 像装 MC 整合包一样，装你的 agent
 

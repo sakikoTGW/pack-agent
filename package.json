@@ -1,14 +1,17 @@
 {
   "name": "@sakikotgw/pack-agent",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Agent Modpack — install your agent like an MC modpack (skills/rules/MCP portable packs)",
   "type": "module",
   "files": [
     "bin",
     "src",
+    "dsh-modpack",
+    "dsh-plugin",
+    "crates",
+    "scripts",
     "mcp",
     "skills",
-    "scripts",
     "vendor",
     "docs",
     "README.md",
@@ -24,7 +27,13 @@
   },
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./dsh": "./dsh-plugin/src/index.ts"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./dsh-plugin/cordis.root.yml"
+    }
   },
   "keywords": [
     "agent-modpack",
@@ -35,7 +44,9 @@
     "codex",
     "mcp",
     "skills",
-    "modpack"
+    "modpack",
+    "deepseek-harness",
+    "dsh"
   ],
   "license": "MIT",
   "author": "sakikotgw",
@@ -51,11 +62,13 @@
     "install-pack": "bun run src/cli.ts install",
     "detect": "bun run src/cli.ts detect",
     "mcp": "bun run mcp/server.ts",
-    "test": "bun run test/install.ts && bun run test/portable-ab.ts && bun run test/conflict.ts && bun run test/transcript-distill.ts && bun run test/agent-profile.ts"
+    "test": "bun run test/tmp-root-assert.ts && bun run dsh-modpack/test.ts && bun run dsh-modpack/catalog.test.ts && bun run dsh-modpack/map.test.ts && bun run dsh-plugin/test.ts && bun run test/install.ts && bun run test/portable-ab.ts && bun run test/pack-zip.ts && bun run test/commands-module.ts && bun run test/conflict.ts && bun run test/transcript-distill.ts && bun run test/agent-profile.ts && bun run test/experience-live.ts && bun run test/dsh-adapter.ts && bun run test/dsh-harness-live.ts",
+    "pack-index": "bun run scripts/build-pack-index.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "*",
     "json5": "^2.2.3",
+    "smol-toml": "^1.7.1",
     "yaml": "^2.8.0",
     "zod": "*"
   },

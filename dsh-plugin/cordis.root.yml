@@ -1,0 +1,13 @@
+# pack-agent repo as a DSH profile bundle
+# dsh plugin --profile web add <pack-agent-root>
+- insert:
+    - id: pack-agent
+      name: '@sakikotgw/pack-agent/dsh'
+      inject: [tools, skills]
+    - id: pack-agent-dsh-skills
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: pack-agent-dsh
+        includeDefaultRoots: false
+        customSkillDirs:
+          - ./dsh-plugin/skills

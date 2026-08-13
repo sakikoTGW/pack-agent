@@ -14,8 +14,9 @@ import { promises as fs } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
 import JSON5 from 'json5'
+import { parseDshCordisMcp } from './dsh-cordis.js'
 
-export type McpFormat = 'json-mcpServers' | 'json-mcp' | 'toml-mcp_servers' | 'yaml-mcp_servers'
+export type McpFormat = 'json-mcpServers' | 'json-mcp' | 'toml-mcp_servers' | 'yaml-mcp_servers' | 'yaml-cordis-patch'
 
 export type SkillDir = { token: string; nested?: boolean } // nested: <dir>/*/skills/<name>/SKILL.md（AstrBot 插件内置）
 export type RuleSrc =
@@ -175,6 +176,32 @@ export const RUNTIME_ADAPTERS: RuntimeAdapter[] = [
     note: 'Hermes：skills ~/.hermes/skills/<分类>/<名>/SKILL.md（亦支持 config skills.external_dirs 非侵入挂载）；MCP yaml mcp_servers；瓶口 model.base_url + provider: custom。见 HARNESS_RESEARCH.md §4。',
   },
   {
+    // 对照 deepseek-harness-master（2026-08-13 zip）源码核实，非猜测：
+    // - skills：packages/skill/skill-filesystem/src/index.ts roots()
+    //   项目 `.dsh/skills` rank 100 先于 `.agents/skills` rank 200；用户 `~/.dsh/skills`（$DSH_HOME）。
+    //   目录包 `<name>/SKILL.md` 与扁平 `<name>.md`；名称须 kebab-case。
+    // - rules：packages/context/agent-instructions 默认 AGENTS.md + CLAUDE.md。
+    // - MCP：没有 mcp.json。@deepseek-ai/dsh-mcp-client 是 cordis 插件，经
+    //   `dsh web --patch` 或 `$DSH_HOME/cordis.patch.yml` 的 insert 补丁加载
+    //   （examples/mcp-memory/*.cordis.yml）。
+    // - 经验钩子：hooks-claude-code 读 Claude Code 方言 hooks.json；桥接本身也要进 cordis 组合。
+    id: 'dsh',
+    label: 'DeepSeek Harness',
+    verified: true,
+    detect: ['.dsh', '.dsh/skills', '.dsh-project', '~/.dsh', '~/.dsh/settings.yaml'],
+    skills: [
+      { token: '.dsh/skills' },
+      { token: '.agents/skills' },
+      { token: '~/.dsh/skills' },
+    ],
+    rules: [
+      { kind: 'file', token: 'AGENTS.md', format: 'agents-md' },
+      { kind: 'file', token: 'CLAUDE.md', format: 'claude-md' },
+    ],
+    mcp: [{ token: '.dsh/agent-pack.cordis.yml', format: 'yaml-cordis-patch' }],
+    note: 'DeepSeek Harness：skills 写项目 .dsh/skills（skill-filesystem 自动发现）；MCP/经验钩子写 .dsh/agent-pack.cordis.yml，需 dsh web --patch 或并入 $DSH_HOME/cordis.patch.yml。',
+  },
+  {
     // 据本机 clone 核实（HARNESS_RESEARCH.md §5）：AstrBot v4 同时有 plugins(star) + skills。
     // skills=data/skills/<名>/SKILL.md（与 Codex/Claude 同 frontmatter）；插件自带 skills 在 <plugin>/skills/。
     // CCui 特殊处理：把整合包包装成插件 data/plugins/ccui-<pack>/（见 §5）。瓶口 provider.api_base。
@@ -306,6 +333,13 @@ export function runtimeProjectionDirs(runtimeId: string): { skillsDir: string; r
   return { skillsDir, ruleDir }
 }
 
+/** Windows junction：Bun/Node Dirent 常报 isSymbolicLink=true 且 isDirectory=false，不能只信 isDirectory。 */
+function looksLikeSkillContainer(e: import('node:fs').Dirent): boolean {
+  if (e.name.startsWith('.')) return false
+  if (e.isFile()) return false
+  return e.isDirectory() || e.isSymbolicLink()
+}
+
 async function scanSkillDir(dir: string, scope: string): Promise<ScannedResource[]> {
   const out: ScannedResource[] = []
   let entries: import('node:fs').Dirent[] = []
@@ -315,7 +349,7 @@ async function scanSkillDir(dir: string, scope: string): Promise<ScannedResource
     return out
   }
   for (const e of entries) {
-    if (!e.isDirectory()) continue
+    if (!looksLikeSkillContainer(e)) continue
     const skillMd = join(dir, e.name, 'SKILL.md')
     if (await pathExists(skillMd)) out.push({ name: e.name, ref: skillMd, scope })
   }
@@ -332,7 +366,7 @@ async function scanNestedSkills(dir: string, scope: string): Promise<ScannedReso
     return out
   }
   for (const p of plugins) {
-    if (!p.isDirectory()) continue
+    if (!looksLikeSkillContainer(p)) continue
     out.push(...(await scanSkillDir(join(dir, p.name, 'skills'), `${scope}:${p.name}`)))
   }
   return out
@@ -499,6 +533,7 @@ async function scanMcpSrc(src: McpSrc, cwd: string): Promise<ScannedMcp[]> {
   if (!text) return []
   if (src.format === 'toml-mcp_servers') return parseTomlMcpServers(text)
   if (src.format === 'yaml-mcp_servers') return parseYamlMcpServers(text)
+  if (src.format === 'yaml-cordis-patch') return parseDshCordisMcp(text)
   return parseJsonMcp(text, src.format)
 }
 

@@ -1,0 +1,29 @@
+{
+  "name": "@sakikotgw/pack-agent-dsh",
+  "version": "0.4.0",
+  "description": "pack-agent as a DeepSeek Harness plugin — compile and install Agent Modpacks on DSH",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "skills",
+    "cordis.patch.yml",
+    "README.md",
+    "INSTALL.md"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "agent-modpack",
+    "pack-agent"
+  ]
+}

@@ -1,7 +1,8 @@
 /**
  * 经验罐头 → 各 harness 会话注入口（与 L1 skills 投射并列）。
  *
- * Skill = 外挂 mod；Experience = SessionStart / pre_llm / persona 内化注入，不写 skills 树。
+ * Skill = 外挂 mod（固化）；Experience = 会话注入且随对话变（live），不写 skills 树。
+ * SessionStart 灌基座罐头；UserPromptSubmit / pre_llm_call 每轮更新 live。
  * 槽位与 RUNTIME_ADAPTERS 1:1 覆盖（见 validateExperienceAdapterCoverage）。
  */
 import { promises as fs } from 'node:fs'
@@ -12,6 +13,7 @@ import { parse as yamlParse, stringify as yamlStringify } from 'yaml'
 import { RUNTIME_ADAPTERS } from './adapters.js'
 import { loadExperienceInjection } from './experience-loader.js'
 import { PackConflictError, buildFileErrorDetail } from './errors.js'
+import { DSH_APPLY_NOTE, dshExperienceHooksInsert, upsertDshCordisInsert } from './dsh-cordis.js'
 
 /**
  * 解析目标 harness 配置失败时**绝不能**当成空文件重写——那样会把用户文件里
@@ -88,9 +90,27 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
   },
   {
     runtime: 'claude-code',
+    label: 'Claude Code project UserPromptSubmit (live experience)',
+    resolvePath: cwd => join(cwd, '.claude', 'settings.json'),
+    hookEvent: 'UserPromptSubmit',
+    kind: 'hook-json',
+    createIfMissing: true,
+    scope: 'project',
+  },
+  {
+    runtime: 'claude-code',
     label: 'Claude Code user SessionStart',
     resolvePath: () => join(homedir(), '.claude', 'settings.json'),
     hookEvent: 'SessionStart',
+    kind: 'hook-json',
+    createIfMissing: false,
+    scope: 'user',
+  },
+  {
+    runtime: 'claude-code',
+    label: 'Claude Code user UserPromptSubmit (live experience)',
+    resolvePath: () => join(homedir(), '.claude', 'settings.json'),
+    hookEvent: 'UserPromptSubmit',
     kind: 'hook-json',
     createIfMissing: false,
     scope: 'user',
@@ -106,6 +126,15 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
   },
   {
     runtime: 'codex',
+    label: 'Codex Claude-style UserPromptSubmit (live experience)',
+    resolvePath: cwd => join(cwd, '.claude', 'settings.json'),
+    hookEvent: 'UserPromptSubmit',
+    kind: 'hook-json',
+    createIfMissing: true,
+    scope: 'project',
+  },
+  {
+    runtime: 'codex',
     label: 'Codex project settings',
     resolvePath: cwd => join(cwd, '.codex', 'settings.json'),
     hookEvent: 'SessionStart',
@@ -115,9 +144,27 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
   },
   {
     runtime: 'codex',
+    label: 'Codex project UserPromptSubmit (live experience)',
+    resolvePath: cwd => join(cwd, '.codex', 'settings.json'),
+    hookEvent: 'UserPromptSubmit',
+    kind: 'hook-json',
+    createIfMissing: true,
+    scope: 'project',
+  },
+  {
+    runtime: 'codex',
     label: 'Codex user settings',
     resolvePath: () => join(homedir(), '.codex', 'settings.json'),
     hookEvent: 'SessionStart',
+    kind: 'hook-json',
+    createIfMissing: false,
+    scope: 'user',
+  },
+  {
+    runtime: 'codex',
+    label: 'Codex user UserPromptSubmit (live experience)',
+    resolvePath: () => join(homedir(), '.codex', 'settings.json'),
+    hookEvent: 'UserPromptSubmit',
     kind: 'hook-json',
     createIfMissing: false,
     scope: 'user',
@@ -226,6 +273,24 @@ export const EXPERIENCE_INJECT_SLOTS: ExperienceInjectSlot[] = [
     label: 'Copilot vscode settings hooks',
     resolvePath: cwd => join(cwd, '.vscode', 'settings.json'),
     hookEvent: 'SessionStart',
+    kind: 'hook-json',
+    createIfMissing: true,
+    scope: 'project',
+  },
+  {
+    runtime: 'dsh',
+    label: 'DeepSeek Harness project SessionStart (Claude Code dialect)',
+    resolvePath: cwd => join(cwd, '.dsh', 'hooks.json'),
+    hookEvent: 'SessionStart',
+    kind: 'hook-json',
+    createIfMissing: true,
+    scope: 'project',
+  },
+  {
+    runtime: 'dsh',
+    label: 'DeepSeek Harness project UserPromptSubmit (live experience)',
+    resolvePath: cwd => join(cwd, '.dsh', 'hooks.json'),
+    hookEvent: 'UserPromptSubmit',
     kind: 'hook-json',
     createIfMissing: true,
     scope: 'project',
@@ -562,6 +627,25 @@ export async function projectExperienceToHarnesses(
       } else if (result.parseError) {
         report.skipped.push(`${runtime}:${slot.label} — ${result.parseError.split('\n')[0]}`)
       }
+    }
+
+    if (runtime === 'dsh' && any) {
+      const hooksJson = join(cwd, '.dsh', 'hooks.json')
+      await upsertDshCordisInsert(join(cwd, '.dsh', 'agent-pack.cordis.yml'), [
+        dshExperienceHooksInsert(hooksJson),
+      ])
+      if (includeGlobal) {
+        const dshHome = join(homedir(), '.dsh')
+        try {
+          await fs.access(dshHome)
+          await upsertDshCordisInsert(join(dshHome, 'cordis.patch.yml'), [
+            dshExperienceHooksInsert(hooksJson),
+          ])
+        } catch {
+          /* no ~/.dsh */
+        }
+      }
+      if (!report.notes.includes(DSH_APPLY_NOTE)) report.notes.push(DSH_APPLY_NOTE)
     }
 
     if (!any && injectionText.trim()) {

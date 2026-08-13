@@ -2,8 +2,8 @@
 /** agents.yaml profiles: --agent export + agent-required guard */
 import { join } from 'node:path'
 import { mkdtemp, rm, writeFile, mkdir, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import { exportPackFromProject } from '../src/export.js'
+import { packTestTmp } from './tmp-root.js'
 import { PackConflictError } from '../src/errors.js'
 
 const repo = join(import.meta.dir, '..')
@@ -47,7 +47,7 @@ for (const [name, ok] of checks) {
   if (!ok) failed++
 }
 
-const tmp = await mkdtemp(join(tmpdir(), 'pack-agent-'))
+const tmp = await mkdtemp(packTestTmp('pack-agent-'))
 try {
   await mkdir(join(tmp, '.agents', 'skills', 'solo'), { recursive: true })
   await writeFile(join(tmp, 'AGENTS.md'), '# solo\n', 'utf8')

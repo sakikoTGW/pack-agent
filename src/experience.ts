@@ -1,9 +1,9 @@
 /**
  * 经验罐头（Experience Can）— 蒸馏态 agent 行为，非 skill 固化。
  *
- * 与 skill 约束的分工（打包者/安装者可选）：
- * - skill：装进 .claude/skills 等，持久约束，可被检索
- * - experience：装进 .agent-pack/experiences/，会话态注入，可 offset，不污染 skills 树
+ * 主矛盾：驯服经验要跟着对话变；skill 做完就焊死。
+ * - skill：装进 .claude/skills 等，持久约束，可被检索（固化）
+ * - experience：装进 .agent-pack/experiences/，hook 注回会话；live.json 随轮次变
  */
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'

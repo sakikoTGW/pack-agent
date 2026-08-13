@@ -13,15 +13,17 @@ export type PackModuleId =
   | 'memory'
   | 'settings'
   | 'transcripts'
+  | 'commands'
 
 export type PackModules = Partial<Record<PackModuleId, boolean>>
 
-/** 默认 L1 + 经验罐头；hooks/subagents/memory 等需显式开启 */
+/** 默认 L1 + commands + 经验罐头；hooks/… 需显式开启 */
 export const DEFAULT_PACK_MODULES: Required<PackModules> = {
   skills: true,
   rules: true,
   mcp: true,
   experiences: true,
+  commands: true,
   hooks: false,
   subagents: false,
   memory: false,
@@ -99,7 +101,9 @@ export function filterPackByModules(pack: PackDoc, modules: Required<PackModules
   if (!modules.settings) {
     out.settings = { fragments: [] }
   }
-
+  if (!modules.commands) {
+    out.commands = { files: [] }
+  }
   if (out.bundle?.files?.length) {
     const files = out.bundle.files.filter(f => {
       if (f.path.startsWith('skills/') && !modules.skills) return false
@@ -108,6 +112,7 @@ export function filterPackByModules(pack: PackDoc, modules: Required<PackModules
       if (f.path.startsWith('agents/') && !modules.subagents) return false
       if (f.path.startsWith('memory/') && !modules.memory) return false
       if (f.path.startsWith('settings/') && !modules.settings) return false
+      if (f.path.startsWith('commands/') && !modules.commands) return false
       return true
     })
     out.bundle = { ...out.bundle, files }

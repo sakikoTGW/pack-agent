@@ -1,0 +1,10 @@
+{
+  "id": "agent.plugin",
+  "version": "1.0.0",
+  "traits": ["Describe", "Validate"],
+  "describe": { "title": "Harness Plugin", "summary": "Portable Cordis/DSH plugin row in a modpack" },
+  "layout": { "required": [] },
+  "abi": { "exports": ["plugin"], "imports": [] },
+  "install": { "default": "dsh.plugins" },
+  "portability": { "exclude": [] }
+}

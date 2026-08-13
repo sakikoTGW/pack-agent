@@ -1,0 +1,10 @@
+{
+  "id": "agent.skill",
+  "version": "1.0.0",
+  "traits": ["Describe", "Validate"],
+  "describe": { "title": "Agent Skill", "summary": "Portable skill directory with SKILL.md" },
+  "layout": { "required": ["SKILL.md"] },
+  "abi": { "exports": ["skill"], "imports": [] },
+  "install": { "default": ".agents/skills/{{name}}" },
+  "portability": { "exclude": [] }
+}

@@ -9,3 +9,46 @@ agents:
       - agent-pack
     mcp: []
     captureAs: experience
+
+  cos-best-llm:
+    author: pack-agent
+    description: >-
+      Cos Best LLM (ILS) + collab-bootstrap + Cos Collab rules + agent-pack MCP.
+      Portable L1 pack for intact install via packagent.
+    runtime: cursor
+    packName: cos-best-llm
+    skills:
+      - cos-best-llm
+      - collab-bootstrap
+    rules:
+      - cbl-always.mdc
+      - collab-foundation-guard.mdc
+      - no-ai-fluff.mdc
+      - problem-classification.mdc
+      - zh-cn-implement.mdc
+    mcp:
+      - agent-pack
+    captureAs: experience
+    bootstrap:
+      skills:
+        - agent-pack
+
+  harness-engineer:
+    author: pack-agent
+    description: >-
+      Harness engineering role — Superpowers workflow + agent-pack.
+      Design/adapt adapters, packs, experience hooks across Claude/Cursor/Codex.
+    runtime: cursor
+    skills:
+      - using-superpowers
+      - agent-pack
+      - brainstorming
+      - writing-plans
+      - systematic-debugging
+      - verification-before-completion
+      - writing-skills
+      - test-driven-development
+    rules:
+      - using-superpowers.mdc
+    mcp: []
+    captureAs: experience

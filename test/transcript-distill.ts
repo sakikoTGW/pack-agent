@@ -2,8 +2,8 @@
 /** Transcript distillation → experience jar */
 import { mkdtemp, readFile, rm, writeFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import { tmpdir } from 'node:os'
 import { distillTranscriptContent } from '../src/transcript-distill.js'
+import { packTestTmp } from './tmp-root.js'
 import { embedExtendedBundleFiles, mergeExtendedIntoPack } from '../src/scan-modules.js'
 import { installPack } from '../src/install.js'
 import { summarizeSessionJsonl } from '../vendor/agent-knowledge/summary.ts'
@@ -33,8 +33,8 @@ async function main(): Promise<void> {
   }
   console.log('direct distill ok, prompt chars:', exp.harness.base_system_prompt.length)
 
-  const tmpA = await mkdtemp(join(tmpdir(), 'pack-transcript-a-'))
-  const tmpB = await mkdtemp(join(tmpdir(), 'pack-transcript-b-'))
+  const tmpA = await mkdtemp(packTestTmp('pack-transcript-a-'))
+  const tmpB = await mkdtemp(packTestTmp('pack-transcript-b-'))
   try {
     const relRef = '.cursor/projects/test/agent-transcripts/t.jsonl'
     await mkdir(join(tmpA, '.cursor/projects/test/agent-transcripts'), { recursive: true })
@@ -55,6 +55,7 @@ async function main(): Promise<void> {
       subagents: [],
       memory: [],
       settings: [],
+      commands: [],
       transcripts: [{ name: 't.jsonl', ref: relRef }],
     })
     pack = await embedExtendedBundleFiles(tmpA, pack)

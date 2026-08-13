@@ -11,6 +11,7 @@ export type ModuleInstallReport = {
   subagents: string[]
   memory: string[]
   settings: string[]
+  commands: string[]
   skipped: string[]
 }
 
@@ -98,7 +99,14 @@ export async function installExtendedModules(
   pack: PackDoc,
   stateDir = '.agent-pack',
 ): Promise<ModuleInstallReport> {
-  const report: ModuleInstallReport = { hooks: [], subagents: [], memory: [], settings: [], skipped: [] }
+  const report: ModuleInstallReport = {
+    hooks: [],
+    subagents: [],
+    memory: [],
+    settings: [],
+    commands: [],
+    skipped: [],
+  }
   const staging = await materializePortableBundle(cwd, pack, stateDir)
 
   for (const h of pack.automation?.hooks ?? []) {
@@ -173,6 +181,23 @@ export async function installExtendedModules(
     await fs.mkdir(dirname(settingsPath), { recursive: true })
     await fs.writeFile(settingsPath, JSON.stringify(doc, null, 2), 'utf8')
     report.settings.push(`${settingsPath}#${key}`)
+  }
+
+  // slash commands → Cursor + Claude Code（迁移：两处都写，缺目录就建）
+  for (const c of pack.commands?.files ?? []) {
+    const name = c.name ?? 'command'
+    const rel = `commands/${name}.md`
+    const content = await readBundleText(staging, pack, rel)
+    if (!content) {
+      report.skipped.push(`command:${name} (missing bundle)`)
+      continue
+    }
+    for (const destDir of [join(cwd, '.cursor', 'commands'), join(cwd, '.claude', 'commands')]) {
+      const dest = join(destDir, `${name}.md`)
+      await fs.mkdir(destDir, { recursive: true })
+      await fs.writeFile(dest, content, 'utf8')
+      report.commands.push(dest)
+    }
   }
 
   return report

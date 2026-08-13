@@ -8,6 +8,7 @@ import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { PackExperience } from './types.js'
 import type { ExperienceIndex } from './experience.js'
+import { formatLiveInjection, loadLiveState } from './experience-live.js'
 
 export type ExperienceInjection = {
   systemPromptDelta: string
@@ -73,11 +74,27 @@ export async function loadExperienceInjection(
     }
   }
 
-  if (!blocks.length) return empty
+  if (!blocks.length) {
+    const liveOnly = await loadLiveState(cwd, stateDir)
+    const liveText = liveOnly ? formatLiveInjection(liveOnly) : ''
+    if (!liveText) return empty
+    return {
+      systemPromptDelta: [
+        '--- agent-pack experiences (session injection, not skills) ---',
+        liveText,
+        '--- end agent-pack experiences ---',
+      ].join('\n\n'),
+      reminders: [],
+      experienceIds: ['live'],
+    }
+  }
 
+  const live = await loadLiveState(cwd, stateDir)
+  const liveText = live ? formatLiveInjection(live) : ''
   const systemPromptDelta = [
     '--- agent-pack experiences (session injection, not skills) ---',
     ...blocks,
+    ...(liveText ? [liveText] : []),
     '--- end agent-pack experiences ---',
   ].join('\n\n')
 

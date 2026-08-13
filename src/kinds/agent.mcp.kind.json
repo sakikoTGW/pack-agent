@@ -1,0 +1,10 @@
+{
+  "id": "agent.mcp",
+  "version": "1.0.0",
+  "traits": ["Describe", "Validate"],
+  "describe": { "title": "Agent MCP", "summary": "Portable MCP server/config bundle" },
+  "layout": { "required": ["mcp.json"] },
+  "abi": { "exports": ["mcp"], "imports": [] },
+  "install": { "default": ".mcp/{{name}}" },
+  "portability": { "exclude": [] }
+}

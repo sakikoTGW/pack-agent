@@ -1,5 +1,10 @@
 # Pack 规范（`.pack.json` 格式）
 
+> **文档层级说明（2026-07）**  
+> 本文描述 **IR / 遗留 `pack.json` 层**（`ccui-pack/v0.1`–`v0.2` 与 lowering 后的 `agent-pack-ir/2026`）。  
+> **人类作者应编辑源语言 `Pack.toml`**，规范见 [LANGUAGE.md](./LANGUAGE.md)；教程见 [BOOK.md](./BOOK.md)；术语见 [GLOSSARY.md](./GLOSSARY.md)。  
+> export 仍产出 v0.2 兼容 JSON；`packagent build` 产出 IR 2026 zip。
+
 > **Schema 字段值**：`ccui-pack/v0.2`（export 默认，读取兼容 v0.1）  
 > **工具**：Agent Modpack / `packagent`
 
@@ -13,7 +18,7 @@
 |------|------|
 | **Harness** | Claude Code、OpenClaw、Codex 等 — 跑 loop、拼请求、管 tool |
 | **Agent** | `agents.yaml` 里圈定的角色（skill / rule / MCP 清单） |
-| **Pack** | 某一 agent 的快照文件（`.pack.json` + 内嵌 `bundle`） |
+| **Pack** | 某一 agent 的快照：**主产物 `.pack.zip`**（内含 `pack.json` + 实体 `skills/`、`rules/`、`mcp.json`）；另写兼容用 `.pack.json` |
 | **packagent** | detect → export / install → ledger / eject |
 
 Prefunction 进 pack；harness 决定怎么加载。详见 [README](../README.zh-CN.md#为什么)。
@@ -190,6 +195,8 @@ v0.1 只有 `name` + 扁平列表；v0.2 为**可复现、可比对**的 modpack
 
 另有一条**不是 bug、但会让人以为没生效**的操作性限制：Hermes 的 shell hook 首次触发前要求交互 consent（写进 `~/.hermes/shell-hooks-allowlist.json`），没有 TTY 的场景（比如 gateway 常驻进程）会直接跳过并打 warning。免交互需要用户自己在 `config.yaml` 设 `hooks_auto_accept: true`，或运行时带 `--accept-hooks` / `HERMES_ACCEPT_HOOKS=1`——这是 Hermes 自己的安全设计（信任许可），agent-pack 不会也不该单方面绕过，只会在 `install` 报告的 `notes[]` 字段里提醒用户去做这一步。
 
+**DeepSeek Harness 专项说明（2026-08-13 对着 `deepseek-harness-master` 源码核实，2026-08-13 改为投影模型）**：DSH 一切皆插件。整合包**投影**到 `.agent-pack/modpacks/<id>/`，目录里必须带 `mods/<mod-id>/`（skill / MCP / Cordis 插件各一份 `mod.json` + 正文）。`mod.json` 预留 `publisher` / `id` / `version` / `spec`，现可空。没有 mod 的纯表会被拒绝。Cursor / 老版 `ccui-pack` 用 `packagent dsh map`：把 `.cursor/skills|rules|commands` 映到便携路径再编成 DSH `mods/`；ref-only 包加 `--from <Cursor 项目根>` 把正文嵌进去。多包并存；SQLite 注册表由 Rust `pack-index` 检索；会话只加载允许集。宿主只 `dsh plugin add` **一次** pack-agent 管理器。
+
 ### 5.7 可选模块 + pack.ignore
 
 **模块**（`project.yaml` → `modules:`，CLI `--modules hooks,memory` 或 `--no-memory`）：
@@ -225,11 +232,12 @@ v0.1 只有 `name` + 扁平列表；v0.2 为**可复现、可比对**的 modpack
 
 ### 5.9 便携 bundle（跨机器 install）
 
-跨机器 install 需要 `bundle.files` 内嵌 skill/rule 全文（export 时 `embedPortableFiles`）。
+跨机器 install 需要 `bundle.files` 内嵌 skill/rule/command 全文；`.collab/**` 若要迁移，改走 `cos.collab` 这类 Kind 单元（export 时 `embedPortableFiles` + `embedExtendedBundleFiles`）。
 
-1. export / sync 默认 embed → `bundle.files`
-2. 或把依赖 skill 一并选进 pack（`requires[]` 认：包内 bundled / 本机已有 / 目标机已装）
-3. 仅 `ref`、无 embed → 换机器 install 会失败，需 re-export
+1. export / sync 默认 embed → `bundle.files`，并写出 **`.pack.zip` 整合包**（`pack.json` + 展开的 `skills/**`、`rules/**`、`commands/**`、`mcp.json`、`INSTALL.md`）以及兼容用 `.pack.json`
+2. `packagent install foo.pack.zip`（或 `.pack.json`，或 `https://…`）均可
+3. 模块：`commands` 默认开；`hooks` / `subagents` / `memory` / … 用 `--modules` 开启。`.collab/**` 不再是内建模块，改用 `cos.collab` Kind 样例路径
+4. Cursor 默认参与 install（不再跳过）
 
 `requires[]` 安装前校验；`--force-requires` / MCP `force_requires` 可跳过。
 

@@ -1,0 +1,22 @@
+{
+  "id": "cos.collab",
+  "version": "1.0.0",
+  "traits": ["Describe", "Validate"],
+  "describe": {
+    "title": "Cos Collab Workspace",
+    "summary": "Portable Cos Collab workspace rooted at .collab"
+  },
+  "layout": {
+    "required": [".collab/**"]
+  },
+  "abi": {
+    "exports": ["collab"],
+    "imports": []
+  },
+  "install": {
+    "default": ".collab"
+  },
+  "portability": {
+    "exclude": ["FOUNDATION.md", "environment-traps.md"]
+  }
+}

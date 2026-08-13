@@ -78,6 +78,7 @@ Alias bins: `agent-pack` / `agent-pack-mcp`.
 | `packagent eject [--name]` | Uninstall via ledger |
 | `packagent status` | Lock / ledger / experiences |
 | `packagent diff <a> <b>` | Diff packs or locks |
+| `packagent dsh compile\|project\|map\|index\|search\|allow\|deny\|list` | DeepSeek Harness projection + SQLite catalog |
 
 ### Common flags
 
@@ -152,7 +153,7 @@ Fields: `author` · `description` · `runtime` · `skills` · `rules` · `mcp` �
 **`.pack.json`** — schema v0.2 (see [PACK_SPEC.md](PACK_SPEC.md) for the `schema` field value)  
 Key fields: `agent` · `knowledge` · `tools.mcp` · `experiences` · `harness` · `bundle.files` · `meta.fidelity`
 
-**Harness ids**: `claude-code` · `codex` · `opencode` · `openclaw` · `hermes` · `gemini-cli` · `windsurf` · `github-copilot` · `astrbot`  
+**Harness ids**: `claude-code` · `codex` · `opencode` · `openclaw` · `hermes` · `dsh` · `gemini-cli` · `windsurf` · `github-copilot` · `astrbot`  
 Skipped on default install: `cursor` · `generic-agents`
 
 **State dir** (default `.agent-pack/`): `exports/` · `applied/` · `lock.json` · `experiences/` · `capture/`

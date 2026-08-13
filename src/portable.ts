@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs'
+import { homedir } from 'node:os'
 import { basename, dirname, join, relative } from 'node:path'
 import type { PackDoc } from './types.js'
 
@@ -107,17 +108,40 @@ export async function resolveSkillDir(
   ref: string,
   stagingRoot: string | null,
 ): Promise<string | null> {
-  const abs = ref.match(/^[a-zA-Z]:/) || ref.startsWith('/') ? ref : join(cwd, ref)
-  const dir = abs.endsWith('SKILL.md') ? dirname(abs) : abs
-  if (await exists(join(dir, 'SKILL.md'))) return dir
-
+  // 有便携 staging 时必须优先用它：源仓 install 的 dest 常与 ref 同路径，
+  // 若先返回 live ref，on_conflict=replace 会先 rm(dest) 把源 skill 删掉再 cp 失败。
   if (stagingRoot) {
     const staged = join(stagingRoot, 'skills', name)
     if (await exists(join(staged, 'SKILL.md'))) return staged
   }
 
-  for (const base of ['.agents/skills', '.claude/skills', '.opencode/skills', '.gemini/skills']) {
+  const abs = ref.match(/^[a-zA-Z]:/) || ref.startsWith('/') ? ref : join(cwd, ref)
+  const dir = abs.endsWith('SKILL.md') ? dirname(abs) : abs
+  if (await exists(join(dir, 'SKILL.md'))) return dir
+
+  const projectBases = [
+    '.agents/skills',
+    '.claude/skills',
+    '.cursor/skills',
+    '.codex/skills',
+    '.opencode/skills',
+    '.gemini/skills',
+    '.dsh/skills',
+  ]
+  for (const base of projectBases) {
     const p = join(cwd, base, name)
+    if (await exists(join(p, 'SKILL.md'))) return p
+  }
+  // 用户全局技能树（Cursor/Claude 常用 junction 指向同一份）
+  const homeBases = [
+    join(homedir(), '.cursor', 'skills'),
+    join(homedir(), '.claude', 'skills'),
+    join(homedir(), '.agents', 'skills'),
+    join(homedir(), '.codex', 'skills'),
+    join(homedir(), '.dsh', 'skills'),
+  ]
+  for (const base of homeBases) {
+    const p = join(base, name)
     if (await exists(join(p, 'SKILL.md'))) return p
   }
   return null
@@ -157,6 +181,11 @@ export function skillOriginInBundle(pack: PackDoc, skillName: string): 'bundled'
 }
 
 export async function readPackFile(path: string): Promise<PackDoc> {
+  const { isPackZipPath, readPackZip } = await import('./pack-archive.js')
+  if (isPackZipPath(path)) {
+    const { pack } = await readPackZip(path)
+    return pack
+  }
   const raw = await fs.readFile(path, 'utf8')
   return JSON.parse(raw) as PackDoc
 }

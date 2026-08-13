@@ -8,6 +8,7 @@ import type {
   PackMemoryEntry,
   PackSettingsEntry,
   PackSubagentEntry,
+  PackCommandEntry,
 } from './types.js'
 import { isPackIgnored, type PackIgnoreMatcher } from './pack-ignore.js'
 import { sha256Full } from './versioning.js'
@@ -18,6 +19,7 @@ export type ExtendedScan = {
   memory: PackMemoryEntry[]
   settings: PackSettingsEntry[]
   transcripts: Array<{ name: string; ref: string }>
+  commands: PackCommandEntry[]
 }
 
 async function exists(p: string): Promise<boolean> {
@@ -192,19 +194,51 @@ async function scanTranscriptIndex(cwd: string, ignore: PackIgnoreMatcher): Prom
   return out.slice(0, 50)
 }
 
+async function scanCommands(cwd: string, ignore: PackIgnoreMatcher): Promise<PackCommandEntry[]> {
+  const dirs = [
+    { dir: '.cursor/commands', scope: 'cursor' },
+    { dir: '.claude/commands', scope: 'claude-code' },
+  ]
+  const out: PackCommandEntry[] = []
+  const seen = new Set<string>()
+  for (const { dir, scope } of dirs) {
+    const absDir = join(cwd, dir)
+    let names: string[] = []
+    try {
+      names = (await fs.readdir(absDir)).filter(n => n.endsWith('.md'))
+    } catch {
+      continue
+    }
+    for (const n of names) {
+      const abs = join(absDir, n)
+      const ref = relRef(cwd, abs)
+      if (isPackIgnored(ref, ignore)) continue
+      const name = n.replace(/\.md$/i, '')
+      if (seen.has(name)) continue
+      seen.add(name)
+      const content = (await readText(abs)) ?? ''
+      out.push({ name, ref, scope, contentHash: sha256Full(content) })
+    }
+  }
+  return out
+}
+
 export async function scanExtendedModules(
   cwd: string,
   ignore: PackIgnoreMatcher,
-  enabled: Partial<Record<'hooks' | 'subagents' | 'memory' | 'settings' | 'transcripts', boolean>>,
+  enabled: Partial<
+    Record<'hooks' | 'subagents' | 'memory' | 'settings' | 'transcripts' | 'commands', boolean>
+  >,
 ): Promise<ExtendedScan> {
-  const [hooks, subagents, memory, settings, transcripts] = await Promise.all([
+  const [hooks, subagents, memory, settings, transcripts, commands] = await Promise.all([
     enabled.hooks ? scanHooks(cwd, ignore) : Promise.resolve([]),
     enabled.subagents ? scanSubagents(cwd, ignore) : Promise.resolve([]),
     enabled.memory ? scanMemory(cwd, ignore) : Promise.resolve([]),
     enabled.settings ? scanSettingsFragments(cwd, ignore) : Promise.resolve([]),
     enabled.transcripts ? scanTranscriptIndex(cwd, ignore) : Promise.resolve([]),
+    enabled.commands ? scanCommands(cwd, ignore) : Promise.resolve([]),
   ])
-  return { hooks, subagents, memory, settings, transcripts }
+  return { hooks, subagents, memory, settings, transcripts, commands }
 }
 
 /** 将扩展扫描写入 pack + 准备 bundle 路径 */
@@ -214,10 +248,11 @@ export async function mergeExtendedIntoPack(
   ext: ExtendedScan,
 ): Promise<import('./types.js').PackDoc> {
   const out = { ...pack }
-  if (ext.hooks.length) out.automation = { hooks: ext.hooks }
-  if (ext.subagents.length) out.agents = { subagents: ext.subagents }
-  if (ext.memory.length) out.memory = { files: ext.memory }
-  if (ext.settings.length) out.settings = { fragments: ext.settings }
+  if (ext.hooks?.length) out.automation = { hooks: ext.hooks }
+  if (ext.subagents?.length) out.agents = { subagents: ext.subagents }
+  if (ext.memory?.length) out.memory = { files: ext.memory }
+  if (ext.settings?.length) out.settings = { fragments: ext.settings }
+  if (ext.commands?.length) out.commands = { files: ext.commands }
   if (ext.transcripts.length) {
     out.meta = {
       ...out.meta,
@@ -293,6 +328,18 @@ export async function embedExtendedBundleFiles(
     } catch {
       /* skip */
     }
+  }
+
+  for (const c of pack.commands?.files ?? []) {
+    const ref = String(c.ref || '')
+    if (!ref) continue
+    const abs = join(cwd, ref)
+    const content = await readText(abs)
+    if (!content) continue
+    const p = `commands/${c.name ?? basename(ref, '.md')}.md`
+    if (seen.has(p)) continue
+    seen.add(p)
+    files.push({ path: p, content })
   }
 
   const transcriptIndex = pack.meta?.transcriptIndex as Array<{ name: string; ref: string }> | undefined

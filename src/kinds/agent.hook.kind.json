@@ -1,0 +1,10 @@
+{
+  "id": "agent.hook",
+  "version": "1.0.0",
+  "traits": ["Describe", "Validate"],
+  "describe": { "title": "Agent Hook", "summary": "Portable hook directory for lifecycle automation" },
+  "layout": { "required": ["HOOK.md"] },
+  "abi": { "exports": ["hook"], "imports": [] },
+  "install": { "default": ".claude/hooks/{{name}}" },
+  "portability": { "exclude": [] }
+}

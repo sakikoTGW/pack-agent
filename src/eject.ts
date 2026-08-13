@@ -333,6 +333,26 @@ export async function ejectPack(cwd: string, opts: EjectOpts = {}): Promise<Ejec
         }
         break
       }
+      case 'command':
+      case 'collab': // legacy pre-Kind `.collab` ledger entries
+      case 'rule':
+      case 'subagent':
+      case 'memory':
+      case 'settings':
+      case 'extended-hook': {
+        const abs = item.path.match(/^[a-zA-Z]:/) || item.path.startsWith('/') ? item.path : absPath(cwd, item.path)
+        if (!(await exists(abs))) {
+          items.push({ kind: item.kind, path: abs, status: 'missing' })
+          break
+        }
+        try {
+          await fs.rm(abs, { force: true })
+          items.push({ kind: item.kind, path: abs, status: 'removed' })
+        } catch (e) {
+          items.push({ kind: item.kind, path: abs, status: 'partial', note: (e as Error).message })
+        }
+        break
+      }
       default:
         items.push({ kind: item.kind, path: item.path, status: 'skipped', note: '无自动卸载器' })
     }

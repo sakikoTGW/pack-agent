@@ -1,0 +1,10 @@
+{
+  "id": "agent.loop",
+  "version": "1.0.0",
+  "traits": ["Describe", "Validate"],
+  "describe": { "title": "Agent Loop", "summary": "Portable loop directory for recurring workflows" },
+  "layout": { "required": ["LOOP.md"] },
+  "abi": { "exports": ["loop"], "imports": [] },
+  "install": { "default": ".claude/loops/{{name}}" },
+  "portability": { "exclude": [] }
+}

@@ -118,6 +118,7 @@ const RUNTIME_SKILL_PICK_ORDER = [
   'cursor',
   'opencode',
   'hermes',
+  'dsh',
   'openclaw',
   'gemini-cli',
   'windsurf',
@@ -336,13 +337,14 @@ export async function buildPackFromProject(cwd: string, opts: ExportOpts = {}): 
     pack = scanToPack(scan, runtimeId, name, detected)
   }
 
-  if (modules.hooks || modules.subagents || modules.memory || modules.settings || modules.transcripts) {
+  if (modules.hooks || modules.subagents || modules.memory || modules.settings || modules.transcripts || modules.commands) {
     const ext = await scanExtendedModules(cwd, ignore, {
       hooks: modules.hooks,
       subagents: modules.subagents,
       memory: modules.memory,
       settings: modules.settings,
       transcripts: modules.transcripts,
+      commands: modules.commands,
     })
     pack = await mergeExtendedIntoPack(cwd, pack, ext)
   }
@@ -350,12 +352,17 @@ export async function buildPackFromProject(cwd: string, opts: ExportOpts = {}): 
   pack.modules = { ...modules }
   pack.version = projectCfg.version ?? pack.version ?? '0.3.0'
   if (projectCfg.channel) pack.channel = projectCfg.channel
+
+  // 先按选件收窄 knowledge/tools，再 embed——避免 Cursor 全局 skills 树全量读盘卡死
+  if (selection) {
+    if (selection.name && !opts.name) pack.name = selection.name
+    pack = filterPackBySelection(pack, selection)
+  }
+
   pack = await embedPortableFiles(pack, cwd)
   pack = await embedExtendedBundleFiles(cwd, pack)
 
   if (selection) {
-    if (selection.name && !opts.name) pack.name = selection.name
-    pack = filterPackBySelection(pack, selection)
     pack = filterBundleFilesForPack(pack)
   }
 
@@ -440,15 +447,30 @@ export async function buildPackFromProject(cwd: string, opts: ExportOpts = {}): 
   return { pack, outPath, scan, stats, lockPath }
 }
 
-/** 扫描 → 写 pack 文件 */
+/** 扫描 → 写整合包：主产物 .pack.zip（json+实体 skills/rules/mcp），并保留 .pack.json 兼容 */
 export async function exportPackFromProject(cwd: string, opts: ExportOpts = {}): Promise<{
   pack: PackDoc
   outPath: string
+  jsonPath: string
+  zipPath: string
   stats: Record<string, unknown>
   lockPath: string
 }> {
-  const { pack, outPath, stats, lockPath } = await buildPackFromProject(cwd, opts)
-  await fs.mkdir(dirname(outPath), { recursive: true })
-  await fs.writeFile(outPath, JSON.stringify(pack, null, 2), 'utf8')
-  return { pack, outPath, stats, lockPath }
+  const { pack, outPath: jsonPath, stats, lockPath } = await buildPackFromProject(cwd, opts)
+  await fs.mkdir(dirname(jsonPath), { recursive: true })
+  await fs.writeFile(jsonPath, JSON.stringify(pack, null, 2), 'utf8')
+
+  const { writePackZip } = await import('./pack-archive.js')
+  const zipPath = jsonPath.replace(/\.pack\.json$/i, '.pack.zip')
+  const layout = await writePackZip(pack, zipPath)
+
+  const nextStats = {
+    ...stats,
+    jsonPath,
+    zipPath,
+    archiveSkillsFiles: layout.skillCount,
+    archiveRulesFiles: layout.ruleCount,
+    archiveMcp: layout.mcpCount,
+  }
+  return { pack, outPath: zipPath, jsonPath, zipPath, stats: nextStats, lockPath }
 }

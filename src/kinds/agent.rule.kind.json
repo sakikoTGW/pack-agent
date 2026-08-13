@@ -1,0 +1,10 @@
+{
+  "id": "agent.rule",
+  "version": "1.0.0",
+  "traits": ["Describe", "Validate"],
+  "describe": { "title": "Agent Rule", "summary": "Portable rule directory for harness guidance" },
+  "layout": { "required": ["RULE.md"] },
+  "abi": { "exports": ["rule"], "imports": [] },
+  "install": { "default": ".claude/rules/{{name}}" },
+  "portability": { "exclude": [] }
+}

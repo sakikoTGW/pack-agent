@@ -31,9 +31,10 @@ import {
   type PackConflictDetail,
 } from './errors.js'
 import type { ConflictPolicy } from './types.js'
+import { mcpServersToDshInsertItems, upsertDshCordisInsert } from './dsh-cordis.js'
 
 /** 装包时跳过（generic 会与具体 harness 重复；cursor 非 CLI 目标） */
-export const PACK_APPLY_SKIP = new Set(['cursor', 'generic-agents'])
+export const PACK_APPLY_SKIP = new Set(['generic-agents'])
 
 export type PackProjectOpts = InstallOpts & {
   stateDir?: string
@@ -331,7 +332,8 @@ async function projectRules(
     }
 
     if (!placed && hasDirTarget) {
-      const destName = rule.format === 'mdc' ? rule.name.replace(/\.mdc$/, '.md') : rule.name
+      // Cursor 读 .mdc；改后缀会破坏「原封不动」安装
+      const destName = rule.name
       const dest = join(cwd, ruleDir, destName)
       await fs.copyFile(rule.abs, dest)
       applied.push(destName)
@@ -419,7 +421,7 @@ async function projectHarnessL2(
     return { path: file, kind: 'file', sidecars }
   }
 
-  if (['codex', 'openclaw', 'hermes', 'generic-agents', 'gemini-cli', 'windsurf', 'github-copilot'].includes(runtime)) {
+  if (['codex', 'openclaw', 'hermes', 'generic-agents', 'gemini-cli', 'windsurf', 'github-copilot', 'dsh'].includes(runtime)) {
     const agentsMd = runtime === 'gemini-cli' ? join(cwd, 'GEMINI.md') : join(cwd, 'AGENTS.md')
     await appendMarkedBlock(agentsMd, marker, `# Agent pack: ${packName}\n\n${body}`)
     return { path: agentsMd, kind: 'append', sidecars }
@@ -575,6 +577,12 @@ async function projectToRuntime(
       if (res.added.length) {
         man.mcpFileAbs = res.file
         man.mcpFormat = res.format
+      }
+      if (runtime === 'dsh' && allowGlobalConfig && Object.keys(servers).length) {
+        const dshHome = join(homedir(), '.dsh')
+        if (await exists(dshHome)) {
+          await upsertDshCordisInsert(join(dshHome, 'cordis.patch.yml'), mcpServersToDshInsertItems(servers))
+        }
       }
     } else {
       skipped.push(`mcp:${Object.keys(servers).join(',')} skipped (global config ${target.absFile}; pass allowGlobalConfig / --global-config to opt in)`)

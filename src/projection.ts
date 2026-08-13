@@ -9,12 +9,20 @@ import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { parse as yamlParse, stringify as yamlStringify } from 'yaml'
 import JSON5 from 'json5'
+import {
+  dshMcpPluginId,
+  mcpServersToDshInsertItems,
+  parseDshCordisMcp,
+  removeDshCordisInsertIds,
+  upsertDshCordisInsert,
+} from './dsh-cordis.js'
 
 export type McpFormat =
   | 'json-mcpServers'
   | 'json-mcp'
   | 'yaml-mcp_servers'
   | 'toml-mcp_servers'
+  | 'yaml-cordis-patch'
 
 export type McpTarget = {
   absFile: string
@@ -73,6 +81,8 @@ export function mcpTargetFor(runtime: string, cwd: string): McpTarget {
       return { absFile: join(cwd, '.windsurf', 'mcp_config.json'), projectLocal: true, format: 'json-mcpServers' }
     case 'github-copilot':
       return { absFile: join(cwd, '.vscode', 'mcp.json'), projectLocal: true, format: 'json-mcpServers' }
+    case 'dsh':
+      return { absFile: join(cwd, '.dsh', 'agent-pack.cordis.yml'), projectLocal: true, format: 'yaml-cordis-patch' }
     case 'claude-code':
     default:
       return { absFile: join(cwd, '.mcp.json'), projectLocal: true, format: 'json-mcpServers' }
@@ -253,6 +263,38 @@ export async function mergeMcp(
     return out
   }
 
+  if (target.format === 'yaml-cordis-patch') {
+    const existingText = fileExists ? await fs.readFile(target.absFile, 'utf8') : ''
+    const existing = existingText ? parseDshCordisMcp(existingText) : []
+    const existingByName = new Map(existing.map(s => [s.name, s]))
+    const toWrite: McpServers = {}
+    for (const n of names) {
+      const prev = existingByName.get(n)
+      if (prev) {
+        const nextItem = mcpServersToDshInsertItems({ [n]: servers[n] })[0]
+        const same =
+          prev.command === nextItem.config.command
+          && JSON.stringify(prev.args ?? []) === JSON.stringify(nextItem.config.args ?? [])
+          && (prev.url ?? '') === String(nextItem.config.url ?? '')
+        if (same) {
+          out.unchanged.push(n)
+          continue
+        }
+        const action = handleMcpConflict(n)
+        if (action === 'skip') {
+          out.unchanged.push(n)
+          continue
+        }
+      }
+      toWrite[n] = servers[n]
+      out.added.push(n)
+    }
+    if (out.added.length) {
+      await upsertDshCordisInsert(target.absFile, mcpServersToDshInsertItems(toWrite))
+    }
+    return out
+  }
+
   return out
 }
 
@@ -275,6 +317,8 @@ export async function unmergeMcp(absFile: string, format: McpFormat, names: stri
     const doc = (yamlParse(await fs.readFile(absFile, 'utf8')) || {}) as { mcp_servers?: McpServers }
     if (doc.mcp_servers) for (const n of names) delete doc.mcp_servers[n]
     await fs.writeFile(absFile, yamlStringify(doc), 'utf8')
+  } else if (format === 'yaml-cordis-patch') {
+    await removeDshCordisInsertIds(absFile, names.map(n => dshMcpPluginId(n)))
   }
 }
 

@@ -2,8 +2,8 @@
 /** A→B portable round-trip: export with bundle → install on fresh dir */
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
-import { tmpdir } from 'node:os'
 import { exportPackFromProject } from '../src/export.js'
+import { packTestTmp } from './tmp-root.js'
 import { installPack, installPackFile } from '../src/install.js'
 import { loadExperienceInjection } from '../src/experience-loader.js'
 import type { PackDoc } from '../src/types.js'
@@ -16,7 +16,7 @@ function fail(msg: string): never {
   process.exit(1)
 }
 
-const root = join(tmpdir(), `pack-portable-ab-${Date.now()}`)
+const root = packTestTmp(`pack-portable-ab-${Date.now()}`)
 const dirA = join(root, 'A')
 const dirB = join(root, 'B')
 

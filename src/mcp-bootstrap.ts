@@ -54,6 +54,11 @@ export async function bootstrapAgentPackMcp(
           skipped.push(`${t.absFile} (unchanged ${SERVER_NAME})`)
           continue
         }
+        // pack 已写入便携 MCP（npx / node_modules）时，install 默认 skipIfPresent：保留已有，不覆盖
+        if (opts.skipIfPresent) {
+          skipped.push(`${t.absFile} (kept existing ${SERVER_NAME})`)
+          continue
+        }
         throw new PackConflictError({
           kind: 'mcp-server',
           summary: `MCP server \`${SERVER_NAME}\` already configured differently`,

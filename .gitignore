@@ -2,8 +2,30 @@
 .agent-pack/exports/
 .agent-pack/applied/
 .agent-pack/lock.json
+.agent-pack/modpacks/
+.agent-pack/catalog.sqlite
+.agent-pack/catalog.sqlite-journal
+.agent-pack/catalog.sqlite-wal
+.agent-pack/catalog.sqlite-shm
 .claude/
 .ccui/
 node_modules/
 *.tgz
 .DS_Store
+
+# Local clones of WeChat layout OSS (see drafts/wechat-oss-pipeline.md)
+drafts/_vendor/
+
+# WeChat Official Account credentials (local publish only)
+drafts/wechat-assets/.wechat.env
+
+# DeepSeek Harness zip extract (local research only)
+.tmp-dsh-extract/
+
+# DSH modpack compiler output
+dsh-modpack/compiled/
+dsh-modpack.out/
+
+# Rust pack-index (local target; CI uses E:\tmp\pack-agent\pack-index-target)
+crates/pack-index/target/
+target/

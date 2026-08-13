@@ -1,4 +1,5 @@
-export type { PackDoc, InstallOpts, InstallReport, RuntimeInstallReport, CaptureDeliver, PackExperience, PackPolicy, PackAgentRef } from './types.js'
+export type { PackDoc, InstallOpts, InstallReport, RuntimeInstallReport, CaptureDeliver, PackExperience, PackPolicy, PackAgentRef, PackDshLayer, PackDshPlugin, PackModManifest, PackModKind } from './types.js'
+export { PACK_MOD_SCHEMA } from './types.js'
 
 export { DEFAULT_STATE_DIR, PACK_APPLY_SKIP, projectPackToRuntimes, resolveApplyRuntimes } from './project.js'
 
@@ -34,6 +35,7 @@ export type { McpFormat, McpTarget, McpServers } from './projection.js'
 export { injectBootstrapIntoPack, resolveAgentPackSkillDir, BOOTSTRAP_SKILL_NAME } from './bootstrap.js'
 
 export { enrichPackVersions, PACK_SCHEMA_V02, parseSkillFrontmatter } from './versioning.js'
+export { upgradePackDocToIr } from './lang/upgrade.js'
 
 export { loadPackProjectConfig, ensureAgentPackProjectYaml, type PackProjectConfig } from './project-config.js'
 
@@ -59,6 +61,13 @@ export { validateSkillRequires, validatePackSkillsResolvable } from './requires-
 export { skillOriginInBundle, skillHasBundleFiles } from './portable.js'
 export { bootstrapAgentPackMcp, removeAgentPackMcpBootstrap } from './mcp-bootstrap.js'
 export { unwireExperienceHooks } from './experience-projection.js'
+export { checkPackToml, checkPackFile, type CheckResult } from './lang/check.js'
+export { explainPackToml, explainPackFile, type ExplainResult } from './lang/explain.js'
+export { buildPackToml, type BuildPackOpts, type BuildPackResult } from './lang/build.js'
+export { lowerPack } from './lang/lower.js'
+export type { PackIr } from './lang/ir.js'
+export { describeCodegenTargets } from './codegen/project-ir.js'
+export { loadKind, type KindDoc } from './lang/kind-load.js'
 
 export {
   projectExperienceToHarnesses,
@@ -70,6 +79,16 @@ export {
 export type { ExperienceProjectionReport, ExperienceInjectSlot, ExperienceInjectKind } from './experience-projection.js'
 
 export { loadExperienceInjection, mergeSystemPromptWithExperiences, type ExperienceInjection } from './experience-loader.js'
+export {
+  applyLiveTurn,
+  formatLiveInjection,
+  loadLiveState,
+  mergeBaseAndLive,
+  parseHookStdin,
+  type HookStdinPayload,
+  type LiveState,
+  type LiveTurn,
+} from './experience-live.js'
 
 export {
   loadPackIgnore,
@@ -107,6 +126,14 @@ export {
   readPackFile,
 
 } from './portable.js'
+
+export {
+  writePackZip,
+  readPackZip,
+  isPackZipPath,
+  materializePackArchiveLayout,
+  loadPackFromArchiveDir,
+} from './pack-archive.js'
 
 export { writeAstrbotPlugin } from './astrbot.js'
 

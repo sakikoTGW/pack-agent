@@ -4,3 +4,10 @@ dsh-modpack.out/
 crates/pack-index/target/
 .tmp-dsh-extract/
 *.tgz
+
+# Design drafts — not part of the published packages
+docs/superpowers/
+docs/NORTH_STAR.md
+docs/APL_VISION.md
+docs/ECOSYSTEM.md
+docs/APL_VERIFY.md

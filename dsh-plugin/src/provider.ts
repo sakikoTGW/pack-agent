@@ -58,12 +58,12 @@ export function createCatalogSkillProvider(workspace: string): SkillProvider {
         name: s.name,
         description: s.description || s.name,
         invocation: { modelInvocable: true, userInvocable: true },
-        source: 'pack-agent',
+        source: 'custom',
         provider: CATALOG_PROVIDER_NAME,
         rank: CATALOG_SKILL_RANK + i,
         locator: { pack_id: s.pack_id, path: s.path },
         path: s.path,
-      }))
+      })).filter(s => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s.name))
     },
     async get(candidate) {
       const p = candidate.locator?.path || candidate.path
@@ -79,7 +79,7 @@ export function createCatalogSkillProvider(workspace: string): SkillProvider {
         name: candidate.name,
         description: parsed.description || candidate.description,
         invocation: { modelInvocable: true, userInvocable: true },
-        source: 'pack-agent',
+        source: 'custom',
         provider: CATALOG_PROVIDER_NAME,
         content: parsed.body,
         path: p,

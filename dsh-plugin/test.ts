@@ -17,14 +17,28 @@ if (!inject.includes('tools')) fail(`inject must include tools: ${inject.join(',
 if (!inject.includes('skills')) fail(`inject must include skills: ${inject.join(',')}`)
 console.log('✓ cordis plugin name/inject')
 
-type ToolDef = { name: string; description?: string; execute: (args: Record<string, unknown>) => Promise<unknown> }
+type ToolDef = {
+  name: string
+  description?: string
+  execute: (args: Record<string, unknown>) => Promise<unknown>
+  output?: { schema?: unknown; render?: unknown }
+}
 type CmdDef = { name: string; description?: string; handler: (inv: { rawInput: string }) => Promise<unknown> | unknown }
 
 const tools: ToolDef[] = []
 const commands: CmdDef[] = []
 const providers: Array<{ name: string; list: () => Promise<unknown>; get: (c: unknown) => Promise<unknown> }> = []
 const ctx = {
-  tools: { register(def: ToolDef) { tools.push(def) } },
+  tools: {
+    register(def: ToolDef) {
+      // DeepSeek Harness `@deepseek-ai/dsh-tools` ToolRuntime.register (0.1.0-rc.6)
+      const output = def.output as { render?: unknown } | undefined
+      if (output === undefined || typeof output !== 'object' || typeof output.render !== 'function') {
+        fail(`tool "${def.name}" must declare output { schema, render, presentationMeta? }`)
+      }
+      tools.push(def)
+    },
+  },
   commands: { register(def: CmdDef) { commands.push(def) } },
   skills: {
     registerProvider(create: (control: { signal: AbortSignal; invalidate: () => void }) => (typeof providers)[0]) {

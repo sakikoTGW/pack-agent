@@ -90,12 +90,14 @@ if (!profilePkg.dependencies?.['@sakikotgw/pack-agent']) {
 const installedPkgPath = join(profileDir, 'node_modules', '@sakikotgw', 'pack-agent', 'package.json')
 if (!existsSync(installedPkgPath)) fail(`linked package missing at ${installedPkgPath}`)
 const installed = JSON.parse(readFileSync(installedPkgPath, 'utf8')) as {
-  exports?: Record<string, string>
+  exports?: Record<string, string | { import?: string; default?: string; bun?: string }>
   dsh?: { bundle?: { patch?: string } }
 }
 if (!installed.dsh?.bundle?.patch) fail('installed pack-agent missing dsh.bundle.patch — DSH would treat it as a plain library')
-if (installed.exports?.['./dsh'] !== './dsh-plugin/src/index.ts') {
-  fail(`exports ./dsh is ${installed.exports?.['./dsh']}`)
+const dshExport = installed.exports?.['./dsh']
+const dshRel = typeof dshExport === 'string' ? dshExport : dshExport?.import || dshExport?.default
+if (!dshRel || dshRel.endsWith('.ts')) {
+  fail(`exports ./dsh must be Node-loadable JS, got ${JSON.stringify(dshExport)}`)
 }
 
 const patchPath = join(profileDir, 'node_modules', '@sakikotgw', 'pack-agent', installed.dsh.bundle.patch)

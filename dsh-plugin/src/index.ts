@@ -30,6 +30,10 @@ type ToolRegister = {
     description: string
     parameters: Record<string, unknown>
     execute: (args: Record<string, unknown>) => Promise<unknown>
+    output: {
+      schema: Record<string, unknown>
+      render: (args: unknown, value: unknown) => Array<{ type: 'text'; text: string }>
+    }
   }) => unknown
 }
 
@@ -67,10 +71,29 @@ function textOf(value: unknown): string {
   return `${JSON.stringify(value, null, 2)}`
 }
 
+/** DSH ToolRuntime.register 要求 output.render；对照 @deepseek-ai/dsh-tools 0.1.0-rc.6。 */
+function withDshOutput<T extends {
+  name: string
+  description: string
+  parameters: Record<string, unknown>
+  execute: (args: Record<string, unknown>) => Promise<unknown>
+}>(def: T) {
+  return {
+    ...def,
+    output: {
+      schema: { type: 'object', additionalProperties: true },
+      render(_args: unknown, value: unknown) {
+        const text = typeof value === 'string' ? value : JSON.stringify(value ?? null, null, 2)
+        return [{ type: 'text' as const, text }]
+      },
+    },
+  }
+}
+
 export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void {
   ctx.skills?.registerProvider(() => createCatalogSkillProvider(cwdOf(config)))
 
-  ctx.tools.register({
+  ctx.tools.register(withDshOutput({
     name: 'packagent_detect',
     description: 'Detect which agent harnesses are present in a project directory.',
     parameters: {
@@ -79,9 +102,9 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
       additionalProperties: false,
     },
     execute: args => actionDetect(cwdOf(config, args.cwd)),
-  })
+  }))
 
-  ctx.tools.register({
+  ctx.tools.register(withDshOutput({
     name: 'packagent_compile',
     description: 'Compile a pack-agent pack into a projected dsh.bundle directory (does not index).',
     parameters: {
@@ -104,9 +127,9 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
         : defaultCompileOut(cwd, doc.name || 'pack')
       return actionCompile(resolve(cwd, pack), out)
     },
-  })
+  }))
 
-  ctx.tools.register({
+  ctx.tools.register(withDshOutput({
     name: 'packagent_project',
     description: 'Project a pack into .agent-pack/modpacks and index the SQLite catalog. Does not dsh plugin add.',
     parameters: {
@@ -125,9 +148,9 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
       const cwd = cwdOf(config, args.cwd)
       return actionProject(resolve(cwd, pack), cwd, Boolean(args.allow))
     },
-  })
+  }))
 
-  ctx.tools.register({
+  ctx.tools.register(withDshOutput({
     name: 'packagent_map',
     description: 'Map a Cursor/ccui-pack export into a DeepSeek Harness modpack (mods/ + catalog). Use --from for ref-only packs.',
     parameters: {
@@ -148,9 +171,9 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
       const from = typeof args.from === 'string' && args.from.trim() ? resolve(cwd, args.from) : undefined
       return actionMap(resolve(cwd, pack), cwd, { allow: Boolean(args.allow), from })
     },
-  })
+  }))
 
-  ctx.tools.register({
+  ctx.tools.register(withDshOutput({
     name: 'packagent_search',
     description: 'Full-text search projected packs via the Rust SQLite catalog.',
     parameters: {
@@ -167,9 +190,9 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
       if (!query) throw new Error('query required')
       return actionSearch(cwdOf(config, args.cwd), query)
     },
-  })
+  }))
 
-  ctx.tools.register({
+  ctx.tools.register(withDshOutput({
     name: 'packagent_allow',
     description: 'Allow a projected pack so the current session can see its skills.',
     parameters: {
@@ -186,9 +209,9 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
       if (!id) throw new Error('id required')
       return actionAllow(cwdOf(config, args.cwd), id)
     },
-  })
+  }))
 
-  ctx.tools.register({
+  ctx.tools.register(withDshOutput({
     name: 'packagent_deny',
     description: 'Deny a projected pack. Files stay on disk; the session can no longer see it.',
     parameters: {
@@ -205,9 +228,9 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
       if (!id) throw new Error('id required')
       return actionDeny(cwdOf(config, args.cwd), id)
     },
-  })
+  }))
 
-  ctx.tools.register({
+  ctx.tools.register(withDshOutput({
     name: 'packagent_list',
     description: 'List projected packs in the SQLite catalog.',
     parameters: {
@@ -219,7 +242,7 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
       additionalProperties: false,
     },
     execute: args => actionList(cwdOf(config, args.cwd), Boolean(args.enabled)),
-  })
+  }))
 
   ctx.commands?.register({
     name: 'packagent-detect',

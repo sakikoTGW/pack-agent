@@ -1,0 +1,6 @@
+# Keep npm tarball aligned with gitignore for generated / local-only trees.
+dsh-modpack/compiled/
+dsh-modpack.out/
+crates/pack-index/target/
+.tmp-dsh-extract/
+*.tgz

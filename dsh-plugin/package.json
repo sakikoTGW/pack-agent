@@ -1,6 +1,6 @@
 {
   "name": "@sakikotgw/pack-agent-dsh",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "DeepSeek Harness plugin: project Agent Modpacks into .agent-pack/modpacks and allow them",
   "type": "module",
   "main": "./lib/index.js",

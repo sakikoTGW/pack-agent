@@ -61,6 +61,12 @@ if (!stagedReadme.includes('dsh plugin --profile web add @sakikotgw/pack-agent-d
 if (stagedReadme.includes('北极星') || stagedReadme.toLowerCase().includes('north star')) {
   fail('DSH README must not use north-star copy')
 }
+if (stagedReadme.includes('便于被发现') || stagedReadme.includes('so they can be found')) {
+  fail('DSH README must not tell installers to tag GitHub topics')
+}
+if (!stagedReadme.includes('https://www.npmjs.com/package/@sakikotgw/pack-agent-dsh')) {
+  fail('DSH README must link the npm package')
+}
 if (skill.includes('dsh plugin --profile web add "<compiled-dir>"')) {
   fail('SKILL.md must not tell the model to plugin-add a compiled pack')
 }

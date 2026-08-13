@@ -3,7 +3,7 @@
  * DSH 用 Node 加载 bundle。官方 publish 教程交 index.js，不交 .ts。
  * 本测试只 spawn node，不用 bun 执行入口。
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -17,6 +17,14 @@ function fail(msg: string): never {
 
 const root = resolve(import.meta.dirname, '..')
 if (packAgentRoot() !== root) fail(`packAgentRoot ${packAgentRoot()} != ${root}`)
+
+const dshPkgRoot = packTestTmp(`pkg-dsh-${Date.now()}`)
+mkdirSync(join(dshPkgRoot, 'lib'), { recursive: true })
+writeFileSync(join(dshPkgRoot, 'package.json'), JSON.stringify({ name: '@sakikotgw/pack-agent-dsh' }) + '\n')
+if (packAgentRoot(join(dshPkgRoot, 'lib')) !== dshPkgRoot) {
+  fail(`packAgentRoot must accept @sakikotgw/pack-agent-dsh, got ${packAgentRoot(join(dshPkgRoot, 'lib'))}`)
+}
+console.log('✓ packAgentRoot accepts CLI package and DSH plugin package')
 
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
   exports?: Record<string, string | { import?: string; default?: string; bun?: string }>

@@ -1,6 +1,6 @@
 //! pack-index — SQLite FTS5 catalog for projected Agent Modpacks.
 //!
-//! Commands: index | search | allow | deny | list | snapshot
+//! Commands: index | search | allow | deny | list | snapshot | set-save | set-load | set-list
 //! Always prints one JSON object on stdout.
 
 use anyhow::{anyhow, bail, Context, Result};
@@ -97,7 +97,22 @@ fn run() -> Result<Value> {
         }
         "list" => cmd_list(&conn, cli.enabled_only),
         "snapshot" => cmd_snapshot(&conn),
-        other => bail!("unknown command {other}; use index|search|allow|deny|list|snapshot"),
+        "set-save" => {
+            let name = cli
+                .positional
+                .first()
+                .ok_or_else(|| anyhow!("set-save requires <name>"))?;
+            cmd_set_save(&conn, name)
+        }
+        "set-load" => {
+            let name = cli
+                .positional
+                .first()
+                .ok_or_else(|| anyhow!("set-load requires <name>"))?;
+            cmd_set_load(&conn, name)
+        }
+        "set-list" => cmd_set_list(&conn),
+        other => bail!("unknown command {other}; use index|search|allow|deny|list|snapshot|set-save|set-load|set-list"),
     }
 }
 
@@ -124,7 +139,7 @@ fn parse_args() -> Result<Cli> {
             "--enabled" => enabled_only = true,
             "--help" | "-h" => {
                 eprintln!(
-                    "Usage: pack-index <index|search|allow|deny|list|snapshot> --db <file> [--root dir] [--enabled] [--json]"
+                    "Usage: pack-index <index|search|allow|deny|list|snapshot|set-save|set-load|set-list> --db <file> [--root dir] [--enabled] [--json]"
                 );
                 std::process::exit(0);
             }
@@ -176,9 +191,102 @@ fn init_schema(conn: &Connection) -> Result<()> {
           PRIMARY KEY (term, unit_id)
         );
         CREATE INDEX IF NOT EXISTS idx_terms_term ON terms(term);
+        CREATE TABLE IF NOT EXISTS allow_set_names (
+          name TEXT PRIMARY KEY
+        );
+        CREATE TABLE IF NOT EXISTS allow_sets (
+          set_name TEXT NOT NULL,
+          pack_id TEXT NOT NULL,
+          PRIMARY KEY (set_name, pack_id)
+        );
+        CREATE TABLE IF NOT EXISTS instance_meta (
+          k TEXT PRIMARY KEY,
+          v TEXT NOT NULL
+        );
+        INSERT OR IGNORE INTO instance_meta (k, v) VALUES ('active_set', 'default');
+        INSERT OR IGNORE INTO allow_set_names (name) VALUES ('default');
         "#,
     )?;
     Ok(())
+}
+
+fn valid_set_name(name: &str) -> bool {
+    let n = name.len();
+    n >= 1
+        && n <= 64
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
+        && !name.starts_with('.')
+}
+
+fn active_set_name(conn: &Connection) -> Result<String> {
+    let v: String = conn.query_row(
+        "SELECT v FROM instance_meta WHERE k = 'active_set'",
+        [],
+        |row| row.get(0),
+    )?;
+    Ok(v)
+}
+
+fn cmd_set_save(conn: &Connection, name: &str) -> Result<Value> {
+    if !valid_set_name(name) {
+        bail!("invalid set name {name}");
+    }
+    conn.execute("INSERT OR IGNORE INTO allow_set_names (name) VALUES (?1)", params![name])?;
+    conn.execute("DELETE FROM allow_sets WHERE set_name = ?1", params![name])?;
+    conn.execute(
+        "INSERT INTO allow_sets (set_name, pack_id) SELECT ?1, id FROM packs WHERE enabled = 1",
+        params![name],
+    )?;
+    Ok(json!({ "ok": true, "name": name, "saved": true }))
+}
+
+fn cmd_set_load(conn: &Connection, name: &str) -> Result<Value> {
+    if !valid_set_name(name) {
+        bail!("invalid set name {name}");
+    }
+    let exists: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM allow_set_names WHERE name = ?1",
+        params![name],
+        |row| row.get(0),
+    )?;
+    if exists == 0 {
+        bail!("unknown set {name}");
+    }
+    conn.execute("UPDATE packs SET enabled = 0", [])?;
+    conn.execute(
+        "UPDATE packs SET enabled = 1 WHERE id IN (SELECT pack_id FROM allow_sets WHERE set_name = ?1)",
+        params![name],
+    )?;
+    conn.execute(
+        "INSERT INTO instance_meta (k, v) VALUES ('active_set', ?1) ON CONFLICT(k) DO UPDATE SET v = excluded.v",
+        params![name],
+    )?;
+    Ok(json!({ "ok": true, "name": name, "loaded": true }))
+}
+
+fn cmd_set_list(conn: &Connection) -> Result<Value> {
+    let active = active_set_name(conn).unwrap_or_else(|_| "default".into());
+    let mut names: Vec<String> = Vec::new();
+    {
+        let mut stmt = conn.prepare("SELECT name FROM allow_set_names ORDER BY name")?;
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            names.push(row.get(0)?);
+        }
+    }
+    let mut sets: Vec<Value> = Vec::new();
+    for name in names {
+        let mut pack_ids: Vec<String> = Vec::new();
+        let mut stmt = conn.prepare("SELECT pack_id FROM allow_sets WHERE set_name = ?1 ORDER BY pack_id")?;
+        let mut rows = stmt.query(params![name])?;
+        while let Some(row) = rows.next()? {
+            pack_ids.push(row.get(0)?);
+        }
+        sets.push(json!({ "name": name, "pack_ids": pack_ids }));
+    }
+    Ok(json!({ "ok": true, "active": active, "sets": sets }))
 }
 
 fn cmd_index(conn: &Connection, root: &Path) -> Result<Value> {
@@ -211,6 +319,7 @@ fn cmd_index(conn: &Connection, root: &Path) -> Result<Value> {
     for id in existing {
         if !seen.contains(&id) {
             conn.execute("DELETE FROM units WHERE pack_id = ?1", params![id])?;
+            conn.execute("DELETE FROM allow_sets WHERE pack_id = ?1", params![id])?;
             conn.execute("DELETE FROM packs WHERE id = ?1", params![id])?;
         }
     }
@@ -296,6 +405,17 @@ fn index_one_pack(conn: &Connection, dir: &Path, indexed_at: i64) -> Result<Opti
         if unit.name.trim().is_empty() {
             continue;
         }
+        if unit.name.starts_with('.') || unit.name.contains('/') || unit.name.contains('\\') {
+            continue;
+        }
+        if unit
+            .path
+            .replace('\\', "/")
+            .split('/')
+            .any(|seg| seg.starts_with('.'))
+        {
+            continue;
+        }
         let abs = if unit.path.trim().is_empty() {
             String::new()
         } else {
@@ -327,8 +447,14 @@ fn walk_skill_units(dir: &Path) -> Vec<CatalogUnit> {
             continue;
         }
         let name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+        if name.starts_with('.') {
+            continue;
+        }
         let rel = path.strip_prefix(dir).unwrap_or(path);
         let rel_s = rel.to_string_lossy().replace('\\', "/");
+        if rel_s.split('/').any(|seg| seg.starts_with('.')) {
+            continue;
+        }
         if name.eq_ignore_ascii_case("SKILL.md") {
             let skill_name = path
                 .parent()
@@ -336,6 +462,9 @@ fn walk_skill_units(dir: &Path) -> Vec<CatalogUnit> {
                 .and_then(|s| s.to_str())
                 .unwrap_or("skill")
                 .to_string();
+            if skill_name.starts_with('.') {
+                continue;
+            }
             out.push(CatalogUnit {
                 kind: "skill".into(),
                 name: skill_name,

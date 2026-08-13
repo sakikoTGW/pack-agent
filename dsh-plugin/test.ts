@@ -15,6 +15,9 @@ function fail(msg: string): never {
 if (pluginName !== 'pack-agent') fail(`plugin name ${pluginName}`)
 if (!inject.includes('tools')) fail(`inject must include tools: ${inject.join(',')}`)
 if (!inject.includes('skills')) fail(`inject must include skills: ${inject.join(',')}`)
+if (!inject.includes('commands')) {
+  fail(`inject must include commands; Cordis throws "cannot get property commands without inject": ${inject.join(',')}`)
+}
 console.log('✓ cordis plugin name/inject')
 
 type ToolDef = {
@@ -49,14 +52,23 @@ const ctx = {
 }
 
 const cwd = packTestTmp(`dsh-plugin-${Date.now()}`)
-apply(ctx, { cwd })
+const injectSet = new Set(inject)
+const cordisCtx = new Proxy(ctx, {
+  get(target, prop, receiver) {
+    if (typeof prop === 'string' && prop in target && !injectSet.has(prop)) {
+      throw new Error(`cannot get property "${prop}" without inject`)
+    }
+    return Reflect.get(target, prop, receiver)
+  },
+})
+apply(cordisCtx, { cwd })
 
 const toolNames = tools.map(t => t.name).sort()
-for (const n of ['packagent_detect', 'packagent_compile', 'packagent_project', 'packagent_map', 'packagent_search', 'packagent_allow', 'packagent_deny', 'packagent_list']) {
+for (const n of ['packagent_detect', 'packagent_compile', 'packagent_project', 'packagent_map', 'packagent_search', 'packagent_allow', 'packagent_deny', 'packagent_list', 'packagent_set_save', 'packagent_set_load', 'packagent_set_list']) {
   if (!toolNames.includes(n)) fail(`missing tool ${n}; have ${toolNames.join(',')}`)
 }
 const cmdNames = commands.map(c => c.name).sort()
-for (const n of ['packagent-detect', 'packagent-compile', 'packagent-project', 'packagent-map', 'packagent-search', 'packagent-allow']) {
+for (const n of ['packagent-detect', 'packagent-compile', 'packagent-project', 'packagent-map', 'packagent-search', 'packagent-allow', 'packagent-set-save', 'packagent-set-load', 'packagent-set-list']) {
   if (!cmdNames.includes(n)) fail(`missing command /${n}; have ${cmdNames.join(',')}`)
 }
 console.log('✓ tools + slash commands registered')
@@ -103,6 +115,16 @@ if (!listedSkills.some(s => s.name === 'demo')) {
 }
 console.log('✓ SkillProvider list is the allow-list')
 
+const setSave = tools.find(t => t.name === 'packagent_set_save')!
+const saved = await setSave.execute({ name: 'demo-only', cwd }) as { ok?: boolean; name?: string }
+if (!saved?.ok || saved.name !== 'demo-only') fail(`set-save ${JSON.stringify(saved)}`)
+const setList = tools.find(t => t.name === 'packagent_set_list')!
+const listedSets = await setList.execute({ cwd }) as { sets?: Array<{ name?: string; pack_ids?: string[] }> }
+if (!listedSets.sets?.some(s => s.name === 'demo-only' && s.pack_ids?.includes(String(projected.id)))) {
+  fail(`set-list after save ${JSON.stringify(listedSets)}`)
+}
+console.log('✓ packagent_set_save/list writes workspace presets')
+
 const cmd = commands.find(c => c.name === 'packagent-detect')!
 const cmdOut = await cmd.handler({ rawInput: '' }) as { kind?: string; text?: string }
 if (cmdOut?.kind !== 'success') fail(`slash detect ${JSON.stringify(cmdOut)}`)
@@ -117,11 +139,14 @@ if (!pluginPkg.dsh?.bundle?.patch) fail('plugin package.json missing dsh.bundle.
 console.log('✓ plugin is a dsh.bundle')
 
 const skillMd = await readFile(join(import.meta.dir, 'skills', 'pack-agent-dsh', 'SKILL.md'), 'utf8')
+if (!skillMd.includes('@sakikotgw/pack-agent-dsh')) {
+  fail('SKILL.md must tell the host to add @sakikotgw/pack-agent-dsh')
+}
 if (skillMd.includes('dsh plugin --profile web add "<compiled-dir>"')) {
   fail('SKILL.md must not tell the model to plugin-add a compiled pack')
 }
-if (!skillMd.includes('packagent_map') || !skillMd.includes('packagent_allow')) {
-  fail('SKILL.md must document map/allow tools')
+if (!skillMd.includes('packagent_map') || !skillMd.includes('packagent_allow') || !skillMd.includes('packagent_set_save')) {
+  fail('SKILL.md must document map/allow/set-save tools')
 }
 console.log('✓ plugin skill documents projection, not plugin-add-per-pack')
 

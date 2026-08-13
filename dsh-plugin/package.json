@@ -1,7 +1,7 @@
 {
   "name": "@sakikotgw/pack-agent-dsh",
-  "version": "0.4.0",
-  "description": "pack-agent as a DeepSeek Harness plugin — compile and install Agent Modpacks on DSH",
+  "version": "0.4.1",
+  "description": "DeepSeek Harness plugin: project Agent Modpacks into .agent-pack/modpacks and allow them",
   "type": "module",
   "main": "./lib/index.js",
   "exports": {
@@ -9,13 +9,23 @@
   },
   "files": [
     "lib",
-    "src",
     "skills",
     "cordis.patch.yml",
     "README.md",
+    "README.zh.md",
     "INSTALL.md"
   ],
   "license": "MIT",
+  "author": "sakikotgw",
+  "homepage": "https://github.com/sakikoTGW/pack-agent/blob/main/dsh-plugin/README.md",
+  "bugs": {
+    "url": "https://github.com/sakikoTGW/pack-agent/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sakikoTGW/pack-agent.git",
+    "directory": "dsh-plugin"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -26,5 +36,11 @@
     "deepseek-harness",
     "agent-modpack",
     "pack-agent"
-  ]
+  ],
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "prepublishOnly": "node -e \"console.error('publish @sakikotgw/pack-agent-dsh from staged dir: bun run scripts/stage-dsh-npm.ts'); process.exit(1)\""
+  }
 }

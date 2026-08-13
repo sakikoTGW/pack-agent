@@ -13,6 +13,9 @@ import {
   catalogList,
   catalogPaths,
   catalogSearch,
+  catalogSetList,
+  catalogSetLoad,
+  catalogSetSave,
   catalogSnapshot,
   projectPack,
 } from './catalog.js'
@@ -110,6 +113,24 @@ try {
 await catalogDeny(workspace, a.id)
 const snap2 = await catalogSnapshot(workspace)
 if (snap2.skills.some(s => s.name === 'alpha-skill')) fail('deny should hide alpha')
+
+await catalogAllow(workspace, a.id)
+await catalogSetSave(workspace, 'alpha-only')
+await catalogAllow(workspace, b.id)
+const snapBoth = await catalogSnapshot(workspace)
+if (!snapBoth.skills.some(s => s.name === 'alpha-skill') || !snapBoth.skills.some(s => s.name === 'beta-skill')) {
+  fail(`live whitelist after second allow should contain both: ${JSON.stringify(snapBoth)}`)
+}
+await catalogSetLoad(workspace, 'alpha-only')
+const snapLoaded = await catalogSnapshot(workspace)
+if (!snapLoaded.skills.some(s => s.name === 'alpha-skill')) fail(`set-load alpha-only missing alpha: ${JSON.stringify(snapLoaded)}`)
+if (snapLoaded.skills.some(s => s.name === 'beta-skill')) fail('set-load alpha-only must not keep beta in the live whitelist')
+const sets = await catalogSetList(workspace)
+if (sets.active !== 'alpha-only') fail(`active set ${sets.active}`)
+if (!sets.sets.some(s => s.name === 'alpha-only' && s.pack_ids.includes(a.id) && !s.pack_ids.includes(b.id))) {
+  fail(`set list ${JSON.stringify(sets)}`)
+}
+console.log('✓ named allow-set save/load is instance whitelist, not per-chat')
 
 console.log('✓ project + sqlite catalog + rust search + allow-list')
 

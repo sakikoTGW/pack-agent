@@ -1,18 +1,50 @@
-# pack-agent-dsh — pack-agent 长出的 DeepSeek 插件
+# pack-agent-dsh
 
-在 pack-agent 上长出来的 Cordis 插件：给 DSH 注册投影/检索/允许工具，并以 SkillProvider 只暴露允许集。
+English | [中文](README.zh.md)
 
-## 安装
+`@sakikotgw/pack-agent-dsh` is a [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin.
 
-把**仓库根**加进 DSH 一次（根 `package.json` 声明了 `dsh.bundle`）：
+It projects `.pack.json` / `.pack.zip` into `.agent-pack/modpacks/` and exposes an allow-list of skills. Install this plugin once. Do not `dsh plugin add` each projected pack.
+
+Claude Code, Codex, and Cursor use [`@sakikotgw/pack-agent`](https://www.npmjs.com/package/@sakikotgw/pack-agent).
+
+## Install
+
+Install [Node.js](https://nodejs.org/), then:
 
 ```sh
-dsh plugin --profile web add @sakikotgw/pack-agent
-dsh web
+dsh plugin --profile web add @sakikotgw/pack-agent-dsh
 ```
 
-pnpm 9 若报 `ERR_PNPM_ADDING_TO_ROOT`，加 `-w`：`dsh plugin --profile web add @sakikotgw/pack-agent -w`。
+pnpm 9: add `-w` if you get `ERR_PNPM_ADDING_TO_ROOT`.
 
-不要把 `.agent-pack/modpacks/<某个包>` 再 `plugin add`。换包 = 换允许集。
+Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to plugin repositories so they can be found.
 
-然后模型能调 `packagent_project` / `packagent_search` / `packagent_allow` / `packagent_deny` / `packagent_list`。
+## Use
+
+```sh
+packagent dsh project path/to/foo.pack.json
+packagent dsh allow <id>
+```
+
+`packagent` is the CLI in `@sakikotgw/pack-agent`. Cursor / old packs: `packagent dsh map`.
+
+Tools registered in DSH: `packagent_project`, `packagent_map`, `packagent_search`, `packagent_allow`, `packagent_deny`, `packagent_list`, `packagent_set_save`, `packagent_set_load`, `packagent_set_list`.
+
+The allow-list is per project directory. `set-save` / `set-load` switch named presets for that directory.
+
+## Run from source
+
+```sh
+git clone https://github.com/sakikoTGW/pack-agent.git
+cd pack-agent
+bun install
+bun run build:dsh
+dsh plugin --profile web add ./dsh-plugin -w
+```
+
+Prefer the npm package. Git installs do not run this repo's build.
+
+## License
+
+[MIT](https://github.com/sakikoTGW/pack-agent/blob/main/LICENSE)

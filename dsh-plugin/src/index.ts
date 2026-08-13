@@ -12,13 +12,16 @@ import {
   actionMap,
   actionProject,
   actionSearch,
+  actionSetList,
+  actionSetLoad,
+  actionSetSave,
   defaultCompileOut,
 } from './actions.js'
 import { loadPackDoc } from '../../dsh-modpack/compile.js'
 import { createCatalogSkillProvider } from './provider.js'
 
 export const name = 'pack-agent'
-export const inject = ['tools', 'skills']
+export const inject = ['tools', 'skills', 'commands']
 
 export type PackAgentDshConfig = {
   cwd?: string
@@ -194,7 +197,7 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
 
   ctx.tools.register(withDshOutput({
     name: 'packagent_allow',
-    description: 'Allow a projected pack so the current session can see its skills.',
+    description: 'Enable a projected pack in this workspace live whitelist. Files stay on disk. Does not change saved presets.',
     parameters: {
       type: 'object',
       properties: {
@@ -213,7 +216,7 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
 
   ctx.tools.register(withDshOutput({
     name: 'packagent_deny',
-    description: 'Deny a projected pack. Files stay on disk; the session can no longer see it.',
+    description: 'Disable a projected pack in this workspace live whitelist. Files stay on disk. Does not change saved presets.',
     parameters: {
       type: 'object',
       properties: {
@@ -242,6 +245,57 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
       additionalProperties: false,
     },
     execute: args => actionList(cwdOf(config, args.cwd), Boolean(args.enabled)),
+  }))
+
+  ctx.tools.register(withDshOutput({
+    name: 'packagent_set_save',
+    description: 'Save the current workspace live whitelist as a named allow-set preset.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Preset name: [A-Za-z0-9._-]+, 1-64, not starting with .' },
+        cwd: { type: 'string' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+    async execute(args) {
+      const name = String(args.name || '').trim()
+      if (!name) throw new Error('name required')
+      return actionSetSave(cwdOf(config, args.cwd), name)
+    },
+  }))
+
+  ctx.tools.register(withDshOutput({
+    name: 'packagent_set_load',
+    description: 'Load a named allow-set preset over this workspace live whitelist. All agents in the workspace see the change.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        cwd: { type: 'string' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+    async execute(args) {
+      const name = String(args.name || '').trim()
+      if (!name) throw new Error('name required')
+      return actionSetLoad(cwdOf(config, args.cwd), name)
+    },
+  }))
+
+  ctx.tools.register(withDshOutput({
+    name: 'packagent_set_list',
+    description: 'List named allow-set presets and the active preset for this workspace.',
+    parameters: {
+      type: 'object',
+      properties: {
+        cwd: { type: 'string' },
+      },
+      additionalProperties: false,
+    },
+    execute: args => actionSetList(cwdOf(config, args.cwd)),
   }))
 
   ctx.commands?.register({
@@ -305,12 +359,45 @@ export function apply(ctx: PluginContext, config: PackAgentDshConfig = {}): void
 
   ctx.commands?.register({
     name: 'packagent-allow',
-    description: 'allow a projected pack for this session',
+    description: 'allow a projected pack in this workspace whitelist',
     input: { hint: '<pack-id>' },
     handler: async invocation => {
       const id = invocation.rawInput.trim()
       if (!id) return { kind: 'error' as const, text: 'Usage: /packagent-allow <pack-id>' }
       const r = await actionAllow(cwdOf(config), id)
+      return { kind: 'success' as const, text: textOf(r) }
+    },
+  })
+
+  ctx.commands?.register({
+    name: 'packagent-set-save',
+    description: 'save current workspace whitelist as a named preset',
+    input: { hint: '<name>' },
+    handler: async invocation => {
+      const name = invocation.rawInput.trim()
+      if (!name) return { kind: 'error' as const, text: 'Usage: /packagent-set-save <name>' }
+      const r = await actionSetSave(cwdOf(config), name)
+      return { kind: 'success' as const, text: textOf(r) }
+    },
+  })
+
+  ctx.commands?.register({
+    name: 'packagent-set-load',
+    description: 'load a named whitelist preset for this workspace',
+    input: { hint: '<name>' },
+    handler: async invocation => {
+      const name = invocation.rawInput.trim()
+      if (!name) return { kind: 'error' as const, text: 'Usage: /packagent-set-load <name>' }
+      const r = await actionSetLoad(cwdOf(config), name)
+      return { kind: 'success' as const, text: textOf(r) }
+    },
+  })
+
+  ctx.commands?.register({
+    name: 'packagent-set-list',
+    description: 'list named whitelist presets for this workspace',
+    handler: async () => {
+      const r = await actionSetList(cwdOf(config))
       return { kind: 'success' as const, text: textOf(r) }
     },
   })

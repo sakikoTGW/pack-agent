@@ -11,6 +11,9 @@
  *   packagent dsh deny <id> [--cwd dir]
  *   packagent dsh list [--cwd dir] [--enabled]
  *   packagent dsh snapshot [--cwd dir]
+ *   packagent dsh set-save <name> [--cwd dir]
+ *   packagent dsh set-load <name> [--cwd dir]
+ *   packagent dsh set-list [--cwd dir]
  */
 import { mkdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -21,6 +24,9 @@ import {
   catalogIndex,
   catalogList,
   catalogSearch,
+  catalogSetList,
+  catalogSetLoad,
+  catalogSetSave,
   catalogSnapshot,
   mapPackToDsh,
   projectPack,
@@ -44,7 +50,10 @@ function printHelp(): void {
   packagent dsh allow <id> [--cwd dir]
   packagent dsh deny <id> [--cwd dir]
   packagent dsh list [--cwd dir] [--enabled]
-  packagent dsh snapshot [--cwd dir]`)
+  packagent dsh snapshot [--cwd dir]
+  packagent dsh set-save <name> [--cwd dir]
+  packagent dsh set-load <name> [--cwd dir]
+  packagent dsh set-list [--cwd dir]`)
 }
 
 function parseFlags(args: string[]): {
@@ -190,7 +199,29 @@ export async function runDshCli(args: string[]): Promise<void> {
     return
   }
 
-  fail(`Unknown dsh subcommand: ${cmd}. Use: compile | ours | project | map | index | search | allow | deny | list | snapshot`)
+  if (cmd === 'set-save') {
+    const name = positional[0]
+    if (!name) fail('Usage: packagent dsh set-save <name> [--cwd dir]')
+    await catalogSetSave(workspaceOf(cwd), name)
+    console.log(JSON.stringify({ ok: true, name, saved: true }))
+    return
+  }
+
+  if (cmd === 'set-load') {
+    const name = positional[0]
+    if (!name) fail('Usage: packagent dsh set-load <name> [--cwd dir]')
+    await catalogSetLoad(workspaceOf(cwd), name)
+    console.log(JSON.stringify({ ok: true, name, loaded: true }))
+    return
+  }
+
+  if (cmd === 'set-list') {
+    const sets = await catalogSetList(workspaceOf(cwd))
+    console.log(JSON.stringify(sets, null, 2))
+    return
+  }
+
+  fail(`Unknown dsh subcommand: ${cmd}. Use: compile | ours | project | map | index | search | allow | deny | list | snapshot | set-save | set-load | set-list`)
 }
 
 if (import.meta.main) {

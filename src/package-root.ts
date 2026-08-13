@@ -1,12 +1,14 @@
 /**
- * 定位本包根目录（package.json name = @sakikotgw/pack-agent）。
- * DSH 插件会打成 dsh-plugin/lib/index.js，import.meta.dirname 不再是源码目录。
+ * 定位本包根目录。CLI 包名 @sakikotgw/pack-agent；DSH 精简包名 @sakikotgw/pack-agent-dsh。
+ * 插件打成 dsh-plugin/lib/index.js 后，import.meta.dirname 不再是源码目录。
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 export const PACK_AGENT_PKG = '@sakikotgw/pack-agent'
+export const PACK_AGENT_DSH_PKG = '@sakikotgw/pack-agent-dsh'
+export const PACK_AGENT_PKGS = [PACK_AGENT_PKG, PACK_AGENT_DSH_PKG] as const
 
 function startDir(from?: string): string {
   if (from) return from
@@ -21,7 +23,7 @@ export function packAgentRoot(start?: string): string {
     if (existsSync(pkgPath)) {
       try {
         const name = (JSON.parse(readFileSync(pkgPath, 'utf8')) as { name?: string }).name
-        if (name === PACK_AGENT_PKG) return dir
+        if (name && (PACK_AGENT_PKGS as readonly string[]).includes(name)) return dir
       } catch {
         // keep walking
       }
@@ -30,5 +32,18 @@ export function packAgentRoot(start?: string): string {
     if (parent === dir) break
     dir = parent
   }
-  throw new Error(`pack-agent package root not found (name ${PACK_AGENT_PKG}) from ${startDir(start)}`)
+  throw new Error(`pack-agent package root not found (${PACK_AGENT_PKGS.join(' | ')}) from ${startDir(start)}`)
+}
+
+/**
+ * 包根下的资源。npm `@sakikotgw/pack-agent-dsh` 与仓库根同布局；
+ * 若从 git 里的 `dsh-plugin/` 当包根，则回退到上一层。
+ */
+export function packAgentFile(...rel: string[]): string {
+  const root = packAgentRoot()
+  const direct = join(root, ...rel)
+  if (existsSync(direct)) return direct
+  const up = join(root, '..', ...rel)
+  if (existsSync(up)) return up
+  return direct
 }

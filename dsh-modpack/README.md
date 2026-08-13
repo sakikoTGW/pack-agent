@@ -2,13 +2,13 @@
 
 DeepSeek Harness 是 Forge。这个目录把 Pack 编成投影目录，**不** `dsh plugin add` 进宿主插件栈。
 
-多包并存于 `.agent-pack/modpacks/<id>/`。每个整合包必须带 `mods/<mod-id>/`：skill、MCP、rule、command、hook、Cordis 插件各有 `mod.json` + 正文。SQLite 注册表由 Rust `pack-index` 维护。会话只看见允许集。
+多包并存于 `.agent-pack/modpacks/<id>/`。每个整合包必须带 `mods/<mod-id>/`：skill、MCP、rule、command、hook、Cordis 插件各有 `mod.json` + 正文。SQLite 注册表由 Rust `pack-index` 维护。技能目录只看见工作区活白名单（`packs.enabled`）。命名预设用 `set-save` / `set-load`。
 
 ## 实际用法
 
 ```sh
 # 宿主只装一次 pack-agent 管理器
-dsh plugin --profile web add @sakikotgw/pack-agent
+dsh plugin --profile web add @sakikotgw/pack-agent-dsh
 # pnpm 9: add -w if ERR_PNPM_ADDING_TO_ROOT
 
 # 投影 + 建索引（默认不放行）
@@ -23,11 +23,16 @@ packagent dsh map path/to/from-cursor.pack.json --from E:\that-cursor-project
 # 检索（所有已投影包）
 packagent dsh search ALPHATOKENSIG
 
-# 本会话放行 / 停用（文件不删）
+# 工作区活白名单放行 / 停用（文件不删，不改已保存预设）
 packagent dsh allow pack-agent-modpack-foo
 packagent dsh deny pack-agent-modpack-foo
 packagent dsh list
 packagent dsh snapshot
+
+# 命名整合白：保存当前活名单，或覆盖加载
+packagent dsh set-save alpha-only
+packagent dsh set-load alpha-only
+packagent dsh set-list
 ```
 
 只编译目录、不入索引：`packagent dsh compile` / `packagent dsh ours`。

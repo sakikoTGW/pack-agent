@@ -5,6 +5,9 @@ import {
   catalogDeny,
   catalogList,
   catalogSearch,
+  catalogSetList,
+  catalogSetLoad,
+  catalogSetSave,
   catalogSnapshot,
   mapPackToDsh,
   projectPack,
@@ -57,6 +60,21 @@ export async function actionList(cwd: string, enabledOnly = false) {
 export async function actionSnapshot(cwd: string) {
   const snap = await catalogSnapshot(cwd)
   return { ok: true as const, ...snap }
+}
+
+export async function actionSetSave(cwd: string, name: string) {
+  await catalogSetSave(cwd, name)
+  return { ok: true as const, name, saved: true }
+}
+
+export async function actionSetLoad(cwd: string, name: string) {
+  await catalogSetLoad(cwd, name)
+  return { ok: true as const, name, loaded: true }
+}
+
+export async function actionSetList(cwd: string) {
+  const sets = await catalogSetList(cwd)
+  return { ok: true as const, ...sets }
 }
 
 export function defaultCompileOut(cwd: string, packName: string): string {

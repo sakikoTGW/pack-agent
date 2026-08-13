@@ -196,6 +196,33 @@ try {
 console.log('✓ everything packable: files + persona + plugins + hooks + preset + mods/')
 await rm(allOut, { recursive: true, force: true }).catch(() => {})
 
+const originPack: PackDoc = {
+  name: 'origin-lib',
+  version: '0.1.0',
+  knowledge: { skills: [{ name: 'real-skill', source: 'bundled' }] },
+  bundle: {
+    portable: true,
+    files: [
+      { path: 'skills/real-skill/SKILL.md', content: '---\nname: real-skill\n---\n# real\n' },
+      { path: 'skills/real-skill/.agent-pack-origin.json', content: '{"packName":"origin-lib","skillName":"real-skill"}\n' },
+    ],
+  },
+}
+const originOut = packTestTmp(`dsh-modpack-origin-${Date.now()}`)
+const originResult = await compilePackToDshBundle(originPack, originOut)
+try {
+  await access(join(originResult.dir, 'mods', 'real-skill', '.agent-pack-origin.json', 'SKILL.md'))
+  fail('origin json must not compile into mods/<skill>/.agent-pack-origin.json/SKILL.md')
+} catch {
+  // missing is correct
+}
+const originCatalog = JSON.parse(await readFile(join(originResult.dir, 'catalog.json'), 'utf8')) as { units?: Array<{ name?: string; path?: string }> }
+if (originCatalog.units?.some(u => String(u.name || '').includes('agent-pack-origin') || String(u.path || '').includes('.agent-pack-origin.json'))) {
+  fail(`catalog must not index origin marker: ${JSON.stringify(originCatalog.units)}`)
+}
+console.log('✓ origin marker is not compiled as a skill/mod')
+await rm(originOut, { recursive: true, force: true }).catch(() => {})
+
 try {
   await compilePackToDshBundle(
     { name: 'empty-table', version: '0.0.1', description: 'json only', bundle: { portable: true, files: [] } },

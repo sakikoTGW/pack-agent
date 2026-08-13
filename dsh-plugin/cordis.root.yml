@@ -3,7 +3,7 @@
 - insert:
     - id: pack-agent
       name: '@sakikotgw/pack-agent/dsh'
-      inject: [tools, skills]
+      inject: [tools, skills, commands]
     - id: pack-agent-dsh-skills
       name: '@deepseek-ai/dsh-skill-filesystem'
       config:

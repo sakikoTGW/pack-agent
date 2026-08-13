@@ -8123,7 +8123,7 @@ var init_tmp_root = __esm(() => {
 
 // src/pack-archive.ts
 import { promises as fs2 } from "node:fs";
-import { dirname as dirname2, join as join4 } from "node:path";
+import { dirname as dirname3, join as join4 } from "node:path";
 import { spawnSync as spawnSync2 } from "node:child_process";
 function mcpEntriesFromServers(doc) {
   const out = [];
@@ -8237,7 +8237,7 @@ var init_pack_archive = __esm(() => {
 import { resolve as resolve3 } from "node:path";
 
 // dsh-plugin/src/actions.ts
-import { join as join11, resolve as resolve2 } from "node:path";
+import { join as join10, resolve as resolve2 } from "node:path";
 
 // src/adapters.ts
 var import_json5 = __toESM(require_lib(), 1);
@@ -8530,18 +8530,20 @@ var RULE_FILES = new Map([
 // dsh-modpack/catalog.ts
 import { spawnSync as spawnSync3 } from "node:child_process";
 import { mkdirSync as mkdirSync3 } from "node:fs";
-import { dirname as dirname5, join as join10 } from "node:path";
+import { dirname as dirname6, join as join9 } from "node:path";
 
 // scripts/build-pack-index.ts
 import { spawnSync } from "node:child_process";
 import { existsSync as existsSync3, mkdirSync as mkdirSync2, writeFileSync } from "node:fs";
-import { join as join3 } from "node:path";
+import { dirname as dirname2, join as join3 } from "node:path";
 
 // src/package-root.ts
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join as join2 } from "node:path";
 import { fileURLToPath } from "node:url";
 var PACK_AGENT_PKG = "@sakikotgw/pack-agent";
+var PACK_AGENT_DSH_PKG = "@sakikotgw/pack-agent-dsh";
+var PACK_AGENT_PKGS = [PACK_AGENT_PKG, PACK_AGENT_DSH_PKG];
 function startDir(from) {
   if (from)
     return from;
@@ -8556,7 +8558,7 @@ function packAgentRoot(start) {
     if (existsSync(pkgPath)) {
       try {
         const name = JSON.parse(readFileSync(pkgPath, "utf8")).name;
-        if (name === PACK_AGENT_PKG)
+        if (name && PACK_AGENT_PKGS.includes(name))
           return dir;
       } catch {}
     }
@@ -8565,7 +8567,17 @@ function packAgentRoot(start) {
       break;
     dir = parent;
   }
-  throw new Error(`pack-agent package root not found (name ${PACK_AGENT_PKG}) from ${startDir(start)}`);
+  throw new Error(`pack-agent package root not found (${PACK_AGENT_PKGS.join(" | ")}) from ${startDir(start)}`);
+}
+function packAgentFile(...rel) {
+  const root = packAgentRoot();
+  const direct = join2(root, ...rel);
+  if (existsSync(direct))
+    return direct;
+  const up = join2(root, "..", ...rel);
+  if (existsSync(up))
+    return up;
+  return direct;
 }
 
 // scripts/build-pack-index.ts
@@ -8599,8 +8611,7 @@ function buildPackIndex() {
   const bin = packIndexBinPath();
   if (existsSync3(bin) && !process.env.PACK_INDEX_REBUILD)
     return bin;
-  const repoRoot = packAgentRoot();
-  const manifest = join3(repoRoot, "crates", "pack-index", "Cargo.toml");
+  const manifest = packAgentFile("crates", "pack-index", "Cargo.toml");
   const target = packIndexTargetDir();
   mkdirSync2(target, { recursive: true });
   const tmp = packTmpRoot();
@@ -8614,7 +8625,7 @@ function buildPackIndex() {
   const spawnOpts = {
     encoding: "utf8",
     env,
-    cwd: repoRoot,
+    cwd: dirname2(manifest),
     maxBuffer: 64 * 1024 * 1024,
     timeout: 10 * 60 * 1000
   };
@@ -8662,7 +8673,7 @@ init_tmp_root();
 
 // dsh-modpack/compile.ts
 import { promises as fs6 } from "node:fs";
-import { dirname as dirname4, join as join9, resolve } from "node:path";
+import { dirname as dirname5, join as join8, resolve } from "node:path";
 
 // src/types.ts
 var PACK_MOD_SCHEMA = "pack-agent.mod/v0";
@@ -8672,8 +8683,7 @@ init_pack_archive();
 
 // dsh-modpack/registry.ts
 import { readFileSync as readFileSync2 } from "node:fs";
-import { join as join5 } from "node:path";
-function loadRegistry(path = join5(packAgentRoot(), "dsh-modpack", "registry.yaml")) {
+function loadRegistry(path = packAgentFile("dsh-modpack", "registry.yaml")) {
   const raw = $parse(readFileSync2(path, "utf8"));
   if (!raw?.units || typeof raw.units !== "object") {
     throw new Error(`invalid dsh-modpack registry: ${path}`);
@@ -8684,11 +8694,11 @@ function loadRegistry(path = join5(packAgentRoot(), "dsh-modpack", "registry.yam
 // dsh-modpack/map.ts
 var import_json52 = __toESM(require_lib(), 1);
 import { promises as fs5 } from "node:fs";
-import { join as join8 } from "node:path";
+import { join as join7 } from "node:path";
 
 // src/portable.ts
 import { promises as fs3 } from "node:fs";
-import { basename as basename3, dirname as dirname3, join as join6, relative } from "node:path";
+import { basename as basename3, dirname as dirname4, join as join5, relative } from "node:path";
 async function embedPortableFiles(pack, cwd) {
   const files = [];
   const seen = new Set;
@@ -8696,9 +8706,9 @@ async function embedPortableFiles(pack, cwd) {
     const ref = String(s.ref || "").trim();
     if (!ref)
       continue;
-    const abs = ref.match(/^[a-zA-Z]:/) || ref.startsWith("/") ? ref : join6(cwd, ref);
-    const dir = abs.endsWith("SKILL.md") ? dirname3(abs) : abs;
-    if (!await exists(join6(dir, "SKILL.md")))
+    const abs = ref.match(/^[a-zA-Z]:/) || ref.startsWith("/") ? ref : join5(cwd, ref);
+    const dir = abs.endsWith("SKILL.md") ? dirname4(abs) : abs;
+    if (!await exists(join5(dir, "SKILL.md")))
       continue;
     const skillName = s.name || basename3(dir);
     for (const f of await walkFiles2(dir)) {
@@ -8713,7 +8723,7 @@ async function embedPortableFiles(pack, cwd) {
     const ref = String(r.ref || "").trim();
     if (!ref)
       continue;
-    const abs = ref.match(/^[a-zA-Z]:/) || ref.startsWith("/") ? ref : join6(cwd, ref);
+    const abs = ref.match(/^[a-zA-Z]:/) || ref.startsWith("/") ? ref : join5(cwd, ref);
     if (!await exists(abs))
       continue;
     try {
@@ -8753,7 +8763,7 @@ async function walkFiles2(dir, base = dir) {
     return out;
   }
   for (const e of entries) {
-    const abs = join6(dir, e.name);
+    const abs = join5(dir, e.name);
     if (e.isDirectory()) {
       out.push(...await walkFiles2(abs, base));
       continue;
@@ -8770,7 +8780,7 @@ async function walkFiles2(dir, base = dir) {
 
 // src/scan-modules.ts
 import { promises as fs4 } from "node:fs";
-import { basename as basename4, join as join7 } from "node:path";
+import { basename as basename4, join as join6 } from "node:path";
 async function readText(abs) {
   try {
     return await fs4.readFile(abs, "utf8");
@@ -8785,7 +8795,7 @@ async function embedExtendedBundleFiles(cwd, pack) {
     const ref = String(h.ref || "");
     if (!ref)
       continue;
-    const abs = join7(cwd, ref);
+    const abs = join6(cwd, ref);
     const content = await readText(abs);
     if (!content)
       continue;
@@ -8802,7 +8812,7 @@ async function embedExtendedBundleFiles(cwd, pack) {
     const ref = String(a.ref || "");
     if (!ref)
       continue;
-    const abs = join7(cwd, ref);
+    const abs = join6(cwd, ref);
     const content = await readText(abs);
     if (!content)
       continue;
@@ -8816,7 +8826,7 @@ async function embedExtendedBundleFiles(cwd, pack) {
     const ref = String(m.ref || "");
     if (!ref)
       continue;
-    const abs = join7(cwd, ref);
+    const abs = join6(cwd, ref);
     const content = await readText(abs);
     if (!content)
       continue;
@@ -8830,7 +8840,7 @@ async function embedExtendedBundleFiles(cwd, pack) {
     const ref = String(s.ref || "");
     if (!ref)
       continue;
-    const abs = join7(cwd, ref);
+    const abs = join6(cwd, ref);
     const raw = await readText(abs);
     if (!raw)
       continue;
@@ -8850,7 +8860,7 @@ async function embedExtendedBundleFiles(cwd, pack) {
     const ref = String(c.ref || "");
     if (!ref)
       continue;
-    const abs = join7(cwd, ref);
+    const abs = join6(cwd, ref);
     const content = await readText(abs);
     if (!content)
       continue;
@@ -8865,7 +8875,7 @@ async function embedExtendedBundleFiles(cwd, pack) {
     const ref = String(t.ref || "");
     if (!ref)
       continue;
-    const abs = join7(cwd, ref);
+    const abs = join6(cwd, ref);
     const content = await readText(abs);
     if (!content)
       continue;
@@ -9036,17 +9046,17 @@ async function ingestSourceTree(pack, sourceRoot) {
     files.push({ path, content });
   };
   for (const skillRoot of [".cursor/skills", ".claude/skills", ".agents/skills"]) {
-    const absRoot = join8(sourceRoot, skillRoot);
+    const absRoot = join7(sourceRoot, skillRoot);
     for (const name of await listDir(absRoot)) {
-      const dir = join8(absRoot, name);
-      const skillMd = join8(dir, "SKILL.md");
+      const dir = join7(absRoot, name);
+      const skillMd = join7(dir, "SKILL.md");
       if (!await exists2(skillMd))
         continue;
       const entries = await fs5.readdir(dir, { withFileTypes: true }).catch(() => []);
       for (const e of entries) {
         if (!e.isFile())
           continue;
-        const content = await readIfFile(join8(dir, e.name));
+        const content = await readIfFile(join7(dir, e.name));
         if (content == null)
           continue;
         push(`${skillRoot}/${name}/${e.name}`, content);
@@ -9054,37 +9064,37 @@ async function ingestSourceTree(pack, sourceRoot) {
     }
   }
   for (const mcpRel of [".cursor/mcp.json", ".mcp.json", "mcp.json", ".vscode/mcp.json"]) {
-    const content = await readIfFile(join8(sourceRoot, mcpRel));
+    const content = await readIfFile(join7(sourceRoot, mcpRel));
     if (content != null)
       push(mcpRel, content);
   }
   for (const ruleDir of [".cursor/rules", ".claude/rules"]) {
-    const abs = join8(sourceRoot, ruleDir);
+    const abs = join7(sourceRoot, ruleDir);
     for (const name of await listDir(abs)) {
       if (!/\.(mdc|md)$/i.test(name))
         continue;
-      const content = await readIfFile(join8(abs, name));
+      const content = await readIfFile(join7(abs, name));
       if (content != null)
         push(`${ruleDir}/${name}`, content);
     }
   }
   for (const rf of ["AGENTS.md", "CLAUDE.md", "AGENTS.override.md"]) {
-    const content = await readIfFile(join8(sourceRoot, rf));
+    const content = await readIfFile(join7(sourceRoot, rf));
     if (content != null)
       push(rf, content);
   }
   for (const cmdDir of [".cursor/commands", ".claude/commands"]) {
-    const abs = join8(sourceRoot, cmdDir);
+    const abs = join7(sourceRoot, cmdDir);
     for (const name of await listDir(abs)) {
       if (!/\.(md|txt)$/i.test(name))
         continue;
-      const content = await readIfFile(join8(abs, name));
+      const content = await readIfFile(join7(abs, name));
       if (content != null)
         push(`${cmdDir}/${name}`, content);
     }
   }
   for (const hf of [".cursor/hooks.json", ".claude/hooks.json"]) {
-    const content = await readIfFile(join8(sourceRoot, hf));
+    const content = await readIfFile(join7(sourceRoot, hf));
     if (content != null)
       push(hf, content);
   }
@@ -9138,19 +9148,30 @@ function pluginId(prefix, name) {
   return `${prefix}-${slug(name)}`;
 }
 async function writeShippedMod(dir, manifest, files) {
-  const modDir = join9(dir, "mods", manifest.id);
+  const id = String(manifest.id || "").trim();
+  if (!id || id.includes("/") || id.includes("\\") || id.startsWith(".") || id.includes(".agent-pack-origin.json")) {
+    throw new Error(`invalid mod id: ${manifest.id}`);
+  }
+  const modDir = join8(dir, "mods", id);
   await fs6.mkdir(modDir, { recursive: true });
-  await fs6.writeFile(join9(modDir, "mod.json"), JSON.stringify(manifest, null, 2) + `
+  await fs6.writeFile(join8(modDir, "mod.json"), JSON.stringify(manifest, null, 2) + `
 `, "utf8");
   for (const [fileName, content] of Object.entries(files)) {
-    await fs6.writeFile(join9(modDir, fileName), content, "utf8");
+    await fs6.writeFile(join8(modDir, fileName), content, "utf8");
   }
 }
 function unitFromRel(srcRel, destRel) {
   const p = srcRel.replace(/\\/g, "/");
+  const segs = p.split("/");
+  if (segs.some((seg) => seg.startsWith(".") || seg === ".agent-pack-origin.json"))
+    return;
   if (p.startsWith("skills/")) {
     const rest = p.slice("skills/".length);
+    if (!rest.toLowerCase().endsWith(".md"))
+      return;
     const name = rest.endsWith("/SKILL.md") ? rest.slice(0, -"/SKILL.md".length).split("/").pop() || rest : rest.replace(/\.md$/i, "");
+    if (!name || name.includes("/") || name.startsWith("."))
+      return;
     return { kind: "skill", name, path: destRel };
   }
   if (p.startsWith("commands/")) {
@@ -9190,9 +9211,11 @@ async function compilePackToDshBundle(pack, outDir) {
   const extraFileMods = [];
   for (const f of pack.bundle?.files ?? []) {
     const rel = f.path.replace(/\\/g, "/");
+    if (rel.split("/").some((seg) => seg.startsWith(".")))
+      continue;
     const destRel = remapBundlePath(rel);
-    const dest = join9(dir, ...destRel.split("/"));
-    await fs6.mkdir(dirname4(dest), { recursive: true });
+    const dest = join8(dir, ...destRel.split("/"));
+    await fs6.mkdir(dirname5(dest), { recursive: true });
     await fs6.writeFile(dest, f.content, "utf8");
     if (rel.startsWith("skills/"))
       skillCount++;
@@ -9288,7 +9311,7 @@ async function compilePackToDshBundle(pack, outDir) {
     name: pack.dsh?.preset?.name || pack.name || packName,
     description: pack.dsh?.preset?.description || pack.description || ""
   };
-  await fs6.writeFile(join9(dir, "preset.yml"), $stringify(presetMeta), "utf8");
+  await fs6.writeFile(join8(dir, "preset.yml"), $stringify(presetMeta), "utf8");
   for (const m of pack.tools?.mcp ?? []) {
     const serverName = String(m.name || "").trim();
     if (serverName)
@@ -9389,7 +9412,7 @@ async function compilePackToDshBundle(pack, outDir) {
   const patchHeader = `# pack-agent dsh-modpack
 # 投影目录；不要 dsh plugin add 本包。放行：packagent dsh allow ${npmName}
 `;
-  await fs6.writeFile(join9(dir, "cordis.patch.yml"), patchHeader + $stringify(patch), "utf8");
+  await fs6.writeFile(join8(dir, "cordis.patch.yml"), patchHeader + $stringify(patch), "utf8");
   const pkg = {
     name: npmName,
     version: pack.version || "0.0.0",
@@ -9413,9 +9436,9 @@ async function compilePackToDshBundle(pack, outDir) {
     ],
     dsh: { bundle: { patch: "./cordis.patch.yml" } }
   };
-  await fs6.writeFile(join9(dir, "package.json"), JSON.stringify(pkg, null, 2) + `
+  await fs6.writeFile(join8(dir, "package.json"), JSON.stringify(pkg, null, 2) + `
 `, "utf8");
-  await fs6.writeFile(join9(dir, "catalog.json"), JSON.stringify({
+  await fs6.writeFile(join8(dir, "catalog.json"), JSON.stringify({
     id: npmName,
     name: packName,
     version: pack.version || "0.0.0",
@@ -9428,7 +9451,8 @@ async function compilePackToDshBundle(pack, outDir) {
   const installMd = `# 投影 · 不要把本包 add 进 DSH 插件栈
 
 本目录是整合包投影（\`dsh.bundle\` 形状），多包并存于 \`.agent-pack/modpacks/\`。
-会话只加载允许集；没允许的包留在磁盘上，模型看不见。
+工作区只加载活白名单；没允许的包留在磁盘上，模型看不见。
+命名预设：\`packagent dsh set-save <name>\` / \`set-load <name>\`。
 
 宿主只装一次 pack-agent 管理器：
 
@@ -9449,17 +9473,17 @@ ${installCommand}
 packagent dsh deny ${npmName}
 \`\`\`
 `;
-  await fs6.writeFile(join9(dir, "INSTALL.md"), installMd, "utf8");
+  await fs6.writeFile(join8(dir, "INSTALL.md"), installMd, "utf8");
   return { dir, npmName, installCommand };
 }
 
 // dsh-modpack/catalog.ts
 function catalogPaths(workspace) {
-  const root = join10(workspace, ".agent-pack");
+  const root = join9(workspace, ".agent-pack");
   return {
     root,
-    modpacksDir: join10(root, "modpacks"),
-    db: join10(root, "catalog.sqlite")
+    modpacksDir: join9(root, "modpacks"),
+    db: join9(root, "catalog.sqlite")
   };
 }
 function runPackIndex(db, args) {
@@ -9489,7 +9513,7 @@ ${proc.stderr || ""}`);
 async function catalogIndex(workspace) {
   const { db, modpacksDir } = catalogPaths(workspace);
   mkdirSync3(modpacksDir, { recursive: true });
-  mkdirSync3(dirname5(db), { recursive: true });
+  mkdirSync3(dirname6(db), { recursive: true });
   const out = runPackIndex(db, ["index", "--root", modpacksDir]);
   return {
     packs: Number(out.packs || 0),
@@ -9500,7 +9524,7 @@ async function projectPack(pack, workspace, opts) {
   const ready = opts?.from ? await hydrateLegacyPack(pack, opts.from) : remapLegacyPack(pack);
   const id = npmNameForPack(ready.name || "pack");
   const { modpacksDir } = catalogPaths(workspace);
-  const dir = join10(modpacksDir, id);
+  const dir = join9(modpacksDir, id);
   const compiled = await compilePackToDshBundle(ready, dir);
   await catalogIndex(workspace);
   if (opts?.allow)
@@ -9535,6 +9559,23 @@ async function catalogList(workspace, enabledOnly = false) {
   const out = runPackIndex(db, args);
   const packs = Array.isArray(out.packs) ? out.packs : [];
   return packs;
+}
+async function catalogSetSave(workspace, name) {
+  const { db } = catalogPaths(workspace);
+  runPackIndex(db, ["set-save", name]);
+}
+async function catalogSetLoad(workspace, name) {
+  const { db } = catalogPaths(workspace);
+  runPackIndex(db, ["set-load", name]);
+}
+async function catalogSetList(workspace) {
+  const { db } = catalogPaths(workspace);
+  const out = runPackIndex(db, ["set-list"]);
+  const sets = Array.isArray(out.sets) ? out.sets : [];
+  return {
+    active: String(out.active || "default"),
+    sets
+  };
 }
 async function catalogSnapshot(workspace) {
   const { db } = catalogPaths(workspace);
@@ -9579,8 +9620,20 @@ async function actionList(cwd, enabledOnly = false) {
   const packs = await catalogList(cwd, enabledOnly);
   return { ok: true, packs };
 }
+async function actionSetSave(cwd, name) {
+  await catalogSetSave(cwd, name);
+  return { ok: true, name, saved: true };
+}
+async function actionSetLoad(cwd, name) {
+  await catalogSetLoad(cwd, name);
+  return { ok: true, name, loaded: true };
+}
+async function actionSetList(cwd) {
+  const sets = await catalogSetList(cwd);
+  return { ok: true, ...sets };
+}
 function defaultCompileOut(cwd, packName) {
-  return join11(cwd, ".agent-pack", "modpacks", npmNameForPack(packName));
+  return join10(cwd, ".agent-pack", "modpacks", npmNameForPack(packName));
 }
 
 // dsh-plugin/src/provider.ts
@@ -9641,7 +9694,7 @@ function createCatalogSkillProvider(workspace) {
 
 // dsh-plugin/src/index.ts
 var name = "pack-agent";
-var inject = ["tools", "skills"];
+var inject = ["tools", "skills", "commands"];
 function cwdOf(config, argsCwd) {
   if (typeof argsCwd === "string" && argsCwd.trim())
     return resolve3(argsCwd);
@@ -9764,7 +9817,7 @@ function apply(ctx, config = {}) {
   }));
   ctx.tools.register(withDshOutput({
     name: "packagent_allow",
-    description: "Allow a projected pack so the current session can see its skills.",
+    description: "Enable a projected pack in this workspace live whitelist. Files stay on disk. Does not change saved presets.",
     parameters: {
       type: "object",
       properties: {
@@ -9783,7 +9836,7 @@ function apply(ctx, config = {}) {
   }));
   ctx.tools.register(withDshOutput({
     name: "packagent_deny",
-    description: "Deny a projected pack. Files stay on disk; the session can no longer see it.",
+    description: "Disable a projected pack in this workspace live whitelist. Files stay on disk. Does not change saved presets.",
     parameters: {
       type: "object",
       properties: {
@@ -9812,6 +9865,56 @@ function apply(ctx, config = {}) {
       additionalProperties: false
     },
     execute: (args) => actionList(cwdOf(config, args.cwd), Boolean(args.enabled))
+  }));
+  ctx.tools.register(withDshOutput({
+    name: "packagent_set_save",
+    description: "Save the current workspace live whitelist as a named allow-set preset.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Preset name: [A-Za-z0-9._-]+, 1-64, not starting with ." },
+        cwd: { type: "string" }
+      },
+      required: ["name"],
+      additionalProperties: false
+    },
+    async execute(args) {
+      const name2 = String(args.name || "").trim();
+      if (!name2)
+        throw new Error("name required");
+      return actionSetSave(cwdOf(config, args.cwd), name2);
+    }
+  }));
+  ctx.tools.register(withDshOutput({
+    name: "packagent_set_load",
+    description: "Load a named allow-set preset over this workspace live whitelist. All agents in the workspace see the change.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        cwd: { type: "string" }
+      },
+      required: ["name"],
+      additionalProperties: false
+    },
+    async execute(args) {
+      const name2 = String(args.name || "").trim();
+      if (!name2)
+        throw new Error("name required");
+      return actionSetLoad(cwdOf(config, args.cwd), name2);
+    }
+  }));
+  ctx.tools.register(withDshOutput({
+    name: "packagent_set_list",
+    description: "List named allow-set presets and the active preset for this workspace.",
+    parameters: {
+      type: "object",
+      properties: {
+        cwd: { type: "string" }
+      },
+      additionalProperties: false
+    },
+    execute: (args) => actionSetList(cwdOf(config, args.cwd))
   }));
   ctx.commands?.register({
     name: "packagent-detect",
@@ -9878,13 +9981,45 @@ ${r.installCommand}` };
   });
   ctx.commands?.register({
     name: "packagent-allow",
-    description: "allow a projected pack for this session",
+    description: "allow a projected pack in this workspace whitelist",
     input: { hint: "<pack-id>" },
     handler: async (invocation) => {
       const id = invocation.rawInput.trim();
       if (!id)
         return { kind: "error", text: "Usage: /packagent-allow <pack-id>" };
       const r = await actionAllow(cwdOf(config), id);
+      return { kind: "success", text: textOf(r) };
+    }
+  });
+  ctx.commands?.register({
+    name: "packagent-set-save",
+    description: "save current workspace whitelist as a named preset",
+    input: { hint: "<name>" },
+    handler: async (invocation) => {
+      const name2 = invocation.rawInput.trim();
+      if (!name2)
+        return { kind: "error", text: "Usage: /packagent-set-save <name>" };
+      const r = await actionSetSave(cwdOf(config), name2);
+      return { kind: "success", text: textOf(r) };
+    }
+  });
+  ctx.commands?.register({
+    name: "packagent-set-load",
+    description: "load a named whitelist preset for this workspace",
+    input: { hint: "<name>" },
+    handler: async (invocation) => {
+      const name2 = invocation.rawInput.trim();
+      if (!name2)
+        return { kind: "error", text: "Usage: /packagent-set-load <name>" };
+      const r = await actionSetLoad(cwdOf(config), name2);
+      return { kind: "success", text: textOf(r) };
+    }
+  });
+  ctx.commands?.register({
+    name: "packagent-set-list",
+    description: "list named whitelist presets for this workspace",
+    handler: async () => {
+      const r = await actionSetList(cwdOf(config));
       return { kind: "success", text: textOf(r) };
     }
   });

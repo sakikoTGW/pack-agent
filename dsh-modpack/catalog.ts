@@ -144,6 +144,36 @@ export async function catalogList(workspace: string, enabledOnly = false): Promi
   return packs as CatalogPackRow[]
 }
 
+export type CatalogAllowSet = {
+  name: string
+  pack_ids: string[]
+}
+
+export type CatalogAllowSets = {
+  active: string
+  sets: CatalogAllowSet[]
+}
+
+export async function catalogSetSave(workspace: string, name: string): Promise<void> {
+  const { db } = catalogPaths(workspace)
+  runPackIndex(db, ['set-save', name])
+}
+
+export async function catalogSetLoad(workspace: string, name: string): Promise<void> {
+  const { db } = catalogPaths(workspace)
+  runPackIndex(db, ['set-load', name])
+}
+
+export async function catalogSetList(workspace: string): Promise<CatalogAllowSets> {
+  const { db } = catalogPaths(workspace)
+  const out = runPackIndex(db, ['set-list'])
+  const sets = Array.isArray(out.sets) ? out.sets : []
+  return {
+    active: String(out.active || 'default'),
+    sets: sets as CatalogAllowSet[],
+  }
+}
+
 export async function catalogSnapshot(workspace: string): Promise<CatalogSnapshot> {
   const { db } = catalogPaths(workspace)
   const out = runPackIndex(db, ['snapshot'])

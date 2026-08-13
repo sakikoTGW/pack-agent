@@ -61,7 +61,11 @@ async function writeShippedMod(
   manifest: PackModManifest,
   files: Record<string, string>,
 ): Promise<void> {
-  const modDir = join(dir, 'mods', manifest.id)
+  const id = String(manifest.id || '').trim()
+  if (!id || id.includes('/') || id.includes('\\') || id.startsWith('.') || id.includes('.agent-pack-origin.json')) {
+    throw new Error(`invalid mod id: ${manifest.id}`)
+  }
+  const modDir = join(dir, 'mods', id)
   await fs.mkdir(modDir, { recursive: true })
   await fs.writeFile(join(modDir, 'mod.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf8')
   for (const [fileName, content] of Object.entries(files)) {
@@ -73,11 +77,15 @@ type CatalogUnit = { kind: string; name: string; path: string }
 
 function unitFromRel(srcRel: string, destRel: string): CatalogUnit | undefined {
   const p = srcRel.replace(/\\/g, '/')
+  const segs = p.split('/')
+  if (segs.some(seg => seg.startsWith('.') || seg === '.agent-pack-origin.json')) return undefined
   if (p.startsWith('skills/')) {
     const rest = p.slice('skills/'.length)
+    if (!rest.toLowerCase().endsWith('.md')) return undefined
     const name = rest.endsWith('/SKILL.md')
       ? rest.slice(0, -'/SKILL.md'.length).split('/').pop() || rest
       : rest.replace(/\.md$/i, '')
+    if (!name || name.includes('/') || name.startsWith('.')) return undefined
     return { kind: 'skill', name, path: destRel }
   }
   if (p.startsWith('commands/')) {
@@ -119,6 +127,7 @@ export async function compilePackToDshBundle(pack: PackDoc, outDir: string): Pro
   const extraFileMods: Array<{ kind: 'rule' | 'command' | 'hook'; name: string; fileName: string; content: string }> = []
   for (const f of pack.bundle?.files ?? []) {
     const rel = f.path.replace(/\\/g, '/')
+    if (rel.split('/').some(seg => seg.startsWith('.'))) continue
     const destRel = remapBundlePath(rel)
     const dest = join(dir, ...destRel.split('/'))
     await fs.mkdir(dirname(dest), { recursive: true })
@@ -357,7 +366,8 @@ export async function compilePackToDshBundle(pack: PackDoc, outDir: string): Pro
   const installMd = `# 投影 · 不要把本包 add 进 DSH 插件栈
 
 本目录是整合包投影（\`dsh.bundle\` 形状），多包并存于 \`.agent-pack/modpacks/\`。
-会话只加载允许集；没允许的包留在磁盘上，模型看不见。
+工作区只加载活白名单；没允许的包留在磁盘上，模型看不见。
+命名预设：\`packagent dsh set-save <name>\` / \`set-load <name>\`。
 
 宿主只装一次 pack-agent 管理器：
 

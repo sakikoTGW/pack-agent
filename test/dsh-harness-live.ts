@@ -103,7 +103,7 @@ if (!dshRel || dshRel.endsWith('.ts')) {
 const patchPath = join(profileDir, 'node_modules', '@sakikotgw', 'pack-agent', installed.dsh.bundle.patch)
 const patch = readFileSync(patchPath, 'utf8')
 if (!patch.includes("name: '@sakikotgw/pack-agent/dsh'")) fail(`bundle patch missing pack-agent/dsh insert:\n${patch}`)
-if (!patch.includes('inject: [tools, skills]')) fail('bundle patch must inject tools, skills')
+if (!patch.includes('inject: [tools, skills, commands]')) fail('bundle patch must inject tools, skills, commands')
 console.log('✓ installed package is a dsh.bundle; patch inserts @sakikotgw/pack-agent/dsh')
 
 const bundles = profilePkg.dsh?.profile?.bundles ?? []
@@ -128,7 +128,7 @@ apply(
   },
   { cwd: home },
 )
-if (!tools.includes('packagent_map') || !tools.includes('packagent_allow')) {
+if (!tools.includes('packagent_map') || !tools.includes('packagent_allow') || !tools.includes('packagent_set_load')) {
   fail(`loaded plugin tools ${tools.join(',')}`)
 }
 console.log('✓ Cordis apply() from linked package registers map/allow')

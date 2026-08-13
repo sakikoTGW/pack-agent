@@ -29,3 +29,6 @@ dsh-modpack.out/
 # Rust pack-index (local target; CI uses E:\tmp\pack-agent\pack-index-target)
 crates/pack-index/target/
 target/
+
+# Local design drafts — do not publish
+docs/superpowers/

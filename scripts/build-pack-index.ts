@@ -5,8 +5,8 @@
  */
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { packAgentRoot } from '../src/package-root.js'
+import { dirname, join } from 'node:path'
+import { packAgentFile } from '../src/package-root.js'
 import { packTmpRoot } from '../src/tmp-root.js'
 
 export function packIndexTargetDir(): string {
@@ -46,8 +46,7 @@ export function buildPackIndex(): string {
   const bin = packIndexBinPath()
   if (existsSync(bin) && !process.env.PACK_INDEX_REBUILD) return bin
 
-  const repoRoot = packAgentRoot()
-  const manifest = join(repoRoot, 'crates', 'pack-index', 'Cargo.toml')
+  const manifest = packAgentFile('crates', 'pack-index', 'Cargo.toml')
   const target = packIndexTargetDir()
   mkdirSync(target, { recursive: true })
   const tmp = packTmpRoot()
@@ -61,7 +60,7 @@ export function buildPackIndex(): string {
   const spawnOpts = {
     encoding: 'utf8' as const,
     env,
-    cwd: repoRoot,
+    cwd: dirname(manifest),
     maxBuffer: 64 * 1024 * 1024,
     timeout: 10 * 60 * 1000,
   }

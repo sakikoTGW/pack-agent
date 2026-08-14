@@ -67,6 +67,16 @@ if (stagedReadme.includes('便于被发现') || stagedReadme.includes('so they c
 if (!stagedReadme.includes('https://www.npmjs.com/package/@sakikotgw/pack-agent-dsh')) {
   fail('DSH README must link the npm package')
 }
+if (!stagedReadme.includes('https://awesome-dsh-plugin.com/badge.svg')) {
+  fail('DSH README must show the awesome-dsh-plugin badge')
+}
+if (!stagedReadme.includes('Manage DeepSeek Harness config like a Minecraft modpack.')) {
+  fail('DSH README first sentence must be the Minecraft-modpack hook')
+}
+const stagedReadmeZh = readFileSync(join(dest, 'README.zh.md'), 'utf8')
+if (!stagedReadmeZh.includes('像 MC 整合包一样管理 DeepSeek Harness 配置。')) {
+  fail('DSH README.zh.md first sentence must be the Minecraft-modpack hook')
+}
 if (skill.includes('dsh plugin --profile web add "<compiled-dir>"')) {
   fail('SKILL.md must not tell the model to plugin-add a compiled pack')
 }

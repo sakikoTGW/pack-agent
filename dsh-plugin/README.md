@@ -1,8 +1,10 @@
 # pack-agent-dsh
 
+[![awesome · DSH plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
+
 English | [中文](README.zh.md)
 
-`@sakikotgw/pack-agent-dsh` is a [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin. It projects `.pack.json` / `.pack.zip` into `.agent-pack/modpacks/` and exposes skills from the project allow-list.
+Manage DeepSeek Harness config like a Minecraft modpack. `@sakikotgw/pack-agent-dsh` is a [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin. It projects `.pack.json` / `.pack.zip` into `.agent-pack/modpacks/` and exposes skills from the project allow-list.
 
 ## Install
 

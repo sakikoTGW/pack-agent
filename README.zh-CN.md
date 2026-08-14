@@ -1,8 +1,10 @@
 # Agent Modpack
 
+[![awesome · DSH plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
+
 [English](README.md) | 中文
 
-Agent Modpack（`packagent`）把 skills、rules、MCP 打成 `.pack.zip`，装进 Claude Code、Codex、Cursor 等 harness。卸装按账本撤。
+像 MC 整合包一样管理 DeepSeek Harness 配置。Agent Modpack（`packagent`）把 skills、rules、MCP 打成 `.pack.zip`，装进 Claude Code、Codex、Cursor 等 harness。卸装按账本撤。
 
 需要 [Bun](https://bun.sh) ≥ 1.1。npm：[`@sakikotgw/pack-agent`](https://www.npmjs.com/package/@sakikotgw/pack-agent)。
 

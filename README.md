@@ -1,8 +1,10 @@
 # Agent Modpack
 
+[![awesome · DSH plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
+
 English | [中文](README.zh-CN.md)
 
-Agent Modpack (`packagent`) packs skills, rules, and MCP into a `.pack.zip` and installs them into Claude Code, Codex, Cursor, and other harnesses. Uninstall uses the install ledger.
+Manage DeepSeek Harness config like a Minecraft modpack. Agent Modpack (`packagent`) packs skills, rules, and MCP into a `.pack.zip` and installs them into Claude Code, Codex, Cursor, and other harnesses. Uninstall uses the install ledger.
 
 Requires [Bun](https://bun.sh) ≥ 1.1. npm: [`@sakikotgw/pack-agent`](https://www.npmjs.com/package/@sakikotgw/pack-agent).
 

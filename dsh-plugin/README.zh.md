@@ -1,8 +1,10 @@
 # pack-agent-dsh
 
+[![awesome · DSH plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
+
 [English](README.md) | 中文
 
-`@sakikotgw/pack-agent-dsh` 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件。把 `.pack.json` / `.pack.zip` 投影到 `.agent-pack/modpacks/`，按项目白名单暴露 skill。
+像 MC 整合包一样管理 DeepSeek Harness 配置。`@sakikotgw/pack-agent-dsh` 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件。把 `.pack.json` / `.pack.zip` 投影到 `.agent-pack/modpacks/`，按项目白名单暴露 skill。
 
 ## 安装
 

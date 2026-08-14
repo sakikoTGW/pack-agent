@@ -1,6 +1,6 @@
 {
   "name": "@sakikotgw/pack-agent",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Pack skills, rules, and MCP into .pack.zip and install them into Claude Code, Codex, Cursor, and other harnesses",
   "type": "module",
   "files": [

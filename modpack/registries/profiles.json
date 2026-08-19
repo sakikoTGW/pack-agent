@@ -1,0 +1,17 @@
+{
+  "schema": "pack-agent.registry/v1",
+  "registry": "profiles",
+  "version": 1,
+  "entries": [
+    {
+      "id": "web",
+      "port": true,
+      "ready": { "stdoutIncludes": "dsh web: http://127.0.0.1:" }
+    },
+    {
+      "id": "headless",
+      "port": false,
+      "ready": { "exitZero": true }
+    }
+  ]
+}

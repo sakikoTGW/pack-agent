@@ -1,0 +1,47 @@
+{
+  "name": "@sakikotgw/pack-agent-dsh",
+  "version": "0.4.4",
+  "description": "DeepSeek Harness plugin: project Agent Modpacks into .agent-pack/modpacks and allow them",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "files": [
+    "lib",
+    "skills",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "INSTALL.md"
+  ],
+  "license": "MIT",
+  "author": "sakikotgw",
+    "homepage": "https://github.com/sakikoTGW/pack-agent/blob/main/agent-pack-dsh/plugin/README.md",
+  "bugs": {
+    "url": "https://github.com/sakikoTGW/pack-agent/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sakikoTGW/pack-agent.git",
+    "directory": "agent-pack-dsh/plugin"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "agent-modpack",
+    "pack-agent"
+  ],
+  "engines": {
+    "node": ">=20.11.0",
+    "dsh": ">=0.1.0-rc.7 <0.2.0"
+  },
+  "scripts": {
+    "prepublishOnly": "node -e \"console.error('publish @sakikotgw/pack-agent-dsh from staged dir: bun run agent-pack-dsh/scripts/stage-npm.ts'); process.exit(1)\""
+  }
+}

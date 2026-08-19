@@ -1,0 +1,13 @@
+{
+  "schema": "pack-agent.registry/v1",
+  "registry": "migrate",
+  "version": 1,
+  "entries": [
+    {
+      "id": "instance-display",
+      "fromSchema": "pack-agent.launcher.instance/v1",
+      "toSchema": "pack-agent.launcher.instance/v1",
+      "primitive": "fill-display"
+    }
+  ]
+}

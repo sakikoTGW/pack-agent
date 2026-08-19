@@ -1,0 +1,11 @@
+{
+  "schema": "pack-agent.registry/v1",
+  "registry": "crash-rules",
+  "version": 1,
+  "entries": [
+    { "id": "eaddrinuse", "pattern": "EADDRINUSE", "category": "port", "faq": "port-in-use" },
+    { "id": "credentials-missing", "pattern": "credentials|REF:", "category": "credentials", "faq": "credentials-missing" },
+    { "id": "plugin-load", "pattern": "Cannot find package|ERR_MODULE_NOT_FOUND|plugin add failed", "category": "plugin", "faq": "plugin-load" },
+    { "id": "nonzero-exit", "pattern": "exited before ready|exit code [1-9]", "category": "process", "faq": "nonzero-exit" }
+  ]
+}

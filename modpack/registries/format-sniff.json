@@ -1,0 +1,33 @@
+{
+  "schema": "pack-agent.registry/v1",
+  "registry": "format-sniff",
+  "version": 1,
+  "entries": [
+    {
+      "id": "ccui-pack",
+      "match": {
+        "file": "pack.json",
+        "schemaPrefix": ["ccui-pack/", "agent-pack-ir/"]
+      },
+      "kind": "pack",
+      "handler": "import-pack"
+    },
+    {
+      "id": "pack-zip",
+      "match": {
+        "suffix": ".pack.zip"
+      },
+      "kind": "pack",
+      "handler": "import-pack"
+    },
+    {
+      "id": "pinst-v1",
+      "match": {
+        "suffix": ".pinst.zip",
+        "manifestSchema": "pack-agent.pinst/v1"
+      },
+      "kind": "pinst",
+      "handler": "import-pinst"
+    }
+  ]
+}

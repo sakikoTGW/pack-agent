@@ -1,0 +1,18 @@
+[package]
+name = "pack-agent-dsh-launcher"
+version = "0.1.0"
+description = "Tauri shell: thin invoke to packagent dsh launcher"
+authors = ["pack-agent"]
+edition = "2021"
+
+[lib]
+name = "pack_agent_dsh_launcher_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

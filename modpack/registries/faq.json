@@ -1,0 +1,27 @@
+{
+  "schema": "pack-agent.registry/v1",
+  "registry": "faq",
+  "version": 1,
+  "entries": [
+    {
+      "id": "port-in-use",
+      "title": "web 端口被占",
+      "markdown": "换端口或停占用该端口的实例。`packagent dsh launcher stop <id>`，或 create/pin 时改 `--port`。"
+    },
+    {
+      "id": "credentials-missing",
+      "title": "凭据缺失",
+      "markdown": "把钥匙写入 `library/credentials.yaml` 后对该实例重建，或手填 `home/.credentials.yaml`。"
+    },
+    {
+      "id": "plugin-load",
+      "title": "组合包没装上",
+      "markdown": "看该实例 `dsh plugin add` 日志。缺 pnpm 是 PA011。装完必须 restart。"
+    },
+    {
+      "id": "nonzero-exit",
+      "title": "进程非零退出",
+      "markdown": "读 `instances/<id>/logs/`。卡启动且未打印 `dsh web: http://127.0.0.1:` 也走这里。"
+    }
+  ]
+}

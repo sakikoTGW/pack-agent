@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>agent-pack for DSH</title>
+  <style>
+    :root {
+      --bg: #d8dee6;
+      --ink: #15202b;
+      --muted: #5c6b7a;
+      --card: #f3f5f8;
+      --line: #b7c0cb;
+      --accent: #0f6e8c;
+      --danger: #9b2c2c;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font: 15px/1.45 "Segoe UI", "PingFang SC", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      display: grid;
+      grid-template-columns: 280px 1fr;
+    }
+    aside {
+      border-right: 1px solid var(--line);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    h1 { font-size: 15px; font-weight: 650; margin: 0 0 4px; letter-spacing: 0.02em; }
+    .sub { color: var(--muted); font-size: 12px; }
+    nav { display: flex; flex-wrap: wrap; gap: 4px; }
+    nav button {
+      font: inherit;
+      font-size: 12px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    nav button[aria-current="true"] { outline: 2px solid var(--accent); }
+    #list { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 6px; }
+    .row {
+      text-align: left;
+      border: 1px solid var(--line);
+      background: var(--card);
+      padding: 8px 10px;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+    }
+    .row[aria-current="true"] { outline: 2px solid var(--accent); }
+    .id { font-family: Consolas, "Courier New", monospace; font-size: 13px; }
+    main { padding: 28px 32px; overflow: auto; }
+    #run {
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      padding: 16px 36px;
+      font: inherit;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+    }
+    #run:disabled { opacity: 0.45; cursor: not-allowed; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 20px; }
+    .actions button:not(#run) {
+      font: inherit;
+      border: 1px solid var(--line);
+      background: var(--card);
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    #drop {
+      margin-top: 12px;
+      border: 1px dashed var(--line);
+      padding: 22px;
+      color: var(--muted);
+      min-height: 72px;
+    }
+    #drop.over { border-color: var(--accent); color: var(--ink); }
+    #status { margin-top: 16px; font-size: 13px; color: var(--muted); white-space: pre-wrap; }
+    #status.err { color: var(--danger); }
+    #empty { color: var(--muted); font-size: 13px; margin: 8px 0; }
+    #job-progress {
+      height: 10px;
+      background: var(--line);
+      margin: 12px 0 20px;
+    }
+    #job-progress > span {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+    }
+    .panel { display: none; }
+    .panel.on { display: block; }
+  </style>
+</head>
+<body>
+  <aside>
+    <div>
+      <h1>启动器</h1>
+      <div class="sub">同一组函数，和 CLI --json 同构</div>
+    </div>
+    <nav>
+      <button type="button" data-tab="instances" aria-current="true">实例</button>
+      <button type="button" data-tab="versions">版本</button>
+      <button type="button" data-tab="market">货架</button>
+      <button type="button" data-tab="jobs">进度</button>
+      <button type="button" data-tab="keys">钥匙</button>
+    </nav>
+    <div id="list"></div>
+    <div id="empty"></div>
+    <div id="drop">把 .pack.zip / .pinst.zip 拖到这里，或丢到启动器根目录后点扫描</div>
+    <button type="button" id="scan">扫描根目录 zip</button>
+  </aside>
+  <main>
+    <section class="panel on" id="panel-instances">
+      <p id="meta">选一个实例</p>
+      <div class="actions">
+        <button type="button" id="run" disabled>启动</button>
+        <button type="button" id="stop" disabled>停止</button>
+        <button type="button" id="shortcut" disabled>快捷方式</button>
+      </div>
+    </section>
+    <section class="panel" id="panel-versions">
+      <p class="sub">versions/</p>
+      <div id="versions"></div>
+    </section>
+    <section class="panel" id="panel-market">
+      <p>货架 · awesome-dsh plugins.json</p>
+      <input id="market-q" placeholder="搜索" />
+      <button type="button" id="market-search">搜</button>
+      <div id="market"></div>
+    </section>
+    <section class="panel" id="panel-jobs">
+      <p>进度</p>
+      <div id="job-progress"><span></span></div>
+      <div id="jobs"></div>
+    </section>
+    <section class="panel" id="panel-keys">
+      <p>钥匙套</p>
+      <div id="keys"></div>
+    </section>
+    <div id="status"></div>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id)
+    let selected = null
+    let rows = []
+    let tab = 'instances'
+
+    async function api(method, params = {}) {
+      const invoke = window.__TAURI__?.core?.invoke
+      if (!invoke) throw new Error('在 Tauri 窗口里打开；或用 packagent dsh launcher')
+      const raw = await invoke('launcher_api', { method, params: JSON.stringify(params) })
+      const parsed = JSON.parse(raw)
+      if (!parsed.ok) throw new Error(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error))
+      return parsed.result
+    }
+
+    function itemsOf(raw) {
+      if (Array.isArray(raw)) return raw
+      return raw?.items || []
+    }
+
+    function setStatus(text, err) {
+      $('status').textContent = text
+      $('status').className = err ? 'err' : ''
+    }
+
+    function renderList() {
+      $('list').innerHTML = ''
+      for (const inst of rows) {
+        const b = document.createElement('button')
+        b.className = 'row'
+        b.type = 'button'
+        b.innerHTML = `<div class="id">${inst.id}</div><div class="sub">${inst.profile?.name || ''} · ${inst.dsh?.version || ''}${inst.adopted ? ' · 外部 home' : ''}</div>`
+        if (selected?.id === inst.id) b.setAttribute('aria-current', 'true')
+        b.onclick = () => {
+          selected = inst
+          $('meta').textContent = `${inst.name}  ${inst.home || ''}`
+          $('run').disabled = inst.status === 'import-failed'
+          $('stop').disabled = false
+          $('shortcut').disabled = false
+          renderList()
+        }
+        $('list').appendChild(b)
+      }
+    }
+
+    async function refresh() {
+      const raw = await api('instance.list')
+      rows = itemsOf(raw)
+      $('empty').textContent = raw?.emptyState ? `${raw.emptyState.title} · ${raw.emptyState.action}` : ''
+      renderList()
+    }
+
+    document.querySelectorAll('nav [data-tab]').forEach((btn) => {
+      btn.onclick = async () => {
+        tab = btn.getAttribute('data-tab')
+        document.querySelectorAll('nav [data-tab]').forEach((b) => b.setAttribute('aria-current', b === btn ? 'true' : 'false'))
+        document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('on', p.id === 'panel-' + tab))
+        if (tab === 'versions') {
+          const v = itemsOf(await api('version.list'))
+          $('versions').textContent = v.map((x) => x.version).join('\n') || '无可用版本'
+        }
+        if (tab === 'market') {
+          const m = itemsOf(await api('market.list'))
+          $('market').textContent = m.map((p) => `${p.name}  ${p.npm || ''}`).join('\n') || '货架是空的'
+        }
+        if (tab === 'jobs') {
+          const jobs = itemsOf(await api('job.list'))
+          const running = jobs.find((j) => j.status === 'running' && j.leaves)
+          let pct = 0
+          if (running?.leaves?.length) {
+            const w = running.leaves.reduce((s, l) => s + l.weight, 0) || 1
+            pct = running.leaves.reduce((s, l) => s + l.weight * (l.total ? l.done / l.total : 0), 0) / w * 100
+          }
+          $('job-progress').firstElementChild.style.width = pct + '%'
+          $('jobs').textContent = jobs.map((j) => `${j.id} ${j.status}`).join('\n') || '没有任务'
+        }
+        if (tab === 'keys') {
+          const k = itemsOf(await api('credentials.list'))
+          $('keys').textContent = k.join('\n') || '还没有钥匙'
+        }
+      }
+    })
+
+    $('run').onclick = async () => {
+      if (!selected) return
+      setStatus('启动中…')
+      try {
+        const r = await api('run', { id: selected.id, detach: true })
+        setStatus(`pid ${r.pid}  port ${r.port}`)
+      } catch (e) { setStatus(String(e), true) }
+    }
+    $('stop').onclick = async () => {
+      if (!selected) return
+      try {
+        await api('stop', { id: selected.id })
+        setStatus('已停止')
+      } catch (e) { setStatus(String(e), true) }
+    }
+    $('shortcut').onclick = async () => {
+      if (!selected) return
+      try {
+        const r = await api('shortcut.write', { id: selected.id })
+        setStatus(`快捷方式 ${r.path}`)
+      } catch (e) { setStatus(String(e), true) }
+    }
+    $('market-search').onclick = async () => {
+      try {
+        const m = await api('market.search', { q: $('market-q').value })
+        const list = Array.isArray(m) ? m : itemsOf(m)
+        $('market').textContent = list.map((p) => `${p.name}  ${p.npm || ''}`).join('\n') || '没有命中'
+      } catch (e) { setStatus(String(e), true) }
+    }
+    $('scan').onclick = async () => {
+      setStatus('扫描…')
+      try {
+        const r = await api('scanDrop', {})
+        setStatus(`导入 ${ (r.imported || []).join(', ') || '无' }`)
+        await refresh()
+      } catch (e) { setStatus(String(e), true) }
+    }
+
+    const drop = $('drop')
+    drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over') })
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'))
+    drop.addEventListener('drop', async (e) => {
+      e.preventDefault()
+      drop.classList.remove('over')
+      const f = e.dataTransfer?.files?.[0]
+      const path = f?.path
+      if (!path) {
+        setStatus('需要 Tauri 拖放路径；或把 zip 放到启动器根目录再扫描', true)
+        return
+      }
+      setStatus('导入…')
+      try {
+        await api('import', { path })
+        setStatus(`已导入 ${path}`)
+        await refresh()
+      } catch (err) { setStatus(String(err), true) }
+    })
+
+    refresh().then(() => api('scanDrop', {}).then(refresh).catch(() => {})).catch((e) => setStatus(String(e), true))
+  </script>
+</body>
+</html>

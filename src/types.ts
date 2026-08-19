@@ -201,17 +201,31 @@ export type PackModManifest = {
 }
 
 export type PackDshPlugin = {
-  id: string
-  name: string
+  /** 交给 `dsh plugin add`。缺省用 `name` */
+  spec?: string
+  required?: boolean
+  id?: string
+  name?: string
   config?: Record<string, unknown>
   disabled?: boolean
   inject?: string[]
 }
 
+export type PackDshOverride = {
+  from: string
+  to: string
+}
+
 export type PackDshLayer = {
+  /** import 必填。精确号或 npm range */
+  version?: string
+  /** `--profile` 名，默认 web */
+  profile?: string
   persona?: string
   preset?: { id?: string; name?: string; description?: string }
   plugins?: PackDshPlugin[]
+  /** 拷进实例工作区，不进 DSH_HOME，不进投影 mods/ */
+  overrides?: PackDshOverride[]
 }
 
 /** 冲突时：stop=停下并报错；skip=跳过该项；replace=覆盖 */

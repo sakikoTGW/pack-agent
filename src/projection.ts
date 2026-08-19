@@ -15,7 +15,7 @@ import {
   parseDshCordisMcp,
   removeDshCordisInsertIds,
   upsertDshCordisInsert,
-} from './dsh-cordis.js'
+} from '../agent-pack-dsh/cordis.js'
 
 export type McpFormat =
   | 'json-mcpServers'

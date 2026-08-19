@@ -1,20 +1,12 @@
 {
   "name": "@sakikotgw/pack-agent",
-  "version": "0.4.2",
+  "version": "0.4.4",
   "description": "Pack skills, rules, and MCP into .pack.zip and install them into Claude Code, Codex, Cursor, and other harnesses",
   "type": "module",
   "files": [
     "bin",
     "src",
-    "dsh-modpack/catalog.ts",
-    "dsh-modpack/cli.ts",
-    "dsh-modpack/compile.ts",
-    "dsh-modpack/map.ts",
-    "dsh-modpack/registry.ts",
-    "dsh-modpack/registry.yaml",
-    "dsh-modpack/README.md",
-    "dsh-plugin",
-    "crates",
+    "agent-pack-dsh",
     "scripts",
     "mcp",
     "skills",
@@ -34,14 +26,14 @@
   "exports": {
     ".": "./src/index.ts",
     "./dsh": {
-      "bun": "./dsh-plugin/src/index.ts",
-      "import": "./dsh-plugin/lib/index.js",
-      "default": "./dsh-plugin/lib/index.js"
+      "bun": "./agent-pack-dsh/plugin/src/index.ts",
+      "import": "./agent-pack-dsh/plugin/lib/index.js",
+      "default": "./agent-pack-dsh/plugin/lib/index.js"
     }
   },
   "dsh": {
     "bundle": {
-      "patch": "./dsh-plugin/cordis.root.yml"
+      "patch": "./agent-pack-dsh/plugin/cordis.root.yml"
     }
   },
   "keywords": [
@@ -72,15 +64,16 @@
     "install-pack": "bun run src/cli.ts install",
     "detect": "bun run src/cli.ts detect",
     "mcp": "bun run mcp/server.ts",
-    "test": "bun run test/tmp-root-assert.ts && bun run dsh-modpack/test.ts && bun run dsh-modpack/catalog.test.ts && bun run dsh-modpack/map.test.ts && bun run dsh-plugin/test.ts && bun run test/install.ts && bun run test/portable-ab.ts && bun run test/pack-zip.ts && bun run test/commands-module.ts && bun run test/conflict.ts && bun run test/transcript-distill.ts && bun run test/agent-profile.ts && bun run test/experience-live.ts && bun run test/dsh-adapter.ts && bun run test/dsh-harness-live.ts && bun run test/multi-harness-parallel.ts && bun run test/dsh-node-entry.ts && bun run test/stage-dsh-npm.ts",
-    "pack-index": "bun run scripts/build-pack-index.ts",
-    "build:dsh": "bun run scripts/build-dsh-plugin.ts",
-    "stage:dsh": "bun run scripts/stage-dsh-npm.ts",
-    "prepublishOnly": "bun run scripts/build-dsh-plugin.ts"
+    "test": "bun run test/tmp-root-assert.ts && bun run agent-pack-dsh/modpack/test.ts && bun run agent-pack-dsh/modpack/catalog.test.ts && bun run agent-pack-dsh/modpack/map.test.ts && bun run agent-pack-dsh/modpack/launcher.test.ts && bun run agent-pack-dsh/modpack/registry-store.test.ts && bun run agent-pack-dsh/modpack/registry-live.test.ts && bun run agent-pack-dsh/modpack/dsh-version.test.ts && bun run agent-pack-dsh/modpack/import-pack.test.ts && bun run agent-pack-dsh/modpack/pinst.test.ts && bun run agent-pack-dsh/modpack/doctor.test.ts && bun run agent-pack-dsh/modpack/drop-scan.test.ts && bun run agent-pack-dsh/modpack/credentials.test.ts && bun run agent-pack-dsh/modpack/adopt.test.ts && bun run agent-pack-dsh/modpack/launcher-api.test.ts && bun run agent-pack-dsh/modpack/project-key.test.ts && bun run agent-pack-dsh/modpack/p1-commands.test.ts && bun run agent-pack-dsh/modpack/p2-p3.test.ts && bun run agent-pack-dsh/plugin/test.ts && bun run test/install.ts && bun run test/portable-ab.ts && bun run test/pack-zip.ts && bun run test/commands-module.ts && bun run test/conflict.ts && bun run test/transcript-distill.ts && bun run test/agent-profile.ts && bun run test/experience-live.ts && bun run agent-pack-dsh/tests/adapter.ts && bun run agent-pack-dsh/tests/harness-live.ts && bun run test/multi-harness-parallel.ts && bun run agent-pack-dsh/tests/node-entry.ts && bun run agent-pack-dsh/tests/stage-npm.ts",
+    "pack-index": "bun run agent-pack-dsh/scripts/build-pack-index.ts",
+    "build:dsh": "bun run agent-pack-dsh/scripts/build-plugin.ts",
+    "stage:dsh": "bun run agent-pack-dsh/scripts/stage-npm.ts",
+    "prepublishOnly": "bun run agent-pack-dsh/scripts/build-plugin.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "*",
     "json5": "^2.2.3",
+    "semver": "^7.8.5",
     "smol-toml": "^1.7.1",
     "yaml": "^2.8.0",
     "zod": "*"

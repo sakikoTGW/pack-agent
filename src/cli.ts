@@ -470,7 +470,7 @@ async function main(): Promise<void> {
       await cmdBuild(rest)
       break
     case 'dsh': {
-      const { runDshCli } = await import('../dsh-modpack/cli.js')
+      const { runDshCli } = await import('../agent-pack-dsh/modpack/cli.js')
       await runDshCli(rest)
       break
     }

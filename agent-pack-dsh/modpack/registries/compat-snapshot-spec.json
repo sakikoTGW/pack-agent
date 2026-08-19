@@ -1,0 +1,10 @@
+{
+  "schema": "pack-agent.registry/v1",
+  "registry": "compat-snapshot-spec",
+  "version": 1,
+  "entries": [
+    { "id": "sessionFormatVersion", "field": "sessionFormatVersion", "source": "constant", "value": "0" },
+    { "id": "patchRowIds", "field": "patchRowIds", "source": "default-ids", "value": "session-persistence-jsonl" },
+    { "id": "profileTemplates", "field": "profileTemplates", "source": "profiles-registry", "value": "web,headless" }
+  ]
+}

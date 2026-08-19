@@ -13,7 +13,7 @@ import { parse as yamlParse, stringify as yamlStringify } from 'yaml'
 import { RUNTIME_ADAPTERS } from './adapters.js'
 import { loadExperienceInjection } from './experience-loader.js'
 import { PackConflictError, buildFileErrorDetail } from './errors.js'
-import { DSH_APPLY_NOTE, dshExperienceHooksInsert, upsertDshCordisInsert } from './dsh-cordis.js'
+import { DSH_APPLY_NOTE, dshExperienceHooksInsert, upsertDshCordisInsert } from '../agent-pack-dsh/cordis.js'
 
 /**
  * 解析目标 harness 配置失败时**绝不能**当成空文件重写——那样会把用户文件里

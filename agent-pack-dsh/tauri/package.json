@@ -1,0 +1,14 @@
+{
+  "name": "pack-agent-dsh-launcher",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Tauri shell for packagent dsh launcher — same functions as CLI --json",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

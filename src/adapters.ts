@@ -14,7 +14,7 @@ import { promises as fs } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
 import JSON5 from 'json5'
-import { parseDshCordisMcp } from './dsh-cordis.js'
+import { parseDshCordisMcp } from '../agent-pack-dsh/cordis.js'
 
 export type McpFormat = 'json-mcpServers' | 'json-mcp' | 'toml-mcp_servers' | 'yaml-mcp_servers' | 'yaml-cordis-patch'
 

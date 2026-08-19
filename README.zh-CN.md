@@ -8,7 +8,7 @@
 
 需要 [Bun](https://bun.sh) ≥ 1.1。npm：[`@sakikotgw/pack-agent`](https://www.npmjs.com/package/@sakikotgw/pack-agent)。
 
-DeepSeek Harness 用另一个包：[`@sakikotgw/pack-agent-dsh`](https://www.npmjs.com/package/@sakikotgw/pack-agent-dsh)。见 [dsh-plugin/README.zh.md](dsh-plugin/README.zh.md)。
+agent-pack for DSH 整棵在 [`agent-pack-dsh/`](agent-pack-dsh/README.md)。产品设计：[`agent-pack-dsh/docs/PRODUCT.md`](agent-pack-dsh/docs/PRODUCT.md)。插件包：[`@sakikotgw/pack-agent-dsh`](https://www.npmjs.com/package/@sakikotgw/pack-agent-dsh)。见 [agent-pack-dsh/plugin/README.zh.md](agent-pack-dsh/plugin/README.zh.md)。
 
 ## 安装
 

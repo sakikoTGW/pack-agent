@@ -31,7 +31,7 @@ import {
   type PackConflictDetail,
 } from './errors.js'
 import type { ConflictPolicy } from './types.js'
-import { mcpServersToDshInsertItems, upsertDshCordisInsert } from './dsh-cordis.js'
+import { mcpServersToDshInsertItems, upsertDshCordisInsert } from '../agent-pack-dsh/cordis.js'
 
 /** 装包时跳过（generic 会与具体 harness 重复；cursor 非 CLI 目标） */
 export const PACK_APPLY_SKIP = new Set(['generic-agents'])

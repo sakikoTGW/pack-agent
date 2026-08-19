@@ -17,7 +17,7 @@ import {
 import { bootstrapAgentPackMcp } from './mcp-bootstrap.js'
 import { PackConflictError } from './errors.js'
 import { buildInstallLedger, writeInstallLedger } from './install-ledger.js'
-import { DSH_APPLY_NOTE } from './dsh-cordis.js'
+import { DSH_APPLY_NOTE } from '../agent-pack-dsh/cordis.js'
 
 function aggregate(reports: InstallReport['runtimes']): Pick<InstallReport, 'skills' | 'rules' | 'mcp' | 'skipped'> {
   const skills = new Set<string>()

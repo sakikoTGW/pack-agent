@@ -7,8 +7,8 @@ import { access, mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { detectRuntimes } from '../src/adapters.js'
 import { installPackFile } from '../src/install.js'
-import { catalogSearch, mapPackToDsh } from '../dsh-modpack/catalog.js'
-import { loadPackDoc } from '../dsh-modpack/compile.js'
+import { catalogSearch, mapPackToDsh } from '../agent-pack-dsh/modpack/catalog.js'
+import { loadPackDoc } from '../agent-pack-dsh/modpack/compile.js'
 import { packTestTmp } from './tmp-root.js'
 
 function fail(msg: string): never {

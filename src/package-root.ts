@@ -1,6 +1,6 @@
 /**
  * 定位本包根目录。CLI 包名 @sakikotgw/pack-agent；DSH 精简包名 @sakikotgw/pack-agent-dsh。
- * 插件打成 dsh-plugin/lib/index.js 后，import.meta.dirname 不再是源码目录。
+ * 插件打成 agent-pack-dsh/plugin/lib/index.js 后，import.meta.dirname 不再是源码目录。
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -37,13 +37,13 @@ export function packAgentRoot(start?: string): string {
 
 /**
  * 包根下的资源。npm `@sakikotgw/pack-agent-dsh` 与仓库根同布局；
- * 若从 git 里的 `dsh-plugin/` 当包根，则回退到上一层。
+ * 若从 git 里的 `agent-pack-dsh/plugin/` 当包根，则回退到仓库根。
  */
 export function packAgentFile(...rel: string[]): string {
   const root = packAgentRoot()
-  const direct = join(root, ...rel)
-  if (existsSync(direct)) return direct
-  const up = join(root, '..', ...rel)
-  if (existsSync(up)) return up
-  return direct
+  const candidates = [join(root, ...rel), join(root, '..', ...rel), join(root, '..', '..', ...rel)]
+  for (const p of candidates) {
+    if (existsSync(p)) return p
+  }
+  return candidates[0]
 }

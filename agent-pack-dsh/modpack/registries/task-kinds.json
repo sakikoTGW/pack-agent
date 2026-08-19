@@ -1,0 +1,42 @@
+{
+  "schema": "pack-agent.registry/v1",
+  "registry": "task-kinds",
+  "version": 1,
+  "entries": [
+    {
+      "id": "import",
+      "steps": [
+        { "primitive": "sniff" },
+        { "primitive": "resolve-version" },
+        { "primitive": "ensure-version" },
+        { "primitive": "create-instance" },
+        { "primitive": "copy-overrides" },
+        { "primitive": "project-allow" },
+        { "primitive": "install-manager" },
+        { "primitive": "add-plugins" }
+      ]
+    },
+    {
+      "id": "install-manager",
+      "spec": "@sakikotgw/pack-agent-dsh"
+    },
+    {
+      "id": "import-pinst",
+      "steps": [
+        { "primitive": "sniff" },
+        { "primitive": "read-pinst" },
+        { "primitive": "resolve-version" },
+        { "primitive": "ensure-version" },
+        { "primitive": "create-instance" },
+        { "primitive": "restore-pinst" }
+      ]
+    },
+    {
+      "id": "install-version",
+      "steps": [
+        { "primitive": "resolve-version", "weight": 5 },
+        { "primitive": "ensure-version", "weight": 95 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "schema": "pack-agent.registry/v1",
+  "registry": "pa-codes",
+  "version": 1,
+  "entries": [
+    { "id": "PA001", "level": "error", "message": "pinned dsh is not installed or failed verify", "help": ["packagent dsh launcher version install <ver>"] },
+    { "id": "PA002", "level": "error", "message": "plugin engines.dsh does not match the pinned release" },
+    { "id": "PA003", "level": "error", "message": "session id already has a writable process in this DSH_HOME" },
+    { "id": "PA004", "level": "error", "message": "web port is taken" },
+    { "id": "PA005", "level": "error", "message": "instance home is not writable" },
+    { "id": "PA006", "level": "error", "message": "cannot remove a dsh release still pinned by an instance" },
+    { "id": "PA007", "level": "error", "message": "DSH refused to open this session (cwd mismatch or not a directory)" },
+    { "id": "PA008", "level": "error", "message": "instance directory lock is held", "help": ["packagent dsh launcher job cancel <job-id>"] },
+    { "id": "PA009", "level": "error", "message": "pack or pinst structure does not match format-sniff" },
+    { "id": "PA011", "level": "error", "message": "pnpm not found on PATH" },
+    { "id": "PA012", "level": "error", "message": "pack is missing dsh.version, or that release is not on npm", "help": ["set dsh.version to a published exact version"] },
+    { "id": "PA013", "level": "error", "message": "registry unreachable" },
+    {
+      "id": "PA014",
+      "level": "error",
+      "message": "import failed: required dsh plugin add failed",
+      "note": "the instance is still on disk with status import-failed; already-added plugins were not rolled back",
+      "help": ["packagent dsh launcher instance remove <id>"]
+    },
+    { "id": "PA015", "level": "error", "message": "session format version does not match the pinned release" },
+    { "id": "PA017", "level": "error", "message": "registry schema, extra field, missing field, or requires cycle" },
+    { "id": "PA018", "level": "error", "message": "runtime referenced an id that is not in the merged registry" },
+    { "id": "PA019", "level": "error", "message": "import failed: pack-agent manager is missing from --dump-config" },
+    { "id": "PA020", "level": "error", "message": "two instances share the same home path" },
+    { "id": "PA021", "level": "warning", "message": "adding a bundle while sessions already exist" },
+    { "id": "PA101", "level": "warning", "message": "plugin did not declare engines.dsh" },
+    { "id": "PA102", "level": "warning", "message": "session last-writer dsh version differs from the pinned release" },
+    { "id": "PA103", "level": "warning", "message": "pinned release changed; plugins have not been re-verified" },
+    { "id": "PA104", "level": "warning", "message": "export stripped credentials" },
+    { "id": "PA105", "level": "warning", "message": "dependency has no dsh.bundle; installed as a plain dependency" },
+    { "id": "PA106", "level": "warning", "message": "adopted DSH_HOME was changed outside the launcher", "help": ["re-adopt this home"] },
+    { "id": "PA107", "level": "warning", "message": "overlay patch target is missing from pinned release patchRowIds", "help": ["re-verify this version", "pin a matching release"] },
+    { "id": "PA108", "level": "warning", "message": "two projectKey directories resolve to the same cwd", "help": ["normalize the workspace path"] },
+    { "id": "PA109", "level": "warning", "message": "user overlay replaces a builtin registry entry" },
+    { "id": "PA110", "level": "warning", "message": "pack-agent manager was disabled" },
+    { "id": "PA111", "level": "warning", "message": "session deleted but full-text index may remain", "help": ["rebuild the session-query-sqlite index"] }
+  ]
+}

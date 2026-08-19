@@ -8,7 +8,7 @@ Manage DeepSeek Harness config like a Minecraft modpack. Agent Modpack (`package
 
 Requires [Bun](https://bun.sh) ≥ 1.1. npm: [`@sakikotgw/pack-agent`](https://www.npmjs.com/package/@sakikotgw/pack-agent).
 
-DeepSeek Harness uses a separate package: [`@sakikotgw/pack-agent-dsh`](https://www.npmjs.com/package/@sakikotgw/pack-agent-dsh). See [dsh-plugin/README.md](dsh-plugin/README.md).
+agent-pack for DSH lives in [`agent-pack-dsh/`](agent-pack-dsh/README.md). Product design: [`agent-pack-dsh/docs/PRODUCT.md`](agent-pack-dsh/docs/PRODUCT.md). Plugin package: [`@sakikotgw/pack-agent-dsh`](https://www.npmjs.com/package/@sakikotgw/pack-agent-dsh). See [agent-pack-dsh/plugin/README.md](agent-pack-dsh/plugin/README.md).
 
 ## Install
 

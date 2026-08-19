@@ -23,12 +23,38 @@ drafts/wechat-assets/.wechat.env
 .tmp-dsh-extract/
 
 # DSH modpack compiler output
+agent-pack-dsh/modpack/compiled/
+dsh/modpack/compiled/
 dsh-modpack/compiled/
 dsh-modpack.out/
 
 # Rust pack-index (local target; CI uses E:\tmp\pack-agent\pack-index-target)
+agent-pack-dsh/pack-index/target/
+dsh/pack-index/target/
 crates/pack-index/target/
 target/
 
 # Local design drafts — do not publish
-docs/superpowers/
+docs/superpowers/*
+!docs/superpowers/specs/
+!docs/superpowers/specs/**
+!docs/superpowers/plans/
+!docs/superpowers/plans/**
+.superpowers/
+
+# Local IDE / agent scratch
+.agents/
+.codex/
+.collab/
+.cursor/
+.mcp.json
+.pack-launcher/
+.agent-pack/applied-skills/
+.agent-pack/select.json
+.agent-pack/staging/
+
+# bun.lock is canonical
+package-lock.json
+
+# Tauri local install
+agent-pack-dsh/tauri/node_modules/

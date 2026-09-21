@@ -16,6 +16,8 @@ dsh plugin --profile web add @sakikotgw/pack-agent-dsh
 
 Do not `dsh plugin add` a projected pack under `.agent-pack/modpacks/`.
 
+PAD manages a running instance through a separate profile layer, `@sakikotgw/pad-gateway`, which wraps `@deepseek-ai/dsh-host-apiproxy` and advertises itself in `$DSH_HOME/pad-gateway.json`. Do not use that port as a chat channel.
+
 ## Tools
 
 - `packagent_detect` — which harnesses exist in the project

@@ -1,0 +1,39 @@
+{
+  "schema": "ccui-pack/v0.2",
+  "name": "example",
+  "version": "0.1.0",
+  "dsh": {
+    "version": "0.1.0-rc.7",
+    "profile": "web",
+    "overrides": [
+      {
+        "from": "overrides/AGENTS.md",
+        "to": "AGENTS.md"
+      }
+    ]
+  },
+  "knowledge": {
+    "skills": [
+      {
+        "name": "hello",
+        "source": "bundled"
+      }
+    ]
+  },
+  "tools": {
+    "mcp": []
+  },
+  "meta": {
+    "fidelity": "L1",
+    "source": "portable-example"
+  },
+  "bundle": {
+    "portable": true,
+    "files": [
+      {
+        "path": "skills/hello/SKILL.md",
+        "content": "---\nname: hello\ndescription: example skill, maps to MC mods/\n---\n# hello\n\npack-agent 例包。\n"
+      }
+    ]
+  }
+}

@@ -3,6 +3,9 @@
     - id: pack-agent
       name: '@sakikotgw/pack-agent-dsh'
       inject: [tools, skills, commands]
+    # The PAD management side door lives in its own package (@sakikotgw/pad-gateway):
+    # it has to insert the official apiproxy, and inserting a package this one does
+    # not depend on would break every profile that installed only the manager.
     - id: pack-agent-dsh-skills
       name: '@deepseek-ai/dsh-skill-filesystem'
       config:

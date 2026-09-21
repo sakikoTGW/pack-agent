@@ -1,0 +1,126 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+  <!-- Every colour below is an OKLCH value converted to sRGB; the source coordinates
+       stay in the trailing comment so the ramp can be re-derived instead of eyeballed.
+       Anchor hue 218-246 (cool slate to teal), accent chroma capped at 0.09: PAD is
+       stared at while reading logs and agent state, so contrast carries the hierarchy
+       and the accent stays a highlighter rather than a colour block. -->
+
+  <Color x:Key="C.Chrome">#FF1A242D</Color>              <!-- oklch(25.5% 0.022 246) -->
+
+  <Color x:Key="C.Ink.900">#FF19222A</Color>             <!-- oklch(24.5% 0.020 246) -->
+  <Color x:Key="C.Ink.700">#FF414A52</Color>             <!-- oklch(40.5% 0.017 243) -->
+  <Color x:Key="C.Ink.500">#FF626A71</Color>             <!-- oklch(52.0% 0.015 241) -->
+  <Color x:Key="C.Ink.400">#FF848C92</Color>             <!-- oklch(63.5% 0.013 239) -->
+  <Color x:Key="C.Ink.300">#FFABB2B7</Color>             <!-- oklch(76.0% 0.011 237) -->
+  <Color x:Key="C.Ink.200">#FFCFD6DA</Color>             <!-- oklch(87.2% 0.009 235) -->
+  <Color x:Key="C.Ink.100">#FFE3E8EB</Color>             <!-- oklch(92.8% 0.007 233) -->
+  <Color x:Key="C.Ink.050">#FFEAEFF3</Color>             <!-- oklch(94.8% 0.007 233) -->
+  <Color x:Key="C.Surface">#FFFAFCFD</Color>             <!-- oklch(99.0% 0.003 232) -->
+  <Color x:Key="C.Surface.Sunk">#FFEFF6F9</Color>        <!-- oklch(96.8% 0.008 230) -->
+  <Color x:Key="C.White">#FFFFFFFF</Color>
+
+  <Color x:Key="C.Accent.Deep">#FF113E4E</Color>         <!-- oklch(34.0% 0.055 226) -->
+  <Color x:Key="C.Accent.Press">#FF186074</Color>        <!-- oklch(45.5% 0.075 222) -->
+  <Color x:Key="C.Accent">#FF278197</Color>              <!-- oklch(56.0% 0.088 218) -->
+  <Color x:Key="C.Accent.Hover">#FF3A95AA</Color>        <!-- oklch(62.5% 0.090 216) -->
+  <Color x:Key="C.Accent.Light">#FF7DB5C4</Color>        <!-- oklch(74.0% 0.062 216) -->
+  <Color x:Key="C.Accent.Soft">#FFC6E2EB</Color>         <!-- oklch(89.5% 0.032 218) -->
+  <Color x:Key="C.Accent.Wash">#FFE5F3F8</Color>         <!-- oklch(95.5% 0.016 220) -->
+  <Color x:Key="C.Accent.Text">#FF006177</Color>         <!-- oklch(45.5% 0.085 220) -->
+  <Color x:Key="C.Focus">#FF159CB7</Color>               <!-- oklch(64.0% 0.110 216) -->
+
+  <Color x:Key="C.Success">#FF3A7661</Color>             <!-- oklch(52.0% 0.072 168) -->
+  <Color x:Key="C.Success.Text">#FF23644F</Color>        <!-- oklch(45.5% 0.075 168) -->
+  <Color x:Key="C.Success.Wash">#FFE2F3EC</Color>        <!-- oklch(95.0% 0.020 168) -->
+  <Color x:Key="C.Warning">#FF815B22</Color>             <!-- oklch(50.0% 0.088  74) -->
+  <Color x:Key="C.Warning.Text">#FF754D10</Color>        <!-- oklch(45.5% 0.090  72) -->
+  <Color x:Key="C.Warning.Wash">#FFF8EFDF</Color>        <!-- oklch(95.5% 0.024  82) -->
+  <Color x:Key="C.Danger">#FF9A4B45</Color>              <!-- oklch(51.0% 0.108  26) -->
+  <Color x:Key="C.Danger.Text">#FF8D3A35</Color>         <!-- oklch(46.0% 0.115  26) -->
+  <Color x:Key="C.Danger.Wash">#FFFDE9E6</Color>         <!-- oklch(95.0% 0.022  28) -->
+  <Color x:Key="C.Close.Hover">#FFC4403B</Color>         <!-- oklch(56.0% 0.170  26) -->
+
+  <SolidColorBrush x:Key="Accent" Color="{StaticResource C.Accent}" />
+  <SolidColorBrush x:Key="AccentHover" Color="{StaticResource C.Accent.Hover}" />
+  <SolidColorBrush x:Key="AccentPress" Color="{StaticResource C.Accent.Press}" />
+  <SolidColorBrush x:Key="AccentDeep" Color="{StaticResource C.Accent.Deep}" />
+  <SolidColorBrush x:Key="AccentLight" Color="{StaticResource C.Accent.Light}" />
+  <SolidColorBrush x:Key="AccentSoft" Color="{StaticResource C.Accent.Soft}" />
+  <SolidColorBrush x:Key="AccentWash" Color="{StaticResource C.Accent.Wash}" />
+  <SolidColorBrush x:Key="AccentText" Color="{StaticResource C.Accent.Text}" />
+  <SolidColorBrush x:Key="Focus" Color="{StaticResource C.Focus}" />
+
+  <SolidColorBrush x:Key="TextPrimary" Color="{StaticResource C.Ink.900}" />
+  <SolidColorBrush x:Key="TextBody" Color="{StaticResource C.Ink.700}" />
+  <SolidColorBrush x:Key="TextSecondary" Color="{StaticResource C.Ink.500}" />
+  <SolidColorBrush x:Key="TextMuted" Color="{StaticResource C.Ink.400}" />
+  <SolidColorBrush x:Key="TextOnAccent" Color="{StaticResource C.White}" />
+
+  <SolidColorBrush x:Key="LineBorder" Color="{StaticResource C.Ink.200}" />
+  <SolidColorBrush x:Key="LineDivider" Color="{StaticResource C.Ink.100}" />
+  <SolidColorBrush x:Key="InkDisabled" Color="{StaticResource C.Ink.300}" />
+
+  <SolidColorBrush x:Key="BgCard" Color="{StaticResource C.Surface}" />
+  <SolidColorBrush x:Key="BgPage" Color="{StaticResource C.Ink.050}" />
+  <SolidColorBrush x:Key="BgSidebar" Color="{StaticResource C.Surface}" />
+  <SolidColorBrush x:Key="BgSubtle" Color="{StaticResource C.Surface.Sunk}" />
+  <SolidColorBrush x:Key="BgChrome" Color="{StaticResource C.Chrome}" />
+
+  <SolidColorBrush x:Key="Danger" Color="{StaticResource C.Danger}" />
+  <SolidColorBrush x:Key="DangerText" Color="{StaticResource C.Danger.Text}" />
+  <SolidColorBrush x:Key="DangerWash" Color="{StaticResource C.Danger.Wash}" />
+  <SolidColorBrush x:Key="Success" Color="{StaticResource C.Success}" />
+  <SolidColorBrush x:Key="SuccessText" Color="{StaticResource C.Success.Text}" />
+  <SolidColorBrush x:Key="SuccessWash" Color="{StaticResource C.Success.Wash}" />
+  <SolidColorBrush x:Key="Warning" Color="{StaticResource C.Warning}" />
+  <SolidColorBrush x:Key="WarningText" Color="{StaticResource C.Warning.Text}" />
+  <SolidColorBrush x:Key="WarningWash" Color="{StaticResource C.Warning.Wash}" />
+  <SolidColorBrush x:Key="CloseHover" Color="{StaticResource C.Close.Hover}" />
+
+  <SolidColorBrush x:Key="ChromeInk" Color="#FFE6EDF2" />
+  <SolidColorBrush x:Key="ChromeInkDim" Color="#FF93A3AF" />
+  <SolidColorBrush x:Key="ChromeHairline" Color="#FF2C3944" />
+
+  <!-- WPF renders from installed fonts only, so the pairing is drawn from what ships
+       with Windows: the UI grotesque for prose, the terminal mono as the one outlier
+       register, used for machine-issued strings (发行号, pid, session id, 路径). -->
+  <FontFamily x:Key="FontUI">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
+  <FontFamily x:Key="FontDisplay">Segoe UI Variable Display, Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
+  <FontFamily x:Key="FontMono">Cascadia Mono, Consolas, Courier New</FontFamily>
+
+  <!-- Six sizes, anchored on 13 (the Windows UI body size), roughly x1.2 upward. 14 is
+       the list-row title, the one size that exists because rows outnumber headings. -->
+  <sys:Double x:Key="FsMicro">11</sys:Double>
+  <sys:Double x:Key="FsSmall">12</sys:Double>
+  <sys:Double x:Key="FsBody">13</sys:Double>
+  <sys:Double x:Key="FsRow">14</sys:Double>
+  <sys:Double x:Key="FsTitle">15</sys:Double>
+  <sys:Double x:Key="FsSection">19</sys:Double>
+
+  <CornerRadius x:Key="RadCard">8</CornerRadius>
+  <CornerRadius x:Key="RadRow">6</CornerRadius>
+  <CornerRadius x:Key="RadCtl">6</CornerRadius>
+  <CornerRadius x:Key="RadTile">6</CornerRadius>
+  <CornerRadius x:Key="RadPill">9</CornerRadius>
+
+  <!-- Page margin and card padding are the two numbers that set the whole density.
+       Both are PCL's: 25 around a page, 25 down each side of a card. -->
+  <Thickness x:Key="PadPage">25</Thickness>
+  <Thickness x:Key="PadSlab">25,15,25,17</Thickness>
+  <Thickness x:Key="PadCard">18,15,18,17</Thickness>
+  <Thickness x:Key="PadRow">12,10,12,11</Thickness>
+
+  <!-- Three duration buckets and three easings. Micro carries colour and press,
+       short carries hover and reveals, med carries the segmented indicator. -->
+  <Duration x:Key="DMicro">0:0:0.12</Duration>
+  <Duration x:Key="DShort">0:0:0.18</Duration>
+  <Duration x:Key="DMed">0:0:0.22</Duration>
+
+  <CubicEase x:Key="EaseOut" EasingMode="EaseOut" />
+  <CubicEase x:Key="EaseIn" EasingMode="EaseIn" />
+  <CubicEase x:Key="EaseInOut" EasingMode="EaseInOut" />
+
+</ResourceDictionary>

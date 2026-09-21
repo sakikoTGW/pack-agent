@@ -1,0 +1,1110 @@
+<UserControl x:Class="Pad.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Pad.Views"
+             mc:Ignorable="d"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
+
+  <!-- PCL Setup shape: left rail picks a layer, right pane holds that layer's cards.
+       Each layer maps to one object in pad.json so 「初始化本页」can wipe just that object. -->
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="168" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <Border Grid.Column="0" Background="{StaticResource BgSidebar}" BorderThickness="0,0,1,0"
+            BorderBrush="{StaticResource LineBorder}">
+      <StackPanel Margin="8,12,8,0">
+        <RadioButton x:Name="NavApi" Style="{StaticResource NavItem}" Content="API Key"
+                     v:Ico.Of="{StaticResource I.Key}" Checked="Nav_Checked" Tag="api" />
+        <RadioButton x:Name="NavLaunch" Style="{StaticResource NavItem}" Content="启动"
+                     v:Ico.Of="{StaticResource I.Play}" IsChecked="True" Checked="Nav_Checked"
+                     Tag="launch" />
+        <RadioButton x:Name="NavUi" Style="{StaticResource NavItem}" Content="个性化"
+                     v:Ico.Of="{StaticResource I.Brush}" Checked="Nav_Checked" Tag="ui" />
+        <RadioButton x:Name="NavDownload" Style="{StaticResource NavItem}" Content="下载"
+                     v:Ico.Of="{StaticResource I.Download}" Checked="Nav_Checked" Tag="download" />
+        <RadioButton x:Name="NavOther" Style="{StaticResource NavItem}" Content="其他"
+                     v:Ico.Of="{StaticResource I.More}" Checked="Nav_Checked" Tag="other" />
+        <Button x:Name="ResetBtn" Style="{StaticResource IcoBtn}" Margin="4,18,0,0"
+                HorizontalAlignment="Left" Click="Reset_Click"
+                ToolTip="初始化本页设置">
+          <v:Ico Glyph="{StaticResource I.Refresh}" Height="12" />
+        </Button>
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer Grid.Column="1" Padding="25" VerticalScrollBarVisibility="Auto">
+      <Grid>
+        <!-- ========== API Key ========== -->
+        <StackPanel x:Name="PaneApi" Visibility="Collapsed">
+          <Grid>
+            <StackPanel x:Name="ApiListStage">
+              <DockPanel LastChildFill="True" Margin="0,0,0,14">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                  <Button x:Name="ApiImportBtn" Style="{StaticResource BtnPrimary}" Content="导入 API Key"
+                          Click="ApiImport_Click" />
+                  <Button x:Name="ApiConfigBtn" Style="{StaticResource Btn}" Content="配置管理"
+                          Margin="8,0,0,0" Click="ApiConfig_Click" />
+                </StackPanel>
+                <StackPanel Margin="0,0,16,0">
+                  <TextBlock Text="API 管理" Style="{StaticResource SectionTitle}" />
+                  <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0"
+                             Text="每家公司一条。点进去看 refs 和上游模型。密钥只在导入窗。" />
+                </StackPanel>
+              </DockPanel>
+
+              <UniformGrid Columns="4" Margin="0,0,0,12">
+                <Border BorderBrush="{StaticResource LineBorder}" BorderThickness="1"
+                        CornerRadius="{StaticResource RadCard}" Padding="10,8" Margin="0,0,8,0"
+                        Background="{StaticResource BgCard}">
+                  <StackPanel>
+                    <TextBlock x:Name="ApiStatImported" Text="0" Style="{StaticResource SectionTitle}" />
+                    <TextBlock Text="已配置" Style="{StaticResource Muted}" Margin="0,6,0,0" />
+                  </StackPanel>
+                </Border>
+                <Border BorderBrush="{StaticResource LineBorder}" BorderThickness="1"
+                        CornerRadius="{StaticResource RadCard}" Padding="10,8" Margin="0,0,8,0"
+                        Background="{StaticResource BgCard}">
+                  <StackPanel>
+                    <TextBlock x:Name="ApiStatApis" Text="0" Style="{StaticResource SectionTitle}" />
+                    <TextBlock Text="API" Style="{StaticResource Muted}" Margin="0,6,0,0" />
+                  </StackPanel>
+                </Border>
+                <Border BorderBrush="{StaticResource LineBorder}" BorderThickness="1"
+                        CornerRadius="{StaticResource RadCard}" Padding="10,8" Margin="0,0,8,0"
+                        Background="{StaticResource BgCard}">
+                  <StackPanel>
+                    <TextBlock x:Name="ApiStatDeepseek" Text="缺" Style="{StaticResource SectionTitle}" />
+                    <TextBlock Text="DEEPSEEK_API_KEY" Style="{StaticResource Muted}" Margin="0,6,0,0" />
+                  </StackPanel>
+                </Border>
+                <Border BorderBrush="{StaticResource LineBorder}" BorderThickness="1"
+                        CornerRadius="{StaticResource RadCard}" Padding="10,8"
+                        Background="{StaticResource BgCard}">
+                  <StackPanel>
+                    <TextBlock x:Name="ApiStatInst" Text="0" Style="{StaticResource SectionTitle}" />
+                    <TextBlock Text="实例在用" Style="{StaticResource Muted}" Margin="0,6,0,0" />
+                  </StackPanel>
+                </Border>
+              </UniformGrid>
+
+              <Border x:Name="ApiDeepseekBar" Style="{StaticResource HintBarWarn}" Margin="0,0,0,12"
+                      Visibility="Collapsed">
+                <TextBlock Style="{StaticResource HintBarCopyWarn}"
+                           Text="还没有 DEEPSEEK_API_KEY，启动后模型不会答。点 DeepSeek 进去导入。" />
+              </Border>
+
+              <TextBlock Text="API" Style="{StaticResource CardTitle}" />
+              <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,8"
+                         Text="点一条看信息。refs 名跟着厂家走，不用手填。" />
+              <ItemsControl x:Name="ApiReadyList">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Button Style="{StaticResource PickRow}" Tag="{Binding}" Click="ApiRow_Click"
+                            ToolTip="{Binding Instances}">
+                      <Grid>
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="Auto" />
+                          <ColumnDefinition Width="*" />
+                          <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="34" Height="34" CornerRadius="7"
+                                Background="{StaticResource BgSubtle}" ClipToBounds="True">
+                          <Image Source="{Binding Icon}" Stretch="Uniform" Margin="4"
+                                 RenderOptions.BitmapScalingMode="HighQuality" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Company}" FontWeight="SemiBold"
+                                     Foreground="{StaticResource TextPrimary}"
+                                     FontSize="{StaticResource FsTitle}"
+                                     TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding Sub}" Style="{StaticResource Muted}" Margin="0,2,0,0"
+                                     TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="{Binding Status}" VerticalAlignment="Center"
+                                   FontSize="{StaticResource FsSmall}">
+                          <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                              <Setter Property="Foreground" Value="{StaticResource SuccessText}" />
+                              <Style.Triggers>
+                                <DataTrigger Binding="{Binding RefMissing}" Value="True">
+                                  <Setter Property="Foreground" Value="{StaticResource WarningText}" />
+                                  <Setter Property="Text" Value="暂无 Key" />
+                                </DataTrigger>
+                              </Style.Triggers>
+                            </Style>
+                          </TextBlock.Style>
+                        </TextBlock>
+                      </Grid>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Border x:Name="ApiReadyEmpty" Style="{StaticResource EmptyWell}" Visibility="Collapsed">
+                <StackPanel>
+                  <TextBlock Text="还没有导入 API Key" Style="{StaticResource SectionTitle}" />
+                  <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap"
+                             Text="点一条进去写入 refs。所属公司跟 refs 名走。" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+
+            <DockPanel x:Name="ApiDetailStage" Visibility="Collapsed">
+              <DockPanel DockPanel.Dock="Top" LastChildFill="True" Margin="0,0,0,14">
+                <Button DockPanel.Dock="Left" Style="{StaticResource IcoBtn}" Margin="0,0,8,0"
+                        Click="ApiDetailBack_Click" ToolTip="返回 API 列表">
+                  <v:Ico Glyph="{StaticResource I.Back}" Height="12" />
+                </Button>
+                <Button DockPanel.Dock="Right" Style="{StaticResource BtnPrimary}" Content="导入"
+                        Click="ApiImportRow_Click" />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                  <Border Width="34" Height="34" CornerRadius="7" Margin="0,0,10,0"
+                          Background="{StaticResource BgSubtle}" ClipToBounds="True">
+                    <Image x:Name="ApiDetailIcon" Stretch="Uniform" Margin="4"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
+                  </Border>
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="ApiDetailCompany" Style="{StaticResource SectionTitle}" />
+                    <TextBlock x:Name="ApiDetailRef" Style="{StaticResource Mono}" Margin="0,4,0,0" />
+                  </StackPanel>
+                </StackPanel>
+              </DockPanel>
+              <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                  <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="0">
+                    <StackPanel>
+                      <DockPanel Margin="12,8,12,6">
+                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Muted}" Text="refs" />
+                        <TextBlock FontFamily="{StaticResource FontMono}"
+                                   FontSize="{StaticResource FsMicro}"
+                                   Foreground="{StaticResource TextSecondary}"
+                                   Text="library/credentials.yaml" />
+                      </DockPanel>
+                      <Border BorderBrush="{StaticResource LineDivider}" BorderThickness="0,1,0,0"
+                              Padding="12,8,12,10">
+                        <TextBlock x:Name="ApiHeroBoard" Style="{StaticResource Mono}"
+                                   TextWrapping="Wrap" Foreground="{StaticResource AccentText}" />
+                      </Border>
+                    </StackPanel>
+                  </Border>
+                  <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="88" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="状态" Style="{StaticResource Muted}" />
+                    <TextBlock Grid.Column="1" x:Name="ApiDetailStatus" Style="{StaticResource Body}" />
+                    <TextBlock Grid.Row="1" Text="用在" Style="{StaticResource Muted}" Margin="0,8,0,0" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="ApiDetailInst"
+                               Style="{StaticResource Body}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                    <TextBlock Grid.Row="2" Text="baseURL" Style="{StaticResource Muted}" Margin="0,8,0,0" />
+                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="ApiDetailBase"
+                               Style="{StaticResource Mono}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                  </Grid>
+                  <DockPanel Margin="0,0,0,8">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn}" Content="检测"
+                            Click="ApiProbe_Click" />
+                    <TextBlock Text="上游模型" Style="{StaticResource CardTitle}" VerticalAlignment="Center" />
+                  </DockPanel>
+                  <TextBlock x:Name="ApiLiveModels" Style="{StaticResource Mono}" TextWrapping="Wrap"
+                             Text="点检测，向这家公司 GET /models。" />
+                </StackPanel>
+              </ScrollViewer>
+            </DockPanel>
+          </Grid>
+        </StackPanel>
+
+        <!-- ========== 启动 ========== -->
+        <StackPanel x:Name="PaneLaunch">
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="DSH"
+                              v:Ico.Of="{StaticResource I.Block}" />
+              <Grid Margin="0,10,0,8">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="88" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="路径" Style="{StaticResource Label}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" x:Name="DshBinLine" Style="{StaticResource Mono}"
+                           TextWrapping="Wrap" />
+              </Grid>
+              <TextBlock x:Name="SniffLine" Style="{StaticResource Muted}" Margin="88,0,0,8"
+                         TextWrapping="Wrap" />
+              <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="88" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="发行号" Style="{StaticResource Label}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" x:Name="DshVerLine" Style="{StaticResource Mono}" />
+              </Grid>
+              <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="88" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="dsh-tui" Style="{StaticResource Label}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" x:Name="DshTuiLine" Style="{StaticResource Mono}"
+                           TextWrapping="Wrap" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="88" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="$DSH_HOME" Style="{StaticResource Label}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="DshHomeBox" Height="28" LostFocus="Launch_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}" />
+                <Button Grid.Column="2" Style="{StaticResource Btn}" Content="浏览" Margin="8,0,0,0"
+                        Click="BrowseDshHome_Click" v:Ico.Of="{StaticResource I.Folder}" />
+              </Grid>
+              <WrapPanel>
+                <Button x:Name="PinBinBtn" Style="{StaticResource Btn}" Content="使用本机 DSH"
+                        Click="PinSniffed_Click" v:Ico.Of="{StaticResource I.Terminal}" />
+                <Button Style="{StaticResource Btn}" Content="选择 DSH" Margin="8,0,8,8"
+                        Click="PickBin_Click" v:Ico.Of="{StaticResource I.Folder}" />
+                <Button Style="{StaticResource Btn}" Content="选择 dsh-tui" Margin="0,0,8,8"
+                        Click="PickTui_Click" v:Ico.Of="{StaticResource I.Mod}" />
+                <Button Style="{StaticResource Btn}" Content="添加已有文件夹" Margin="0,0,0,8"
+                        Click="AdoptHome_Click" v:Ico.Of="{StaticResource I.Upload}" />
+              </WrapPanel>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="终端"
+                              v:Ico.Of="{StaticResource I.Terminal}" />
+
+              <RadioButton x:Name="OptWt" Style="{StaticResource RadioCard}" GroupName="term"
+                           Click="Term_Click" Tag="wt" Margin="0,10,0,0">
+                <StackPanel>
+                  <StackPanel Orientation="Horizontal">
+                    <v:Ico Glyph="{StaticResource I.Data}" Height="14" Margin="0,1,8,0" />
+                    <TextBlock Text="Windows Terminal" FontSize="{StaticResource FsBody}"
+                               FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" />
+                    <ContentControl Style="{StaticResource QuantMono}" Content="wt.exe" Margin="9,1,0,0"
+                                    v:Ico.Of="{StaticResource I.Gear}" />
+                  </StackPanel>
+                  <TextBlock x:Name="WtHint" Style="{StaticResource Muted}" Margin="0,4,0,0" />
+                </StackPanel>
+              </RadioButton>
+
+              <RadioButton x:Name="OptConhost" Style="{StaticResource RadioCard}" GroupName="term"
+                           Click="Term_Click" Tag="conhost">
+                <StackPanel Orientation="Horizontal">
+                  <v:Ico Glyph="{StaticResource I.Block}" Height="14" Margin="0,1,8,0" />
+                  <TextBlock Text="conhost" FontSize="{StaticResource FsBody}"
+                             FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" />
+                </StackPanel>
+              </RadioButton>
+
+              <RadioButton x:Name="OptCustom" Style="{StaticResource RadioCard}" GroupName="term"
+                           Click="Term_Click" Tag="custom" Margin="0,0,0,9">
+                <StackPanel>
+                  <TextBlock Text="自定义" FontSize="{StaticResource FsBody}" FontWeight="SemiBold"
+                             Foreground="{StaticResource TextPrimary}" />
+                  <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0"
+                             Text="{}{script} {title} {cwd}" />
+                </StackPanel>
+              </RadioButton>
+              <TextBox x:Name="CustomBox" Margin="40,0,0,0" LostFocus="Custom_Save"
+                       FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                       Tag="alacritty -e cmd /k {script}" />
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="启动选项"
+                              v:Ico.Of="{StaticResource I.Play}" />
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="终端标题" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="TitleBox" Height="28" MaxWidth="360"
+                         HorizontalAlignment="Left" MinWidth="280" LostFocus="Launch_Save"
+                         ToolTip="占位符 {instance} 与 {profile}" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+              <TextBlock Text="启动后本窗" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" x:Name="AfterBox" Width="280" Height="28"
+                          SelectionChanged="Launch_Sel">
+                  <ComboBoxItem Tag="keep" Content="保持不变" />
+                  <ComboBoxItem Tag="minimize" Content="最小化" />
+                  <ComboBoxItem Tag="hide" Content="隐藏" />
+                </ComboBox>
+              </Grid>
+              <CheckBox x:Name="ReuseWt" Style="{StaticResource Switch}" Content="Windows Terminal 复用同一窗口开标签"
+                        Click="Launch_Save" Margin="0,4,0,12"
+                        ToolTip="关掉后每次启动都会新开一个 WT 窗口" />
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="默认发行号" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="DefaultReleaseBox" Height="28" MaxWidth="360"
+                         HorizontalAlignment="Left" MinWidth="200" LostFocus="Launch_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                         ToolTip="下载页版本框的预填" />
+              </Grid>
+              <CheckBox x:Name="PauseOnError" Style="{StaticResource Switch}" Content="dsh 非零退出时 pause"
+                        Click="Launch_Save" Margin="0,4,0,10" />
+              <CheckBox x:Name="TelemetryOff" Style="{StaticResource Switch}" Content="launch 脚本禁用遥测"
+                        Click="Launch_Save" Margin="0,0,0,12" />
+              <TextBlock Text="额外环境变量" Style="{StaticResource Muted}" Margin="0,0,0,6" />
+              <TextBox x:Name="ExtraEnvBox" Height="88" AcceptsReturn="True" TextWrapping="Wrap"
+                       VerticalScrollBarVisibility="Auto" LostFocus="Launch_Save"
+                       FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                       ToolTip="每行 KEY=VALUE，写入 launch-*.cmd" />
+              <Grid Margin="0,12,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="28" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="Node 路径" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" x:Name="NodeKind" Height="28" MaxWidth="360"
+                          HorizontalAlignment="Left" MinWidth="280" SelectionChanged="NodeKind_Sel">
+                  <ComboBoxItem Tag="auto" Content="自动选择"
+                                ToolTip="按发行号 engines.node 找 runtime/node，没有则用 PATH。" />
+                  <ComboBoxItem Tag="custom" Content="使用指定的 Node"
+                                ToolTip="手动指定 node.exe 的绝对路径。换电脑后可能失效。" />
+                </ComboBox>
+                <Grid x:Name="NodeCustom" Grid.Row="1" Grid.Column="1" Margin="0,9,0,0" Height="28"
+                      Visibility="Collapsed" MaxWidth="360" HorizontalAlignment="Left">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBox x:Name="NodeBox" Height="28" LostFocus="Launch_Save"
+                           FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                           Tag="node.exe 的绝对路径" />
+                  <Button Grid.Column="1" x:Name="NodeBrowse" Style="{StaticResource Btn}"
+                          Content="浏览" Height="28" MinWidth="64" Margin="8,0,0,0"
+                          Click="NodeBrowse_Click" v:Ico.Of="{StaticResource I.Folder}" />
+                </Grid>
+                <Border x:Name="NodeHintBar" Style="{StaticResource HintBar}"
+                        Grid.Row="2" Grid.Column="1" Margin="0,8,0,0" MaxWidth="520"
+                        HorizontalAlignment="Left">
+                  <TextBlock x:Name="NodeHint" Style="{StaticResource HintBarCopy}"
+                             Text="将会使用：" />
+                </Border>
+              </Grid>
+              <CheckBox x:Name="RuntimeInstallBox" Style="{StaticResource Switch}"
+                        Content="发行号缺 Node 时装进 runtime/node" Click="Launch_Save"
+                        Margin="0,0,0,12" />
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="新建实例工作区" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" x:Name="IndieDefaultBox" Width="280" Height="28"
+                          SelectionChanged="Launch_Sel">
+                  <ComboBoxItem Tag="owned" Content="隔离" />
+                  <ComboBoxItem Tag="shared" Content="与下面目录共用" />
+                </ComboBox>
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="共用工作区" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="SharedWorkspaceBox" Height="28" LostFocus="Launch_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                         ToolTip="空 = 启动器根下 workspace-shared。$DSH_HOME 仍每实例一份。" />
+                <Button Grid.Column="2" Style="{StaticResource Btn}" Content="浏览" Margin="8,0,0,0"
+                        Click="PickSharedWs_Click" v:Ico.Of="{StaticResource I.Folder}" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="启动前执行命令" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="PreCommandBox" Height="28" MaxWidth="400"
+                         HorizontalAlignment="Left" MinWidth="300" LostFocus="Launch_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}" />
+              </Grid>
+              <CheckBox x:Name="PreWaitBox" Style="{StaticResource Switch}" Content="等待命令执行完成后再继续启动"
+                        Click="Launch_Save" Margin="0,0,0,10" />
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="进程优先级" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" x:Name="PriorityBox" Width="200" Height="28"
+                          SelectionChanged="Launch_Sel">
+                  <ComboBoxItem Tag="high" Content="高（优先保证运行，但可能造成其他程序卡顿）" />
+                  <ComboBoxItem Tag="normal" Content="中（平衡）" />
+                  <ComboBoxItem Tag="belownormal" Content="低（优先保证其他程序运行）" />
+                </ComboBox>
+              </Grid>
+              <Grid Height="28">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="默认启动" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="DefaultProfileBox" Height="28" MaxWidth="200"
+                         HorizontalAlignment="Left" MinWidth="140" LostFocus="Launch_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- ========== 个性化 ========== -->
+        <StackPanel x:Name="PaneUi" Visibility="Collapsed">
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="主题色"
+                              v:Ico.Of="{StaticResource I.Brush}" />
+              <UniformGrid Columns="6" Rows="1">
+                <RadioButton x:Name="ThemeTeal" Style="{StaticResource RadioCard}" GroupName="theme"
+                             Margin="0,0,6,0" Click="Theme_Click" Tag="teal" Content="潮汐青" />
+                <RadioButton x:Name="ThemeSlate" Style="{StaticResource RadioCard}" GroupName="theme"
+                             Margin="0,0,6,0" Click="Theme_Click" Tag="slate" Content="岩灰" />
+                <RadioButton x:Name="ThemeForest" Style="{StaticResource RadioCard}" GroupName="theme"
+                             Margin="0,0,6,0" Click="Theme_Click" Tag="forest" Content="苔绿" />
+                <RadioButton x:Name="ThemeAmber" Style="{StaticResource RadioCard}" GroupName="theme"
+                             Margin="0,0,6,0" Click="Theme_Click" Tag="amber" Content="琥珀" />
+                <RadioButton x:Name="ThemeInk" Style="{StaticResource RadioCard}" GroupName="theme"
+                             Margin="0,0,6,0" Click="Theme_Click" Tag="ink" Content="墨色" />
+                <RadioButton x:Name="ThemeCustom" Style="{StaticResource RadioCard}" GroupName="theme"
+                             Click="Theme_Click" Tag="custom" Content="自定义" />
+              </UniformGrid>
+              <Grid Height="28" Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="自定义色" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="CustomAccentBox" Height="28" Width="140"
+                         HorizontalAlignment="Left" LostFocus="Ui_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                         ToolTip="#RRGGBB，别用 #1370f3" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="动效与提示"
+                              v:Ico.Of="{StaticResource I.Sun}" />
+              <CheckBox x:Name="AnimateBox" Style="{StaticResource Switch}" Content="页面切换、列表入场与启动进度动画"
+                        Click="Ui_Save" Margin="0,0,0,12" />
+              <CheckBox x:Name="BrandBox" Style="{StaticResource Switch}" Content="顶栏显示名称"
+                        Click="Ui_Save" Margin="0,0,0,12" />
+              <CheckBox x:Name="LogoBox" Style="{StaticResource Switch}" Content="顶栏显示 logo"
+                        Click="Ui_Save" Margin="0,0,0,12" />
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="顶栏文字" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="BrandTextBox" Height="28" MaxWidth="240"
+                         HorizontalAlignment="Left" Width="180" LostFocus="Ui_Save"
+                         Tag="空 = PAD" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="动画速度" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" x:Name="AnimSpeedBox" Width="160" Height="28"
+                          SelectionChanged="Ui_Sel">
+                  <ComboBoxItem Tag="70" Content="快" />
+                  <ComboBoxItem Tag="100" Content="默认" />
+                  <ComboBoxItem Tag="160" Content="慢" />
+                </ComboBox>
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="提示停留" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" x:Name="ToastBox" Width="160" Height="28"
+                          SelectionChanged="Ui_Sel">
+                  <ComboBoxItem Tag="2000" Content="2 秒" />
+                  <ComboBoxItem Tag="3600" Content="3.6 秒" />
+                  <ComboBoxItem Tag="5000" Content="5 秒" />
+                  <ComboBoxItem Tag="8000" Content="8 秒" />
+                </ComboBox>
+              </Grid>
+              <Grid Height="28">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="同时最多" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" x:Name="ToastMaxBox" Width="120" Height="28"
+                          SelectionChanged="Ui_Sel">
+                  <ComboBoxItem Tag="1" Content="1 条" />
+                  <ComboBoxItem Tag="2" Content="2 条" />
+                  <ComboBoxItem Tag="3" Content="3 条" />
+                  <ComboBoxItem Tag="5" Content="5 条" />
+                  <ComboBoxItem Tag="8" Content="8 条" />
+                </ComboBox>
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="壁纸与透明度"
+                              v:Ico.Of="{StaticResource I.Image}" />
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="壁纸" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="WallpaperBox" Height="28" LostFocus="Ui_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                         Tag="空 = 不用" />
+                <Button Grid.Column="2" Style="{StaticResource Btn}" Content="选图…" Margin="8,0,0,0"
+                        Click="PickWallpaper_Click" v:Ico.Of="{StaticResource I.Image}" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="自定义 logo" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="LogoPathBox" Height="28" LostFocus="Ui_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                         Tag="空 = 内建" />
+                <Button Grid.Column="2" Style="{StaticResource Btn}" Content="选图…" Margin="8,0,0,0"
+                        Click="PickLogo_Click" v:Ico.Of="{StaticResource I.Image}" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="40" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="壁纸不透明" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <Slider Grid.Column="1" x:Name="WallOpSlider" Style="{StaticResource PadSlider}"
+                         Minimum="0" Maximum="100" ValueChanged="Ui_Slide"
+                         PreviewMouseLeftButtonUp="Ui_Save" LostFocus="Ui_Save" />
+                <TextBlock Grid.Column="2" x:Name="WallOpVal" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" HorizontalAlignment="Right" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="40" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="内容不透明" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <Slider Grid.Column="1" x:Name="ContentOpSlider" Style="{StaticResource PadSlider}"
+                         Minimum="40" Maximum="100" ValueChanged="Ui_Slide"
+                         PreviewMouseLeftButtonUp="Ui_Save" LostFocus="Ui_Save" />
+                <TextBlock Grid.Column="2" x:Name="ContentOpVal" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" HorizontalAlignment="Right" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="40" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="顶栏不透明" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <Slider Grid.Column="1" x:Name="ChromeOpSlider" Style="{StaticResource PadSlider}"
+                         Minimum="40" Maximum="100" ValueChanged="Ui_Slide"
+                         PreviewMouseLeftButtonUp="Ui_Save" LostFocus="Ui_Save" />
+                <TextBlock Grid.Column="2" x:Name="ChromeOpVal" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" HorizontalAlignment="Right" />
+              </Grid>
+              <Grid Height="28">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="铺法" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" x:Name="WallFitBox" Width="160" Height="28"
+                          SelectionChanged="Ui_Sel">
+                  <ComboBoxItem Tag="cover" Content="铺满裁切" />
+                  <ComboBoxItem Tag="contain" Content="完整放下" />
+                  <ComboBoxItem Tag="fill" Content="拉伸填满" />
+                </ComboBox>
+              </Grid>
+              <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <Button Style="{StaticResource Btn}" Content="打开壁纸目录" Click="OpenWallpaperDir_Click"
+                        v:Ico.Of="{StaticResource I.Folder}" />
+                <Button Style="{StaticResource Btn}" Content="刷新壁纸" Margin="8,0,0,0"
+                        Click="RefreshWallpaper_Click" v:Ico.Of="{StaticResource I.Refresh}" />
+                <Button Style="{StaticResource Btn}" Content="清掉壁纸" Margin="8,0,0,0"
+                        Click="ClearWallpaper_Click" v:Ico.Of="{StaticResource I.Trash}" />
+              </StackPanel>
+              <Grid Height="28" Margin="0,12,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="40" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="整窗不透明" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <Slider Grid.Column="1" x:Name="WindowOpSlider" Style="{StaticResource PadSlider}"
+                         Minimum="40" Maximum="100" ValueChanged="Ui_Slide"
+                         PreviewMouseLeftButtonUp="Ui_Save" LostFocus="Ui_Save" />
+                <TextBlock Grid.Column="2" x:Name="WindowOpVal" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" HorizontalAlignment="Right" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="40" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="壁纸模糊" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <Slider Grid.Column="1" x:Name="WallpaperBlurSlider" Style="{StaticResource PadSlider}"
+                         Minimum="0" Maximum="60" ValueChanged="Ui_Slide"
+                         PreviewMouseLeftButtonUp="Ui_Save" LostFocus="Ui_Save" />
+                <TextBlock Grid.Column="2" x:Name="WallpaperBlurVal" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" HorizontalAlignment="Right" />
+              </Grid>
+              <Grid Height="28">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="壁纸目录" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="WallpaperDirBox" Height="28" LostFocus="Ui_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                         Tag="非空则每次启动抽一张" />
+                <Button Grid.Column="2" Style="{StaticResource Btn}" Content="选目录…" Margin="8,0,0,0"
+                        Click="PickWallpaperDir_Click" v:Ico.Of="{StaticResource I.Folder}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="窗口几何"
+                              v:Ico.Of="{StaticResource I.Window}" />
+              <Grid Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="100" />
+                  <ColumnDefinition Width="24" />
+                  <ColumnDefinition Width="100" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="宽 × 高" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="WinWBox" Height="28" LostFocus="Ui_Save"
+                         FontFamily="{StaticResource FontMono}" />
+                <TextBlock Grid.Column="2" Text="×" HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="{StaticResource TextMuted}" />
+                <TextBox Grid.Column="3" x:Name="WinHBox" Height="28" LostFocus="Ui_Save"
+                         FontFamily="{StaticResource FontMono}" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="100" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="外框边距" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="WinMarginBox" Height="28" LostFocus="Ui_Save"
+                         FontFamily="{StaticResource FontMono}" />
+              </Grid>
+              <Grid Height="28">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="100" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="顶栏高度" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="ChromeHBox" Height="28" LostFocus="Ui_Save"
+                         FontFamily="{StaticResource FontMono}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="藏页"
+                              v:Ico.Of="{StaticResource I.Eye}" />
+              <CheckBox x:Name="HideVersionEntryBox" Style="{StaticResource Switch}"
+                        Content="藏启动页「版本选择 / 版本设置」入口" Click="Ui_Save" Margin="0,0,0,10" />
+              <CheckBox x:Name="HiddenManageBox" Style="{StaticResource Switch}"
+                        Content="F12 才显示「实例管理」顶栏入口" Click="Ui_Save" Margin="0,0,0,10" />
+              <CheckBox x:Name="HiddenDownloadBox" Style="{StaticResource Switch}"
+                        Content="藏「下载」页" Click="Ui_Save" Margin="0,0,0,10" />
+              <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap"
+                         Text="启动和设置页禁止全藏；F12 临时显示到本次进程结束。" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- ========== 下载 ========== -->
+        <StackPanel x:Name="PaneDownload" Visibility="Collapsed">
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="npm registry"
+                              v:Ico.Of="{StaticResource I.Globe}" />
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="地址" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="RegistryBox" Height="28" LostFocus="Download_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                         Tag="https://registry.npmjs.org" />
+              </Grid>
+              <StackPanel x:Name="RegistryPresetRow" Orientation="Horizontal" Margin="120,0,0,0" />
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="市场"
+                              v:Ico.Of="{StaticResource I.Search}" />
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="每页条数" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" x:Name="PageSizeBox" Width="120" Height="28"
+                          SelectionChanged="Download_Sel">
+                  <ComboBoxItem Tag="10" Content="10" />
+                  <ComboBoxItem Tag="20" Content="20" />
+                  <ComboBoxItem Tag="30" Content="30" />
+                  <ComboBoxItem Tag="50" Content="50" />
+                </ComboBox>
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="100" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="市场超时" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="MarketTimeoutBox" Height="28" LostFocus="Download_Save"
+                         FontFamily="{StaticResource FontMono}" />
+                <TextBlock Grid.Column="2" Text="秒" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="100" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="安装/查版超时" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="InstallTimeoutBox" Height="28" LostFocus="Download_Save"
+                         FontFamily="{StaticResource FontMono}" />
+                <TextBlock Grid.Column="2" Text="秒" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+              </Grid>
+              <Grid Height="28">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="100" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="网关超时" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="GatewayTimeoutBox" Height="28" LostFocus="Download_Save"
+                         FontFamily="{StaticResource FontMono}" />
+                <TextBlock Grid.Column="2" Text="秒" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+              </Grid>
+              <Grid Height="28" Margin="0,12,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="100" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="pnpm 并发" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="PnpmConcurrencyBox" Height="28" LostFocus="Download_Save"
+                         FontFamily="{StaticResource FontMono}" />
+                <TextBlock Grid.Column="2" Text="0 = 默认" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="store 目录" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="CacheDirBox" Height="28" LostFocus="Download_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                         ToolTip="空 = pnpm 全局 store；非空 = 该启动器自己的 store" />
+              </Grid>
+              <CheckBox x:Name="AutoFetchBox" Style="{StaticResource Switch}"
+                        Content="打开下载页时自动获取版本列表" Click="Download_Save"
+                        Margin="0,0,0,0" ToolTip="关掉后要手动点刷新" />
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="社区资源"
+                              v:Ico.Of="{StaticResource I.Mod}" />
+              <TextBox x:Name="ShelvesBox" Height="110" AcceptsReturn="True" TextWrapping="Wrap"
+                       VerticalScrollBarVisibility="Auto" LostFocus="Download_Save"
+                       FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}" />
+              <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,6" Text="registry 快捷按钮（label|url）" />
+              <TextBox x:Name="PresetsBox" Height="64" AcceptsReturn="True" TextWrapping="Wrap"
+                       VerticalScrollBarVisibility="Auto" LostFocus="Download_Save"
+                       FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- ========== 其他 ========== -->
+        <StackPanel x:Name="PaneOther" Visibility="Collapsed">
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="数据在哪"
+                              v:Ico.Of="{StaticResource I.Folder}" />
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Style="{StaticResource Row}" Margin="0,0,10,0"
+                        VerticalAlignment="Center">
+                  <TextBlock x:Name="RootLine" Style="{StaticResource Mono}" />
+                </Border>
+                <Button Grid.Column="1" Style="{StaticResource Btn}" Content="打开目录"
+                        VerticalAlignment="Center" Click="OpenRoot_Click"
+                        v:Ico.Of="{StaticResource I.Folder}" />
+              </Grid>
+              <Grid Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Style="{StaticResource Row}" Margin="0,0,10,0"
+                        VerticalAlignment="Center">
+                  <TextBlock x:Name="SettingsLine" Style="{StaticResource Mono}" />
+                </Border>
+                <Button Grid.Column="1" Style="{StaticResource Btn}" Content="打开 pad.json"
+                        VerticalAlignment="Center" Click="OpenSettings_Click"
+                        v:Ico.Of="{StaticResource I.Log}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="多个启动器根"
+                              v:Ico.Of="{StaticResource I.More}" />
+              <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,8"
+                         Text="名单写在本机用户目录。换文件夹打开 PAD，空的 exe 旁根会切到上次有实例的那份。" />
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ComboBox Grid.Column="0" x:Name="RootsBox" Height="28"
+                          ItemsSource="{Binding Roots}" SelectionChanged="Roots_Sel"
+                          FontFamily="{StaticResource FontMono}" />
+                <Button Grid.Column="1" Style="{StaticResource Btn}" Content="切换"
+                        Margin="8,0,0,0" Click="SwitchRoot_Click"
+                        v:Ico.Of="{StaticResource I.Refresh}" />
+              </Grid>
+              <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource Btn}" Content="添加已有" Click="AddRoot_Click"
+                        v:Ico.Of="{StaticResource I.Folder}"
+                        ToolTip="把一份已有的 .pack-launcher 加进列表" />
+                <Button Style="{StaticResource Btn}" Content="新建根" Margin="8,0,0,0"
+                        Click="NewRoot_Click" v:Ico.Of="{StaticResource I.Plus}"
+                        ToolTip="建一份空 versions/ + instances/" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="习惯"
+                              v:Ico.Of="{StaticResource I.Gear}" />
+              <CheckBox x:Name="ConfirmStop" Style="{StaticResource Switch}"
+                        Content="停止进程前确认" Click="Other_Save" Margin="0,0,0,10" />
+              <CheckBox x:Name="OpenLogOnError" Style="{StaticResource Switch}"
+                        Content="出错时打开 pad-crash.log 所在目录" Click="Other_Save" Margin="0,0,0,10" />
+              <CheckBox x:Name="BackupCorrupt" Style="{StaticResource Switch}"
+                        Content="pad.json 损坏时备份再恢复默认" Click="Other_Save" Margin="0,0,0,12" />
+              <CheckBox x:Name="DebugBox" Style="{StaticResource Switch}"
+                        Content="诊断模式（多打一行 stderr，显示 schema 与根路径）"
+                        Click="Other_Save" Margin="0,0,0,12" />
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="100" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="列表刷新" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="RefreshSecBox" Height="28" LostFocus="Other_Save"
+                         FontFamily="{StaticResource FontMono}" />
+                <TextBlock Grid.Column="2" Text="秒" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="registries 相对路径" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="RegistriesRelBox" Height="28" LostFocus="Other_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="100" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="截图延时" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="ShotDelayBox" Height="28" LostFocus="Other_Save"
+                         FontFamily="{StaticResource FontMono}" />
+                <TextBlock Grid.Column="2" Text="ms" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+              </Grid>
+              <Grid Height="28">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="100" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="市场截图延时" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="ShotMarketDelayBox" Height="28" LostFocus="Other_Save"
+                         FontFamily="{StaticResource FontMono}" />
+                <TextBlock Grid.Column="2" Text="ms" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="注册表覆盖"
+                              v:Ico.Of="{StaticResource I.Pack}" />
+              <Button Style="{StaticResource BtnWide}" Content="打开 library/registries"
+                      HorizontalAlignment="Left" Click="OpenRegistries_Click"
+                      v:Ico.Of="{StaticResource I.Folder}" />
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="升级"
+                              v:Ico.Of="{StaticResource I.Upload}" />
+              <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="88" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="启动器" Style="{StaticResource Label}" />
+                <TextBlock Grid.Column="1" x:Name="PadUpdateLine" Style="{StaticResource Mono}" />
+              </Grid>
+              <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="88" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="DSH 发行号" Style="{StaticResource Label}" />
+                <TextBlock Grid.Column="1" x:Name="DshUpdateLine" Style="{StaticResource Mono}" />
+              </Grid>
+              <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource Btn}" Content="检查升级" Click="CheckUpdate_Click"
+                        v:Ico.Of="{StaticResource I.Refresh}" />
+                <Button Style="{StaticResource Btn}" Content="去下载页" Margin="8,0,0,0"
+                        Click="GotoDownload_Click" v:Ico.Of="{StaticResource I.Download}" />
+                <Button Style="{StaticResource Btn}" Content="诊断" Margin="8,0,0,0"
+                        Click="Doctor_Click" ToolTip="跑 launcher doctor"
+                        v:Ico.Of="{StaticResource I.Search}" />
+              </StackPanel>
+              <Grid Height="28" Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="更新通道" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" x:Name="UpdateChannelBox" Width="160" Height="28"
+                          SelectionChanged="Other_Sel">
+                  <ComboBoxItem Tag="release" Content="release" />
+                  <ComboBoxItem Tag="off" Content="关掉检查" />
+                </ComboBox>
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="设置导入导出"
+                              v:Ico.Of="{StaticResource I.Copy}" />
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                <Button Style="{StaticResource Btn}" Content="导出设置" Click="ExportSettings_Click"
+                        v:Ico.Of="{StaticResource I.Upload}"
+                        ToolTip="写出 pad-settings.json" />
+                <Button Style="{StaticResource Btn}" Content="导入设置" Margin="8,0,0,0"
+                        Click="ImportSettings_Click" v:Ico.Of="{StaticResource I.Download}"
+                        ToolTip="导入前会备份当前 pad.json" />
+              </StackPanel>
+              <Button Style="{StaticResource Btn}" Content="导出便携目录" Margin="0,10,0,0"
+                      Click="ExportPortable_Click" v:Ico.Of="{StaticResource I.Pack}"
+                      ToolTip="把当前 PAD + 空 .pack-launcher（可带当前实例 pinst）打到一个目录" />
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}" Padding="25,22,25,25">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="关于" Margin="0,0,0,8"
+                              v:Ico.Of="{StaticResource I.Data}" />
+              <TextBlock x:Name="AboutLine" Style="{StaticResource Mono}" />
+              <Grid Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Style="{StaticResource Row}" Margin="0,0,10,0"
+                        VerticalAlignment="Center">
+                  <TextBlock x:Name="IdentifyLine" Style="{StaticResource Mono}" />
+                </Border>
+                <Button Grid.Column="1" Style="{StaticResource Btn}" Content="复制识别码"
+                        VerticalAlignment="Center" Click="CopyIdentify_Click"
+                        v:Ico.Of="{StaticResource I.Copy}" />
+              </Grid>
+              <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0"
+                         Text="pack-agent for DSH" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

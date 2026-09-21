@@ -1,0 +1,847 @@
+<UserControl x:Class="Pad.Views.InstanceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pad.Views"
+             xmlns:v="clr-namespace:Pad.Views"
+             mc:Ignorable="d"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
+  <UserControl.Resources>
+    <local:BoolToVis x:Key="B2V" />
+    <local:BoolToVis x:Key="B2VNot" Invert="True" />
+    <local:PackAction x:Key="PackAction" />
+    <local:Initial x:Key="Initial" />
+    <local:ShortId x:Key="Short" Keep="8" />
+    <local:PathToBmp x:Key="PathBmp" />
+  </UserControl.Resources>
+
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="168" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <Border Grid.Column="0" Background="{StaticResource BgSidebar}" BorderThickness="0,0,1,0"
+            BorderBrush="{StaticResource LineBorder}">
+      <StackPanel Margin="8,12,8,0">
+        <RadioButton x:Name="NavOverview" Style="{StaticResource NavItem}" Content="概览"
+                     v:Ico.Of="{StaticResource I.Window}"
+                     IsChecked="True" Checked="Nav_Checked" Tag="overview" />
+        <RadioButton x:Name="NavSettings" Style="{StaticResource NavItem}" Content="设置"
+                     v:Ico.Of="{StaticResource I.Gear}"
+                     Checked="Nav_Checked" Tag="settings" />
+        <RadioButton x:Name="NavPlugins" Style="{StaticResource NavItem}" Content="插件"
+                     v:Ico.Of="{StaticResource I.Mod}"
+                     Checked="Nav_Checked" Tag="plugins" />
+        <RadioButton x:Name="NavSessions" Style="{StaticResource NavItem}" Content="session"
+                     v:Ico.Of="{StaticResource I.Log}"
+                     Checked="Nav_Checked" Tag="sessions" />
+        <RadioButton x:Name="NavPresets" Style="{StaticResource NavItem}" Content="agent-preset"
+                     v:Ico.Of="{StaticResource I.Data}"
+                     Checked="Nav_Checked" Tag="presets" />
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer Grid.Column="1" Padding="25,10,25,22" VerticalScrollBarVisibility="Auto">
+      <Grid>
+        <!-- 概览：对照 PCL PageInstanceOverall。身份卡是无标题的 42 高列表项；
+             其余三块卡用 CardHead，不要 SlabHead 图标砖。 -->
+        <StackPanel x:Name="PaneOverview" Grid.IsSharedSizeScope="True">
+          <Border Style="{StaticResource Card}" Padding="10,7" Margin="0,15,0,15">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="42" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <local:InstMark x:Name="OverviewMark" Width="32" Height="32"
+                                VerticalAlignment="Center" IsHitTestVisible="False"
+                                DataContext="{Binding SelectedInstance}" />
+                <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center"
+                            IsHitTestVisible="False">
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock x:Name="OverviewName" FontSize="{StaticResource FsRow}"
+                               FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="OverviewPipe" FontSize="{StaticResource FsSmall}"
+                               Foreground="{StaticResource TextMuted}" Margin="6,1,0,0"
+                               Visibility="Collapsed" />
+                  </StackPanel>
+                  <TextBlock x:Name="OverviewSub" FontSize="{StaticResource FsSmall}"
+                             Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0"
+                             TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Grid>
+              <StackPanel Grid.Row="1" x:Name="OverviewExtra" Margin="40,6,4,4"
+                          Visibility="Collapsed">
+                <TextBlock x:Name="OverviewIntro" FontSize="{StaticResource FsBody}"
+                           Foreground="{StaticResource TextBody}" TextWrapping="Wrap"
+                           Visibility="Collapsed" />
+                <Button x:Name="OpenReadmeBtn" Style="{StaticResource BtnGhost}" Content="详细介绍"
+                        Height="26" Margin="0,8,0,0" HorizontalAlignment="Left"
+                        Visibility="Collapsed" Click="OpenReadme_Click" />
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <Border Style="{StaticResource Slab}" Padding="25,12,25,15">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardHead}" Text="个性化" />
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="Name" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="28" />
+                  <RowDefinition Height="9" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="28" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="图标" VerticalAlignment="Center" Margin="0,0,25,0"
+                           FontSize="{StaticResource FsBody}"
+                           Foreground="{StaticResource TextPrimary}" />
+                <ComboBox Grid.Column="1" x:Name="LogoBox" Height="28"
+                          SelectionChanged="LogoBox_Sel">
+                  <ComboBoxItem Content="自动" Tag="" />
+                  <ComboBoxItem Content="自定义..." Tag="custom" />
+                </ComboBox>
+                <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                            x:Name="LogoCustomRow" Visibility="Collapsed" Margin="0,0,0,9">
+                  <Grid Height="28">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="LogoPathBox" Height="28" Tag="图片路径"
+                             KeyDown="LogoPath_Key" LostFocus="LogoPath_Lost" />
+                    <Button Grid.Column="1" x:Name="LogoBrowse" Style="{StaticResource Btn}"
+                            Content="浏览" Height="28" MinWidth="64" Margin="8,0,0,0"
+                            Click="LogoBrowse_Click" v:Ico.Of="{StaticResource I.Folder}" />
+                  </Grid>
+                  <StackPanel Orientation="Horizontal" Margin="0,8,0,4">
+                    <Border Width="56" Height="56" CornerRadius="6" ClipToBounds="True"
+                            Background="{StaticResource BgSubtle}"
+                            BorderBrush="{StaticResource LineBorder}" BorderThickness="1">
+                      <Image x:Name="LogoLivePreview" Stretch="UniformToFill" />
+                    </Border>
+                    <TextBlock Style="{StaticResource Muted}" Margin="10,0,0,0"
+                               VerticalAlignment="Center" TextWrapping="Wrap"
+                               Text="可填路径、点浏览，或把图片拖进窗口。" />
+                  </StackPanel>
+                </StackPanel>
+                <TextBlock Grid.Row="3" Text="分类" VerticalAlignment="Center" Margin="0,0,25,0"
+                           FontSize="{StaticResource FsBody}"
+                           Foreground="{StaticResource TextPrimary}" />
+                <ComboBox Grid.Row="3" Grid.Column="1" x:Name="TypeBox" Height="28"
+                          SelectionChanged="TypeBox_Sel">
+                  <ComboBoxItem Content="自动" Tag="" />
+                  <ComboBoxItem Content="从版本列表中隐藏" Tag="隐藏" />
+                  <ComboBoxItem Content="终端" Tag="终端" />
+                  <ComboBoxItem Content="网页" Tag="网页" />
+                  <ComboBoxItem Content="不常用" Tag="不常用" />
+                </ComboBox>
+              </Grid>
+              <Grid Margin="0,15,0,0" Height="35">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="Button" />
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="Button" />
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="Button" />
+                </Grid.ColumnDefinitions>
+                <Button Style="{StaticResource Btn}" MinWidth="140" Height="35"
+                        Content="修改版本名" Margin="0,0,20,0" Click="Rename_Click" />
+                <Button Grid.Column="1" Style="{StaticResource Btn}" MinWidth="140" Height="35"
+                        Content="修改版本描述" Margin="0,0,20,0" Click="Desc_Click" />
+                <Button Grid.Column="2" x:Name="StarBtn" Style="{StaticResource Btn}"
+                        MinWidth="140" Height="35" Content="加入收藏夹" Margin="0,0,20,0"
+                        Click="Star_Click" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}" Padding="25,12,25,15">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardHead}" Text="快捷方式" />
+              <WrapPanel>
+                <Button Style="{StaticResource Btn}" MinWidth="140" Height="35" Margin="0,13,20,0"
+                        Content="实例文件夹" Click="OpenInstanceDir_Click" />
+                <Button Style="{StaticResource Btn}" MinWidth="140" Height="35" Margin="0,13,20,0"
+                        Content="工作区" Click="OpenWorkspace_Click" />
+                <Button Style="{StaticResource Btn}" MinWidth="140" Height="35" Margin="0,13,20,0"
+                        Content="profiles" Click="OpenProfiles_Click" />
+                <Button Style="{StaticResource Btn}" MinWidth="140" Height="35" Margin="0,13,20,0"
+                        Content="投影" Click="OpenProjection_Click" />
+              </WrapPanel>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}" Padding="25,12,25,15">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardHead}" Text="高级管理" />
+              <Grid Height="35">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="Button" />
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="Button" />
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="Button" />
+                </Grid.ColumnDefinitions>
+                <Button Style="{StaticResource Btn}" MinWidth="140" Height="35"
+                        Content="导出启动脚本" Margin="0,0,20,0" Click="Shortcut_Click" />
+                <Button Grid.Column="1" Style="{StaticResource Btn}" MinWidth="140" Height="35"
+                        Content="dump-config" Margin="0,0,20,0" Click="DumpConfig_Click"
+                        ToolTip="把 dsh --dump-config 输出写到实例目录" />
+                <Button Grid.Column="2" Style="{StaticResource BtnDanger}" MinWidth="140"
+                        Height="35" Content="删除实例" Margin="0,0,20,0"
+                        Click="DeleteInstance_Click" />
+              </Grid>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- 插件: PCL Mod 管理 — one list, search, 全部/可更新/试验中. -->
+        <StackPanel x:Name="PanePlugins" Visibility="Collapsed">
+          <Grid Height="32" Margin="0,4,0,12">
+            <TextBox x:Name="PluginSearch" Height="32"
+                     Tag="搜索插件名称 / 描述 / 标签"
+                     TextChanged="PluginSearch_Changed" />
+          </Grid>
+
+          <WrapPanel Margin="0,0,0,12">
+            <Button Style="{StaticResource BtnWide}" Content="打开文件夹" Margin="0,0,20,8"
+                    Click="PluginOpenDir_Click" v:Ico.Of="{StaticResource I.Folder}" />
+            <Button Style="{StaticResource BtnWide}" Content="从文件安装" Margin="0,0,20,8"
+                    Click="PluginFromFile_Click" v:Ico.Of="{StaticResource I.Plus}" />
+            <Button Style="{StaticResource BtnWide}" Content="下载新插件" Margin="0,0,20,8"
+                    Click="PluginDownload_Click" v:Ico.Of="{StaticResource I.Download}" />
+            <Button Style="{StaticResource BtnWide}" Content="全选" Margin="0,0,20,8"
+                    Click="PluginSelectAll_Click" v:Ico.Of="{StaticResource I.Check}" />
+            <ContentControl x:Name="PluginSpinner" Style="{StaticResource Spinner}"
+                            Margin="0,0,0,8" VerticalAlignment="Center" Visibility="Collapsed" />
+          </WrapPanel>
+
+          <Grid Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <RadioButton x:Name="FilterAll" Style="{StaticResource FilterTab}" Content="全部"
+                           GroupName="pluginFilter" IsChecked="True" Tag="all"
+                           Checked="PluginFilter_Changed" />
+              <RadioButton x:Name="FilterUpdatable" Style="{StaticResource FilterTab}" Content="可更新"
+                           GroupName="pluginFilter" Tag="updatable"
+                           Checked="PluginFilter_Changed" />
+              <RadioButton x:Name="FilterTrial" Style="{StaticResource FilterTab}" Content="试验中"
+                           GroupName="pluginFilter" Tag="trial"
+                           Checked="PluginFilter_Changed" />
+            </StackPanel>
+            <ComboBox x:Name="PluginProfile" Width="140" Height="28"
+                      HorizontalAlignment="Right" VerticalAlignment="Center"
+                      ItemsSource="{Binding Launchables}"
+                      SelectionChanged="PluginProfile_Changed">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </Grid>
+
+          <StackPanel x:Name="PluginSelBar" Orientation="Horizontal" Margin="0,0,0,10"
+                      Visibility="Collapsed">
+            <TextBlock x:Name="PluginSelCount" Style="{StaticResource Muted}"
+                       VerticalAlignment="Center" Margin="0,0,12,0" />
+            <Button Style="{StaticResource BtnSm}" Content="更新所选" Click="PluginUpdateSel_Click"
+                    v:Ico.Of="{StaticResource I.Refresh}" />
+            <Button Style="{StaticResource BtnDanger}" Height="26" Padding="11,0"
+                    FontSize="{StaticResource FsSmall}" Content="移除所选" Margin="8,0,0,0"
+                    Click="PluginRemoveSel_Click" v:Ico.Of="{StaticResource I.Trash}" />
+          </StackPanel>
+
+          <ItemsControl x:Name="PluginList">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border local:Fx.Enter="row" Style="{StaticResource Row}" Padding="10,8,8,9">
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <CheckBox Style="{StaticResource Tick}" Margin="0,0,10,0"
+                              IsChecked="{Binding Selected, Mode=TwoWay}"
+                              Click="PluginTick_Click" />
+                    <Grid Grid.Column="1" Width="42" Height="42" Margin="0,0,10,0">
+                      <Image Stretch="Uniform" Width="42" Height="42"
+                             Source="{Binding IconPath, Converter={StaticResource PathBmp}}"
+                             Visibility="{Binding HasIcon, Converter={StaticResource B2V}}" />
+                      <ContentControl Style="{StaticResource Monogram}" Width="42" Height="42"
+                                      FontSize="14" Content="{Binding Monogram}"
+                                      Visibility="{Binding HasIcon, Converter={StaticResource B2VNot}}" />
+                    </Grid>
+                    <StackPanel Grid.Column="2" Margin="0,0,10,0" VerticalAlignment="Center">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock FontSize="{StaticResource FsBody}" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimary}"
+                                   Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Style="{StaticResource Mono}" Margin="8,1,0,0"
+                                   Foreground="{StaticResource TextMuted}"
+                                   Text="{Binding Spec}" ToolTip="{Binding Spec}" />
+                        <ContentControl Style="{StaticResource QuantMono}" Margin="8,1,0,0"
+                                        v:Ico.Of="{StaticResource I.Mod}"
+                                        Content="{Binding VersionLine}" />
+                      </StackPanel>
+                      <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                        <ItemsControl ItemsSource="{Binding Tags}">
+                          <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                              <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                          </ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <ContentControl Style="{StaticResource Pill}" Content="{Binding}"
+                                              Margin="0,0,6,0" />
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Style="{StaticResource Muted}" FontSize="{StaticResource FsMicro}"
+                                   Text="{Binding SubLine}" TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center" />
+                      </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                      <Button Style="{StaticResource IcoBtn}" Click="PluginInfo_Click" Tag="{Binding}"
+                              ToolTip="详情">
+                        <v:Ico Glyph="{StaticResource I.Info}" Height="12" />
+                      </Button>
+                      <Button Style="{StaticResource IcoBtn}" Click="PluginRowDir_Click" Tag="{Binding}"
+                              ToolTip="打开该插件目录">
+                        <v:Ico Glyph="{StaticResource I.Folder}" Height="12" />
+                      </Button>
+                      <Button Style="{StaticResource IcoBtn}" Click="PluginUpdate_Click" Tag="{Binding}"
+                              ToolTip="dsh plugin --profile update"
+                              Visibility="{Binding Trial, Converter={StaticResource B2VNot}}">
+                        <v:Ico Glyph="{StaticResource I.Refresh}" Height="12" />
+                      </Button>
+                      <Button Style="{StaticResource IcoBtn}" Click="PluginRemove_Click" Tag="{Binding}"
+                              ToolTip="dsh plugin --profile remove"
+                              Visibility="{Binding Trial, Converter={StaticResource B2VNot}}">
+                        <v:Ico Glyph="{StaticResource I.Trash}" Height="12" />
+                      </Button>
+                      <Button Style="{StaticResource BtnSm}" Content="固化" Margin="4,0,0,0"
+                              Click="TrialCommit_Click" Tag="{Binding}"
+                              ToolTip="正式装上，以后每次启动都带上"
+                              Visibility="{Binding Trial, Converter={StaticResource B2V}}"
+                              v:Ico.Of="{StaticResource I.Check}" />
+                      <Button Style="{StaticResource BtnDanger}" Content="丢掉" Height="26"
+                              Padding="9,0" FontSize="{StaticResource FsSmall}" Margin="6,0,0,0"
+                              Click="TrialDrop_Click" Tag="{Binding}"
+                              ToolTip="卸掉包并删掉 --patch 覆盖层"
+                              Visibility="{Binding Trial, Converter={StaticResource B2V}}"
+                              v:Ico.Of="{StaticResource I.Trash}" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Border x:Name="PluginEmptyBox" Style="{StaticResource EmptyWell}" Visibility="Collapsed">
+            <StackPanel>
+              <ContentControl Style="{StaticResource PictLg}" v:Ico.Of="{StaticResource I.Mod}"
+                              HorizontalAlignment="Left" Margin="0,0,0,10" />
+              <TextBlock x:Name="PluginEmpty" Style="{StaticResource Muted}" />
+              <TextBlock x:Name="TrialEmpty" Style="{StaticResource Muted}" Margin="0,6,0,0"
+                         Visibility="Collapsed" />
+            </StackPanel>
+          </Border>
+
+          <Grid Margin="0,16,0,12">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="PluginSpecBox" Tag="npm 包名或本地路径"
+                     FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
+              <Button x:Name="PluginAddBtn" Style="{StaticResource Btn}" Content="添加"
+                      Click="PluginAdd_Click" v:Ico.Of="{StaticResource I.Plus}" />
+              <Button x:Name="TrialAddBtn" Style="{StaticResource Btn}" Content="试一次"
+                      Margin="8,0,0,0" Click="TrialAdd_Click" v:Ico.Of="{StaticResource I.Play}" />
+            </StackPanel>
+          </Grid>
+          <TextBox x:Name="PluginLog" Style="{StaticResource LogBox}" Height="0"
+                   Visibility="Collapsed" Margin="0,0,0,12" />
+        </StackPanel>
+
+        <!-- 整合包: enabled is the allow-list, not the files on disk. -->
+        <StackPanel x:Name="PanePacks" Visibility="Collapsed">
+          <Grid Margin="0,0,0,10">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="整合包" Margin="0"
+                              v:Ico.Of="{StaticResource I.Pack}" />
+            </StackPanel>
+            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Width="130">
+              <ContentControl x:Name="PackCount" Style="{StaticResource Pill}"
+                              HorizontalAlignment="Right" Visibility="Collapsed" />
+              <ProgressBar x:Name="PackMeter" Style="{StaticResource Meter}" Margin="0,8,0,0"
+                           Visibility="Collapsed" />
+            </StackPanel>
+          </Grid>
+
+          <StackPanel Orientation="Horizontal" Margin="0,4,0,14">
+            <Button x:Name="ImportBtn" Style="{StaticResource BtnPrimary}" Content="装整合包…"
+                    Click="Import_Click" v:Ico.Of="{StaticResource I.Pack}" />
+            <Button x:Name="ScanBtn" Style="{StaticResource Btn}" Content="扫启动器目录" Margin="8,0,0,0"
+                    Click="Scan_Click" v:Ico.Of="{StaticResource I.Search}"
+                    ToolTip="把丢在启动器根目录里的包捡进来" />
+            <Button x:Name="PackRefreshBtn" Style="{StaticResource Btn}" Content="刷新"
+                    Margin="8,0,0,0" Click="PackRefresh_Click" v:Ico.Of="{StaticResource I.Refresh}" />
+            <ContentControl x:Name="PackSpinner" Style="{StaticResource Spinner}" Margin="10,0,0,0"
+                            VerticalAlignment="Center" Visibility="Collapsed" />
+          </StackPanel>
+
+          <!-- Projection runs as a subprocess and takes a second or two; the row shape
+               is known in advance, so the wait is a skeleton rather than a blank. -->
+          <StackPanel x:Name="PackSkeleton" Visibility="Collapsed">
+            <Border Style="{StaticResource Skeleton}" Width="620" Height="56" Margin="0,0,0,8" />
+            <Border Style="{StaticResource Skeleton}" Width="620" Height="56" />
+          </StackPanel>
+
+          <ItemsControl x:Name="PackList">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border local:Fx.Enter="row" Background="{StaticResource BgCard}" BorderThickness="3,1,1,1"
+                        BorderBrush="{StaticResource Accent}" CornerRadius="{StaticResource RadRow}"
+                        Padding="14,12,14,13" Margin="0,0,0,8">
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Title}" FontSize="{StaticResource FsBody}"
+                                   FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <ContentControl Style="{StaticResource Quant}" Margin="9,1,0,0"
+                                        v:Ico.Of="{StaticResource I.Mod}"
+                                        Content="{Binding StateText}" />
+                        <ContentControl Style="{StaticResource QuantMono}" Margin="6,1,0,0"
+                                        v:Ico.Of="{StaticResource I.Gear}"
+                                        Content="{Binding VersionText}" />
+                      </StackPanel>
+                      <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,0"
+                                 Text="{Binding DescriptionText}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <Button Grid.Column="1" VerticalAlignment="Center" Tag="{Binding Id}"
+                            Click="TogglePack_Click" Style="{StaticResource Btn}" Width="64"
+                            Content="{Binding Enabled, Converter={StaticResource PackAction}}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Border x:Name="PackEmptyBox" Style="{StaticResource EmptyWell}"
+                  Visibility="Collapsed">
+            <StackPanel>
+              <ContentControl Style="{StaticResource PictLg}" v:Ico.Of="{StaticResource I.Pack}"
+                              HorizontalAlignment="Left" Margin="0,0,0,10" />
+              <TextBlock x:Name="PackEmpty" Style="{StaticResource Muted}" MaxWidth="480"
+                         HorizontalAlignment="Left" />
+            </StackPanel>
+          </Border>
+
+          <Border x:Name="PackLogCard" Visibility="Collapsed" Margin="0,16,0,0">
+            <StackPanel>
+              <ContentControl Style="{StaticResource Rule}" Content="装包输出"
+                              v:Ico.Of="{StaticResource I.Terminal}" />
+              <TextBox x:Name="PackLog" Style="{StaticResource LogBox}" Height="150" />
+            </StackPanel>
+          </Border>
+
+          <ContentControl Style="{StaticResource Rule}" Content="白名单套装" Margin="0,24,0,10"
+                          v:Ico.Of="{StaticResource I.Check}" />
+          <Grid Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" x:Name="SetNameBox" MaxWidth="300" HorizontalAlignment="Left"
+                     MinWidth="220" Tag="套装名，如 demo-only" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
+              <Button x:Name="SetSaveBtn" Style="{StaticResource Btn}" Content="保存当前"
+                      Click="SetSave_Click" v:Ico.Of="{StaticResource I.Check}"
+                      ToolTip="把当前启用集存成命名套装" />
+              <Button x:Name="SetLoadBtn" Style="{StaticResource Btn}" Content="载入"
+                      Margin="8,0,0,0" Click="SetLoad_Click" v:Ico.Of="{StaticResource I.Folder}"
+                      ToolTip="用上面名字载入套装" />
+            </StackPanel>
+          </Grid>
+          <ItemsControl x:Name="SetList">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button Style="{StaticResource BtnSm}" Content="{Binding}" Margin="0,0,6,6"
+                        Click="SetLoadNamed_Click" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button Style="{StaticResource Btn}" Content="打开投影目录" Margin="0,6,0,0"
+                  Click="OpenProjection_Click" v:Ico.Of="{StaticResource I.Folder}" />
+        </StackPanel>
+
+        <!-- session -->
+        <StackPanel x:Name="PaneSessions" Visibility="Collapsed">
+          <Grid Margin="0,0,0,10">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="session" Margin="0"
+                              v:Ico.Of="{StaticResource I.Log}" />
+            </StackPanel>
+            <ContentControl x:Name="SessionCount" Style="{StaticResource Quant}"
+                            v:Ico.Of="{StaticResource I.Data}"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Visibility="Collapsed" />
+          </Grid>
+
+          <ItemsControl x:Name="SessionList" Margin="0,4,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border local:Fx.Enter="row" Style="{StaticResource Row}" Padding="13,11,13,12">
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                      <TextBlock Style="{StaticResource Mono}" FontWeight="SemiBold"
+                                 Foreground="{StaticResource TextPrimary}"
+                                 Text="{Binding Id, Converter={StaticResource Short}}"
+                                 ToolTip="{Binding Id}" />
+                      <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                        <ContentControl Style="{StaticResource Quant}"
+                                        v:Ico.Of="{StaticResource I.Gear}"
+                                        Content="{Binding PresetText}" />
+                        <ContentControl Style="{StaticResource QuantMono}"
+                                        v:Ico.Of="{StaticResource I.Block}"
+                                        Content="{Binding Size}" />
+                        <ContentControl Style="{StaticResource Quant}" Margin="0"
+                                        v:Ico.Of="{StaticResource I.Upload}"
+                                        Content="{Binding UpdatedText}" />
+                      </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                      <Button Style="{StaticResource BtnSm}" Content="备份" Click="BackupSession_Click"
+                              Tag="{Binding}" ToolTip="备份这一条" v:Ico.Of="{StaticResource I.Copy}" />
+                      <Button Style="{StaticResource BtnSm}" Content="打开" Margin="6,0,0,0"
+                              Click="OpenSession_Click" Tag="{Binding}" ToolTip="打开 session 文件所在目录"
+                              v:Ico.Of="{StaticResource I.Folder}" />
+                      <Button Style="{StaticResource BtnDanger}" Content="删除" Height="26" Padding="9,0"
+                              FontSize="{StaticResource FsSmall}" Margin="6,0,0,0"
+                              Click="DeleteSession_Click" Tag="{Binding}"
+                              v:Ico.Of="{StaticResource I.Trash}" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Border x:Name="NoSessions" Style="{StaticResource EmptyWell}"
+                  Visibility="Collapsed">
+            <StackPanel>
+              <ContentControl Style="{StaticResource PictLg}" v:Ico.Of="{StaticResource I.Log}"
+                              HorizontalAlignment="Left" Margin="0,0,0,10" />
+              <TextBlock Text="没有 session" Style="{StaticResource Muted}" />
+              <Button Style="{StaticResource BtnWide}" Content="去启动"
+                      HorizontalAlignment="Stretch" Margin="0,12,0,0" Click="GoLaunch_Click"
+                      v:Ico.Of="{StaticResource I.Play}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- 设置：对照 PCL PageInstanceSetup。卡片 + CardHead，空则跟随全局。 -->
+        <StackPanel x:Name="PaneSettings" Visibility="Collapsed" Grid.IsSharedSizeScope="True">
+          <Border Style="{StaticResource Banner}" Margin="0,15,0,15">
+            <TextBlock FontSize="{StaticResource FsBody}" Foreground="{StaticResource AccentText}"
+                       TextWrapping="Wrap"
+                       Text="这些设置只对该实例生效，空则跟随全局。改完下次启动重生脚本。" />
+          </Border>
+
+          <Border Style="{StaticResource Slab}" Padding="25,12,25,15">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardHead}" Text="启动选项" />
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="Name" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="28" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="9" />
+                  <RowDefinition Height="28" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="9" />
+                  <RowDefinition Height="28" />
+                  <RowDefinition Height="9" />
+                  <RowDefinition Height="28" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="9" />
+                  <RowDefinition Height="28" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="工作区隔离" VerticalAlignment="Center" Margin="0,0,25,0"
+                           FontSize="{StaticResource FsBody}"
+                           Foreground="{StaticResource TextPrimary}" />
+                <ComboBox Grid.Column="1" x:Name="InstIndieBox" Height="28"
+                          SelectionChanged="InstIndie_Sel">
+                  <ComboBoxItem Tag="owned" Content="隔离（本实例自己的工作区）" />
+                  <ComboBoxItem Tag="existing" Content="与指定目录共用" />
+                </ComboBox>
+                <Grid Grid.Row="1" Grid.Column="1" Margin="0,6,0,0" Height="28">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBox x:Name="InstWsPath" Height="28" Tag="工作区目录"
+                           LostFocus="InstWsPath_Lost" KeyDown="InstWsPath_Key" />
+                  <Button Grid.Column="1" x:Name="InstWsBrowse" Style="{StaticResource Btn}"
+                          Content="浏览" Height="28" MinWidth="64" Margin="8,0,0,0"
+                          Click="InstWsBrowse_Click" v:Ico.Of="{StaticResource I.Folder}" />
+                </Grid>
+                <TextBlock Grid.Row="3" Text="终端标题" VerticalAlignment="Center" Margin="0,0,25,0"
+                           FontSize="{StaticResource FsBody}"
+                           Foreground="{StaticResource TextPrimary}" />
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="InstTitleBox" Height="28"
+                         LostFocus="InstSetting_Save"
+                         Tag="空 = 全局 {instance} · {profile}" />
+                <TextBlock x:Name="InstTitleFollow" Grid.Row="4" Grid.Column="1"
+                           Style="{StaticResource Muted}" Margin="0,4,0,0" />
+                <TextBlock Grid.Row="6" Text="启动后本窗" VerticalAlignment="Center" Margin="0,0,25,0"
+                           FontSize="{StaticResource FsBody}"
+                           Foreground="{StaticResource TextPrimary}" />
+                <ComboBox Grid.Row="6" Grid.Column="1" x:Name="InstAfterBox" Height="28"
+                          SelectionChanged="InstSetting_Sel">
+                  <ComboBoxItem Tag="" Content="跟随全局" />
+                  <ComboBoxItem Tag="keep" Content="保持不变" />
+                  <ComboBoxItem Tag="minimize" Content="最小化" />
+                  <ComboBoxItem Tag="hide" Content="隐藏" />
+                </ComboBox>
+                <TextBlock Grid.Row="8" Text="Node 路径" VerticalAlignment="Center" Margin="0,0,25,0"
+                           FontSize="{StaticResource FsBody}"
+                           Foreground="{StaticResource TextPrimary}" />
+                <ComboBox Grid.Row="8" Grid.Column="1" x:Name="InstNodeKind" Height="28"
+                          SelectionChanged="InstNodeKind_Sel">
+                  <ComboBoxItem Tag="" Content="跟随全局"
+                                ToolTip="用全局启动设置里的 Node。" />
+                  <ComboBoxItem Tag="auto" Content="自动选择"
+                                ToolTip="忽略全局指定路径，按发行号 engines.node 找 runtime/node，没有则用 PATH。" />
+                  <ComboBoxItem Tag="custom" Content="使用指定的 Node"
+                                ToolTip="手动指定 node.exe 的绝对路径。换电脑后可能失效。" />
+                </ComboBox>
+                <Grid x:Name="InstNodeCustom" Grid.Row="9" Grid.Column="1" Margin="0,9,0,0" Height="28"
+                      Visibility="Collapsed">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBox x:Name="InstNodeBox" Height="28"
+                           LostFocus="InstSetting_Save"
+                           FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                           Tag="node.exe 的绝对路径" />
+                  <Button Grid.Column="1" x:Name="InstNodeBrowse" Style="{StaticResource Btn}"
+                          Content="浏览" Height="28" MinWidth="64" Margin="8,0,0,0"
+                          Click="InstNodeBrowse_Click" v:Ico.Of="{StaticResource I.Folder}" />
+                </Grid>
+                <Border x:Name="InstNodeHintBar" Style="{StaticResource HintBar}"
+                        Grid.Row="10" Grid.Column="1" Margin="0,8,0,0">
+                  <TextBlock x:Name="InstNodeHint" Style="{StaticResource HintBarCopy}"
+                             Text="将会使用：" />
+                </Border>
+                <TextBlock Grid.Row="12" Text="API Key" VerticalAlignment="Center" Margin="0,0,25,0"
+                           FontSize="{StaticResource FsBody}"
+                           Foreground="{StaticResource TextPrimary}" />
+                <ComboBox Grid.Row="12" Grid.Column="1" x:Name="InstCredBox" Height="28"
+                          SelectionChanged="InstSetting_Sel" />
+              </Grid>
+              <Grid Margin="0,15,0,0" Height="35">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="Button" />
+                </Grid.ColumnDefinitions>
+                <Button Style="{StaticResource Btn}" MinWidth="140" Height="35"
+                        Content="恢复跟随全局" Click="InstSetting_Reset"
+                        ToolTip="清掉这个实例的 launch 覆盖" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Slab}" Padding="25,12,25,15">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardHead}" Text="高级选项" />
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="Name" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="9" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="额外环境变量" VerticalAlignment="Top" Margin="0,6,25,0"
+                           FontSize="{StaticResource FsBody}"
+                           Foreground="{StaticResource TextPrimary}" />
+                <TextBox Grid.Column="1" x:Name="InstEnvBox" Height="100" AcceptsReturn="True"
+                         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                         VerticalContentAlignment="Top" LostFocus="InstSetting_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                         Tag="每行 KEY=VALUE，追加在全局后" />
+                <TextBlock x:Name="InstEnvFollow" Grid.Row="1" Grid.Column="1"
+                           Style="{StaticResource Muted}" Margin="0,4,0,0" />
+                <TextBlock Grid.Row="3" Text="启动前命令" VerticalAlignment="Top" Margin="0,6,25,0"
+                           FontSize="{StaticResource FsBody}"
+                           Foreground="{StaticResource TextPrimary}" />
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="InstPreCommandBox" Height="28"
+                         LostFocus="InstSetting_Save"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                         Tag="启动 dsh 前先跑的一行命令" />
+                <TextBlock x:Name="InstPreFollow" Grid.Row="4" Grid.Column="1"
+                           Style="{StaticResource Muted}" Margin="0,4,0,0" />
+                <StackPanel Grid.Row="5" Grid.Column="1" Margin="0,8,0,0">
+                  <CheckBox x:Name="InstPreWaitBox" Style="{StaticResource Switch}" IsThreeState="True"
+                            Content="等待命令执行完成后再继续启动（空=全局）"
+                            Click="InstSetting_Save" Margin="0,0,0,8" />
+                  <CheckBox x:Name="InstPauseBox" Style="{StaticResource Switch}" IsThreeState="True"
+                            Content="该实例 pause on error（空=全局）"
+                            Click="InstSetting_Save" Margin="0,0,0,8" />
+                  <CheckBox x:Name="InstTelemetryBox" Style="{StaticResource Switch}" IsThreeState="True"
+                            Content="该实例禁用遥测（空=全局）"
+                            Click="InstSetting_Save" />
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Button Style="{StaticResource BtnGhost}" Content="全局启动设置"
+                  Height="32" HorizontalAlignment="Center" Margin="0,4,0,8"
+                  Click="GotoGlobalLaunch_Click" />
+        </StackPanel>
+
+        <!-- agent-preset -->
+        <StackPanel x:Name="PanePresets" Visibility="Collapsed">
+          <Grid Margin="0,0,0,10">
+            <ContentControl Style="{StaticResource SlabHead}" Content="agent-preset" Margin="0"
+                            v:Ico.Of="{StaticResource I.Data}" />
+          </Grid>
+
+          <ItemsControl x:Name="PresetList" Margin="0,4,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border local:Fx.Enter="row" Style="{StaticResource Row}" Padding="13,11,13,12">
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Mono}" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimary}" Text="{Binding Id}" />
+                        <ContentControl Style="{StaticResource PillWarn}" Content="{Binding TrustText}"
+                                        Margin="9,1,0,0" Visibility="{Binding Broken, Converter={StaticResource B2V}}" />
+                        <ContentControl Style="{StaticResource Quant}" Margin="6,1,0,0"
+                                        Content="{Binding TrustText}" />
+                      </StackPanel>
+                      <TextBlock Style="{StaticResource Muted}" Margin="0,5,0,0"
+                                 Text="{Binding Path}" TextTrimming="CharacterEllipsis"
+                                 Visibility="{Binding Broken, Converter={StaticResource B2V}}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                      <Button Style="{StaticResource BtnSm}" Content="复制" Click="CopyPreset_Click"
+                              Tag="{Binding}" ToolTip="复制到用户层" v:Ico.Of="{StaticResource I.Copy}" />
+                      <Button Style="{StaticResource BtnDanger}" Content="删除" Height="26" Padding="9,0"
+                              FontSize="{StaticResource FsSmall}" Margin="6,0,0,0"
+                              Click="RemovePreset_Click" Tag="{Binding}"
+                              v:Ico.Of="{StaticResource I.Trash}"
+                              Visibility="{Binding CanRemove, Converter={StaticResource B2V}}" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Border x:Name="NoPresets" Style="{StaticResource EmptyWell}" Visibility="Collapsed">
+            <StackPanel>
+              <ContentControl Style="{StaticResource PictLg}" v:Ico.Of="{StaticResource I.Mod}"
+                              HorizontalAlignment="Left" Margin="0,0,0,10" />
+              <TextBlock Text="没有 agent-preset" Style="{StaticResource Muted}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </ScrollViewer>
+
+    <Grid x:Name="IntroEditLayer" Grid.ColumnSpan="2" Visibility="Collapsed" Panel.ZIndex="30"
+          KeyboardNavigation.TabNavigation="Cycle">
+      <Border Background="#99000000" MouseLeftButtonDown="IntroDim_Down" />
+      <Border x:Name="IntroEditCard" MinWidth="440" MaxWidth="560" MaxHeight="480"
+              HorizontalAlignment="Center" VerticalAlignment="Center"
+              Background="{StaticResource BgCard}" CornerRadius="7"
+              BorderBrush="{StaticResource LineBorder}" BorderThickness="1" Margin="20"
+              MouseLeftButtonDown="IntroCard_Down">
+        <Border.Effect>
+          <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Opacity="0.28"
+                            Color="#FF19222A" />
+        </Border.Effect>
+        <Grid Margin="22,20,22,18">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="2" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+          <TextBlock FontSize="23" Foreground="{StaticResource AccentText}" FontWeight="SemiBold"
+                     Margin="7,-1,8,8" Text="修改版本描述" />
+          <Rectangle Grid.Row="1" Height="2" Fill="{StaticResource Accent}" />
+          <ScrollViewer x:Name="IntroEditScroll" Grid.Row="3" VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
+            <StackPanel Margin="7,0,10,0">
+              <TextBlock Text="版本描述" FontSize="{StaticResource FsBody}"
+                         Foreground="{StaticResource TextPrimary}" Margin="0,0,0,6" />
+              <TextBox x:Name="InfoBox" Height="32" Tag="名字下面那一行，留空则用发行号和终端/网页" />
+              <TextBlock Text="介绍" FontSize="{StaticResource FsBody}"
+                         Foreground="{StaticResource TextPrimary}" Margin="0,12,0,6" />
+              <TextBox x:Name="IntroBox" Height="64" AcceptsReturn="True" TextWrapping="Wrap"
+                       VerticalScrollBarVisibility="Auto" Tag="显示在身份卡里的介绍" />
+              <TextBlock Text="详细介绍（readme.md）" FontSize="{StaticResource FsBody}"
+                         Foreground="{StaticResource TextPrimary}" Margin="0,12,0,6" />
+              <TextBox x:Name="ReadmeBox" MinHeight="88" Height="120" AcceptsReturn="True"
+                       TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                       FontFamily="{StaticResource FontMono}"
+                       Tag="Markdown，保存后点详细介绍查看渲染" />
+            </StackPanel>
+          </ScrollViewer>
+          <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
+                      Margin="8,12,8,0">
+            <Button Style="{StaticResource BtnPrimary}" Content="确定" MinWidth="88" Height="35"
+                    Click="IntroSave_Click" />
+            <Button Style="{StaticResource Btn}" Content="取消" MinWidth="88" Height="35"
+                    Margin="12,0,0,0" IsCancel="True" Click="IntroCancel_Click" />
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

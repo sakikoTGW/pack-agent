@@ -1,0 +1,21 @@
+{
+  "name": "dsh-tui-mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "stdio MCP over a running DSH instance's pad-gateway (official apiproxy)",
+  "type": "module",
+  "bin": {
+    "dsh-tui-mcp-server": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "bun src/index.ts",
+    "test": "bun src/ad.test.ts && bun src/rpc.test.ts && bun src/history.test.ts && bun src/rpc.http.test.ts && bun src/client.allow.test.ts && bun src/mcp.stdio.test.ts"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.5.4"
+  }
+}

@@ -1,5 +1,6 @@
 /**
- * Tauri / CLI 同构 API。窗口只调这些方法，不另起一套。
+ * TS 侧 launcher API。PAD 窗是 WPF 原生（agent-pack-dsh/pad），走自己的 C# 核心；
+ * 这里留给 `packagent dsh launcher --json` 与脚本调用，两边行为要对齐。
  */
 import { adoptExistingHome } from './adopt.js'
 import { analyzeCrash } from './crash.js'
@@ -35,6 +36,7 @@ import {
   pluginRemove,
   pluginUpdate,
 } from './plugin-ops.js'
+import { copyAgentPreset, listAgentPresets, removeAgentPreset } from './agent-preset-ops.js'
 import { backupSessions, deleteSession, inspectSession, listSessions } from './session-ops.js'
 import { writeShortcut } from './shortcut.js'
 import { applyUpdate, checkUpdate } from './update.js'
@@ -73,6 +75,9 @@ export const LAUNCHER_API_METHODS = [
   'session.inspect',
   'session.delete',
   'session.backup',
+  'agentPreset.list',
+  'agentPreset.copy',
+  'agentPreset.remove',
   'job.list',
   'job.cancel',
   'crash.analyze',
@@ -196,6 +201,12 @@ export async function invokeLauncherApi(
       return deleteSession(root, id, String(params.sid || ''))
     case 'session.backup':
       return backupSessions(root, id, params.sid ? String(params.sid) : undefined)
+    case 'agentPreset.list':
+      return listOrEmpty('agentPreset.list', listAgentPresets(root, id))
+    case 'agentPreset.copy':
+      return copyAgentPreset(root, id, String(params.from || params.fromId || ''), String(params.to || params.toId || ''))
+    case 'agentPreset.remove':
+      return removeAgentPreset(root, id, String(params.presetId || params.name || ''))
     case 'job.list':
       return listOrEmpty('job.list', listJobs(root))
     case 'job.cancel':

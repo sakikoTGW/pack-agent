@@ -1,0 +1,1427 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:v="clr-namespace:Pad.Views">
+
+  <ResourceDictionary.MergedDictionaries>
+    <ResourceDictionary Source="Icons.xaml" />
+  </ResourceDictionary.MergedDictionaries>
+
+  <!-- Hover and press states are drawn as overlay layers whose Opacity animates, never
+       as a Background swap: a brush handed out by the dictionary is shared and frozen,
+       and opacity keeps every state change on transform/opacity only. -->
+
+  <!-- ============================ text roles ============================ -->
+
+  <Style x:Key="SectionTitle" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontDisplay}" />
+    <Setter Property="FontSize" Value="{StaticResource FsSection}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style x:Key="CardTitle" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsTitle}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,0,0,8" />
+  </Style>
+
+  <Style x:Key="Body" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource TextBody}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsBody}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style x:Key="Muted" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsSmall}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <!-- Machine-issued strings: 发行号, pid, session id, npm spec, 路径. -->
+  <Style x:Key="Mono" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource TextBody}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
+    <Setter Property="FontSize" Value="{StaticResource FsSmall}" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+
+  <Style x:Key="Label" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsMicro}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <!-- ============================ surfaces ============================ -->
+
+  <Style x:Key="Card" TargetType="Border">
+    <Setter Property="Background" Value="{StaticResource BgCard}" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadCard}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineDivider}" />
+    <Setter Property="Padding" Value="{StaticResource PadCard}" />
+    <Setter Property="Margin" Value="0,0,0,14" />
+    <Setter Property="Effect">
+      <Setter.Value>
+        <DropShadowEffect BlurRadius="10" ShadowDepth="1" Direction="270" Opacity="0.055" Color="#FF19222A" />
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- PCL's card: 25 down each side, and enough room above the body that the card's
+       own title is not crowding it. Used wherever a page groups a form or a list. -->
+  <Style x:Key="Slab" TargetType="Border" BasedOn="{StaticResource Card}">
+    <Setter Property="Padding" Value="{StaticResource PadSlab}" />
+    <Setter Property="Margin" Value="0,0,0,15" />
+  </Style>
+
+  <Style x:Key="SlabTitle" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsRow}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,0,0,14" />
+  </Style>
+
+  <!-- PCL MyCard.Title: accent, 13px bold, sitting at the top of the card. -->
+  <Style x:Key="CardHead" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource AccentText}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsBody}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Margin" Value="0,0,0,18" />
+  </Style>
+
+  <!-- Figma-style pictogram: a 14px path sitting in a 26px accent-wash tile.
+       Card heads use SlabHead so the tile and the title stay one unit. -->
+  <Style x:Key="Pict" TargetType="ContentControl">
+    <Setter Property="Width" Value="26" />
+    <Setter Property="Height" Value="26" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <Border Background="{StaticResource AccentWash}" CornerRadius="7"
+                  Width="{TemplateBinding Width}" Height="{TemplateBinding Height}">
+            <v:Ico Glyph="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}"
+                   Foreground="{StaticResource AccentText}" Height="14" />
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="PictLg" TargetType="ContentControl" BasedOn="{StaticResource Pict}">
+    <Setter Property="Width" Value="48" />
+    <Setter Property="Height" Value="48" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <Border Background="{StaticResource AccentWash}" CornerRadius="12"
+                  Width="{TemplateBinding Width}" Height="{TemplateBinding Height}">
+            <v:Ico Glyph="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}"
+                   Foreground="{StaticResource AccentText}" Height="22" />
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="SlabHead" TargetType="ContentControl">
+    <Setter Property="Margin" Value="0,0,0,14" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <StackPanel Orientation="Horizontal">
+            <Border Width="26" Height="26" Background="{StaticResource AccentWash}"
+                    CornerRadius="7" VerticalAlignment="Center">
+              <v:Ico Glyph="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}"
+                     Foreground="{StaticResource AccentText}" Height="14" />
+            </Border>
+            <TextBlock Style="{StaticResource SlabTitle}" Margin="10,0,0,0"
+                       VerticalAlignment="Center"
+                       Text="{TemplateBinding Content}" />
+          </StackPanel>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- Second containment layer: rows inside a card get a sunk fill and no shadow,
+       so the page never stacks a bordered box inside a bordered box. -->
+  <Style x:Key="Row" TargetType="Border">
+    <Setter Property="Background" Value="{StaticResource BgSubtle}" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadRow}" />
+    <Setter Property="Padding" Value="{StaticResource PadRow}" />
+    <Setter Property="Margin" Value="0,0,0,6" />
+  </Style>
+
+  <!-- PCL MyListItem Clickable: one box per row, hover wash, click opens the next layer. -->
+  <Style x:Key="PickRow" TargetType="Button">
+    <Setter Property="Height" Value="50" />
+    <Setter Property="Margin" Value="0,0,0,4" />
+    <Setter Property="Padding" Value="8,4,10,4" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid Background="Transparent">
+            <Border x:Name="hot" Background="{StaticResource AccentWash}"
+                    CornerRadius="{StaticResource RadRow}" Opacity="0" />
+            <ContentPresenter Margin="{TemplateBinding Padding}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Setter TargetName="hot" Property="Opacity" Value="1" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="Divider" TargetType="Border">
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Background" Value="{StaticResource LineDivider}" />
+    <Setter Property="Margin" Value="0,12" />
+  </Style>
+
+  <!-- Label + hairline rule. Groups a run of key/value lines without a nested box. -->
+  <Style x:Key="Rule" TargetType="ContentControl">
+    <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsMicro}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,0,0,8" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <v:Ico Height="11" Margin="0,0,6,0" VerticalAlignment="Center"
+                     Foreground="{TemplateBinding Foreground}"
+                     Glyph="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}" />
+              <ContentPresenter VerticalAlignment="Center" />
+            </StackPanel>
+            <Border Grid.Column="1" Height="1" Margin="10,1,0,0" VerticalAlignment="Center"
+                    Background="{StaticResource LineDivider}" />
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================ inline quantifiers ============================ -->
+
+  <!-- A number or a fact with a 11px icon in front of it, the way PCL labels a version,
+       a date and a source under a market row. This is what replaced the pills: an icon
+       says which kind of quantity it is, so the text no longer needs a border to be
+       readable as a unit. -->
+  <Style x:Key="Quant" TargetType="ContentControl">
+    <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsSmall}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,0,17,0" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <StackPanel Orientation="Horizontal">
+            <v:Ico Height="11" Margin="0,1,5,0" VerticalAlignment="Center"
+                   Glyph="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}" />
+            <ContentPresenter VerticalAlignment="Center" />
+          </StackPanel>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="QuantMono" TargetType="ContentControl" BasedOn="{StaticResource Quant}">
+    <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
+  </Style>
+
+  <Style x:Key="QuantLoud" TargetType="ContentControl" BasedOn="{StaticResource Quant}">
+    <Setter Property="Foreground" Value="{StaticResource AccentText}" />
+    <Setter Property="FontSize" Value="{StaticResource FsBody}" />
+  </Style>
+
+  <!-- ============================ pills ============================ -->
+
+  <Style x:Key="Pill" TargetType="ContentControl">
+    <Setter Property="Background" Value="{StaticResource BgSubtle}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBorder}" />
+    <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsMicro}" />
+    <Setter Property="Padding" Value="7,1,7,2" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="1" CornerRadius="{StaticResource RadPill}"
+                  Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+            <ContentPresenter VerticalAlignment="Center" />
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- The one surviving tinted pill. A missing side door is a warning about this
+       profile, not a label on it, so it keeps the semantic wash the others lost. -->
+  <Style x:Key="PillWarn" TargetType="ContentControl" BasedOn="{StaticResource Pill}">
+    <Setter Property="Background" Value="{StaticResource WarningWash}" />
+    <Setter Property="BorderBrush" Value="{StaticResource WarningWash}" />
+    <Setter Property="Foreground" Value="{StaticResource WarningText}" />
+  </Style>
+
+  <Style x:Key="PillAccent" TargetType="ContentControl" BasedOn="{StaticResource Pill}">
+    <Setter Property="Background" Value="{StaticResource AccentWash}" />
+    <Setter Property="BorderBrush" Value="{StaticResource AccentWash}" />
+    <Setter Property="Foreground" Value="{StaticResource AccentText}" />
+  </Style>
+
+  <!-- PCL Mod 管理 filter chips: 全部 / 可更新. Filled accent when selected. -->
+  <Style x:Key="FilterTab" TargetType="RadioButton">
+    <Setter Property="Height" Value="28" />
+    <Setter Property="MinWidth" Value="72" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="Margin" Value="0,0,8,0" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsBody}" />
+    <Setter Property="Foreground" Value="{StaticResource AccentText}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RadioButton">
+          <Grid Background="Transparent">
+            <Border x:Name="bd" Background="{StaticResource BgCard}"
+                    BorderBrush="{StaticResource Accent}" BorderThickness="1"
+                    CornerRadius="{StaticResource RadPill}" />
+            <Border x:Name="hot" Background="{StaticResource AccentWash}"
+                    CornerRadius="{StaticResource RadPill}" Opacity="0" />
+            <Border x:Name="ring" CornerRadius="{StaticResource RadPill}" BorderThickness="1.6"
+                    BorderBrush="{StaticResource Focus}" Opacity="0" />
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                              Margin="{TemplateBinding Padding}"
+                              TextElement.Foreground="{TemplateBinding Foreground}" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="hot" Property="Opacity" Value="1" />
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="bd" Property="Background" Value="{StaticResource Accent}" />
+              <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource Accent}" />
+              <Setter Property="Foreground" Value="{StaticResource TextOnAccent}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="ring" Property="Opacity" Value="1" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================ status dot ============================ -->
+
+  <Style x:Key="Pip" TargetType="Border">
+    <Setter Property="Width" Value="7" />
+    <Setter Property="Height" Value="7" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,0,7,0" />
+  </Style>
+
+  <!-- ============================ monogram tile ============================ -->
+
+  <Style x:Key="Monogram" TargetType="ContentControl">
+    <Setter Property="Width" Value="34" />
+    <Setter Property="Height" Value="34" />
+    <Setter Property="Background" Value="{StaticResource AccentDeep}" />
+    <Setter Property="Foreground" Value="{StaticResource TextOnAccent}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <Border Background="{TemplateBinding Background}" CornerRadius="{StaticResource RadRow}">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="MonogramSm" TargetType="ContentControl" BasedOn="{StaticResource Monogram}">
+    <Setter Property="Width" Value="26" />
+    <Setter Property="Height" Value="26" />
+    <Setter Property="FontSize" Value="9.5" />
+  </Style>
+
+  <!-- npm publishes no icon field, so a letter tile stands in for one. 50x50 with 6px
+       corners is PCL's market logo box. -->
+  <Style x:Key="MonogramTile" TargetType="ContentControl" BasedOn="{StaticResource Monogram}">
+    <Setter Property="Width" Value="50" />
+    <Setter Property="Height" Value="50" />
+    <Setter Property="FontSize" Value="17" />
+  </Style>
+
+  <Style x:Key="MonogramLg" TargetType="ContentControl" BasedOn="{StaticResource Monogram}">
+    <Setter Property="Width" Value="58" />
+    <Setter Property="Height" Value="58" />
+    <Setter Property="FontSize" Value="18" />
+  </Style>
+
+  <!-- ============================ banners ============================ -->
+
+  <Style x:Key="Banner" TargetType="Border">
+    <Setter Property="Background" Value="{StaticResource AccentWash}" />
+    <Setter Property="BorderBrush" Value="{StaticResource AccentSoft}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadRow}" />
+    <Setter Property="Padding" Value="12,9,12,10" />
+  </Style>
+
+  <Style x:Key="BannerWarn" TargetType="Border" BasedOn="{StaticResource Banner}">
+    <Setter Property="Background" Value="{StaticResource WarningWash}" />
+    <Setter Property="BorderBrush" Value="{StaticResource WarningWash}" />
+  </Style>
+
+  <!-- PCL MyHint: left accent bar, wash fill. -->
+  <Style x:Key="HintBar" TargetType="Border">
+    <Setter Property="Background" Value="{StaticResource AccentWash}" />
+    <Setter Property="BorderBrush" Value="{StaticResource Accent}" />
+    <Setter Property="BorderThickness" Value="3,0,0,0" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="Padding" Value="12,9" />
+    <Setter Property="SnapsToDevicePixels" Value="True" />
+  </Style>
+
+  <Style x:Key="HintBarWarn" TargetType="Border" BasedOn="{StaticResource HintBar}">
+    <Setter Property="Background" Value="{StaticResource WarningWash}" />
+    <Setter Property="BorderBrush" Value="{StaticResource Warning}" />
+  </Style>
+
+  <Style x:Key="HintBarCopy" TargetType="TextBlock" BasedOn="{StaticResource Body}">
+    <Setter Property="Foreground" Value="{StaticResource AccentText}" />
+    <Setter Property="FontSize" Value="{StaticResource FsSmall}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style x:Key="HintBarCopyWarn" TargetType="TextBlock" BasedOn="{StaticResource HintBarCopy}">
+    <Setter Property="Foreground" Value="{StaticResource WarningText}" />
+  </Style>
+
+  <!-- Hallmark · component: empty-well · genre: modern-minimal · theme: PAD existing
+       Quiet empty: one well, one line, no second card stacked on the section. -->
+  <Style x:Key="EmptyWell" TargetType="Border">
+    <Setter Property="Background" Value="{StaticResource BgSubtle}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadCard}" />
+    <Setter Property="Padding" Value="18,16" />
+  </Style>
+
+  <!-- ============================ skeleton ============================ -->
+
+  <Style x:Key="Skeleton" TargetType="Border">
+    <Setter Property="Height" Value="12" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="Background" Value="{StaticResource LineBorder}" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Style.Triggers>
+      <EventTrigger RoutedEvent="Loaded">
+        <BeginStoryboard>
+          <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.75" To="0.3"
+                             Duration="0:0:0.8" EasingFunction="{StaticResource EaseInOut}" />
+          </Storyboard>
+        </BeginStoryboard>
+      </EventTrigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- ============================ spinner ============================ -->
+
+  <Style x:Key="Spinner" TargetType="ContentControl">
+    <Setter Property="Width" Value="15" />
+    <Setter Property="Height" Value="15" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <Grid RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+              <RotateTransform Angle="0" />
+            </Grid.RenderTransform>
+            <!-- The trigger lives on the element it animates: an EventTrigger declared
+                 in ControlTemplate.Triggers resolves its target against the container's
+                 namescope, where a template part does not exist. -->
+            <Grid.Triggers>
+              <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                  <Storyboard RepeatBehavior="Forever">
+                    <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(RotateTransform.Angle)"
+                                     From="0" To="360" Duration="0:0:0.9" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </EventTrigger>
+            </Grid.Triggers>
+            <Ellipse Margin="1" StrokeThickness="2" Stroke="{StaticResource LineBorder}" />
+            <Ellipse Margin="1" StrokeThickness="2" Stroke="{StaticResource Accent}"
+                     StrokeDashArray="6 22" StrokeDashCap="Round" />
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================ meter ============================ -->
+
+  <!-- Determinate only. PAD has real ratios to show (启用的整合包 / 在跑的 session) and
+       no real percentage for installs, so there is no indeterminate variant to fake. -->
+  <Style x:Key="Meter" TargetType="ProgressBar">
+    <Setter Property="Height" Value="4" />
+    <Setter Property="Minimum" Value="0" />
+    <Setter Property="Foreground" Value="{StaticResource Accent}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ProgressBar">
+          <Grid>
+            <Border Background="{StaticResource LineBorder}" CornerRadius="2" />
+            <Border x:Name="PART_Track" />
+            <Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="2"
+                    Background="{TemplateBinding Foreground}" />
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================ window chrome ============================ -->
+
+  <Style x:Key="WinBtn" TargetType="Button">
+    <Setter Property="Width" Value="46" />
+    <Setter Property="Height" Value="50" />
+    <Setter Property="Foreground" Value="{StaticResource ChromeInk}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Cursor" Value="Arrow" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid Background="Transparent">
+            <Border x:Name="hot" Background="#22FFFFFF" Opacity="0" />
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Setter TargetName="hot" Property="Background" Value="#3AFFFFFF" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="WinBtnClose" TargetType="Button" BasedOn="{StaticResource WinBtn}">
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid Background="Transparent">
+            <Border x:Name="hot" Background="{StaticResource CloseHover}" Opacity="0" />
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- Segment of the top-level page control: a 16px icon then the label, inside a
+       27-high capsule. The moving white indicator lives behind the strip in MainWindow,
+       so a segment only carries its own icon, label weight and hover. -->
+  <Style x:Key="TitleTab" TargetType="RadioButton">
+    <Setter Property="Foreground" Value="{StaticResource ChromeInk}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsBody}" />
+    <Setter Property="MinHeight" Value="27" />
+    <Setter Property="MaxHeight" Value="27" />
+    <Setter Property="Margin" Value="5,0" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RadioButton">
+          <Grid Background="Transparent">
+            <Border x:Name="hot" Background="#18FFFFFF" CornerRadius="13.5" Opacity="0" />
+            <StackPanel x:Name="cp" Orientation="Horizontal" VerticalAlignment="Center">
+              <v:Ico Height="16" Margin="12,0,0,0" VerticalAlignment="Center"
+                     Foreground="{TemplateBinding Foreground}"
+                     Glyph="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}" />
+              <ContentPresenter Margin="8,0,12,0" VerticalAlignment="Center"
+                                TextElement.Foreground="{TemplateBinding Foreground}" />
+            </StackPanel>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter Property="Foreground" Value="{StaticResource ChromeInk}" />
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter Property="Foreground" Value="{StaticResource AccentText}" />
+              <Setter Property="FontWeight" Value="SemiBold" />
+              <Setter TargetName="hot" Property="Opacity" Value="0" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="cp" Property="Opacity" Value="0.4" />
+              <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================ icon buttons ============================ -->
+
+  <!-- 28x28, no label. Row actions, refresh, paging and the inner-page back arrow all
+       use this one shape; the icon inherits Foreground, so hover recolours both. -->
+  <Style x:Key="IcoBtn" TargetType="Button">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid x:Name="root" Background="Transparent">
+            <Border x:Name="hot" Background="{StaticResource AccentWash}"
+                    CornerRadius="{StaticResource RadCtl}" Opacity="0" />
+            <Border x:Name="ring" CornerRadius="{StaticResource RadCtl}" BorderThickness="2"
+                    BorderBrush="{StaticResource Focus}" Opacity="0" />
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter Property="Foreground" Value="{StaticResource AccentText}" />
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="ring" Property="Opacity" Value="1" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="root" Property="Opacity" Value="0.32" />
+              <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- Same shape on the dark title bar, where the wash has to be light-on-dark. -->
+  <Style x:Key="IcoBtnChrome" TargetType="Button" BasedOn="{StaticResource IcoBtn}">
+    <Setter Property="Foreground" Value="{StaticResource ChromeInk}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid x:Name="root" Background="Transparent">
+            <Border x:Name="hot" Background="#22FFFFFF" CornerRadius="{StaticResource RadCtl}"
+                    Opacity="0" />
+            <Border x:Name="ring" CornerRadius="{StaticResource RadCtl}" BorderThickness="1.6"
+                    BorderBrush="{StaticResource Focus}" Opacity="0" />
+            <ContentPresenter x:Name="cp" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <ContentPresenter.RenderTransform>
+                <TranslateTransform />
+              </ContentPresenter.RenderTransform>
+            </ContentPresenter>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="cp"
+                                     Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)"
+                                     To="-2.5" Duration="{StaticResource DShort}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                    <DoubleAnimation Storyboard.TargetName="cp"
+                                     Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="ring" Property="Opacity" Value="1" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================ left-nav rows ============================ -->
+
+  <Style x:Key="NavItem" TargetType="RadioButton">
+    <Setter Property="Height" Value="36" />
+    <Setter Property="Foreground" Value="{StaticResource TextBody}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsBody}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RadioButton">
+          <Grid Background="Transparent">
+            <Border x:Name="hot" Background="{StaticResource AccentWash}"
+                    CornerRadius="{StaticResource RadCtl}" Opacity="0" />
+            <Border x:Name="rail" Width="3" HorizontalAlignment="Left" Margin="0,9" CornerRadius="2"
+                    Background="{StaticResource Accent}" Opacity="0"
+                    RenderTransformOrigin="0.5,0.5">
+              <Border.RenderTransform>
+                <ScaleTransform ScaleY="0.3" />
+              </Border.RenderTransform>
+            </Border>
+            <Border x:Name="ring" CornerRadius="{StaticResource RadCtl}" BorderThickness="1.6"
+                    BorderBrush="{StaticResource Focus}" Opacity="0" />
+            <StackPanel Orientation="Horizontal" Margin="13,0,10,0" VerticalAlignment="Center">
+              <v:Ico Height="16" Margin="0,0,10,0" VerticalAlignment="Center"
+                     Glyph="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}" />
+              <ContentPresenter VerticalAlignment="Center"
+                                TextElement.Foreground="{TemplateBinding Foreground}" />
+            </StackPanel>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter Property="Foreground" Value="{StaticResource AccentText}" />
+              <Setter Property="FontWeight" Value="SemiBold" />
+              <Setter TargetName="hot" Property="Opacity" Value="1" />
+              <Setter TargetName="rail" Property="Opacity" Value="1" />
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="rail"
+                                     Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)"
+                                     To="1" Duration="{StaticResource DShort}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="ring" Property="Opacity" Value="1" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="NavGroup" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsSmall}" />
+    <Setter Property="Opacity" Value="0.6" />
+    <Setter Property="Margin" Value="13,20,5,4" />
+  </Style>
+
+  <!-- ============================ buttons ============================ -->
+
+  <!-- The one dominant action, outlined rather than filled — PCL's launch button is a
+       white box with an accent edge, and it carries the current selection on a second
+       line inside itself instead of in a caption underneath. -->
+  <Style x:Key="HeroButton" TargetType="Button">
+    <Setter Property="Height" Value="56" />
+    <Setter Property="Foreground" Value="{StaticResource AccentText}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid x:Name="root" RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+              <TransformGroup>
+                <ScaleTransform x:Name="squash" />
+                <TranslateTransform x:Name="lift" />
+              </TransformGroup>
+            </Grid.RenderTransform>
+            <Border Background="{StaticResource BgCard}" CornerRadius="{StaticResource RadCtl}"
+                    BorderThickness="1.4" BorderBrush="{StaticResource Accent}" />
+            <Border x:Name="hot" Background="{StaticResource AccentWash}"
+                    CornerRadius="{StaticResource RadCtl}" BorderThickness="1.4"
+                    BorderBrush="{StaticResource AccentPress}" Opacity="0" />
+            <Border x:Name="ring" CornerRadius="8" Margin="-2" BorderThickness="2"
+                    BorderBrush="{StaticResource Focus}" Opacity="0" />
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DShort}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[1].(TranslateTransform.Y)"
+                                     To="-1.5" Duration="{StaticResource DShort}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[1].(TranslateTransform.Y)"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleX)"
+                                     To="0.985" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleY)"
+                                     To="0.965" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleX)"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleY)"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="ring" Property="Opacity" Value="1" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="root" Property="Opacity" Value="0.4" />
+              <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="Btn" TargetType="Button">
+    <Setter Property="Height" Value="30" />
+    <Setter Property="Padding" Value="13,0" />
+    <Setter Property="Foreground" Value="{StaticResource TextBody}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsBody}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid x:Name="root" RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+              <TransformGroup>
+                <ScaleTransform x:Name="squash" />
+                <TranslateTransform x:Name="lift" />
+              </TransformGroup>
+            </Grid.RenderTransform>
+            <Border Background="{StaticResource BgCard}" CornerRadius="{StaticResource RadCtl}"
+                    BorderThickness="1" BorderBrush="{StaticResource LineBorder}" />
+            <Border x:Name="hot" Background="{StaticResource AccentWash}"
+                    CornerRadius="{StaticResource RadCtl}" BorderThickness="1"
+                    BorderBrush="{StaticResource AccentLight}" Opacity="0" />
+            <Border x:Name="ring" CornerRadius="8" Margin="-2" BorderThickness="2"
+                    BorderBrush="{StaticResource Focus}" Opacity="0" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Margin="{TemplateBinding Padding}">
+              <v:Ico x:Name="btnIco" Height="12" Margin="0,0,6,0"
+                     Foreground="{TemplateBinding Foreground}"
+                     Glyph="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}" />
+              <ContentPresenter />
+            </StackPanel>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[1].(TranslateTransform.Y)"
+                                     To="-1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[1].(TranslateTransform.Y)"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleX)"
+                                     To="0.985" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleY)"
+                                     To="0.965" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleX)"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleY)"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="ring" Property="Opacity" Value="1" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="root" Property="Opacity" Value="0.42" />
+              <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+            <DataTrigger Binding="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}"
+                         Value="{x:Null}">
+              <Setter TargetName="btnIco" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="btnIco" Property="Margin" Value="0" />
+            </DataTrigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="BtnSm" TargetType="Button" BasedOn="{StaticResource Btn}">
+    <Setter Property="Height" Value="26" />
+    <Setter Property="Padding" Value="11,0" />
+    <Setter Property="FontSize" Value="{StaticResource FsSmall}" />
+  </Style>
+
+  <!-- PCL's button proportions: 140 wide minimum, 13 of side padding, 20 between two.
+       Wide enough that a two-word Chinese label never crowds its own edge. -->
+  <Style x:Key="BtnWide" TargetType="Button" BasedOn="{StaticResource Btn}">
+    <Setter Property="Height" Value="35" />
+    <Setter Property="MinWidth" Value="140" />
+    <Setter Property="Padding" Value="13,0" />
+  </Style>
+
+  <Style x:Key="BtnPrimary" TargetType="Button" BasedOn="{StaticResource Btn}">
+    <Setter Property="Foreground" Value="{StaticResource TextOnAccent}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid x:Name="root" RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+              <TransformGroup>
+                <ScaleTransform x:Name="squash" />
+                <TranslateTransform x:Name="lift" />
+              </TransformGroup>
+            </Grid.RenderTransform>
+            <Border Background="{StaticResource AccentDeep}" CornerRadius="{StaticResource RadCtl}" />
+            <Border x:Name="hot" Background="{StaticResource AccentPress}"
+                    CornerRadius="{StaticResource RadCtl}" Opacity="0" />
+            <Border x:Name="ring" CornerRadius="8" Margin="-2" BorderThickness="2"
+                    BorderBrush="{StaticResource Focus}" Opacity="0" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Margin="{TemplateBinding Padding}">
+              <v:Ico x:Name="btnIco" Height="12" Margin="0,0,6,0" Foreground="{TemplateBinding Foreground}"
+                     Glyph="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}" />
+              <ContentPresenter />
+            </StackPanel>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[1].(TranslateTransform.Y)"
+                                     To="-1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[1].(TranslateTransform.Y)"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleX)"
+                                     To="0.985" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleY)"
+                                     To="0.965" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleX)"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleY)"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="ring" Property="Opacity" Value="1" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="root" Property="Opacity" Value="0.35" />
+              <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+            <DataTrigger Binding="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}"
+                         Value="{x:Null}">
+              <Setter TargetName="btnIco" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="btnIco" Property="Margin" Value="0" />
+            </DataTrigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="BtnWidePrimary" TargetType="Button" BasedOn="{StaticResource BtnPrimary}">
+    <Setter Property="Height" Value="35" />
+    <Setter Property="MinWidth" Value="140" />
+    <Setter Property="Padding" Value="13,0" />
+  </Style>
+
+  <Style x:Key="BtnDanger" TargetType="Button" BasedOn="{StaticResource Btn}">
+    <Setter Property="Foreground" Value="{StaticResource DangerText}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid x:Name="root" RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+              <TransformGroup>
+                <ScaleTransform x:Name="squash" />
+                <TranslateTransform x:Name="lift" />
+              </TransformGroup>
+            </Grid.RenderTransform>
+            <Border Background="{StaticResource BgCard}" CornerRadius="{StaticResource RadCtl}"
+                    BorderThickness="1" BorderBrush="{StaticResource LineBorder}" />
+            <Border x:Name="hot" Background="{StaticResource DangerWash}"
+                    CornerRadius="{StaticResource RadCtl}" BorderThickness="1"
+                    BorderBrush="{StaticResource Danger}" Opacity="0" />
+            <Border x:Name="ring" CornerRadius="8" Margin="-2" BorderThickness="2"
+                    BorderBrush="{StaticResource Focus}" Opacity="0" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Margin="{TemplateBinding Padding}">
+              <v:Ico x:Name="btnIco" Height="12" Margin="0,0,6,0"
+                     Foreground="{TemplateBinding Foreground}"
+                     Glyph="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}" />
+              <ContentPresenter />
+            </StackPanel>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[1].(TranslateTransform.Y)"
+                                     To="-1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[1].(TranslateTransform.Y)"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleX)"
+                                     To="0.985" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleY)"
+                                     To="0.965" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleX)"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetName="root"
+                                     Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleY)"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="ring" Property="Opacity" Value="1" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="root" Property="Opacity" Value="0.42" />
+              <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+            <DataTrigger Binding="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}"
+                         Value="{x:Null}">
+              <Setter TargetName="btnIco" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="btnIco" Property="Margin" Value="0" />
+            </DataTrigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="BtnGhost" TargetType="Button" BasedOn="{StaticResource Btn}">
+    <Setter Property="Foreground" Value="{StaticResource AccentText}" />
+    <Setter Property="Height" Value="26" />
+    <Setter Property="FontSize" Value="{StaticResource FsSmall}" />
+    <Setter Property="Padding" Value="9,0" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid x:Name="root" Background="Transparent">
+            <Border x:Name="hot" Background="{StaticResource AccentWash}"
+                    CornerRadius="{StaticResource RadCtl}" Opacity="0" />
+            <Border x:Name="ring" CornerRadius="7" BorderThickness="2"
+                    BorderBrush="{StaticResource Focus}" Opacity="0" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Margin="{TemplateBinding Padding}">
+              <v:Ico Height="12" Margin="0,0,6,0" Foreground="{TemplateBinding Foreground}"
+                     Glyph="{Binding Path=(v:Ico.Of), RelativeSource={RelativeSource TemplatedParent}}" />
+              <ContentPresenter />
+            </StackPanel>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="1" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="hot" Storyboard.TargetProperty="Opacity"
+                                     To="0" Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseIn}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="ring" Property="Opacity" Value="1" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="root" Property="Opacity" Value="0.42" />
+              <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================ tooltip ============================ -->
+
+  <Style TargetType="ToolTip">
+    <Setter Property="Foreground" Value="{StaticResource ChromeInk}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontUI}" />
+    <Setter Property="FontSize" Value="{StaticResource FsSmall}" />
+    <Setter Property="HasDropShadow" Value="False" />
+    <Setter Property="Placement" Value="Bottom" />
+    <Setter Property="VerticalOffset" Value="6" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToolTip">
+          <Border Background="{StaticResource BgChrome}" CornerRadius="{StaticResource RadCtl}"
+                  Padding="9,5,9,6">
+            <Border.RenderTransform>
+              <TranslateTransform />
+            </Border.RenderTransform>
+            <Border.Triggers>
+              <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1"
+                                     Duration="{StaticResource DMicro}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                    <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)"
+                                     From="-4" To="0" Duration="{StaticResource DShort}"
+                                     EasingFunction="{StaticResource EaseOut}" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </EventTrigger>
+            </Border.Triggers>
+            <ContentPresenter />
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================ toast ============================ -->
+
+  <Style x:Key="Toast" TargetType="Border">
+    <Setter Property="Background" Value="{StaticResource BgChrome}" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadRow}" />
+    <Setter Property="Padding" Value="13,10,15,11" />
+    <Setter Property="Effect">
+      <Setter.Value>
+        <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Opacity="0.22" Color="#FF19222A" />
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+</ResourceDictionary>

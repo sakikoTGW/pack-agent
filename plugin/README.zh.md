@@ -30,6 +30,8 @@ DSH 里对应工具：`packagent_project`、`packagent_map`、`packagent_search`
 
 白名单按项目目录一份。投影结果在 `.agent-pack/modpacks/`，不要对里面的目录再 `dsh plugin add`。
 
+管理正在跑的实例是另一层 profile：`@sakikotgw/pad-gateway` 包住官方 `@deepseek-ai/dsh-host-apiproxy`，广告写在 `$DSH_HOME/pad-gateway.json`。PAD 读广告后调 apiproxy 的 rpc（`workspace.list`、`session.list`、`session.cancel`）。不是聊天协议。
+
 ## 从源码运行
 
 ```sh

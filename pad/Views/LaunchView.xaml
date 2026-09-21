@@ -1,0 +1,137 @@
+<UserControl x:Class="Pad.Views.LaunchView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pad.Views"
+             xmlns:v="clr-namespace:Pad.Views"
+             mc:Ignorable="d"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
+  <UserControl.Resources>
+    <local:BoolToVis x:Key="B2V" />
+    <local:BoolToVis x:Key="B2VNot" Invert="True" />
+  </UserControl.Resources>
+
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="350" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <Border Grid.Column="0" Background="{StaticResource BgSidebar}" BorderThickness="0,0,1,0"
+            BorderBrush="{StaticResource LineBorder}">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" VerticalAlignment="Center" Margin="25,0"
+                    Visibility="{Binding CanLaunch, Converter={StaticResource B2V}}">
+          <local:InstMark Width="58" Height="58" HorizontalAlignment="Center"
+                          DataContext="{Binding SelectedProfile}" />
+          <TextBlock Text="{Binding SelectedProfile.Name}" HorizontalAlignment="Center"
+                     Margin="0,15,0,0" FontSize="{StaticResource FsTitle}"
+                     Foreground="{StaticResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="{Binding SelectedProfile.InstanceName}" HorizontalAlignment="Center"
+                     Margin="0,4,0,0" FontSize="{StaticResource FsSmall}"
+                     Foreground="{StaticResource TextMuted}" TextTrimming="CharacterEllipsis" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+            <ContentControl Style="{StaticResource QuantMono}" v:Ico.Of="{StaticResource I.Gear}"
+                            Content="{Binding SelectedProfile.Release}" />
+            <ContentControl Style="{StaticResource Quant}" v:Ico.Of="{StaticResource I.Terminal}"
+                            Content="{Binding SelectedProfile.Kind}" />
+            <ContentControl Style="{StaticResource Quant}" v:Ico.Of="{StaticResource I.Pack}"
+                            Margin="0" Content="{Binding EnabledPackCount}"
+                            ContentStringFormat="{}{0} 个整合包" />
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="0" VerticalAlignment="Center" Margin="25,0"
+                    Visibility="{Binding HasInstanceNoProfile, Converter={StaticResource B2V}}">
+          <local:InstMark Width="58" Height="58" HorizontalAlignment="Center"
+                          DataContext="{Binding SelectedInstance}" />
+          <TextBlock Text="{Binding SelectedInstance.Name}" HorizontalAlignment="Center"
+                     Margin="0,15,0,0" FontSize="{StaticResource FsTitle}"
+                     Foreground="{StaticResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="未找到可用的版本" HorizontalAlignment="Center"
+                     Margin="0,6,0,0" Style="{StaticResource Muted}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="0" Margin="25,18,25,0"
+                    Visibility="{Binding NeedsSetup, Converter={StaticResource B2V}}">
+          <Border Style="{StaticResource EmptyWell}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource PictLg}" v:Ico.Of="{StaticResource I.Plus}"
+                              HorizontalAlignment="Left" Margin="0,0,0,12" />
+              <TextBlock Text="还没有实例" Style="{StaticResource SectionTitle}" />
+              <Button Style="{StaticResource BtnWidePrimary}" Content="新建"
+                      HorizontalAlignment="Stretch" Margin="0,12,0,0" Click="Step_Click"
+                      v:Ico.Of="{StaticResource I.Plus}" />
+              <Button Style="{StaticResource BtnWide}" Content="添加已有文件夹"
+                      Margin="0,8,0,0" HorizontalAlignment="Stretch" Click="Adopt_Click"
+                      v:Ico.Of="{StaticResource I.Upload}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="25,0,25,25">
+          <Button x:Name="RunBtn" Style="{StaticResource HeroButton}" Click="Run_Click"
+                  ToolTip="启动">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <v:Ico Glyph="{StaticResource I.Play}" Height="13" Margin="0,1,8,0" />
+                <TextBlock x:Name="RunLabel" Text="启动" />
+              </StackPanel>
+              <TextBlock Text="{Binding SelectionTitle}" HorizontalAlignment="Center" Margin="0,2,0,0"
+                         FontSize="{StaticResource FsMicro}" FontWeight="Normal"
+                         Foreground="{StaticResource TextSecondary}"
+                         TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+          </Button>
+          <TextBlock x:Name="KeyWarn" Style="{StaticResource Muted}" Margin="0,10,0,0"
+                     TextWrapping="Wrap" TextAlignment="Center" Visibility="Collapsed"
+                     Text="还没有 API Key。到设置填写。" />
+          <Grid x:Name="VersionEntryGrid" Margin="0,20,0,0">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="20" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Style="{StaticResource BtnWide}" MinWidth="0" Content="版本选择"
+                    Click="Versions_Click" v:Ico.Of="{StaticResource I.Block}" />
+            <Button Grid.Column="2" Style="{StaticResource BtnWide}" MinWidth="0" Content="版本设置"
+                    IsEnabled="{Binding HasSelection}" Click="Instance_Click"
+                    v:Ico.Of="{StaticResource I.Gear}" />
+          </Grid>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Column="1" Background="{StaticResource BgSubtle}">
+      <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="40"
+                  Visibility="{Binding CanLaunch, Converter={StaticResource B2V}}">
+        <local:InstMark Width="88" Height="88" HorizontalAlignment="Center"
+                         DataContext="{Binding SelectedProfile}" />
+        <TextBlock Text="{Binding SelectedProfile.InstanceName}" HorizontalAlignment="Center"
+                   Margin="0,18,0,0" FontSize="{StaticResource FsSection}"
+                   Foreground="{StaticResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+        <TextBlock Text="{Binding SelectedProfile.Release}" HorizontalAlignment="Center"
+                   Margin="0,6,0,0" Style="{StaticResource Mono}"
+                   Foreground="{StaticResource TextMuted}" />
+      </StackPanel>
+
+      <Border Style="{StaticResource Slab}" VerticalAlignment="Bottom" Margin="25,0,25,25"
+              Visibility="{Binding AnyRunning, Converter={StaticResource B2V}}" Padding="16,14">
+        <Grid>
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <v:Ico Glyph="{StaticResource I.Play}" Height="11" Margin="0,1,8,0"
+                   Foreground="{StaticResource Accent}" />
+            <TextBlock Text="有实例在跑" Style="{StaticResource Label}" VerticalAlignment="Center" />
+          </StackPanel>
+          <Button Style="{StaticResource Btn}" HorizontalAlignment="Right" Content="打开管理"
+                  Click="Manage_Click" v:Ico.Of="{StaticResource I.Data}" />
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

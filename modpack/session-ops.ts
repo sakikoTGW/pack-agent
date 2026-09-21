@@ -18,6 +18,7 @@ export type SessionRow = {
   cwd?: string
   formatVersion?: number
   dshVersion?: string
+  agentPreset?: string
   path: string
 }
 
@@ -55,7 +56,30 @@ function firstJsonLine(text: string): Record<string, unknown> | null {
   }
 }
 
-type Found = { projectKey: string; dir: string; log: string; encodedSid: string; header: Record<string, unknown> }
+type Found = {
+  projectKey: string
+  dir: string
+  log: string
+  encodedSid: string
+  header: Record<string, unknown>
+  agentPreset?: string
+}
+
+function resolveAgentPreset(text: string, header: Record<string, unknown>): string | undefined {
+  let last = typeof header.agentPreset === 'string' ? header.agentPreset : undefined
+  for (const line of text.split(/\r?\n/)) {
+    if (!line.trim()) continue
+    try {
+      const ev = JSON.parse(line) as { type?: string; data?: { agentPreset?: unknown } }
+      if (ev.type === 'agent-preset/selected' && typeof ev.data?.agentPreset === 'string') {
+        last = ev.data.agentPreset
+      }
+    } catch {
+      /* skip torn line */
+    }
+  }
+  return last
+}
 
 function walkSessions(home: string): Found[] {
   const root = join(home, 'sessions')
@@ -69,8 +93,16 @@ function walkSessions(home: string): Found[] {
       const dir = join(projPath, sidEnt.name)
       const log = ['session.jsonl', 'session.jsonl.zstd'].map((n) => join(dir, n)).find((p) => existsSync(p))
       if (!log) continue
-      const header = firstJsonLine(decodeSessionBytes(readFileSync(log))) || {}
-      out.push({ projectKey: proj.name, dir, log, encodedSid: sidEnt.name, header })
+      const text = decodeSessionBytes(readFileSync(log))
+      const header = firstJsonLine(text) || {}
+      out.push({
+        projectKey: proj.name,
+        dir,
+        log,
+        encodedSid: sidEnt.name,
+        header,
+        agentPreset: resolveAgentPreset(text, header),
+      })
     }
   }
   return out
@@ -123,6 +155,7 @@ export function listSessions(root: LauncherRoot, id: string): OpResult<SessionRo
       cwd,
       formatVersion: typeof s.header.version === 'number' ? s.header.version : undefined,
       dshVersion: typeof s.header.dshVersion === 'string' ? s.header.dshVersion : undefined,
+      agentPreset: s.agentPreset,
       path: s.log,
     }
   })
@@ -187,6 +220,7 @@ export function inspectSession(root: LauncherRoot, id: string, sid: string): OpR
       cwd,
       formatVersion,
       dshVersion: written,
+      agentPreset: found.agentPreset,
       path: found.log,
     },
     warnings,

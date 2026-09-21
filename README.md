@@ -4,8 +4,10 @@
 
 ```
 agent-pack-dsh/
-  modpack/      投影、白名单、启动器
+  pad/          PAD 启动器：.NET 9 WPF 窗 + pad cli（pack-agent-for DSH.exe）
+  modpack/      投影、白名单、TS 侧 launcher API
   plugin/       实例内管理器 @sakikotgw/pack-agent-dsh
+  gateway/      管理口 @sakikotgw/pad-gateway（包住官方 apiproxy）
   pack-index/   SQLite 检索
   cordis.ts     通用 install 用的 overlay
   scripts/      编插件 / 编检索 / stage npm
@@ -13,7 +15,7 @@ agent-pack-dsh/
   docs/         产品设计（先读 docs/PRODUCT.md）
 ```
 
-人路径：`.pack.zip` → 隔离实例 → `packagent dsh launcher run`。
+人路径：`.pack.zip` → 隔离实例 → PAD 启动页点一下，或 `pad cli run <instance>`。
 
 设计稿：
 

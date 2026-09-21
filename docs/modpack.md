@@ -1,15 +1,15 @@
-# agent-pack for DSH：整合包研究
+# pack-agent：整合包研究
 
 date: 2026-08-19
 status: research
-product: **agent-pack for DSH**
+product: **pack-agent**
 对照：PCL 2.13.1.1 `ModModpack.vb`（`E:\PCL\src\Plain Craft Launcher 2\Modules\Minecraft\ModModpack.vb`）
 
 产品定义见 [PRODUCT.md](PRODUCT.md)。本文件只钉装包链。不谈社区套壳，不谈多 harness 语言优先。
 
 ## 0. 产品
 
-人拿到一份 `.pack.zip`，丢进启动器，得到一个隔离实例，点一下就能在 DSH 里用这包的 skill / MCP / 规则 / 指令。
+pack-agent 是启动器、整合包装卸器、管理器。当前只管 DeepSeek Harness。人拿到一份 `.pack.zip`，丢进 pack-agent，得到隔离实例，点一下就能在 DSH 里用这包的 skill / MCP / 规则 / 指令。卸：对该实例白名单停用，或删掉实例。原则见 [PRODUCT.md](PRODUCT.md) §2.1。好用细则 §2.2：整窗拖入 → `import` → 版本设置。新建实例同构。PAD 下载页列出 npm packument 全部 `@deepseek-ai/dsh` 发行号（丢掉 `0.0.1-rc.1`），装完进版本选择。
 
 | MC | 本产品 |
 |---|---|
@@ -19,10 +19,10 @@ product: **agent-pack for DSH**
 | `mods/*.jar` | 投影目录 `mods/<id>/`（skill、MCP、rule、command、hook） |
 | Forge 模组（进加载器） | `pack.dsh.plugins[]` → 该实例 `dsh plugin add` |
 | `overrides/` | 拷进该实例工作区的文件 |
-| `versions\<名>\` + 版本隔离 | 启动器实例：独立 `DSH_HOME` + 工作区 |
-| PCL 大按钮「启动游戏」 | `packagent dsh launcher run <id>` |
+| `versions\<名>\` + 版本隔离 | 启动器实例：独立 `DSH_HOME`；工作区默认同实例隔离，可改为与指定目录共用 |
+| PCL 大按钮「启动游戏」 | PAD 启动页大按钮 / `pad cli run <instance> [profile]` |
 
-pack-agent 管理器 = 内容加载器。每个整合包本身禁止 `dsh plugin add`。
+pack-agent 管理器 = 该实例 `--profile` 层的组合包更新（含 TUI，顶栏管理页与版本设置插件页，不依赖管理口）**加上** 内容加载器 **加上** 该实例 Harness 里的 agent-preset 名册、session，以及经官方 apiproxy 对正在跑的实例发的管理 rpc。每个整合包本身禁止 `dsh plugin add`。管理页组合包行显示该包自己的图；TUI 的在 GitHub `docs/assets/logo.svg`。
 
 `docs/PACK_SPEC.md` §0 把「游戏版本」写成 Claude/Codex 等 harness。那是旧跨壳故事。本产品里游戏版本 = DSH 发行号。
 
@@ -50,11 +50,12 @@ pack-agent 管理器 = 内容加载器。每个整合包本身禁止 `dsh plugin
 | 投影 | `agent-pack-dsh/modpack/compile.ts` → `.agent-pack/modpacks/<id>/mods/` | 把内容写成实例能看见的 mods |
 | 白名单 | `project` / `allow` / `set-save` | 这个实例启用哪些包 |
 | 管理器 | `agent-pack-dsh/plugin/` / `@sakikotgw/pack-agent-dsh` | 内容加载器，每实例装一次 |
-| 版本库 + 隔离实例 + 双开 | `agent-pack-dsh/modpack/launcher.ts` P0 | 游戏版本目录 + 版本隔离 + 同时开两份 |
+| 管理口 | `agent-pack-dsh/gateway/` / `@sakikotgw/pad-gateway` | 包住官方 apiproxy，让 PAD 能读跑着的实例 |
+| 版本库 + 隔离实例 + 双开 | `agent-pack-dsh/pad/Core/Launcher.cs` | 游戏版本目录 + 版本隔离 + 同时开两份 |
 
 ## 3. 装包链（已定）
 
-对照 PCL 第 2–8 步。命令：`packagent dsh launcher import`。细则见 [launcher-design.md](launcher-design.md) §6–§7。
+对照 PCL 第 2–8 步。命令：`packagent dsh launcher import`（PAD 窗里拖包走同一条链）。细则见 [launcher-design.md](launcher-design.md) §6–§7。
 
 ### 3.1 `dsh.version`
 
@@ -102,6 +103,31 @@ pack-agent 管理器 = 内容加载器。每个整合包本身禁止 `dsh plugin
 foo.pack.zip  →  实例 foo  →  run
 ```
 
+解压就能玩对照用户本机 `E:\UserData\Desktop\12344 (1).6解压包（解压就能玩）`：
+
+| 那份 MC 包 | pack-agent |
+|---|---|
+| `pcl.exe` / `HMCL-3.5.9.exe` | `pack-agent-for DSH.exe`，双击打开 PAD；运行时 dll 打进这个 exe |
+| `.minecraft/` | `.pack-launcher/` |
+| `.minecraft/versions/` | `.pack-launcher/versions/` DSH 发行号 |
+| `.minecraft/versions/落幕曲/` 整夹 | `.pack-launcher/instances/<id>/` |
+| `落幕曲/mods/*.jar` | 投影 `workspace/.agent-pack/modpacks/<pack>/mods/` |
+| `PCL/` | `.pack-launcher/library/` |
+| 包根丢 zip | 把 `.pack.zip` 放在 exe 旁边，启动会扫进 `.pack-launcher` 再 import |
+| 自己填账号 | 设置 → API Key：`library/credentials.yaml`，不属于某一实例 |
+| PCL 文件夹列表 | `%LOCALAPPDATA%\pack-agent-dsh\roots.json`：多份 `.pack-launcher` 共用；exe 旁根是空的就切到上次有实例的那份。不默默收编 `~/.dsh`。`PACK_LAUNCHER_ROOT` 钉死时不切。 |
+
+整合包解压后的正文：
+
+```
+example-pack/
+  pack.json           # = manifest.json，必有 dsh.version
+  overrides/          # = overrides/，拷进工作区
+  skills/             # = mods/
+```
+
+打一份带启动器的整合包目录：`packagent dsh launcher portable-init <dir>`（内部 `dotnet publish` 单文件 PAD），或 `pad cli portable-export <dir> <instance>` 把已装好的发行号和实例拷进去。解压根目录是 `pack-agent-for DSH.exe`、`.pack-launcher/`。`portable-export` 剥凭据和 `pad-cli.log` / `runtime.json`，重生 `%~dp0` 启动脚本。先让人双击这份目录测过，再压缩。pnpm 小文件超过 65535 条会变成 ZIP64，Windows 压缩文件夹会报 zip 无效，给别人用 `packPlay7z` 或拼上 `7z.sfx` 的自解压 exe。7-Zip 多线程（`packPlayZip` 仍可打 zip 给 7-Zip 打开）。打包前检查 `launch-*.cmd` 没有烘焙 API Key，不用 Windows `tar` 单线程 deflate。对照 PCL：`PCL.exe` + `.minecraft`。窗固定 1000×620，不存尺寸。下载页 `dsh-tui` 货架钉 `@deepseek-harness-tui/dsh-tui`。
+
 ## 4. 嗅探
 
 真值在 `format-sniff`。内建：`pack.json`（`ccui-pack/*` 或 `agent-pack-ir/*`）、`.pack.zip`、`*.pinst.zip`。匹配不上 PA009。不实现 CurseForge / MMC / mrpack。
@@ -110,9 +136,9 @@ foo.pack.zip  →  实例 foo  →  run
 
 设计已钉，口径只认 [PRODUCT.md](PRODUCT.md) 与 [launcher-design.md](launcher-design.md)。本文件不再另写一套「要补」。
 
-代码还没有：无。P2 后台元数据缓存、多套命名钥匙、pnpm store 目录、P3 通道整包替换、货架、进度条、快捷方式、Tauri 大按钮已落地。
+代码还没有：无。P2 后台元数据缓存、多套命名钥匙、pnpm store 目录、P3 通道整包替换、货架、进度条、快捷方式已落地；PAD 窗按 PCL 顶栏与卡片，已从旧 web 壳重写成 WPF 原生。个性化：透明度滑条、顶栏文字、动画速度、刷新壁纸。卡片标题带圆角色块小标识。
 
-P0 + import 已有：两版本目录、两空实例、双 `run`、rustc 诊断、`profile.name`、注册表加载器、`launcher import` 查表（嗅探 → 版本 → 实例 → overrides → project+allow → 管理器 → plugins[]）。必选 `add` 失败留下 `import-failed`，stderr 英文提醒还在盘上以及怎么删。
+P0 + import 已有：两版本目录、两空实例、双 `run`、rustc 诊断、`profile.name`、注册表加载器、`launcher import` 查表（嗅探 → 版本 → 实例 → overrides → project+allow → 管理器 → plugins[]）。必选 `add` 失败留下 `import-failed`，stderr 英文提醒还在盘上以及怎么删。PAD 窗出错弹窗；界面卡住无异常时 PA040 系统弹窗，禁止只冻住。
 
 ## 6. 已核对的硬约束（装包时必须守）
 

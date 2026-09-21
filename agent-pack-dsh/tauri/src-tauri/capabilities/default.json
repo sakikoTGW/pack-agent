@@ -1,6 +1,0 @@
-{
-  "identifier": "default",
-  "description": "launcher invoke",
-  "windows": ["main"],
-  "permissions": ["core:default"]
-}

@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>false</UseWindowsForms>
+    <AssemblyName>pack-agent-for DSH</AssemblyName>
+    <RootNamespace>Pad</RootNamespace>
+    <Version>0.1.0</Version>
+    <Product>PAD</Product>
+    <AssemblyTitle>PAD — pack-agent for DSH</AssemblyTitle>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <ApplicationIcon>Assets\pad.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\pad-logo.png" />
+    <Resource Include="Assets\pad.ico" />
+    <Resource Include="Assets\api\*.png" />
+    <EmbeddedResource Include="..\modpack\registries\crash-rules.json" LogicalName="Pad.registries.crash-rules.json" />
+    <EmbeddedResource Include="..\modpack\registries\faq.json" LogicalName="Pad.registries.faq.json" />
+    <EmbeddedResource Include="..\modpack\registries\pad-pages.json" LogicalName="Pad.registries.pad-pages.json" />
+    <EmbeddedResource Include="..\modpack\registries\pa-codes.json" LogicalName="Pad.registries.pa-codes.json" />
+  </ItemGroup>
+
+  <Target Name="CopyCrashRegistries" AfterTargets="Build">
+    <MakeDir Directories="$(OutputPath)registries" />
+    <Copy SourceFiles="..\modpack\registries\crash-rules.json;..\modpack\registries\faq.json;..\modpack\registries\pad-pages.json"
+          DestinationFolder="$(OutputPath)registries"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

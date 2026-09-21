@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Tauri 薄转发：命令表与 launcher-api 同构，拖 zip = import。
+ * launcher-api 命令表：整窗拖入 / 选文件 / 根目录扫描 = import。
  */
 import { existsSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -25,12 +25,11 @@ for (const m of [
   if (!LAUNCHER_API_METHODS.includes(m as (typeof LAUNCHER_API_METHODS)[number])) fail(`missing method ${m}`)
 }
 
-const html = join(import.meta.dirname, '../tauri/index.html')
-const rust = join(import.meta.dirname, '../tauri/src-tauri/src/lib.rs')
-const conf = join(import.meta.dirname, '../tauri/src-tauri/tauri.conf.json')
-if (!existsSync(html)) fail(`missing ${html}`)
-if (!existsSync(rust)) fail(`missing ${rust}`)
-if (!existsSync(conf)) fail(`missing ${conf}`)
+// 窗是 WPF 原生的：C# 直接调 launcher 核心，不再有 web 壳转发层。
+const padCore = join(import.meta.dirname, '../pad/Core/Launcher.cs')
+const padCli = join(import.meta.dirname, '../pad/Core/Cli.cs')
+if (!existsSync(padCore)) fail(`missing ${padCore}`)
+if (!existsSync(padCli)) fail(`missing ${padCli}`)
 
 const fakeJs = `const args = process.argv.slice(2)
 if (args.includes('--version') || args.includes('-V')) {

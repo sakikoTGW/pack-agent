@@ -38,6 +38,14 @@
     { "id": "PA108", "level": "warning", "message": "two projectKey directories resolve to the same cwd", "help": ["normalize the workspace path"] },
     { "id": "PA109", "level": "warning", "message": "user overlay replaces a builtin registry entry" },
     { "id": "PA110", "level": "warning", "message": "pack-agent manager was disabled" },
-    { "id": "PA111", "level": "warning", "message": "session deleted but full-text index may remain", "help": ["rebuild the session-query-sqlite index"] }
+    { "id": "PA111", "level": "warning", "message": "session deleted but full-text index may remain", "help": ["rebuild the session-query-sqlite index"] },
+    { "id": "PA112", "level": "error", "message": "cannot remove a shipped agent-preset", "help": ["copy it to a user-layer id, then edit the copy"] },
+    { "id": "PA113", "level": "error", "message": "agent-preset id is illegal, missing, or already exists", "help": ["use a lowercase id matching [a-z0-9][a-z0-9-]*"] },
+    { "id": "PA114", "level": "error", "message": "the pad-gateway advert is missing or the harness pid is not running", "help": ["pad cli run <instance> <profile>"] },
+    { "id": "PA115", "level": "error", "message": "pad-gateway refused, or the apiproxy rpc call failed", "help": ["pad cli gateway <instance>"] },
+    { "id": "PA116", "level": "error", "message": "DEEPSEEK_API_KEY is not configured", "help": ["fill DEEPSEEK_API_KEY in Settings → API Key"] },
+    { "id": "PA117", "level": "error", "message": "portable-export needs a single-file PAD", "help": ["dotnet publish -p:PublishSingleFile=true", "set PACK_PAD_HOST_EXE"] },
+    { "id": "PA032", "level": "error", "message": "that bundle is already in this profile's layer, so there is nothing to trial", "help": ["remove it from the profile first"] },
+    { "id": "PA040", "level": "error", "message": "UI thread hung, or a page hosts itself in its own Content", "help": ["details are in pad-crash.log"] }
   ]
 }

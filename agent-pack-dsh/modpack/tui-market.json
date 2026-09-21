@@ -1,0 +1,18 @@
+{
+  "schema": "pack-agent.tui-market/v1",
+  "source": "https://github.com/ccch1mneyyy/dsh-TUI",
+  "plugins": [
+    {
+      "name": "dsh-TUI",
+      "npm": "@deepseek-harness-tui/dsh-tui",
+      "category": "tui",
+      "owner": "ccch1mneyyy",
+      "url": "https://github.com/ccch1mneyyy/dsh-TUI",
+      "install": "dsh plugin --profile dsh-tui add @deepseek-harness-tui/dsh-tui",
+      "description": {
+        "zh": "钉死的终端组合包。进自定义 profile dsh-tui 的 dsh.profile.bundles。",
+        "en": "Pinned TUI bundle for profile dsh-tui."
+      }
+    }
+  ]
+}

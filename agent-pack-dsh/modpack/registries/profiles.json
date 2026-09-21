@@ -12,6 +12,11 @@
       "id": "headless",
       "port": false,
       "ready": { "exitZero": true }
+    },
+    {
+      "id": "dsh-tui",
+      "port": false,
+      "ready": { "exitZero": true }
     }
   ]
 }

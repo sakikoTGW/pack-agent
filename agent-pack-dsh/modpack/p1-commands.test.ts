@@ -292,6 +292,7 @@ for (const m of [
   'plugin.list',
   'plugin.add',
   'session.list',
+  'agentPreset.list',
   'job.list',
   'crash.analyze',
   'pack.list',

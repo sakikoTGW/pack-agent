@@ -1,0 +1,246 @@
+<Window x:Class="Pad.Views.ApiConfigWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Pad.Views"
+        xmlns:v="clr-namespace:Pad.Views"
+        Title="配置管理"
+        Width="920" Height="720"
+        MinWidth="720" MinHeight="520"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="{StaticResource BgPage}"
+        FontFamily="{StaticResource FontUI}"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+  <ScrollViewer Padding="18" VerticalScrollBarVisibility="Auto">
+    <StackPanel>
+      <Border Style="{StaticResource Slab}">
+        <StackPanel>
+          <ContentControl Style="{StaticResource SlabHead}" Content="配置管理"
+                          v:Ico.Of="{StaticResource I.Gear}" />
+          <Grid Height="28" Margin="0,0,0,9">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ComboBox Grid.Column="0" x:Name="CredList" Height="28"
+                      SelectionChanged="Cred_Sel" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
+              <Button Style="{StaticResource Btn}" Content="新建" Click="CredNew_Click"
+                      v:Ico.Of="{StaticResource I.Plus}" />
+              <Button Style="{StaticResource BtnDanger}" Content="删除" Margin="8,0,0,0"
+                      Click="CredDelete_Click" ToolTip="删掉这份配置（global 不可删）"
+                      v:Ico.Of="{StaticResource I.Trash}" />
+            </StackPanel>
+          </Grid>
+          <TextBox x:Name="CredEditor" Height="140" AcceptsReturn="True" TextWrapping="Wrap"
+                   VerticalScrollBarVisibility="Auto" LostFocus="CredSave_Click"
+                   FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                   Tag="credentials.yaml 内容" />
+          <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Style="{StaticResource Btn}" Content="保存" Click="CredSave_Click"
+                    v:Ico.Of="{StaticResource I.Check}" />
+            <TextBlock x:Name="CredPathLine" Style="{StaticResource Muted}" Margin="12,0,0,0"
+                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Style="{StaticResource Slab}">
+        <StackPanel>
+          <ContentControl Style="{StaticResource SlabHead}" Content="装载配置"
+                          v:Ico.Of="{StaticResource I.Folder}" />
+          <Grid Height="28" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="120" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="默认配置" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+            <ComboBox Grid.Column="1" x:Name="CredentialsDefaultBox" Width="200" Height="28"
+                      HorizontalAlignment="Left" SelectionChanged="Load_Sel" />
+          </Grid>
+          <ItemsControl x:Name="ApiMatchList">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Height="40" Margin="0,0,0,6">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="72" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontMono}"
+                             FontSize="{StaticResource FsSmall}" VerticalAlignment="Center"
+                             Foreground="{StaticResource TextPrimary}" />
+                  <TextBlock Grid.Column="1" Text="{Binding Status}" Style="{StaticResource Muted}"
+                             VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding Instances}" Style="{StaticResource Muted}"
+                             VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Style="{StaticResource Slab}">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <ContentControl Style="{StaticResource SlabHead}" Content="llm-pi-ai.providers"
+                          v:Ico.Of="{StaticResource I.Data}" />
+          <TextBlock Grid.Row="1" Style="{StaticResource Muted}" Margin="0,0,0,12" TextWrapping="Wrap"
+                     Text="写成 DSH 的 llm-pi-ai.providers。只写 apiKeyEnv、baseURL 和模型，密钥留在导入的 refs。改完下次启动才进 session.models。" />
+          <Grid Grid.Row="2" MinHeight="420">
+            <Grid x:Name="ProviderSplit" MinHeight="420">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="252" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <Border Grid.Column="0" Background="{StaticResource BgSubtle}"
+                      BorderBrush="{StaticResource LineDivider}" BorderThickness="1"
+                      CornerRadius="{StaticResource RadCard}" Padding="10,10,10,12">
+                <Grid>
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                  </Grid.RowDefinitions>
+                  <ListBox x:Name="ProviderRoster" Style="{StaticResource PlainList}"
+                           SelectionChanged="Provider_Sel">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel local:Fx.Enter="row">
+                          <TextBlock Text="{Binding Title}" FontSize="{StaticResource FsBody}"
+                                     FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
+                                     TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding Sub}" Style="{StaticResource Mono}"
+                                     FontSize="{StaticResource FsMicro}"
+                                     Foreground="{StaticResource TextSecondary}" Margin="0,3,0,0"
+                                     TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding Status}" FontSize="{StaticResource FsMicro}"
+                                     Margin="0,4,0,0" TextTrimming="CharacterEllipsis">
+                            <TextBlock.Style>
+                              <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource SuccessText}" />
+                                <Style.Triggers>
+                                  <DataTrigger Binding="{Binding RefMissing}" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource WarningText}" />
+                                  </DataTrigger>
+                                </Style.Triggers>
+                              </Style>
+                            </TextBlock.Style>
+                          </TextBlock>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                  <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                    <ComboBox x:Name="ProviderPreset" Height="28" Margin="0,0,0,8" />
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                      </Grid.ColumnDefinitions>
+                      <Button Style="{StaticResource Btn}" Content="套用" Click="ProviderPreset_Click" />
+                      <Button Grid.Column="1" Style="{StaticResource Btn}" Content="新建"
+                              Margin="6,0,0,0" Click="ProviderNew_Click"
+                              v:Ico.Of="{StaticResource I.Plus}" />
+                    </Grid>
+                    <Grid Margin="0,6,0,0">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                      </Grid.ColumnDefinitions>
+                      <Button Style="{StaticResource Btn}" Content="上移" Click="ProviderUp_Click" />
+                      <Button Grid.Column="1" Style="{StaticResource Btn}" Content="下移"
+                              Margin="6,0,0,0" Click="ProviderDown_Click" />
+                      <Button Grid.Column="2" Style="{StaticResource BtnDanger}" Content="删除"
+                              Margin="6,0,0,0" Click="ProviderDelete_Click"
+                              v:Ico.Of="{StaticResource I.Trash}" />
+                    </Grid>
+                  </StackPanel>
+                </Grid>
+              </Border>
+              <StackPanel Grid.Column="1" x:Name="ProviderDetail" Margin="16,0,0,0">
+                <Grid Height="28" Margin="0,0,0,9">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="88" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="路由名" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                  <TextBox Grid.Column="1" x:Name="ProviderRouteBox" Height="28"
+                           FontFamily="{StaticResource FontMono}" Tag="acme-gateway" />
+                </Grid>
+                <Grid Height="28" Margin="0,0,0,9">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="88" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="显示名" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                  <TextBox Grid.Column="1" x:Name="ProviderNameBox" Height="28" />
+                </Grid>
+                <Grid Height="28" Margin="0,0,0,9">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="88" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="baseURL" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                  <TextBox Grid.Column="1" x:Name="ProviderUrlBox" Height="28"
+                           FontFamily="{StaticResource FontMono}" Tag="https://api.example/v1" />
+                </Grid>
+                <Grid Height="28" Margin="0,0,0,9">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="88" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="apiKeyEnv" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                  <ComboBox Grid.Column="1" x:Name="ProviderEnvBox" Height="28" IsEditable="True"
+                            FontFamily="{StaticResource FontMono}" />
+                </Grid>
+                <TextBlock Text="模型 id，一行一个，顺序即优先度" Style="{StaticResource Muted}"
+                           Margin="0,0,0,6" />
+                <TextBox x:Name="ProviderModelsBox" Height="88" AcceptsReturn="True" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" LostFocus="ProviderModels_Lost"
+                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}" />
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,10">
+                  <CheckBox x:Name="ProviderInputText" Style="{StaticResource Switch}" Content="text"
+                            IsChecked="True" />
+                  <CheckBox x:Name="ProviderInputImage" Style="{StaticResource Switch}" Content="image"
+                            Margin="16,0,0,0" />
+                </StackPanel>
+                <Border x:Name="ProviderHintBar" Style="{StaticResource HintBar}" Margin="0,0,0,12">
+                  <TextBlock x:Name="ProviderHint" Style="{StaticResource HintBarCopy}"
+                             Text="将会进入 session.models：" />
+                </Border>
+                <Button Style="{StaticResource BtnPrimary}" Content="保存配方" HorizontalAlignment="Left"
+                        Click="ProviderSave_Click" />
+              </StackPanel>
+            </Grid>
+            <Border x:Name="ProviderEmpty" Style="{StaticResource EmptyWell}">
+              <StackPanel>
+                <ContentControl Style="{StaticResource PictLg}" v:Ico.Of="{StaticResource I.Data}"
+                                HorizontalAlignment="Left" Margin="0,0,0,12" />
+                <TextBlock Text="还没有供应商配方" Style="{StaticResource SectionTitle}" />
+                <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap"
+                           Text="名册列出每条 llm-pi-ai.providers 路由。套 DSH 文档里的 openai / anthropic / acme-gateway，或自己新建。" />
+                <Button Style="{StaticResource BtnWidePrimary}" Content="新建" Margin="0,14,0,0"
+                        HorizontalAlignment="Left" MinWidth="120" Click="ProviderNew_Click"
+                        v:Ico.Of="{StaticResource I.Plus}" />
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                  <Button Style="{StaticResource Btn}" Content="套用 openai" Tag="openai"
+                          Click="ProviderPreset_Click" />
+                  <Button Style="{StaticResource Btn}" Content="套用 anthropic" Tag="anthropic"
+                          Margin="8,0,0,0" Click="ProviderPreset_Click" />
+                  <Button Style="{StaticResource Btn}" Content="套用 acme-gateway" Tag="acme-gateway"
+                          Margin="8,0,0,0" Click="ProviderPreset_Click" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </Grid>
+        </Grid>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

@@ -21,6 +21,7 @@ import { copyGlobalCredentialsToHome, copyNamedCredentialsToHome } from './crede
 import { listOrEmpty } from './empty-state.js'
 import { migrateInstanceRecord } from './migrate.js'
 import { pnpmStoreEnv } from './pnpm-store.js'
+import { initPortableKit } from './portable.js'
 
 export type DiagLevel = 'error' | 'warning'
 
@@ -764,6 +765,16 @@ export async function runLauncherCli(argv: string[]): Promise<void> {
       printLauncherHelp()
       return
     }
+    if (group === 'portable-init') {
+      const kit = resolve(cmd || process.cwd())
+      out(initPortableKit(kit))
+      return
+    }
+    if (group === 'pad') {
+      throw new LauncherError(
+        'PAD 窗已经是 WPF 原生 exe：agent-pack-dsh/pad（pack-agent-for DSH.exe）。CLI 走 `pad cli …`。',
+      )
+    }
     if (group === 'diag' && cmd === 'render') {
       const file = rest[0]
       if (!file) throw new LauncherError('Usage: packagent dsh launcher diag render <json>')
@@ -975,6 +986,29 @@ export async function runLauncherCli(argv: string[]): Promise<void> {
         return
       }
       throw new LauncherError('Usage: packagent dsh launcher pack project|allow|deny|set-save|set-load|list <id> …')
+    }
+    if (group === 'agent-preset') {
+      const id = rest[0]
+      if (!id) throw new LauncherError('Usage: packagent dsh launcher agent-preset list|copy|remove …')
+      const presets = await import('./agent-preset-ops.js')
+      if (cmd === 'list') {
+        out(listOrEmpty('agentPreset.list', presets.listAgentPresets(root, id)))
+        return
+      }
+      if (cmd === 'copy') {
+        const fromId = rest[1]
+        const toId = rest[2]
+        if (!fromId || !toId) throw new LauncherError('Usage: packagent dsh launcher agent-preset copy <id> <from> <to>')
+        out(presets.copyAgentPreset(root, id, fromId, toId))
+        return
+      }
+      if (cmd === 'remove') {
+        const presetId = rest[1]
+        if (!presetId) throw new LauncherError('Usage: packagent dsh launcher agent-preset remove <id> <presetId>')
+        out(presets.removeAgentPreset(root, id, presetId))
+        return
+      }
+      throw new LauncherError('Usage: packagent dsh launcher agent-preset list|copy|remove …')
     }
     if (group === 'session') {
       const id = rest[0]
@@ -1222,10 +1256,12 @@ function printLauncherHelp(): void {
                           |update <id> <pkg>|enable <id> <pkg>|disable <id> <pkg>
   packagent dsh launcher pack    project <id> <pack>|allow <id> <pack-id>|deny <id> <pack-id>
                           |set-save <id> <name>|set-load <id> <name>|list <id>
+  packagent dsh launcher agent-preset list <id>|copy <id> <from> <to>|remove <id> <presetId>
   packagent dsh launcher session list <id>|delete <id> <sid>|backup <id> [<sid>]|inspect <id> <sid>
   packagent dsh launcher import <pack.json|pack.zip|*.pinst.zip> [--name <id>]
   packagent dsh launcher export <id> [--out x.pinst.zip]
   packagent dsh launcher scan-drop
+  packagent dsh launcher portable-init [dir]   打一份带启动器的整合包目录
   packagent dsh launcher credentials list|get [<name>]|set [<name>] <file.yaml>
   packagent dsh launcher market  list [<category>]|search <q>|install <id> <name>
   packagent dsh launcher update  check|apply <ver> <dir>

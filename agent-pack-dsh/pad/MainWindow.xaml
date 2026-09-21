@@ -1,0 +1,213 @@
+<Window x:Class="Pad.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Pad"
+        xmlns:v="clr-namespace:Pad.Views"
+        mc:Ignorable="d"
+        Title="PAD" Width="1000" Height="620"
+        Icon="pack://application:,,,/Assets/pad.ico"
+        WindowStyle="None" AllowsTransparency="True" ResizeMode="CanMinimize"
+        Background="Transparent" WindowStartupLocation="CenterScreen"
+        AllowDrop="True" PreviewDragOver="Window_DragOver" Drop="Window_Drop"
+        TextOptions.TextFormattingMode="Display"
+        ToolTipService.InitialShowDelay="700" ToolTipService.BetweenShowDelay="200"
+        FontFamily="{StaticResource FontUI}" UseLayoutRounding="True" SnapsToDevicePixels="True">
+
+  <Border x:Name="OuterShell" Margin="14" Background="Transparent" CornerRadius="10">
+    <Border.Effect>
+      <DropShadowEffect BlurRadius="26" ShadowDepth="3" Direction="270" Opacity="0.28" Color="#FF19222A" />
+    </Border.Effect>
+
+    <Border CornerRadius="10" ClipToBounds="True" BorderThickness="1"
+            BorderBrush="{StaticResource LineBorder}">
+      <Grid>
+        <!-- Steam-style skin: wallpaper under a wash so text stays readable. -->
+        <Image x:Name="Wallpaper" Stretch="UniformToFill" StretchDirection="Both"
+               Opacity="0.4" Visibility="Collapsed" IsHitTestVisible="False" />
+        <Border x:Name="PageWash" Background="{StaticResource BgPage}" IsHitTestVisible="False" />
+
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition x:Name="ChromeRow" Height="50" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+
+          <Border x:Name="ChromeBar" Grid.Row="0" Background="{StaticResource BgChrome}"
+                  BorderThickness="0,0,0,1" BorderBrush="{StaticResource ChromeHairline}"
+                  MouseLeftButtonDown="TitleBar_Drag">
+            <Grid>
+              <Grid x:Name="TopMode">
+                <StackPanel x:Name="BrandMark" Orientation="Horizontal" Margin="10,0,0,0"
+                            VerticalAlignment="Center" IsHitTestVisible="False">
+                  <!-- Light plate + teal rim; asset is head-crop for small chrome. -->
+                  <Border x:Name="BrandLogoPlate" Width="42" Height="42" CornerRadius="21"
+                          Background="#F2FAFC" BorderBrush="#5AA8BA" BorderThickness="2"
+                          Margin="0,0,10,0" VerticalAlignment="Center" SnapsToDevicePixels="True">
+                    <Border.Effect>
+                      <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.5"
+                                        Color="#FF159CB7" />
+                    </Border.Effect>
+                    <Image x:Name="BrandLogo" Width="38" Height="38"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Stretch="Uniform" SnapsToDevicePixels="True"
+                           RenderOptions.BitmapScalingMode="HighQuality">
+                      <Image.Clip>
+                        <EllipseGeometry Center="19,19" RadiusX="18.5" RadiusY="18.5" />
+                      </Image.Clip>
+                    </Image>
+                  </Border>
+                  <TextBlock x:Name="BrandText" Text="PAD" Foreground="{StaticResource TextOnAccent}"
+                             FontFamily="{StaticResource FontMono}" FontSize="18" FontWeight="Bold"
+                             VerticalAlignment="Center" />
+                </StackPanel>
+
+                <Grid x:Name="TabStrip" Height="27" HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                  <Border x:Name="TabPill" Width="72" Height="27" HorizontalAlignment="Left"
+                          CornerRadius="13.5" Background="{StaticResource BgCard}">
+                    <Border.RenderTransform>
+                      <TranslateTransform x:Name="TabPillShift" />
+                    </Border.RenderTransform>
+                  </Border>
+                  <StackPanel x:Name="TabRow" Orientation="Horizontal">
+                    <RadioButton x:Name="TabLaunch" Style="{StaticResource TitleTab}" Content="启动"
+                                 v:Ico.Of="{StaticResource I.Play}"
+                                 IsChecked="True" Checked="Tab_Checked" Tag="launch" />
+                    <RadioButton x:Name="TabManage" Style="{StaticResource TitleTab}" Content="管理"
+                                 v:Ico.Of="{StaticResource I.Data}"
+                                 Checked="Tab_Checked" Tag="manage" />
+                    <RadioButton x:Name="TabDownload" Style="{StaticResource TitleTab}" Content="下载"
+                                 v:Ico.Of="{StaticResource I.Download}"
+                                 Checked="Tab_Checked" Tag="download" />
+                    <RadioButton x:Name="TabTasks" Style="{StaticResource TitleTab}" Content="任务"
+                                 v:Ico.Of="{StaticResource I.Tasks}"
+                                 Checked="Tab_Checked" Tag="tasks" Visibility="Collapsed" />
+                    <RadioButton x:Name="TabSettings" Style="{StaticResource TitleTab}" Content="设置"
+                                 v:Ico.Of="{StaticResource I.Gear}"
+                                 Checked="Tab_Checked" Tag="settings" />
+                  </StackPanel>
+                </Grid>
+              </Grid>
+
+              <Grid x:Name="InnerMode" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,0,0">
+                  <Button x:Name="BackBtn" Style="{StaticResource IcoBtnChrome}" Click="Back_Click">
+                    <v:Ico Glyph="{StaticResource I.Back}" Height="13" />
+                  </Button>
+                  <TextBlock x:Name="InnerTitle" Foreground="{StaticResource TextOnAccent}"
+                             FontSize="{StaticResource FsTitle}" VerticalAlignment="Center"
+                             Margin="12,1,0,0" />
+                  <TextBlock x:Name="InnerBadge" Foreground="{StaticResource ChromeInkDim}"
+                             FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                             VerticalAlignment="Center" Margin="14,2,0,0" Visibility="Collapsed" />
+                </StackPanel>
+              </Grid>
+
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Style="{StaticResource WinBtn}" Click="Minimize_Click" ToolTip="最小化">
+                  <v:Ico Glyph="{StaticResource I.Min}" Height="11" Width="11" />
+                </Button>
+                <Button Style="{StaticResource WinBtnClose}" Click="Close_Click" ToolTip="关闭">
+                  <v:Ico Glyph="{StaticResource I.Close}" Height="10" />
+                </Button>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <ContentControl x:Name="Host" Grid.Row="1" />
+
+          <StackPanel x:Name="ToastLayer" Grid.Row="1" HorizontalAlignment="Right"
+                      VerticalAlignment="Bottom" Margin="0,0,20,18" IsHitTestVisible="False" />
+
+          <!-- PCL MyMsg: overlay on the main window, no OS title bar. -->
+          <Grid x:Name="MsgLayer" Grid.RowSpan="2" Visibility="Collapsed" Panel.ZIndex="40"
+                KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Contained">
+            <Border x:Name="MsgDim" Background="#99000000" />
+            <Border x:Name="MsgCard" MinWidth="400" MaxWidth="520" MaxHeight="460"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{StaticResource BgCard}" CornerRadius="7"
+                    BorderBrush="{StaticResource LineBorder}" BorderThickness="1"
+                    Margin="20" FocusManager.IsFocusScope="True">
+              <Border.Effect>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Opacity="0.28"
+                                  Color="#FF19222A" />
+              </Border.Effect>
+              <Grid Margin="22,20,22,18">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="2" />
+                  <RowDefinition Height="10" />
+                  <RowDefinition Height="*" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock x:Name="MsgTitle" FontSize="23" Foreground="{StaticResource AccentText}"
+                           FontWeight="SemiBold" Margin="7,-1,8,8" TextWrapping="Wrap" />
+                <Rectangle x:Name="MsgLine" Grid.Row="1" Height="2" Fill="{StaticResource Accent}" />
+                <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
+                  <StackPanel>
+                    <TextBlock x:Name="MsgBody" FontSize="15" LineHeight="22"
+                               Foreground="{StaticResource TextBody}" TextWrapping="Wrap"
+                               Margin="7,0,7,12" Visibility="Collapsed" />
+                    <Border x:Name="MsgPreviewBox" Width="72" Height="72" Margin="7,0,7,12"
+                            HorizontalAlignment="Left" CornerRadius="8" ClipToBounds="True"
+                            Background="{StaticResource BgSubtle}" BorderBrush="{StaticResource LineBorder}"
+                            BorderThickness="1" Visibility="Collapsed">
+                      <Image x:Name="MsgPreview" Stretch="UniformToFill" />
+                    </Border>
+                    <TextBox x:Name="MsgInput" Margin="7,0,7,12" Height="32"
+                             MinWidth="360" Visibility="Collapsed" />
+                  </StackPanel>
+                </ScrollViewer>
+                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
+                            Margin="8,12,8,0">
+                  <Button x:Name="MsgOk" Style="{StaticResource BtnPrimary}" Content="确定"
+                          MinWidth="88" Height="35" Click="MsgOk_Click" />
+                  <Button x:Name="MsgCancel" Style="{StaticResource Btn}" Content="取消"
+                          MinWidth="88" Height="35" Margin="12,0,0,0" IsCancel="True"
+                          Click="MsgCancel_Click" />
+                </StackPanel>
+              </Grid>
+            </Border>
+          </Grid>
+
+          <Grid x:Name="MdLayer" Grid.RowSpan="2" Visibility="Collapsed" Panel.ZIndex="41"
+                KeyboardNavigation.TabNavigation="Cycle">
+            <Border Background="#99000000" MouseLeftButtonDown="MdDim_Down" />
+            <Border x:Name="MdCard" MinWidth="420" MaxWidth="560" MaxHeight="480"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{StaticResource BgCard}" CornerRadius="7"
+                    BorderBrush="{StaticResource LineBorder}" BorderThickness="1" Margin="20">
+              <Border.Effect>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Opacity="0.28"
+                                  Color="#FF19222A" />
+              </Border.Effect>
+              <Grid Margin="22,20,22,18">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="2" />
+                  <RowDefinition Height="10" />
+                  <RowDefinition Height="*" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock x:Name="MdTitle" FontSize="23" Foreground="{StaticResource AccentText}"
+                           FontWeight="SemiBold" Margin="7,-1,8,8" TextWrapping="Wrap" />
+                <Rectangle Grid.Row="1" Height="2" Fill="{StaticResource Accent}" />
+                <FlowDocumentScrollViewer x:Name="MdDoc" Grid.Row="3" Margin="2,0,2,0"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          IsToolBarVisible="False" Zoom="100"
+                                          SizeChanged="MdDoc_Size" />
+                <Button Grid.Row="4" Style="{StaticResource BtnPrimary}" Content="关闭"
+                        MinWidth="88" Height="35" HorizontalAlignment="Right" Margin="8,12,8,0"
+                        Click="MdClose_Click" />
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+      </Grid>
+    </Border>
+  </Border>
+</Window>

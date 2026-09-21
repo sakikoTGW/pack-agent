@@ -30,6 +30,8 @@ Same operations as DSH tools: `packagent_project`, `packagent_map`, `packagent_s
 
 Allow-list is one per project directory. Projected packs stay under `.agent-pack/modpacks/`; they are not extra `dsh plugin add` targets.
 
+Managing a running instance is a separate profile layer: `@sakikotgw/pad-gateway` wraps the official `@deepseek-ai/dsh-host-apiproxy` and writes `$DSH_HOME/pad-gateway.json`. PAD reads that advert and calls apiproxy rpc (`workspace.list`, `session.list`, `session.cancel`). It is not a chat protocol.
+
 ## Run from source
 
 ```sh

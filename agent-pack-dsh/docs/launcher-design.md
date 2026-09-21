@@ -1,4 +1,4 @@
-# DSH 启动器功能设计
+# pack-agent 启动器功能设计
 
 date: 2026-08-19
 status: draft
@@ -10,9 +10,11 @@ scope: DeepSeek Harness only
 
 ## 1. 一句话
 
-`.pack.zip` 丢进启动器 → 新建一份 `DSH_HOME` → `packagent dsh launcher run`。DSH 发行号是唯一版本轴。`--profile`、组合包、投影白名单、工作区、凭据都是实例设置。
+pack-agent 是启动器、整合包装卸器、管理器。当前只管理 DSH。`.pack.zip` 丢进去 → 新建一份 `DSH_HOME` → `pad cli run`。停用白名单或删除实例 = 卸。给别人的是整合包：解压根目录是 `pack-agent-for DSH.exe` + `.pack-launcher/`（对照 PCL.exe + `.minecraft`），运行时 dll 打进单文件 exe，可把已装好的实例拷进去。打这份目录：`packagent dsh launcher portable-init` 或 `pad cli portable-export <dir> <instance>`。发给别人用 `.7z` 或 `7z.sfx` 自解压，不要用 Explorer 打开 ZIP64 zip。双击 exe 开 PAD 窗（WPF 原生，顶栏启动 / 管理 / 下载 / 设置），在窗里管理整合包、agent-preset、正在跑的实例、session。DSH 发行号是唯一版本轴。`--profile`、组合包、投影白名单、工作区是实例设置。`DEEPSEEK_API_KEY` 在设置 → API Key（`library/credentials.yaml`），不属于某一实例。
 
 定义只用 DeepSeek Harness 原词。启动器自己的词：实例、版本库、投影、白名单。
+
+原则见 [PRODUCT.md](PRODUCT.md) §2.1。好用细则 §2.2。不把启动器改写成 Rust。skill 走投影，不 `dsh plugin add`。
 
 ## 2. 对照
 
@@ -22,17 +24,20 @@ scope: DeepSeek Harness only
 | Forge | DeepSeek Harness | 插件树 |
 | 一个 `.minecraft` | 一份实例 | 一份 `DSH_HOME` |
 | `versions\<名>\` 里的加载器+mods | 该实例的 `--profile` + `dsh.profile.bundles` | `$DSH_HOME/profiles/<name>/` |
-| 版本隔离开：`saves` 在版本文件夹 | session 只写这份 `DSH_HOME`。没有「关掉隔离」 | `dshHomePath('sessions')`，再按工作区路径和 session id 分 |
+| 版本隔离开：`saves` 在版本文件夹 | `$DSH_HOME` 始终隔离。工作区隔离对照 PCL `VersionArgumentIndieV2`：可关，改成 `workspace.kind=existing` 与指定目录共用。session 仍只写这份 home | `dshHomePath('sessions')`，再按工作区路径和 session id 分 |
 | 人自己把世界文件夹拷进另一个版本 | 人自己把 session 目录拷进另一份 home | 不拦。打开失败只报 error |
 | 启动游戏 | `run` | `DSH_HOME=… dsh --profile <name> --patch …` |
+| 模组列表 | 投影 + 组合包 | `pack.list` / `plugin.list` |
+| 世界 / 存档 | session | `$DSH_HOME/sessions/…`，列出带 `agentPreset` |
+| 角色组成 | agent-preset | 发行号随附 + `$DSH_HOME/.agent-presets` |
 
 `--profile` 只决定叠哪些组合包。项目和 session 是这份 Harness 按工作区真实路径自己分的。
 
 npm `@deepseek-ai/dsh`（2026-08-19）：`0.0.1-rc.1` / `0.0.1-rc.2` / `0.0.1-rc.5` / `0.1.0-rc.2` / `0.1.0-rc.3` / `0.1.0-rc.6` / `0.1.0-rc.7`。无 rc.4、无源码树上的 `0.1.0-rc.5`。`latest` 与 `next` 都是 `0.1.0-rc.7`。
 
-随附模板只有 `web`、`headless`。其他名字第一次 `dsh plugin add` 时只有 `@deepseek-ai/dsh-base`。
+随附模板只有 `web`、`headless`。其他名字第一次 `dsh plugin add` 时只有 `@deepseek-ai/dsh-base`。PAD 钉自定义 profile `dsh-tui` 的组合包 `@deepseek-harness-tui/dsh-tui`。
 
-## 3. 三层
+## 3. 四层
 
 ### 3.1 版本库
 
@@ -70,6 +75,34 @@ $DSH_HOME/sessions/<工作区路径编出来的目录>/<session id>/
 - 不做挂载。没有 `shared/sessions`，没有 `session mount` 命令，`instance.json` 没有 mounts 表。两实例即使 `workspace.path` 相同，也各写各的 `home/sessions`。
 - 人自己把 session 目录拷进另一份 home：启动器不拦、不确认、不改 jsonl、不改 header.cwd。实例照样能 `run`。打开那条 session 时，header.cwd 对不上 → `error[PA007]`；格式版本不对 → `error[PA015]`；DSH 崩了 → 转述退出码和日志。不默默修好。打不打得开是拷的人的事。
 
+### 3.4 agent-preset
+
+一份实例的 Harness 里，agent 的组成是 agent-preset。PAD 同时管启动和这份名册。
+
+- 随附：钉住的发行号安装内 `config/agent-presets/`。只读。删 → PA112。
+- 用户层：该实例 `home/.agent-presets/<id>/agent.cordis.yml`。id 必须匹配 `[a-z0-9][a-z0-9-]*`。
+- `list`：用户层先扫，随附同名覆盖。与 DSH `dsh-agent-presets` 发现顺序一致。
+- `copy <from> <to>`：整目录拷到用户层。目标已在名册或非法 id → PA113。
+- `remove`：只删用户层。
+- session 列表带 `agentPreset`：header 为创建时值，日志里最后一条 `agent-preset/selected` 覆盖。
+- 不在 PAD 窗里 `ctx.agents.create` 代聊。新开 agent = 人在已 `run` 的 Harness 里选 preset。
+
+### 3.5 管理侧门（官方 apiproxy）
+
+PAD 是管理层：不只扫盘，还要和正在跑的 DSH 说话。用的是 DSH **官方**网关，不自造协议。
+
+`@deepseek-ai/dsh-host-apiproxy` 只提供 `ctx.apiProxy`，自己不注册路由（官方 README 原文：carriers such as HTTP wrap it themselves）。Web 版由 web-app 接上 HTTP；终端 profile 没人接，所以本仓的 `@sakikotgw/pad-gateway`（源码 `agent-pack-dsh/gateway/`）接一份 loopback carrier：
+
+- 独立 npm 包、独立插件行，`inject: [apiProxy]`。**不能**并进主插件 —— cordis 的 inject 会等服务就绪，没装网关的 profile 会连 tools / skills 一起等不到。
+- 用官方 `toFetchHandler(ctx.apiProxy)`，监听 `127.0.0.1` 随机端口，广告写 `$DSH_HOME/pad-gateway.json`（token，0600），排障日志写 `$DSH_HOME/pad-gateway.log`。
+- `GET /pad/ping` 是 carrier 自己的健康检查；其余原样交给官方协议：`POST /api/<method>` 带 `client-request` 信封，SSE 在 `GET /api/events.mux`。
+- 它的 `cordis.patch.yml` 一次插三行：`dsh-host-apiproxy`、`dsh-host-directory-picker-native`、自己。apiproxy 的 inject 列表要 `directoryPicker`，`dsh-base` 不带。
+- **必须是 `-native`，不能用 `-auto`**：`-auto` 的 inject 是 `['webServer','loader']`，终端 profile 没有 `webServer`，于是 picker 起不来 → apiproxy 起不来 → 网关永远不 `apply()`，静默挂住，一句报错都没有。
+- 这些包的 npm `latest` 都是旧的 `0.0.1-rc.1`，必须钉到发行号那条线。
+- `headless` 官方不挂 apiproxy，那种 profile 只能扫盘。
+
+PAD 能读到的因此和 DSH Web UI 完全同源：`session.list` 每行带 `running`（agent 在跑）、`blank`（能否切 preset）、`agentPreset`；`workspace.list` 给出真实的 workspace 注册表。`agentPreset.select` 只在会话空白时可用，跑过一轮就 `agent-preset-locked`，这是 DSH 的硬锁。
+
 ## 4. 盘上
 
 ```
@@ -78,7 +111,9 @@ $DSH_HOME/sessions/<工作区路径编出来的目录>/<session id>/
   runtime/node/<node-ver>/
   instances/<id>/
     instance.json
-    home/                 # DSH_HOME
+    home/                 # DSH_HOME；装了 pad-gateway 的 profile 跑起来后写出 pad-gateway.json
+    workspace/            # 默认工作区；可改指已有项目
+    logs/
     workspace/            # 默认工作区；可改指已有项目
     logs/
   library/
@@ -98,7 +133,7 @@ $DSH_HOME/sessions/<工作区路径编出来的目录>/<session id>/
 
 合成结果是 `id → 绝对路径`。查表 O(1)。读字段看 mtime，变了只重读该文件。坏文件 PA017，映射不切到坏路径。`fs.watch` 更新映射。正在跑的任务用开工时的映射快照。
 
-第一批表：`format-sniff`、`task-kinds`、`pa-codes`、`profiles`。
+第一批表：`format-sniff`、`task-kinds`、`pa-codes`、`profiles`、`pad-pages`。PAD 顶栏页走 `pad-pages`，`handler` 只能是已有 `page.*`。
 
 - 多余字段、缺必填 → PA017。代码不补默认值。默认写在内建条目正文。
 - 自建条目允许。跑起来引用不到 → PA018。自定义 `--profile` 名可以不在 `profiles` 表里。
@@ -115,17 +150,19 @@ $DSH_HOME/sessions/<工作区路径编出来的目录>/<session id>/
 
 对该实例某个 `--profile` 做 `dsh plugin --profile <name> add|remove|update`。有 `dsh.bundle` 进 `dsh.profile.bundles`；没有则普通依赖，转述 DSH 那句 warning。
 
+入口是顶栏管理页：列出该 `--profile` 随附层、TUI、管理口（`dsh-base` / `dsh-web-app` / `dsh-headless` / `dsh-tui` / `pad-gateway`），行上更新 / 移除，可添加，可全部更新。走 `$DSH_HOME` 磁盘，不依赖管理口，没启动也能做。版本设置**插件**页对照 PCL Mod 管理，只列另外 `dsh plugin add` 的包：搜索名称/描述/标签，打开文件夹，从文件安装，下载新插件，全选，过滤全部/可更新/试验中，行上详情/打开目录/更新/移除，试验行固化/丢掉。标签用 package.json keywords，不打「组合包」。整合包是投影，不进这张名单。`pad cli plugin list|add|remove|update` 同一条 `PluginOp`。行上的图是该包自己发布的：盘上 `icon.png` / `logo.svg` / `docs/assets/logo.svg`；没有就按 `package.json` `repository` 拉 GitHub 上的 `docs/assets/logo.svg`，缓存 `library/plugins-meta/`。`dsh-plugin.json` v0.15 没有 icon 字段。TUI 仓库里的 `dsh-ecosystem-spec`（含 tui-channel）是插件准入与协议，不是启动器图标字段。
+
 不按「是不是界面」拦截。同一配置行后一层整段替换。boot 非零退出记 crashed。装完给人看 `--dump-config`。改 bundles 必须重启该实例进程。
 
 已有 session 再 `add` → PA021 warning，打印后继续。无 TTY 同样打印后继续。`--force` 只抬 warning，不改变「能继续」。
 
 停用 pack-agent 管理器 → PA110。停用后该实例看不到投影。
 
-介绍：`package.json` 的 `description` → README 首段 → 无。图标：`dsh.client` 包资源 → `icon` → 名字生成。缓存 `library/plugins-meta/`。
+介绍：`package.json` 的 `description` → README 首段 → 无。图标链见上。缓存 `library/plugins-meta/`。
 
 `engines.dsh` 已声明且对不上钉的发行号 → PA002。未声明 → PA101，不拦 add。
 
-货架：读 awesome-dsh 的 `plugins.json`，安装仍是对该实例 `dsh plugin add`。没有第二套安装通道。
+货架：读 awesome-dsh 的 `plugins.json`，安装仍是对该实例某个 `--profile` 做 `dsh plugin add`。下载页搜索卡对照 PCL：版本=发行号，装到=实例。没有第二套安装通道。
 
 投影继续 `packagent dsh project|allow|deny|set-*`。投影目录禁止 `dsh plugin add`。
 
@@ -159,7 +196,7 @@ $DSH_HOME/sessions/<工作区路径编出来的目录>/<session id>/
 packagent dsh launcher import <pack.json|pack.zip|*.pinst.zip> [--name <id>]
 ```
 
-启动器根目录出现 `.pack.zip` / `.pinst.zip`，扫描后走同一条命令。Tauri 拖文件也走这条。链本身以 `task-kinds` 的 `import` 条目为准，下面是内建链。
+启动器根目录出现 `.pack.zip` / `.pinst.zip`，扫描后走同一条命令。PAD 窗里拖文件也走这条。链本身以 `task-kinds` 的 `import` 条目为准，下面是内建链。
 
 ### 7.1 整合包
 
@@ -189,9 +226,11 @@ manifest `pack-agent.pinst/v1`。解开 → 新 id → 钉的版本没有则先�
 
 DSH 读该 home 的 `.credentials.yaml`（`REF: 字符串`，0600）。
 
-- 启动器全局钥匙：`library/credentials.yaml`，0600。
-- 命名钥匙：`library/credentials/<name>.yaml`。实例 `credentials.set: "work"` 时拷这一份。
-- 新建实例默认拷进 `home/.credentials.yaml`。`credentials.kind=instance` 则不拷，等人填。
+PAD 设置 → API Key 有 `DEEPSEEK_API_KEY` 的 PasswordBox，写入启动器 `library/credentials.yaml`（或具名 `library/credentials/<name>.yaml`）。空白 YAML 编辑器不算配置口。保存时拷进所有使用这份 API Key 的非收编实例 home。`launch-*.cmd` 在运行时从 `%DSH_HOME%\.credentials.yaml` 读出再 `set DEEPSEEK_API_KEY`（DSH 分层 env > 文件；wt/cmd 不继承 PAD 进程）。密钥不写进脚本文件。自有实例的 `DSH_HOME` / 工作区 / `bin.js` / 发行号 Node 跟 `%~dp0` 走，解压换目录仍能双击。缺这个值时启动报 `error[PA116]`，位置指 library，并切到设置 → API Key。管理口连上后 `credentials.describe` 为 false 也显示 PA116。不把密钥写进 `instance.json`、不写进 pack。
+
+- 启动器凭据分发器：`library/credentials.yaml`，0600。
+- 命名钥匙：`library/credentials/<name>.yaml`。实例 `credentialsSet: "work"` 时拷这一份。
+- 新建实例默认从分发器拷进 `home/.credentials.yaml`。`credentialsSet=instance` 则不拷。收编的 home 不覆盖。
 - 启动器不代聊，不把密钥写进 `instance.json`、不写进 pack。
 
 ## 9. 收编 `~/.dsh`
@@ -229,16 +268,44 @@ cd <workspace>
 
 stdout/stderr → `instances/<id>/logs/`。可打开 home、工作区、日志。可跑 `dsh --dump-config` 落到该实例目录。版本损坏：已钉它的运行中实例先停，再补全或重装。
 
-## 13. Tauri
+## 13. 桌面端（WPF）
 
-桌面窗口调同一组 `launcher.ts` 函数，和 CLI `--json` 同构。
+`agent-pack-dsh/pad/`：.NET 9 WPF 原生窗口，跟 PCL 同源，不是网页套壳。UI 与 launcher 逻辑同在 C#，`pack-agent-for DSH.exe` 一个二进制既开窗口也当命令行（`pad cli …`），一份真值。
 
-- 实例列表、当前钉的 `--profile`、一个启动按钮 = `run`。
-- 拖 `.pack.zip` / `.pinst.zip` = `import`。
-- 组合包列表、投影白名单、版本库、任务进度、诊断文本。
-- 不在窗口里做 DSH 聊天。聊天在这份 Harness 里，`web` 用浏览器打开就绪 URL。
-- 自定义 TUI profile：弹出系统终端，绑该 pid。
-- 启动器升级和 DSH 发行号升级分开。
+窗口：无边框 44px 顶栏、固定尺寸、只留最小化与关闭（对照 PCL 的 `ResizeMode="CanMinimize"`）。落到小屏按工作区 clamp。骨架同构 PCL，配色自己一套偏冷低饱和。PCL 只作视觉与手感参照，不复制它的 XAML 或 `.vb`。
+
+顶栏四页，没有占位死按钮：
+
+- **启动**：选中实例和大按钮。点启动弹出进度悬浮卡片。
+- **管理**：这份实例的组合包（含 TUI）更新、添加、移除。有管理口时再显示正在聊的 session。
+- **下载**：列出 npm packument 里 `@deepseek-ai/dsh` 的全部发行号（丢掉 `0.0.1-rc.1`），点装进度条留在下载页，成功进版本选择；社区资源搜索卡对照 PCL 下载 Mod：版本=DSH 发行号，「装到」选实例；点进插件看信息卡、版本芯片和可下版本名单再下。左栏只放分类，分类底下「下载任务」：右边正在下载的 / 下载完成的。只列装发行号和 `dsh plugin add|update|remove`，不列克隆实例。点装不自动切到这一栏。
+- **设置**：左栏 API Key / 启动 / 个性化 / 下载 / 其他。API Key 层填 `DEEPSEEK_API_KEY`，并列出哪份 key 匹配哪些实例。`pad.json` schema v4；坏配置备份后回默认；每层可单独恢复。窗默认 1000×620。卡片标题带圆角色块小标识。其他层「多个启动器根」对照 PCL 文件夹列表：名册在 `%LOCALAPPDATA%\pack-agent-dsh\roots.json`。exe 旁 `.pack-launcher` 没有实例时，切到上次有实例的根，或本机嗅到的实例最多的根。便携包自己已有实例则不切。`PACK_LAUNCHER_ROOT` 已设则不切。不把 `~/.dsh` 收编进这条链。
+
+内建 `pad-pages` 仍有 `tasks` 条目，`disabled: true`，不占顶栏。
+
+实例内页（从版本选择进，顶栏换成回退键）：概览、设置、插件、session、agent-preset。版本选择对照 PCL PageSelect：左栏实例列表（名 + `$DSH_HOME` 路径）和「添加或导入」，右栏该实例的 profile 按终端 / 网页分组。点启动进实例管理内页：进度条、停止、日志、工作区。功能补全见 [launcher-pcl-depth.md](launcher-pcl-depth.md)。
+
+启动终端 profile 时 PAD 生成 `instances/<id>/launch-<profile>.cmd` 交给终端执行，人能自己双击。`web` 交给浏览器。不在窗口里做 DSH 聊天。启动器升级和 DSH 发行号升级分开。
+
+### 13.1 整合包接进窗口
+
+投影轴不重写：投影编译器（TS）、unit 注册表、`pack-index`（Rust SQLite）是和 `packagent dsh` 共用的一份资产，C# 里再写第二份就等于对「这个实例启用了哪些包」给出两个答案。PAD 把它当子进程调 —— `node <repo>/bin/packagent.js dsh launcher --root <root> --json …` —— 拿 JSON 当真值。仓库路径来自 `PACK_AGENT_REPO`，或启动器根目录 / exe 旁边的 `.pack-agent-repo`。缺 bun 或找不到仓库时，实例页直接说这句，而不是显示一个像「这个实例没有整合包」的空列表。
+
+窗口能做：投影一个 `.pack.zip` / `.pack.json` / `.pinst.zip`、扫根目录旁路 zip、列出已投影的包、启用/停用。停用只是从白名单摘掉，文件还在盘上。同一组操作在 `pad cli pack list|project|allow|deny|scan`。
+
+### 13.2 热重载：试验 → 固化
+
+DSH 只在启动时读一次 `dsh.profile.bundles`，改磁盘要重启才生效。官方 apiproxy 的 rpc 表里**没有** plugin 或 loader 方法（`session.*`、`workspace.*`、`agentPreset.*`、`skill.list`、`settings.*`、`credentials.*`、`llm.*`、`goal.*`、`host.*`、`subagent.*`），所以对正在跑的进程热挂插件这条路不存在。别假装有。
+
+能做的是试验 → 固化，每一步都是 DSH 自己的操作：
+
+1. **试验**：`dsh plugin --profile <name> add <spec>` 装进 profile，然后把 DSH 刚追加的那几行**从 `dsh.profile.bundles` 摘回来**（留下 DSH 原话里的那个状态：`installed as a plain dependency, not a profile layer`），改写成 `instances/<id>/trial-<profile>.patch.yml`，靠官方 `--patch` 只挂本次启动。所以平常启动不带它，「仅本次运行」是真的。
+2. **固化**：把那几行写回 `dsh.profile.bundles`，删掉 overlay。下次启动生效。
+3. **丢掉**：`dsh plugin remove` 卸掉，删 overlay。profile 回到试验前。
+
+两条防线：已经在 `bundles` 里的包不许再试验（PA032）—— 否则「装完没有新增行」和「这包没声明 dsh.bundle」长得一模一样，一次误点就会把好用的层卸掉；候选包没声明 `dsh.bundle` 时报 PA105，并且只在这次 add 才带进来的情况下才卸，不动 profile 本来就有的依赖。
+
+`--patch` 写进 `launch-<profile>.cmd`，不藏在 PAD 里：同一次双击要能重现同一次运行。CLI 同一组：`pad cli trial list|add|commit|drop`。
 
 ## 14. 诊断
 
@@ -271,6 +338,15 @@ stdout/stderr → `instances/<id>/logs/`。可打开 home、工作区、日志�
 | PA105 | warning | 普通依赖，无 `dsh.bundle` |
 | PA109 | warning | 用户层覆盖了内建注册表条目 |
 | PA110 | warning | 停用管理器 |
+| PA111 | warning | 删 session 后全文索引可能残留 |
+| PA112 | error | 删除发行号随附的 agent-preset |
+| PA113 | error | agent-preset id 非法、找不到、或已存在 |
+| PA114 | error | `pad-gateway.json` 广告缺失或 Harness pid 已死 |
+| PA115 | error | pad-gateway 拒或 apiproxy rpc 失败 |
+| PA116 | error | `DEEPSEEK_API_KEY` 未配置。启动拦并切到设置 → API Key；管理口 `credentials.describe` 为 false 时写在实例管理页 |
+| PA117 | error | `portable-export` 当前 PAD 不是单文件 exe。先 `dotnet publish -p:PublishSingleFile=true`，或设 `PACK_PAD_HOST_EXE` |
+| PA032 | error | 这个组合包已经在该 profile 的层里，没有可试验的东西 |
+| PA040 | error | 界面线程卡住（无异常），或某页把自己塞进自己的 Content。前者系统弹窗后结束进程；后者切页拦住 |
 
 新失败模式出现再加码，写进本表。
 

@@ -25,6 +25,11 @@ const EMPTY: Record<string, EmptyState> = {
     hint: 'run 之后会按工作区路径出现',
     action: 'packagent dsh launcher run <id>',
   },
+  'agentPreset.list': {
+    title: '还没有 agent-preset',
+    hint: '发行号随附的 standard / code / minimal / cordis 在 versions/<ver>/ 装好后出现；用户层在该实例 home/.agent-presets',
+    action: 'packagent dsh launcher agent-preset list <id>',
+  },
   'job.list': {
     title: '没有任务',
     hint: '装版本 / 导入 / 克隆会生成任务',

@@ -1,0 +1,12 @@
+{
+  "schema": "pack-agent.registry/v1",
+  "registry": "pad-pages",
+  "version": 1,
+  "entries": [
+    { "id": "launch", "title": "启动", "handler": "page.launch" },
+    { "id": "manage", "title": "管理", "handler": "page.manage" },
+    { "id": "tasks", "title": "任务", "handler": "page.tasks", "disabled": true },
+    { "id": "download", "title": "下载", "handler": "page.download" },
+    { "id": "settings", "title": "设置", "handler": "page.settings" }
+  ]
+}

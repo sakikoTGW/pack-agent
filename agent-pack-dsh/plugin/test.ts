@@ -6,6 +6,12 @@ import { access, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { packTestTmp } from '../../test/tmp-root.js'
 import { apply, inject, name as pluginName } from './src/index.js'
+import {
+  GATEWAY_FILE,
+  GATEWAY_SCHEMA,
+  inject as gatewayInject,
+  name as gatewayName,
+} from '../gateway/src/index.js'
 
 function fail(msg: string): never {
   console.error(`✗ ${msg}`)
@@ -18,7 +24,16 @@ if (!inject.includes('skills')) fail(`inject must include skills: ${inject.join(
 if (!inject.includes('commands')) {
   fail(`inject must include commands; Cordis throws "cannot get property commands without inject": ${inject.join(',')}`)
 }
+if (inject.includes('apiProxy')) {
+  fail('apiProxy must NOT be on the main plugin: cordis inject waits, which would stall tools/skills on profiles without the gateway')
+}
 console.log('✓ cordis plugin name/inject')
+
+if (gatewayName !== 'pack-agent-pad-gateway') fail(`gateway name ${gatewayName}`)
+if (!gatewayInject.includes('apiProxy')) fail(`gateway must inject apiProxy: ${gatewayInject.join(',')}`)
+if (GATEWAY_FILE !== 'pad-gateway.json') fail(`gateway advert file ${GATEWAY_FILE}`)
+if (GATEWAY_SCHEMA !== 'pack-agent.pad-gateway/v1') fail(`gateway schema ${GATEWAY_SCHEMA}`)
+console.log('✓ pad gateway is a separate plugin injecting apiProxy')
 
 type ToolDef = {
   name: string
@@ -133,6 +148,7 @@ console.log('✓ /packagent-detect')
 const pluginPkg = JSON.parse(await readFile(join(import.meta.dir, 'package.json'), 'utf8')) as {
   name?: string
   dsh?: { bundle?: { patch?: string } }
+  exports?: Record<string, unknown>
 }
 if (pluginPkg.name !== '@sakikotgw/pack-agent-dsh') fail(`plugin package name ${pluginPkg.name}`)
 if (!pluginPkg.dsh?.bundle?.patch) fail('plugin package.json missing dsh.bundle.patch')
@@ -151,5 +167,55 @@ if (!skillMd.includes('packagent_map') || !skillMd.includes('packagent_allow') |
   fail('SKILL.md must document map/allow/set-save tools')
 }
 console.log('✓ plugin skill documents projection, not plugin-add-per-pack')
+
+// The manager's own patch must NOT insert apiproxy: a profile that installed only
+// the manager would fail to compose a package it never installed.
+const patch = await readFile(join(import.meta.dir, 'cordis.patch.yml'), 'utf8')
+if (patch.includes('apiProxy') || patch.includes('host-apiproxy')) {
+  fail('the manager patch must not touch apiproxy; that belongs to @sakikotgw/pad-gateway')
+}
+
+// The gateway package carries apiproxy as a dependency and inserts it, so adding
+// one package is all a terminal profile needs.
+const gwDir = join(import.meta.dir, '..', 'gateway')
+const gwPatch = await readFile(join(gwDir, 'cordis.patch.yml'), 'utf8')
+for (const row of ['@deepseek-ai/dsh-host-apiproxy', '@deepseek-ai/dsh-host-directory-picker-native', '@sakikotgw/pad-gateway']) {
+  if (!gwPatch.includes(row)) fail(`gateway patch must insert ${row}`)
+}
+// -auto injects ['webServer','loader']. A terminal profile has no webServer, so the
+// picker never starts, apiproxy never starts, and the profile hangs with no error.
+if (gwPatch.includes('directory-picker-auto')) {
+  fail('gateway must use the native directory picker; -auto needs webServer and hangs terminal profiles')
+}
+if (!/pad-gateway'[\s\S]{0,80}inject: \[apiProxy\]/.test(gwPatch)) {
+  fail('the pad-gateway row must inject apiProxy')
+}
+const gwPkg = JSON.parse(await readFile(join(gwDir, 'package.json'), 'utf8')) as {
+  name?: string
+  dsh?: { bundle?: { patch?: string } }
+  dependencies?: Record<string, string>
+}
+if (gwPkg.name !== '@sakikotgw/pad-gateway') fail(`gateway package name ${gwPkg.name}`)
+if (!gwPkg.dsh?.bundle?.patch) fail('gateway package must be a dsh.bundle')
+for (const dep of ['@deepseek-ai/dsh-host-apiproxy', '@deepseek-ai/dsh-host-directory-picker-native']) {
+  if (!gwPkg.dependencies?.[dep]) fail(`gateway package must depend on ${dep}`)
+}
+
+// No DSH_HOME means no instance to advertise into; that must be a quiet no-op
+// rather than a crash that takes the profile down.
+const gatewayMod = await import('../gateway/src/index.js')
+const prevHome = process.env.DSH_HOME
+delete process.env.DSH_HOME
+const warnings: string[] = []
+gatewayMod.apply(
+  { apiProxy: {}, logger: { warn: (m: string) => warnings.push(m) } },
+  {},
+)
+if (!warnings.some((w) => w.includes('DSH_HOME'))) {
+  fail(`gateway without DSH_HOME must warn and return, got ${JSON.stringify(warnings)}`)
+}
+if (prevHome === undefined) delete process.env.DSH_HOME
+else process.env.DSH_HOME = prevHome
+console.log('✓ pad gateway row wired, and no-op without DSH_HOME')
 
 console.log('[OK] dsh-plugin')

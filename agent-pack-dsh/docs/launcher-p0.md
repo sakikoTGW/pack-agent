@@ -17,7 +17,7 @@
 - Modify: `agent-pack-dsh/modpack/cli.ts`（`launcher` 子命令）
 - Modify: `package.json`（test 脚本加上 launcher.test.ts）
 
-P0 不做：注册表解释器、跨实例挂载、插件管理、导入导出、Tauri、凭据、收编 `~/.dsh`。这些除挂载外设计已钉，见 PRODUCT / launcher-design。
+P0 不做：注册表解释器、跨实例挂载、插件管理、导入导出、桌面窗、凭据、收编 `~/.dsh`。这些除挂载外设计已钉，见 PRODUCT / launcher-design。（本文是历史 P0 计划；桌面窗后来落地为 `agent-pack-dsh/pad` 的 WPF 实现，不是当年设想的 Tauri。）
 
 ## 验收
 

@@ -1,27 +1,27 @@
-# DSH 启动器（PCL）架构设计
+# pack-agent 启动器架构设计
 
 date: 2026-08-15
 status: draft
 depends_on: [PRODUCT.md](PRODUCT.md) + [launcher-design.md](launcher-design.md)（本文是实现设计）
 scope: DeepSeek Harness only
-ui: Tauri 调同一组 `launcher-api` 函数，与 CLI `--json` 同构。
+ui: PAD 窗是 .NET 9 WPF 原生 exe（`agent-pack-dsh/pad`，`pack-agent-for DSH.exe`），固定 1000×620、只有最小化与关闭。`pad.json` 的 `ui` 含透明度滑条、`brandText`、`animSpeed`、刷新壁纸。卡片标题带圆角色块小标识。同一个 exe 带 `pad cli …`，C# 是启动器逻辑的唯一真值。
 
-## 0. 定位：pack-agent 的第三维度，同一项目
+## 0. 定位：pack-agent 就是这个产品
 
-pack-agent 不是"打包工具 + 旁边一个新启动器项目"。**启动器是 pack-agent 自身的维度提升**，同一仓库、同一 CLI 家族、同一版本线：
+pack-agent 是启动器、整合包装卸器、管理器，同一仓库、同一版本线。当前只管理 DeepSeek Harness。管理器同时管：投影内容加载器；该实例 Harness 里的 agent-preset 名册与 session；以及经官方 `@deepseek-ai/dsh-host-apiproxy`（由 `@sakikotgw/pad-gateway` 这层 profile 带进来）对正在跑的实例发管理 rpc。没有旁边再做一个启动器项目。给别人的是整合包目录：解压根目录 `pack-agent-for DSH.exe` + `.pack-launcher/`，运行时 dll 打进单文件 exe，对照 PCL.exe + `.minecraft`。`pad cli portable-export <dir> <instance>` 把该发行号和实例拷进目录。发给别人用 `.7z` 或 `7z.sfx` 自解压，Explorer 压缩文件夹打不开 ZIP64 zip。
 
 ```
-维度① 打包（已有）      pack/export/install/sync —— 把 agent 封成 .pack.json，装进各 harness
-维度② 投影（已有）      agent-pack-dsh/modpack / pack-index / plugin —— 整合包进 DSH 目录 + 白名单 + 实例内触角
-维度③ 启动器（本文）    agent-pack-dsh/modpack/launcher.ts —— 编排前两维 + 版本库/实例/会话/插件/进程
-        └─ ③ 是 ①② 的编排层：import = ② 的投影+放行 + ③ 的实例+运行，一条命令
+维度① 打包（已有）      pack/export —— 把 agent 封成 .pack.json / .pack.zip
+维度② 投影 + 管理器     agent-pack-dsh/modpack / pack-index / plugin —— 整合包装进实例、白名单停用；agent-preset 名册；实例内加载
+维度③ 启动器            agent-pack-dsh/pad —— 版本库 / 实例 / profile / 会话 / 进程 / 装卸编排（WPF 窗 + pad cli 同一 exe）
+        └─ import = ② 的投影+放行 + ③ 的实例+运行，一条命令
 ```
 
 因此：
 
 - 本文所有"启动器"字样 = pack-agent 启动器层，不是独立产品；
 - 复用不是"借别人的东西"，是**同一产品内部的层间调用**（§1 原则 4 的措辞按此理解）；
-- 版本/发布：同一 monorepo、同一版本线，`packagent` 一个入口贯穿三维（§21.5）。
+- 版本/发布：同一 monorepo、同一版本线。npm 侧 `packagent` 管打包与投影，启动器侧 `pack-agent-for DSH.exe` 带窗与 `pad cli`（§21.5）。
 
 > 原语与行号以本机 `E:\tmp\pack-agent\dsh-src\deepseek-harness-master`（源码树标 `0.1.0-rc.5`）为证据，见 §2。**版本轴与可装清单以 npm 实测为准（E1），禁止按源码仓库假设存在 `0.1.0-rc.5` 发行包。**
 
@@ -30,16 +30,17 @@ pack-agent 不是"打包工具 + 旁边一个新启动器项目"。**启动器�
 ## 1. 总览
 
 ```
-pack-agent（同一项目 · 一个 CLI 家族 · 一条版本线）
-┌─ Tauri 壳（agent-pack-dsh/tauri，invoke launcher_api）─┐
-│  调同一组 launcher 函数 / 同一条 CLI         │
+pack-agent（同一项目 · 一条版本线）
+┌─ PAD 窗（agent-pack-dsh/pad，WPF）──────────┐
+│  启动 · 管理 · 下载 · 设置，内页带回退键     │
+│  双击 pack-agent-for DSH.exe                 │
+│  同一 exe：pad cli release|instance|run|…    │
 └──────────────┬───────────────────────────────┘
-               │
+               │ 进程内直调（无 HTTP、无 webview）
 ┌──────────────▼───────────────────────────────┐
-│ 维度③ agent-pack-dsh/modpack/launcher.ts（编排层）      │
-│  version / instance / plugin / session /     │
-│  run / job / export / diag                   │
-│  同一 packagent 进程，不是第二套后端          │
+│ 维度③ agent-pack-dsh/pad/Core（编排层，C#）  │
+│  Launcher 版本库/实例/profile/session        │
+│  Runner 弹终端 · Proc 等进程 · Gateway rpc   │
 └──────┬─────────────────────────┬─────────────┘
        │ 层内复用（维度①②）        │ 包壳（不改 DSH 源码）
 ┌──────▼──────────────────┐  ┌───▼──────────────────────────────┐
@@ -47,17 +48,17 @@ pack-agent（同一项目 · 一个 CLI 家族 · 一条版本线）
 │ 维度② 投影层 agent-pack-dsh/modpack │  │   plugin … / --port … /          │
 │  / pack-index / plugin │ │   --dump-config（DSH_HOME=实例home）│
 └─────────────────────────┘  └──────────────────────────────────┘
-入口：`packagent dsh launcher <cmd>` → 同进程调用 launcher.ts
 ```
 
 原则：
 
-1. **引擎走现有 packagent 进程**（Bun/TS，`packagent dsh launcher …`，与 `project/allow/set-*` 同一条 CLI）。`pack-index` 继续 Rust，只因为 SQLite FTS。启动器是 pnpm + 进程 + JSON，不另起语言岛，不另起后端服务。Tauri 调同一组函数。设计见 [launcher-design.md](launcher-design.md) §13。壳在 `agent-pack-dsh/tauri/`。
+1. **启动器逻辑在 C# 同一个 exe 里**（`agent-pack-dsh/pad`，窗与 `pad cli` 共用 `Core/`）。`pack-index` 继续 Rust，只因为 SQLite FTS；投影与打包继续 Bun/TS。启动器是 pnpm + 进程 + JSON，不另起后端服务，也不再套 webview。设计见 [launcher-design.md](launcher-design.md) §13。
 2. **不改 DSH 源码**。一切通过 env / profile 目录 / `--patch` / `dsh plugin` 包壳实现。
 3. **状态文件用 JSON，索引才用 SQLite**。`launcher.json` / `instance.json` / `runtime.json` 人类可读、可备份、可 diff。
 4. **整合包轴不复刻**：投影/检索/白名单继续走 `packagent dsh` + `pack-index`；启动器只做"每实例一份工作区 + 命名白名单"的接线。
 5. **诊断 rustc 风格**（§14）：同一编号一份人读文本 + 一份 JSON，所有 `error[PAxxx]` 拦动作、`warning[PAxxx]` 必须可见。
 6. **行为种类走注册表**（§20）。引擎不写死种类名。`web` / `headless` 只出现在内建 `profiles` 与测试。
+7. **产品原则**（[PRODUCT.md](PRODUCT.md) §2.1）：好用、高性能、rustc 形诊断、everything is a plugin、注册表可覆盖、实例隔离当安全边界。检索才用 Rust。skill 走投影。
 
 ---
 
@@ -129,8 +130,10 @@ pack-agent（同一项目 · 一个 CLI 家族 · 一条版本线）
     workspace/                      # 默认工作区（owned）；existing 模式指向外部路径
     logs/                           # 每进程 stdout/stderr
   library/
-    plugins-meta/<pkg>.json         # 插件介绍/图标缓存
+    plugins-meta/<safe-spec>/      # 组合包自己发布的 logo（包内文件，或 GitHub docs/assets/logo.svg）
     credentials.yaml                # 全局钥匙（0600；可选）
+
+本机另有一份与启动器根脱钩的名册：`%LOCALAPPDATA%\pack-agent-dsh\roots.json`（`schema: pack-agent.pad.roots/v1`，`last` + `roots[]`）。对照 PCL 文件夹列表。PAD 启动：`PACK_LAUNCHER_ROOT` 已设 → 用它；exe 旁 `.pack-launcher` 已有 `instance.json` → 用它（便携包）；否则切到 `last`，再否则切到嗅到的实例最多的 `.pack-launcher`（`AGENT_PACK_TMP\.pack-launcher`、`PACK_AGENT_REPO` 的 Debug/Release 根）。不枚举 tmp 下一层，不扫整盘，不默默 `AdoptHome`。
 ```
 
 ### launcher.json（v1）
@@ -174,7 +177,7 @@ pack-agent（同一项目 · 一个 CLI 家族 · 一条版本线）
 }
 ```
 
-- `profile.name` = `dsh --profile` 的名字。随附模板只有 `web` / `headless`；其他名字是自定义 profile（F19）。`instance.json` 钉这一字段，没有 `shell.kind`。
+- `profile.name` = `dsh --profile` 的名字。随附模板只有 `web` / `headless`；其他名字是自定义 profile（F19）。PAD 钉推荐自定义 profile `dsh-tui` + 组合包 `@deepseek-harness-tui/dsh-tui`。`instance.json` 钉这一字段，没有 `shell.kind`。
 - `port ∈ "auto"|0|正整数`：只在 `profile.name=web` 时作为 web 应用参数 `--port`；auto = 启动器预分配，0 = 交 DSH。
 - `plugins.disabled` 是启动器意图；**真值是 profile 的 `package.json`**（F5/F7），每次操作后重读，不双写两份账。
 - `packs.allowSet` = 该实例工作区 `.agent-pack` 的命名白名单名（`set-save/set-load` 已有），**实例创建即建工作区并写入默认 allowSet**。
@@ -222,7 +225,7 @@ pack-agent（同一项目 · 一个 CLI 家族 · 一条版本线）
 
 ## 4. 版本库
 
-- **获取**：`pnpm add @deepseek-ai/dsh@<ver>`（cwd=`versions/<ver>/`，占位 package.json 为锚）；npm 不可达报 PA010 之外新增 PA013（registry 不可达）。registry url 来自 launcher.json（企业内部镜像可换）。**必须是完整依赖闭包安装**：`@deepseek-ai/dsh` 的依赖（`@deepseek-ai/dsh-base`、`-web-app`、`-headless` 等 in-box bundle）随之一起装进 `versions/<ver>/node_modules`——in-box bundle 按"安装锚点优先"解析（F6），闭包齐了才保证版本与 in-box 插件同 pin，否则会回退解析到当前安装。
+- **获取**：`pnpm add @deepseek-ai/dsh@<ver>`（cwd=`versions/<ver>/`，占位 package.json 为锚）；npm 不可达报 PA010 之外新增 PA013（registry 不可达）。registry url 来自 launcher.json（企业内部镜像可换）。PAD 下载页列出 packument 的全部 `versions`（丢掉 `0.0.1-rc.1`），不是只塞进 ComboBox。**必须是完整依赖闭包安装**：`@deepseek-ai/dsh` 的依赖（`@deepseek-ai/dsh-base`、`-web-app`、`-headless` 等 in-box bundle）随之一起装进 `versions/<ver>/node_modules`——in-box bundle 按"安装锚点优先"解析（F6），闭包齐了才保证版本与 in-box 插件同 pin，否则会回退解析到当前安装。
 - **禁止裸装 `@deepseek-ai/dsh-base`**（E2）：该包 `latest` 仍是 `0.0.1-rc.1`，`next` 才是 `0.1.0-rc.7`。只允许经 `@deepseek-ai/dsh@<ver>` 把闭包拉进来。
 - **锁闭包是硬条件**：发布态 `dsh@0.1.0-rc.6` 对 in-box 依赖写的是 `^0.1.0-rc.6`。无 `pnpm-lock.yaml` 再解析时，后发的 `0.1.0-rc.7` 会被 caret 吸进来，版本目录名与实装闭包会漂。`verify` 必须断言 lockfile 存在，且 `--version` 输出等于目录名。
 - **为什么 `versions/<ver>/` 是纯安装而不是该版本的 DSH_HOME**：spec §3.1 要求"许多实例可钉同一份安装"，§3.2 要求每实例独立 home（会话/凭据/插件归属实例，不归属版本）。实例 home 与版本安装分离正好满足两条；审计提出的"版本即 home"备选会让会话与凭据跟着版本走，违背实例隔离，故不采用。
@@ -245,13 +248,15 @@ pack-agent（同一项目 · 一个 CLI 家族 · 一条版本线）
 5. **装管理器插件 + 冒烟**（§21.3：`dsh plugin add @sakikotgw/pack-agent-dsh@<pin>` + `packagent_list` 冒烟，失败 PA019）；
 6. 凭据按 §11 落 `home/.credentials.yaml`。
 
-- **隔离**：默认每个实例独立 home+workspace。`workspace.kind=existing` 允许指向已有项目（用户显式选择）。
+- **隔离**：`$DSH_HOME` 始终每实例一份。工作区默认隔离；`workspace.kind=existing` 与指定目录共用（对照 PCL 关掉版本隔离）。全局 `launch.workspaceIndieDefault` 只作用于新建实例。切换不拷文件。两实例共用 home → PA020。
 - **删除**：列出将被丢掉的会话数（§7 枚举）后确认；运行中先停。
 - **收编**（spec §12）：首启若 `~/.dsh` 存在，二选一：收编成 `adopted` 实例（home 指向现有目录，启动器只读其元数据、不写）；或留下不动。收编实例在 UI 上标"外部 home"。
 
 ## 6. 插件管理（实例设置，不是版本）
 
 全部包壳 F7：`DSH_HOME=<实例home> <node> <versions/<ver>/…/bin.js> plugin --profile <shell> <pnpm args>`。启用集真值 = profile package.json 的 `dsh.profile.bundles`（F5）。
+
+PAD 窗口入口是顶栏管理页：list 读磁盘上该 `--profile` 的随附层、TUI、管理口；add / remove / update 走 `dsh plugin --profile`。没有 `@sakikotgw/pad-gateway` 也能更新 TUI 和组合包。版本设置左栏「插件」列另外装上的 `dsh plugin` 包，对照 PCL Mod 管理；不把组合包种类打在插件行上，也不把整合包塞进插件名单。session 树只在管理口 Ready 时出现。`pad cli plugin list|add|remove|update` 同一条链。行上的图读该包 `icon.png` / `logo.svg` / `docs/assets/logo.svg`；npm tarball 没有 `docs/` 时按 `repository` 拉 GitHub 那份，缓存 `library/plugins-meta/`。`dsh-plugin.json` v0.15 没有 icon 字段。TUI 的 `dsh-ecosystem-spec`（含 tui-channel）是插件准入与协议，不是图标契约。
 
 环境细节（F21）：profile 的 pnpm 走 `pnpm-workspace.yaml`（`nodeLinker: hoisted`、`autoInstallPeers: false`，pnpm ≥10 不看 .npmrc）——启动器**不代写 pnpm 配置**；profile manifest（package.json/cordis.patch.yml/pnpm-workspace.yaml）在首次 `dsh plugin` 时由 DSH 自动 initProfile，启动器不手建。
 
@@ -284,11 +289,11 @@ pack-agent（同一项目 · 一个 CLI 家族 · 一条版本线）
 - 装完跑 `--dump-config`。boot 非零退出 → crashed。
 - 已有 session 再 add 组合包 → PA021 warning，打印后继续。
 - `import` 只建新 `DSH_HOME`。两实例共用一个 home → PA020 error。同一 home 的多个 `--profile` 共用 `dshHomePath('sessions')`，按工作区路径分，不按 profile 名拆 root。
-- Tauri 不进 `dsh.profile.bundles`。
+- PAD 自身不进 `dsh.profile.bundles`：它是管理器，不是 profile 层。要管正在跑的实例就加 `@sakikotgw/pad-gateway` 这一层，别把窗塞进 Harness。
 
 **安全**：`dsh plugin add` = 在该实例 home 里跑第三方 install 脚本（pnpm prepare / git allowBuilds）。最低门：只装声明了 `dsh.bundle.patch` 的包；装完 `--dump-config` 可见该行；失败进崩溃分析。不在 P0 做沙箱。
 
-**元数据**（spec §5）：描述 `package.json description` → README 首段 → 无；图标 `dsh.icon|icon` → README 首图 → 名字生成；缓存 `library/plugins-meta/<pkg>.json`。停用 pack-agent 管理器插件前警告（spec §5）。
+**元数据**（spec §5）：描述 `package.json description` → README 首段 → 无；图标读包内文件和 GitHub `docs/assets/logo.svg`，缓存 `library/plugins-meta/<pkg>/`。不要发明 `dsh.icon` 当生态已有标准。停用 pack-agent 管理器插件前警告（spec §5）。
 
 ## 7. 整合包（每实例白名单，复用现有轴）
 
@@ -362,39 +367,38 @@ cmd: <node> <root>/versions/<ver>/node_modules/@deepseek-ai/dsh/lib/bin.js \
 
 ## 11. 凭据
 
-- 全局钥匙：`library/credentials.yaml`（0600，与 DSH 同构 `REF: 字符串`，F10）。
-- 新建实例：默认复制全局钥匙 → `home/.credentials.yaml`（0600）；`credentials.kind=instance` 时留空由用户手填（UI 引导）。
-- 导出默认剥 `home/.credentials.yaml` → PA104；**钥匙永不进 instance.json**（spec §8 红线）。
-- 启动器不代聊、不代写密钥内容（只搬运文件）。
+- 设置 → API Key：`library/credentials.yaml`（0600，与 DSH 同构 `REF: 字符串`，F10）。不属于某一实例。
+- 新建实例：默认从 library 拷 → `home/.credentials.yaml`（0600）；`credentialsSet=instance` 时留空；收编的 home 不覆盖。
+- 保存 API Key 时再拷一遍到所有使用这份文件的非收编实例；`launch-*.cmd` 运行时从 `%DSH_HOME%\.credentials.yaml` 加载 `DEEPSEEK_API_KEY`，禁止把密钥烘焙进脚本。
+- 导出默认剥 `home/.credentials.yaml` → PA104；**API Key 永不进 instance.json**（spec §8 红线）；library 里的密钥也不进解压包。`portable-export` 再剥 `pad-cli.log` / `runtime.json` / `jobs.json`，重生相对路径脚本。开发宿主当玩包 exe → PA117。
+- 启动器不代聊、不代写密钥内容（只搬运文件）。对正在跑的 Harness 只走官方 apiproxy 的管理 rpc。
 
 ## 12. 导入导出
 
 - 导出 `*.pinst.zip`：instance.json + home/（剥 `.credentials.yaml` 默认）+ 工作区 `.agent-pack` 白名单集名 + logs 不含；加 manifest `{schema:"pack-agent.pinst/v1", exportedAt, stripped:["credentials"]}`。
 - 导入整合包：走 [launcher-design.md](launcher-design.md) §7.1。导入 `*.pinst.zip`：解包 → 校验 schema（坏包 PA009）→ 新 id/name → 钉的版本没有则先装 → 新 home。剥掉的凭据不还原。端口清空。
-- 启动器根目录出现 `.pack.zip` / `.pinst.zip`，扫描后走同一条 `import`。Tauri 拖文件也走这条。
+- 启动器根目录出现 `.pack.zip` / `.pinst.zip`，扫描后走同一条 `import`。PAD 整窗拖文件、选文件按钮也走这条；成功后打开该实例版本设置。禁止首页常驻大拖拽框。
 
-## 13. 命令面（`packagent dsh launcher`）
+## 13. 命令面（`pad cli`，与 PAD 窗同一个 exe）
 
 ```
-packagent dsh launcher version  list|install <ver>|verify <ver>|remove <ver>
-packagent dsh launcher instance list|create <name> [--version --profile --port --workspace --allow-set]
-                          |clone <id> <new-name>|rename|remove|pin <id> <ver>|info <id>
-packagent dsh launcher plugin  list <id>|add <id> <spec>|remove <id> <pkg>
-                          |update <id> <pkg>|enable <id> <pkg>|disable <id> <pkg>
-packagent dsh launcher pack    project <id> <pack>|allow <id> <pack-id>|deny <id> <pack-id>
-                          |set-save <id> <name>|set-load <id> <name>|list <id>
-packagent dsh launcher session list <id>|delete <id> <sid>|backup <id> [<sid>]
-packagent dsh launcher run     <id> [--detach]|stop <id>|restart <id>|ps|logs <id>
-                          # run 默认等待就绪：web 等到 F20 信号，headless 等到退出码；--detach 立即返回
-packagent dsh launcher job     list|cancel <job-id>
-packagent dsh launcher export  <id> [--out x.pinst.zip]|import <pack.json|pack.zip|*.pinst.zip> [--name n]
-packagent dsh launcher diag    render <json-file>
-packagent dsh launcher doctor
+pad cli release  list|install <ver>|remove <ver>
+pad cli instance list|create <name> <ver>|pin <id> <ver>|remove <id>
+pad cli profile  list <instance>|add <instance> <profile> <tui|web|gateway>
+pad cli run      <instance> [profile]          # 弹终端跑，不在窗里嵌
+pad cli stop     <instance> <profile>
+pad cli ps
+pad cli gateway  <instance> [rpc-method]       # 走 pad-gateway 广告 + 官方 apiproxy
+pad cli trial    list <instance>|add <instance> <profile> <spec>
+                 |commit <instance> <profile> <spec>|drop <instance> <profile> <spec>
+pad cli pack     list <instance>|project <instance> <pack>
+                 |allow <instance> <pack-id>|deny <instance> <pack-id>|scan
+pad cli where
 ```
 
-- 全局 `--json`：所有命令输出机器 JSON；默认人类可读文本，诊断走 rustc 风格渲染（stderr）。
-- Tauri 面 = 同一组函数，参数/返回值与 `--json` 同构（tauri command 薄转发）。
-- TS 薄壳：`packagent dsh launcher <cmd> …` 透传 bin（保持"人用 packagent 一个入口"）。
+- 窗与 `pad cli` 共用 `pad/Core/`，同一份 C# 逻辑，没有第二套实现要对齐。
+- 日志同时落 `<launcher-root>/pad-cli.log`：WinExe 的控制台输出在 Windows 上不可靠。
+- Bun/TS 侧的 `packagent dsh launcher …` 与 `launcher-api` 仍在，管投影与打包脚本，不再是 PAD 窗的后端。
 
 ## 14. 诊断体系（PA 表 v1）
 
@@ -422,6 +426,7 @@ packagent dsh launcher doctor
 | PA018 | error | 跑起来引用了合成表里没有的 id | note: 引用处 + 未知 id；help: 补条目或改引用 |
 | PA019 | error | 实例内 pack-agent 管理器未生效（安装或工具冒烟失败，§21.3） | note: 冒烟输出；help: 重装插件 / 查 pnpm 日志 |
 | PA020 | error | 两个实例 home 路径相同 | help: 各用各的目录 |
+| PA034 | error | 工作区改为共用但目录不存在或未给路径 | help: `pad cli instance workspace share <id> <dir>` |
 | PA021 | warning | 已有 session 还 `add` 组合包 | 打印后继续。无 TTY 同样打印后继续 |
 | PA101 | warning | 插件未声明 engines.dsh（元数据缺失） | 不当成已验证；不拦安装。真门禁看 dump-config / 启动 / 崩溃分析 |
 | PA102 | warning | 会话最后写入版本 ≠ 当前实例版本 | 打开人手拷来的 session 时提示；不拦 |
@@ -434,8 +439,16 @@ packagent dsh launcher doctor
 | PA109 | warning | 用户层覆盖了内建注册表条目（行为偏离内建，§20.1） | note: 被覆盖条目 id |
 | PA110 | warning | 停用 pack-agent 管理器插件（spec §5 警告的落实，§21.3） | help: 停用后实例内看不到投影整合包 |
 | PA111 | warning | 删除会话但实例启用了全文搜索（`session-query-sqlite` 索引残留，F26） | help: 重建索引 |
+| PA112 | error | 删除发行号随附的 agent-preset | help: copy 到用户层再改 |
+| PA113 | error | agent-preset id 非法、找不到、或已存在 | help: `[a-z0-9][a-z0-9-]*` |
+| PA114 | error | `pad-gateway.json` 广告缺失或 Harness pid 已死 | help: `pad cli run <instance> <profile>` |
+| PA115 | error | pad-gateway 拒或 apiproxy rpc 失败 | help: `pad cli gateway <instance>` |
+| PA116 | error | `DEEPSEEK_API_KEY` 未配置 | help: 设置 → API Key 填 PasswordBox；`pad cli credentials has <instance>` |
+| PA117 | error | `portable-export` 需要单文件 PAD | help: `dotnet publish -p:PublishSingleFile=true`；`PACK_PAD_HOST_EXE` |
+| PA032 | error | 这个组合包已经在该 profile 的层里，没有可试验的东西 | help: 先从 profile 里移除它 |
+| PA040 | error | 界面线程卡住无异常，或某页 Content 指向自己 | help: 详情在 pad-crash.log；自宿主会拦住切页 |
 
-实现：`agent-pack-dsh/modpack/launcher.ts` 的 diag：码表 + 渲染器 + `--force` 语义。码表一份 JSON 供以后 Tauri 直接消费。
+实现：`agent-pack-dsh/modpack/launcher.ts` 的 diag：码表 + 渲染器 + `--force` 语义。码表一份 JSON（`modpack/registries/pa-codes.json`），C# 侧同读同一份。
 
 ## 15. 状态机
 
@@ -448,7 +461,7 @@ packagent dsh launcher doctor
 | P0 能跑 | 版本库 + 实例 CRUD + 双 `run` + rustc 诊断。`profile.name` 已落地。已写死 `web`/`headless` 的判断，下一刀删掉改查 `profiles`。 | 1、2、3、4、10 |
 | 下一刀 | 注册表解释器（路径映射、热更新、PA017/018/109）+ `launcher import` 查 `task-kinds.import` | 5、8、13 |
 | 随后 | 同 home 写锁（PA003）+ 打开失败报错（PA007/PA015/PA102）+ 导出（PA104）+ 凭据 + 收编 ~/.dsh（PA106）+ 任务队列（PA008）。**已落地。** | 6、7、9、11、12 |
-| 壳 | Tauri。`agent-pack-dsh/tauri/`，invoke `launcher_api` | |
+| 壳 | PAD 窗。`agent-pack-dsh/pad`（.NET 9 WPF），默认 1000×620（`ui.window*`），顶栏启动 / 管理 / 下载 / 设置；下载左栏分类底下「下载任务」看正在下载的 / 下载完成的。点启动弹出进度悬浮卡片；同 exe 带 `pad cli` | |
 
 P0 计划：[launcher-p0.md](launcher-p0.md)。
 
@@ -458,7 +471,7 @@ P0 计划：[launcher-p0.md](launcher-p0.md)。
 2. **registry 可达性**：`@deepseek-ai/dsh` 是否在 npmjs 公开可装需开工即验证（`npm view @deepseek-ai/dsh`）；不可达则 registry 配内网源，PA013 已备。
 3. **patch 目标 id 漂移**：`session-persistence-jsonl` 的 id 若在新版本改名，overlay 的 override 静默失效（会话落回 home 根）。防线：version verify 时用 `--dump-default-config` 断言该 id 存在（§4）；每次启动前对 overlay 再验一次 → 缺失 PA107。
 4. **pnpm 依赖**（F7）：launcher doctor 检查；不捆绑 pnpm（一期），缺失 PA011。
-5. **自定义 profile**：DSH 无出厂 tui 模板（F19）。文档示例 `tui` = `--profile tui` + `dsh plugin add` 第三方组合包。同一 `$DSH_HOME` 里可以和 `web` 并存；`run` 启动当前 `profile.name`。自定义 TUI 用系统终端，见 launcher-design §13。
+5. **自定义 profile**：DSH 无出厂 tui 模板（F19）。PAD 钉 `dsh-tui` = `--profile dsh-tui` + `dsh plugin add @deepseek-harness-tui/dsh-tui`。同一 `$DSH_HOME` 里可以和 `web` 并存；`run` 启动当前 `profile.name`。dsh-tui 需要 TTY 宿主，见容器承载层。
 6. **人手拷 session**：启动器不拦 Explorer / `cp`。打开失败只报 PA007/PA015 或转述 DSH。人不自己做 junction 就不需要 junction 权限。
 7. **DSH 同 sid 双活写**：DSH 本身不支持，启动器锁即全部防线；锁崩（启动器被强杀）时靠 stale 回收，存在极小窗口，一期接受、文档写明。
 8. **engines.dsh 约定**：pack-agent 单方引入，DSH 上游未来若定义同名字段需对齐。P0/P1 把它当可选元数据，不当生态门。
@@ -495,7 +508,7 @@ packagent dsh launcher import <pack|dir> [--name <n>]
   = 嗅探 → version install → instance create → overrides → project+allow → 管理器 → plugins[] → 可 run
 ```
 
-一条命令完成「丢包 → 隔离实例 → 能 run」。拖 zip 和根目录扫描走同一函数。`--profile` 来自包里的 `dsh.profile`，默认 `web`。
+一条命令完成「丢包 → 隔离实例 → 能 run」。整窗拖入、选文件、根目录扫描走同一函数。成功后打开版本设置。`--profile` 来自包里的 `dsh.profile`，默认 `web`。
 
 ### 18.4 格式嗅探导入
 
@@ -518,7 +531,7 @@ PCL 对资源索引做后台刷新 + 上次更新时间记录，主流程不等�
 
 ### 18.8 实例展示元数据
 
-PCL 实例卡片：Name/Info/Logo/IsStar/分类。instance.json 已加 `display{info, logo, star, category}`（§3）；Logo 生成规则沿用插件图标规则（§6）。[P1]
+PCL 实例卡片：Name/Info/Logo/IsStar/分类。instance.json 已加 `display{info, logo, star, category}`（§3）；Logo 先看实例自己的图，再看该 `--profile` 组合包发布的 logo。[P1]
 
 ### 18.9 空态文案
 
@@ -545,7 +558,7 @@ PCL 的 `patches/` 是一串增量 patch（2.12.x → 2.13.x），带更新通�
 | P0 | 18.1 多源/任务树/加权进度 · 18.3 import · 18.5 crashed 态+退出策略+启动超时 · 18.6 配置迁移 |
 | P1 | 18.2 崩溃分析器 · 18.4 格式嗅探 · 18.8 实例元数据 · 18.9 空态文案 |
 | P2 | 18.7 后台缓存 · 18.10 多钥匙。**已落地** `library/meta/`、`library/credentials/<name>.yaml` |
-| P3 | 18.11 自更新 · 进度页/大按钮/直启快捷方式。**已落地** 通道+整包替换到 `library/updates/`、货架读缓存 plugins.json、Tauri 进度条与启动按钮 |
+| P3 | 18.11 自更新 · 进度页/大按钮/直启快捷方式。**已落地** 通道+整包替换到 `library/updates/`、货架读缓存 plugins.json、PAD 按 PCL 顶栏与卡片（WPF 重写） |
 
 ## 19. 兼容性与编码矩阵（DSH 侧硬约束）
 
@@ -661,6 +674,7 @@ DSH 实现 = **UTF-16 code unit 迭代**（`charCodeAt`，`format.ts:147-167`）
 | `compat-snapshot-spec` | `library/registries/compat-snapshot-spec.json` | §19.7 每个 DSH 版本要快照哪些事实（字段名 + 从安装的提取方式），`version.json` 只存快照值，**快什么由注册表决定** | sessionFormatVersion、patchRowIds、profileTemplates | 是（DSH 新事实不重编译） |
 | `projectkey-spec` | 注册表 + 引擎函数 | §19.2 编码规则：规则版本号、golden 向量集（引擎函数按规则版本实现，向量由注册表供给测试） | v0（UTF-16 code unit 规则）+ 向量 | 版本化（新规则加 v1，旧版本仍可解释旧目录） |
 | `id-rules` | `library/registries/id-rules.json` | §19.4 命名/消毒规则 per 实体（instance/version/profile/pack/session） | 各实体正则 + 生成器说明 | 是 |
+| `pad-pages` | `modpack/registries/pad-pages.json` | PAD 顶栏页：`handler` 必须是引擎已有 `page.*` 原语。`tasks` 可 `disabled: true`，下载管理挂在下载页左栏 | launch / manage / tasks / download / settings | 是 |
 | `unit-map` | `agent-pack-dsh/modpack/registry.yaml`（已有，引用不复制） | 整合包单元 → DSH 插件映射（已有资产，启动器不重造） | skill/mcp/hooks/… 11 种 | 是 |
 | 覆盖层 | `library/registries/` 用户层文件 | 用户/发行版对上述表的覆盖 | — | 是 |
 
@@ -700,7 +714,7 @@ DSH 实现 = **UTF-16 code unit 迭代**（`charCodeAt`，`format.ts:147-167`）
 
 `agent-pack-dsh/plugin/`（npm 包 `@sakikotgw/pack-agent-dsh` 0.4.3）作为 DSH bundle 挂载（`dsh.bundle.patch` → `cordis.patch.yml`），两条 insert：
 
-1. 管理器本体 `@sakikotgw/pack-agent-dsh`（inject: tools, skills, commands）→ 7 个工具（detect/compile/project/map/search/allow/deny/list）、6 个斜杠命令、`pack-agent-catalog` SkillProvider（rank 150，只回放行集技能）；
+1. 管理器本体 `@sakikotgw/pack-agent-dsh`（inject: tools, skills, commands）→ 工具 + 斜杠命令 + `pack-agent-catalog` SkillProvider。它只管内容，不开控制口；
 2. 专属 skill-filesystem 实例（providerName: pack-agent-dsh，只服务 `./skills`）→ 会话内可见 `pack-agent-dsh` 技能（操作手册）。
 
 两种安装源：npm 包（发布态）；仓库根 `cordis.root.yml`（开发态，insert 根包 `exports["./dsh"]`）。底层资产：`agent-pack-dsh/modpack/` 投影编译器 + `registry.yaml` unit-map + `agent-pack-dsh/pack-index` SQLite（含命名白名单 set-save/set-load/set-list）——**这些全部被启动器复用，不复刻**（§1 原则 4）。
@@ -712,8 +726,9 @@ DSH 实现 = **UTF-16 code unit 迭代**（`charCodeAt`，`format.ts:147-167`）
 | 投影/检索 | 会话内 `packagent_project/search` | `import` 任务调用同一 `agent-pack-dsh/modpack` 函数 |
 | 白名单 | 会话内 `allow/deny/set-load` | 实例创建/`import` 时 `set-save` 落命名集 |
 | 目录 | 会话内 `list` | `instance info` 同读 |
+| 正在跑的实例 | `@sakikotgw/pad-gateway` 这层 profile 包住官方 apiproxy | PAD 读 `$DSH_HOME/pad-gateway.json` 广告，调 `workspace.list` / `session.list` / `session.cancel`。不代聊 |
 
-**唯一共享状态 = 实例工作区的 `.agent-pack/catalog.sqlite` + 命名白名单**；两端都不缓存镜像，catalog 是唯一真值（与 §6"启用集真值唯一"同原则）。`instance.json` 的 `packs.allowSet` 只是"该实例默认加载哪个命名集"的指针，不复制白名单内容。
+**唯一共享状态 = 实例工作区的 `.agent-pack/catalog.sqlite` + 命名白名单**；两端都不缓存镜像，catalog 是唯一真值（与 §6"启用集真值唯一"同原则）。`instance.json` 的 `packs.allowSet` 只是"该实例默认加载哪个命名集"的指针，不复制白名单内容。正在跑的实例另加 `$DSH_HOME/pad-gateway.json`（进程在才有效）。
 
 ### 21.3 实例 bootstrap 增补（§5 步骤更新）
 
@@ -730,13 +745,13 @@ spec §5 的"停用 pack-agent 管理器前警告"落实为：`plugin disable <i
 | 1 | 声明 `engines.dsh` | 生态示范（§6 约定），同时消除自家插件的 PA101 |
 | 2 | 修 `compile.ts` origin.json 嵌套 bug | **已修**（`compile.ts:65-66,81` + `agent-pack-dsh/modpack/test.ts:199-223`）：含 `.agent-pack-origin.json` 的路径不再当 skill |
 | 3 | `search` 口径 | 明确"search = 全索引检索，snapshot = 会话可见集"，`--enabled` 过滤选项补齐 |
-| 4 | `pack-agent-dsh` 技能增补 launcher 段 | 加入 `packagent dsh launcher …`、`import` 入口与「启动器装实例」的用法 |
+| 4 | `pack-agent-dsh` 技能增补 launcher 段 | 加入 `pad cli …`、`import` 入口与「启动器装实例」的用法 |
 | 5 | 会话不按 profile 拆根 | catalog 属工作区。隔离 = 每实例一份 `DSH_HOME` + 工作区。人手拷 session 自负。 |
 
 ### 21.5 发布与版本关系
 
-- 启动器代码进 `agent-pack-dsh/modpack/launcher.ts`，跟投影层同一包、同一版本线，不另发 bin。
-- **一个入口**：`packagent` 贯穿三维——`packagent pack|export|install …`（①）、`packagent dsh project|allow|set-* …`（②）、`packagent dsh launcher …`（③）。
+- 启动器代码进 `agent-pack-dsh/pad`（C#），与投影层同一 monorepo、同一版本线。npm 侧只发 DSH 插件，不发启动器 bin。
+- **两条命令面，一条版本线**：npm 上 `packagent pack|export|install …`（①）与 `packagent dsh project|allow|set-* …`（②）；启动器侧 `pack-agent-for DSH.exe`，双击是窗、带参是 `pad cli …`（③）。
 - 根包 `exports["./dsh"]`、`dsh.bundle.patch`、`agent-pack-dsh/plugin/lib` 关系不变。
 - 开放项（P3）：会话内是否要一个 `packagent_launcher` 状态工具（ps/logs 只读）——按"插件不扩职责"原则暂不做，等实例内真实需求出现再以注册表条目形式加。
 
@@ -772,11 +787,11 @@ spec §5 的"停用 pack-agent 管理器前警告"落实为：`plugin disable <i
 
 1. **版本库**（§4）：版本清单 = registry `versions` + dist-tag（`latest`/`next` → launcher 的 stable/dev 通道映射）；安装 = `pnpm add @deepseek-ai/dsh@<ver>`，闭包自动带 in-box bundle 的对应版本（E2）。
 2. **插件兼容是双版本轴**（§6/§19.3）：插件自己的版本线独立于 DSH（E3）。未声明 → PA101 warning，不拦。已声明且不满足 → PA002。`update` 后按 F7 的"已装状态"重算 bundles，E3 的独立版本线意味着**同一 profile 内各插件版本无联动约束**（除 peer 依赖，pnpm 管）。
-3. **元数据/图标约定由 launcher 定义**（§6）：生态暂无标准（E6），`engines.dsh` + `dsh.icon|icon` 就是我们引入的约定，自家插件带头（§21.4 #1）。
+3. **图标读作者发布的文件**（§6）：`dsh-plugin.json` v0.15 没有 icon 字段。管理页读包内 `icon`/`logo`/`docs/assets/logo.svg`，没有则按 `repository` 拉 GitHub。不要发明 `dsh.icon` 当生态已有标准。
 4. **市场二期蓝图**（§18.12）：E1–E5 说明"按 npm 检索 + dsh.bundle 判据 + 元数据缓存"足以做插件市场第一期——不需要上游配合；分类/详情/进度三件套直接复用 §18 资产。
 5. **smoke 口径**（PA019 落实）：`--dump-config` 出现 **`- id: pack-agent`**（F2 免 boot）。根包 insert `name: '@sakikotgw/pack-agent/dsh'`，`-dsh` 包 insert `name: '@sakikotgw/pack-agent-dsh'`，id 相同。真 boot 冒烟留给 P1。
 6. **dist-tag（2026-08-15 夜间复测）**：`@deepseek-ai/dsh` 的 `latest` 与 `next` 都是 `0.1.0-rc.7`。`dsh-base` / `dsh-web-app` / `dsh-headless` 的 `latest` 全是 `0.0.1-rc.1`。通道映射必须按包名分别读 tag，禁止假设「latest = 新」，禁止裸装 in-box。
-7. **市场不要自造目录**：浏览/搜索直接消费 E8 的 `plugins.json`。安装仍是对该实例 `dsh plugin add`。货架读 `library/meta/plugins.json` 缓存。
+7. **市场不要自造目录**：浏览/搜索直接消费 E8 的 `plugins.json`。安装仍是对该实例某个 `--profile` 做 `dsh plugin add`；下载页「装到」选实例，版本格显示该实例钉的发行号；点进插件读 npm packument，用芯片筛可下版本再装。货架读 `library/meta/plugins.json` 缓存。
 8. **插件身份有两半**：Host = `dsh.bundle.patch`（进 profile 要重启进程）；Web = `dsh.client`（进树之后刷新页面能看到 client 半）。启动器 list 必须两栏都读，图标优先看 client 包资源，不要发明 `dsh.icon` 当生态已有标准。
 9. **本仓在目录里的安装名是根包** `@sakikotgw/pack-agent`。启动器默认装管理器时应对齐目录，或同时接受 `-dsh` 包，避免和 dshmarket 各装各的。
 

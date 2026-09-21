@@ -1,0 +1,20 @@
+# PAD management side door.
+#
+# `dsh-host-apiproxy` ships no `dsh.bundle`, so `dsh plugin add` files it as a
+# plain dependency and nothing mounts it. The shipped Web composition inserts it
+# from its own bundle patch; this package does the same for terminal profiles,
+# and carries it as a dependency so adding one package is enough.
+- insert:
+    - id: host-apiproxy
+      name: '@deepseek-ai/dsh-host-apiproxy'
+
+    # ApiProxyService injects `directoryPicker`, which dsh-base does not provide.
+    # Deliberately the native backend, not `-auto`: auto injects `webServer`, a
+    # service only the web composition has, so on a terminal profile it would wait
+    # forever and silently stall apiproxy — and this gateway with it.
+    - id: host-directory-picker
+      name: '@deepseek-ai/dsh-host-directory-picker-native'
+
+    - id: pad-gateway
+      name: '@sakikotgw/pad-gateway'
+      inject: [apiProxy]

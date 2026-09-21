@@ -56,5 +56,17 @@ docs/superpowers/*
 # bun.lock is canonical
 package-lock.json
 
-# Tauri local install
-agent-pack-dsh/tauri/node_modules/
+# PAD (WPF) build output
+agent-pack-dsh/pad/bin/
+agent-pack-dsh/pad/obj/
+
+# PAD publish cache for the unzip-and-play kit
+agent-pack-dsh/portable/pad-dist/
+agent-pack-dsh/portable/*.exe
+agent-pack-dsh/portable/*.dll
+agent-pack-dsh/portable/*.pdb
+agent-pack-dsh/portable/.pack-agent-repo
+
+# Local harness smoke / indexer scratch
+agent-pack-dsh/.smoke/
+agent-pack-dsh/.agent-pack/

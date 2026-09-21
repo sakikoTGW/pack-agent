@@ -103,7 +103,10 @@ if (!dshRel || dshRel.endsWith('.ts')) {
 const patchPath = join(profileDir, 'node_modules', '@sakikotgw', 'pack-agent', installed.dsh.bundle.patch)
 const patch = readFileSync(patchPath, 'utf8')
 if (!patch.includes("name: '@sakikotgw/pack-agent/dsh'")) fail(`bundle patch missing pack-agent/dsh insert:\n${patch}`)
+// The manager is a content loader: tools, skills, commands. Managing a running
+// instance is @sakikotgw/pad-gateway's job, so this bundle must not inject agents.
 if (!patch.includes('inject: [tools, skills, commands]')) fail('bundle patch must inject tools, skills, commands')
+if (patch.includes('agents]')) fail('the manager bundle must not inject agents; that was pad-control')
 console.log('✓ installed package is a dsh.bundle; patch inserts @sakikotgw/pack-agent/dsh')
 
 const bundles = profilePkg.dsh?.profile?.bundles ?? []
@@ -119,12 +122,14 @@ console.log('✓ dsh.profile.bundles includes @sakikotgw/pack-agent')
 
 const { apply, inject, name } = await import('../plugin/src/index.ts')
 if (name !== 'pack-agent') fail(`plugin name ${name}`)
-if (!inject.includes('tools') || !inject.includes('skills')) fail(`inject ${inject.join(',')}`)
+if (!inject.includes('tools') || !inject.includes('skills') || !inject.includes('commands')) fail(`inject ${inject.join(',')}`)
+if (inject.includes('agents')) fail(`the manager must not inject agents; that was pad-control: ${inject.join(',')}`)
 const tools: string[] = []
 apply(
   {
     tools: { register(def: { name: string }) { tools.push(def.name) } },
     skills: { registerProvider() { return () => {} } },
+    commands: { register() {} },
   },
   { cwd: home },
 )

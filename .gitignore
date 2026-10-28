@@ -79,5 +79,3 @@ agent-pack-dsh/.agent-pack/
 # PAD split: local build artifacts / temp verification data
 .tmp/
 agent-pack-dsh/packmaker/bin/
-agent-pack-dsh/pad/Assets/7z/7z.exe
-agent-pack-dsh/pad/Assets/7z/7z.dll

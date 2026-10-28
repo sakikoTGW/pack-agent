@@ -1,0 +1,236 @@
+{
+  "Shells": [
+    {
+      "Exe": "E:\\\u65B0\u5EFA\u6587\u4EF6\u5939 (5)\\DSH Desktop\\DSH Desktop.exe",
+      "Version": "0.11.1",
+      "UserData": "C:\\Users\\Brs\\AppData\\Roaming\\dsh-desktop",
+      "Home": "C:\\Users\\Brs\\AppData\\Roaming\\dsh-desktop\\harness",
+      "Running": true,
+      "Found": "running process"
+    }
+  ],
+  "Clis": [
+    {
+      "Bin": "E:\\\u65B0\u5EFA\u6587\u4EF6\u5939 (5)\\DSH Desktop\\resources\\app.asar\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "Version": null,
+      "Found": "pad.json#launch.dshCli"
+    },
+    {
+      "Bin": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\versions\\0.1.0-rc.7\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "Version": "0.1.0-rc.7",
+      "Found": "pad version store"
+    }
+  ],
+  "Homes": [
+    {
+      "Path": "C:\\Users\\Brs\\AppData\\Roaming\\dsh-desktop\\harness",
+      "Profiles": [
+        ".generations",
+        "web"
+      ],
+      "Sessions": 4,
+      "Running": true,
+      "Found": "desktop home"
+    },
+    {
+      "Path": "C:\\Users\\Brs\\.dsh",
+      "Profiles": [
+        "desktop"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "~/.dsh"
+    },
+    {
+      "Path": "C:\\Users\\Brs",
+      "Profiles": [
+        "web"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "userprofile (profiles/ at root)"
+    },
+    {
+      "Path": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\123\\home",
+      "Profiles": [
+        "dsh-tui"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "pad instance"
+    },
+    {
+      "Path": "e:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\pad-op-clone\\home",
+      "Profiles": [
+        "pad-op-tui"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "pad instance"
+    },
+    {
+      "Path": "e:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\pad-op-tmp\\home",
+      "Profiles": [
+        "pad-op-tui"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "pad instance"
+    },
+    {
+      "Path": "E:\\tmp\\dsh-probe-home",
+      "Profiles": [
+        "collect",
+        "web"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-live-1786639207060",
+      "Profiles": [
+        "packagent-test"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-live-1786639233099",
+      "Profiles": [
+        "packagent-test"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-live-1786639261950",
+      "Profiles": [
+        "packagent-test"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-live-1786640103772",
+      "Profiles": [
+        "packagent-test"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-live-1787183583274",
+      "Profiles": [
+        "packagent-test"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-live-1787183888211",
+      "Profiles": [
+        "packagent-test"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-live-1787183923600",
+      "Profiles": [
+        "packagent-test"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-live-1787184157027",
+      "Profiles": [
+        "packagent-test"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-live-1787184269000",
+      "Profiles": [
+        "packagent-test"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-live-1787186673374",
+      "Profiles": [
+        "packagent-test"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-live-1787191840876",
+      "Profiles": [
+        "packagent-test"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\dsh-home-official",
+      "Profiles": [
+        "packagent-test",
+        "web"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\pad-pict-show\\instances\\demo\\home",
+      "Profiles": [
+        "web"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\pad-root\\instances\\tui-lab\\home",
+      "Profiles": [
+        "dsh-tui"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\tui-kit-stage\\instances\\tui\\home",
+      "Profiles": [
+        "dsh-tui"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    },
+    {
+      "Path": "E:\\tmp\\pad-sys\\qiuzhifangzhou\\layers\\frontend\\dsh-home",
+      "Profiles": [
+        "frontend"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "deep: E:\\tmp"
+    }
+  ]
+}

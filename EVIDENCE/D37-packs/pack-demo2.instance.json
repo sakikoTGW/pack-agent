@@ -1,0 +1,40 @@
+{
+  "schema": "pack-agent.launcher.instance/v2",
+  "id": "pack-demo2",
+  "name": "pack-demo2",
+  "dsh": {
+    "version": "0.1.0-rc.7"
+  },
+  "home": "E:\\tmp\\pad-pack-create\\instances\\pack-demo2\\home",
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\tmp\\pad-pack-create\\instances\\pack-demo2\\workspace"
+  },
+  "status": "ready",
+  "lastProfile": "web",
+  "note": null,
+  "display": {
+    "info": "",
+    "logo": null,
+    "star": false,
+    "category": ""
+  },
+  "launch": null,
+  "source": {
+    "kind": "pack",
+    "packId": "example",
+    "packTitle": "example",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\tmp\\pad-pack-create\\library\\packs\\example.pack.json"
+  },
+  "adopted": false,
+  "adoptedFingerprint": null,
+  "created": "2026-10-27T11:16:43.6446766+00:00",
+  "updated": "2026-10-27T11:16:44.087Z",
+  "packs": {
+    "allowSet": "default"
+  },
+  "plugins": {
+    "disabled": []
+  }
+}

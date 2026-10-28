@@ -1,0 +1,5 @@
+logical 1000x620
+dpi 1.5x1.5
+pixels 1500x930
+host 969.3333333333334x535.3333333333334
+size (none)

@@ -1,0 +1,139 @@
+{
+  "homes": [
+    {
+      "Home": "C:\\Users\\Brs\\AppData\\Roaming\\dsh-desktop\\harness",
+      "Sessions": 10,
+      "Turns": 117,
+      "Steps": 1005,
+      "InputTokens": 2070409,
+      "OutputTokens": 1081746,
+      "CacheReadTokens": 269084672,
+      "UserTokens": 2955,
+      "InjectTokens": 7711,
+      "AssistantTokens": 614552,
+      "ToolTokens": 337127,
+      "Tools": [
+        {
+          "Tool": "pwsh",
+          "Calls": 476,
+          "Tokens": 243593
+        },
+        {
+          "Tool": "edit",
+          "Calls": 36,
+          "Tokens": 1054
+        },
+        {
+          "Tool": "read",
+          "Calls": 32,
+          "Tokens": 18657
+        },
+        {
+          "Tool": "write",
+          "Calls": 32,
+          "Tokens": 1069
+        },
+        {
+          "Tool": "plugin_manager",
+          "Calls": 11,
+          "Tokens": 22687
+        },
+        {
+          "Tool": "web_fetch",
+          "Calls": 9,
+          "Tokens": 21886
+        },
+        {
+          "Tool": "grep",
+          "Calls": 5,
+          "Tokens": 588
+        },
+        {
+          "Tool": "glob",
+          "Calls": 5,
+          "Tokens": 66
+        },
+        {
+          "Tool": "job_output",
+          "Calls": 4,
+          "Tokens": 1831
+        },
+        {
+          "Tool": "web_search",
+          "Calls": 4,
+          "Tokens": 1230
+        },
+        {
+          "Tool": "ask_user_question",
+          "Calls": 4,
+          "Tokens": 144
+        },
+        {
+          "Tool": "cordis_inspect_query",
+          "Calls": 3,
+          "Tokens": 20252
+        },
+        {
+          "Tool": "plugin_status",
+          "Calls": 3,
+          "Tokens": 548
+        },
+        {
+          "Tool": "job_kill",
+          "Calls": 3,
+          "Tokens": 54
+        },
+        {
+          "Tool": "cordis_inspect_list",
+          "Calls": 1,
+          "Tokens": 1971
+        },
+        {
+          "Tool": "plugin_search",
+          "Calls": 1,
+          "Tokens": 622
+        },
+        {
+          "Tool": "read_image",
+          "Calls": 1,
+          "Tokens": 379
+        },
+        {
+          "Tool": "plugin_install",
+          "Calls": 1,
+          "Tokens": 193
+        },
+        {
+          "Tool": "plugin_resolve",
+          "Calls": 1,
+          "Tokens": 118
+        },
+        {
+          "Tool": "create_goal",
+          "Calls": 1,
+          "Tokens": 102
+        },
+        {
+          "Tool": "todo_write",
+          "Calls": 1,
+          "Tokens": 23
+        },
+        {
+          "Tool": "browser_snapshot",
+          "Calls": 1,
+          "Tokens": 22
+        },
+        {
+          "Tool": "browser_list_tabs",
+          "Calls": 1,
+          "Tokens": 22
+        },
+        {
+          "Tool": "present",
+          "Calls": 1,
+          "Tokens": 16
+        }
+      ]
+    }
+  ]
+}

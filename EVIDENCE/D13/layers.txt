@@ -1,0 +1,29 @@
+﻿D13 verification — 整合包投影走 bundle 层
+when: 2026-10-22
+
+command (read-only, nothing is started):
+  DSH_HOME=<%APPDATA%\dsh-desktop\harness>
+  node  <app.asar>\node_modules\@deepseek-ai\dsh\lib\bin.js  --profile web --dump-config
+exit: 0    output: 2730 lines
+
+assertion: every name in the profile's dsh.profile.bundles appears as its own layer marker.
+
+observed layer markers (11 bundles -> 11 layers):
+  # == @deepseek-ai/dsh-base
+  # == @deepseek-ai/dsh-web-app
+  # == @deepseek-ai/dsh-experimental-agent-team-profile
+  # == @deepseek-ai/dsh-experimental-auto-review
+  # == @deepseek-ai/dsh-experimental-schedule-bundle
+  # == @deepseek-ai/dsh-experimental-voice-input-bundle
+  # == @yuxianglin/dsh-bridge-browser
+  # == dsh-better-sidebar
+  # == dsh-context
+  # == dshmarket
+  # == dsh-plugin-resolver
+
+conclusions:
+  1. bundle 层是唯一的挂载点: 一个包 = 一层, 装进 profile 就出现, 别的 profile 看不见。
+  2. in-box 与 out-of-tree 在"层"这一层没有区别——整合包和普通插件同权。
+  3. dump-config 可作为验收断言: 只读, 退出码判定, 符合 D6 (不解读)。
+
+note: Test-Path 看不到 asar 内的 bin.js, 但 .desktop-bin\node.cmd 能跑——它带 asar 支持。

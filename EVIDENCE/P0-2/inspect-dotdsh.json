@@ -1,0 +1,25 @@
+{
+  "home": "C:\\Users\\Brs\\.dsh",
+  "found": true,
+  "sessions": 1,
+  "newestSession": "session-80dd68d9-e958-40a4-8d0d-e7544de9d39c",
+  "newestAt": "2026-10-18T03:27:01.2780000\u002B08:00",
+  "model": null,
+  "tools": 0,
+  "toolsTokens": 0,
+  "systemTokens": 0,
+  "contextTokens": 0,
+  "pressureTokens": 0,
+  "contextWindow": 0,
+  "compactions": 0,
+  "homes": [
+    {
+      "home": "C:\\Users\\Brs\\.dsh",
+      "found": true,
+      "sessions": 1,
+      "tools": 0,
+      "toolsTokens": 0,
+      "contextTokens": 0
+    }
+  ]
+}

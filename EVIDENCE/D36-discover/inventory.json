@@ -1,0 +1,223 @@
+{
+  "Kernels": [
+    {
+      "Version": "0.2.1-rc.2",
+      "Identity": "E:\\DSH-App\\resources\\app.asar!dsh/node_modules/@deepseek-ai/dsh",
+      "Source": "desktop bundle: E:\\DSH-App\\DeepSeek Harness.exe",
+      "Bin": "E:\\DSH-App\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "PackageDir": null,
+      "OwnerExe": "E:\\DSH-App\\DeepSeek Harness.exe",
+      "Label": "0.2.1-rc.2 \u00B7 desktop bundle: E:\\DSH-App\\DeepSeek Harness.exe"
+    },
+    {
+      "Version": "0.2.0-rc.2",
+      "Identity": "E:\\\u65B0\u5EFA\u6587\u4EF6\u5939 (5)\\DSH Desktop\\resources\\app.asar!node_modules/@deepseek-ai/dsh",
+      "Source": "desktop bundle: E:\\\u65B0\u5EFA\u6587\u4EF6\u5939 (5)\\DSH Desktop\\DSH Desktop.exe",
+      "Bin": "E:\\\u65B0\u5EFA\u6587\u4EF6\u5939 (5)\\DSH Desktop\\resources\\app.asar\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "PackageDir": null,
+      "OwnerExe": "E:\\\u65B0\u5EFA\u6587\u4EF6\u5939 (5)\\DSH Desktop\\DSH Desktop.exe",
+      "Label": "0.2.0-rc.2 \u00B7 desktop bundle: E:\\\u65B0\u5EFA\u6587\u4EF6\u5939 (5)\\DSH Desktop\\DSH Desktop.exe"
+    },
+    {
+      "Version": "0.1.0-rc.7",
+      "Identity": "declared:@deepseek-ai/dsh@0.1.0-rc.7",
+      "Source": "launcher script: E:\\dsh-tui\\start.cmd",
+      "Bin": null,
+      "PackageDir": null,
+      "OwnerExe": null,
+      "Label": "0.1.0-rc.7 \u00B7 launcher script: E:\\dsh-tui\\start.cmd"
+    },
+    {
+      "Version": "0.1.0-rc.7",
+      "Identity": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\versions\\0.1.0-rc.7\\node_modules\\@deepseek-ai\\dsh",
+      "Source": "pad version store",
+      "Bin": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\versions\\0.1.0-rc.7\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "PackageDir": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\versions\\0.1.0-rc.7\\node_modules\\@deepseek-ai\\dsh",
+      "OwnerExe": null,
+      "Label": "0.1.0-rc.7 \u00B7 pad version store"
+    }
+  ],
+  "Shells": [
+    {
+      "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+      "Version": "0.2.1-rc.2",
+      "UserData": "C:\\Users\\Brs\\AppData\\Roaming\\@deepseek-ai\\dsh-desktop",
+      "Home": "E:\\DSH-Home",
+      "Running": true,
+      "Found": "running process",
+      "KernelVersion": "0.2.1-rc.2",
+      "KernelIdentity": "E:\\DSH-App\\resources\\app.asar!dsh/node_modules/@deepseek-ai/dsh",
+      "Pid": 28032
+    },
+    {
+      "Exe": "E:\\\u65B0\u5EFA\u6587\u4EF6\u5939 (5)\\DSH Desktop\\DSH Desktop.exe",
+      "Version": "0.11.1",
+      "UserData": "C:\\Users\\Brs\\AppData\\Roaming\\dsh-desktop",
+      "Home": "C:\\Users\\Brs\\AppData\\Roaming\\dsh-desktop\\harness",
+      "Running": false,
+      "Found": "shortcut: C:\\Users\\Brs\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\DSH Desktop.lnk",
+      "KernelVersion": "0.2.0-rc.2",
+      "KernelIdentity": "E:\\\u65B0\u5EFA\u6587\u4EF6\u5939 (5)\\DSH Desktop\\resources\\app.asar!node_modules/@deepseek-ai/dsh",
+      "Pid": null
+    }
+  ],
+  "Tuis": [
+    {
+      "Package": "@deepseek-harness-tui/dsh-tui",
+      "Version": "0.8.3",
+      "PackageDir": "E:\\dsh-tui\\dsh-home\\profiles\\dsh-tui\\node_modules\\@deepseek-harness-tui\\dsh-tui",
+      "Home": "E:\\dsh-tui\\dsh-home",
+      "Profile": "dsh-tui",
+      "Launcher": "E:\\dsh-tui\\start.cmd",
+      "DeclaredKernel": "0.1.0-rc.7",
+      "Running": true,
+      "Found": "profile dependency",
+      "Pid": 57716
+    },
+    {
+      "Package": "@deepseek-harness-tui/dsh-tui",
+      "Version": "0.9.3",
+      "PackageDir": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\123\\home\\profiles\\dsh-tui\\node_modules\\@deepseek-harness-tui\\dsh-tui",
+      "Home": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\123\\home",
+      "Profile": "dsh-tui",
+      "Launcher": null,
+      "DeclaredKernel": null,
+      "Running": false,
+      "Found": "profile dependency",
+      "Pid": null
+    },
+    {
+      "Package": "@deepseek-harness-tui/dsh-tui",
+      "Version": "0.9.3",
+      "PackageDir": "e:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\pad-op-clone\\home\\profiles\\pad-op-tui\\node_modules\\@deepseek-harness-tui\\dsh-tui",
+      "Home": "e:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\pad-op-clone\\home",
+      "Profile": "pad-op-tui",
+      "Launcher": null,
+      "DeclaredKernel": null,
+      "Running": false,
+      "Found": "profile dependency",
+      "Pid": null
+    },
+    {
+      "Package": "@deepseek-harness-tui/dsh-tui",
+      "Version": "0.9.3",
+      "PackageDir": "e:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\pad-op-tmp\\home\\profiles\\pad-op-tui\\node_modules\\@deepseek-harness-tui\\dsh-tui",
+      "Home": "e:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\pad-op-tmp\\home",
+      "Profile": "pad-op-tui",
+      "Launcher": null,
+      "DeclaredKernel": null,
+      "Running": false,
+      "Found": "profile dependency",
+      "Pid": null
+    }
+  ],
+  "Clis": [
+    {
+      "Bin": "E:\\DSH-App\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "Version": "0.2.1-rc.2",
+      "Found": "kernel: desktop bundle: E:\\DSH-App\\DeepSeek Harness.exe",
+      "KernelIdentity": "E:\\DSH-App\\resources\\app.asar!dsh/node_modules/@deepseek-ai/dsh",
+      "Running": false,
+      "Pid": null
+    },
+    {
+      "Bin": "E:\\DSH-App\\resources\\runtime\\cli\\bin\\dsh.cmd",
+      "Version": "0.2.1-rc.2",
+      "Found": "shim: E:\\DSH-App\\resources\\runtime\\cli\\bin\\dsh.cmd",
+      "KernelIdentity": "E:\\DSH-App\\resources\\app.asar!dsh/node_modules/@deepseek-ai/dsh",
+      "Running": false,
+      "Pid": null
+    },
+    {
+      "Bin": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\versions\\0.1.0-rc.7\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "Version": "0.1.0-rc.7",
+      "Found": "pad version store",
+      "KernelIdentity": null,
+      "Running": true,
+      "Pid": 57716
+    },
+    {
+      "Bin": "E:\\\u65B0\u5EFA\u6587\u4EF6\u5939 (5)\\DSH Desktop\\resources\\app.asar\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "Version": "0.2.0-rc.2",
+      "Found": "pad.json#launch.dshCli",
+      "KernelIdentity": null,
+      "Running": false,
+      "Pid": null
+    }
+  ],
+  "Homes": [
+    {
+      "Path": "E:\\DSH-Home",
+      "Profiles": [
+        "desktop"
+      ],
+      "Sessions": 15,
+      "Running": true,
+      "Found": "drive root: E:\\"
+    },
+    {
+      "Path": "C:\\Users\\Brs\\AppData\\Roaming\\dsh-desktop\\harness",
+      "Profiles": [
+        "web"
+      ],
+      "Sessions": 4,
+      "Running": false,
+      "Found": "shell: shortcut: C:\\Users\\Brs\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\DSH Desktop.lnk"
+    },
+    {
+      "Path": "C:\\Users\\Brs\\.dsh",
+      "Profiles": [
+        "desktop"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "known: ~/.dsh"
+    },
+    {
+      "Path": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\123\\home",
+      "Profiles": [
+        "dsh-tui"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "pad instance"
+    },
+    {
+      "Path": "e:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\pad-op-clone\\home",
+      "Profiles": [
+        "pad-op-tui"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "pad instance"
+    },
+    {
+      "Path": "e:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\pad-op-tmp\\home",
+      "Profiles": [
+        "pad-op-tui"
+      ],
+      "Sessions": 1,
+      "Running": false,
+      "Found": "pad instance"
+    },
+    {
+      "Path": "C:\\Users\\Brs",
+      "Profiles": [
+        "web"
+      ],
+      "Sessions": 0,
+      "Running": false,
+      "Found": "known: user profile (profiles/ at root)"
+    },
+    {
+      "Path": "E:\\dsh-tui\\dsh-home",
+      "Profiles": [
+        "dsh-tui"
+      ],
+      "Sessions": 0,
+      "Running": true,
+      "Found": "drive root: E:\\"
+    }
+  ],
+  "CarrierCount": 10
+}

@@ -1,0 +1,9 @@
+﻿✓ 终端标题与 pad cli script 入口
+✓ 实例 auto 忽略全局 nodePath
+✓ launch-*.cmd 吃到全局+实例覆盖，密钥不进脚本
+✓ 改全局设置后重生 launch-*.cmd
+✓ 克隆保留 launch 覆盖且 home 隔离
+✓ 工作区隔离切换贯通到 instance.json 和 launch-*.cmd
+✓ launch-*.cmd 钉该发行号 engines.node 对应的 runtime/node
+✓ 新建实例吃全局默认工作区隔离，home 仍隔离
+

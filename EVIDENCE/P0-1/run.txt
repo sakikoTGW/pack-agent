@@ -1,0 +1,11 @@
+﻿P0-1 run  (2026-10-22T11:55:45.4328960+08:00)
+exe: bin\Debug\net9.0-windows\pack-agent-for DSH.exe (dotnet build -c Debug, 0 warnings 0 errors)
+cmd: pad cli inspect --json --out E:\tmp\pad-inspect.json
+       (same run without --out also goes to bin\Debug\net9.0-windows\.pack-launcher\pad-cli.log)
+exit: 0
+
+assert tools == 71        -> 71
+assert toolsTokens == 12755 -> 12755
+assert valid JSON when no session -> see homes[1] (.dsh, sessions=1, tools=0)
+
+NOTE: stdout of a WinExe is not reliably capturable; --out is the supported channel.

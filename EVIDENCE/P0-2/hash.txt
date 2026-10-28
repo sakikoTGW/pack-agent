@@ -1,0 +1,10 @@
+﻿P0-2 run  (2026-10-22T11:55:45.4328960+08:00)
+home under test: C:\Users\Brs\.dsh  (idle; C:\Users\Brs\AppData\Roaming\dsh-desktop\harness is live and
+written by the running DSH Desktop, so it cannot serve as a clean read-only target)
+cmd: pad cli inspect C:\Users\Brs\.dsh --json --out E:\tmp\pad-inspect-dotdsh.json
+exit: 0
+
+snapshot = every file under the home: relative path | byte length | LastWriteTimeUtc ticks
+before sha256: 0B61F2559D9955D4C96F299AB2722D0482208CC1D51FCEF956F461FD47CF6A13
+after  sha256: 0B61F2559D9955D4C96F299AB2722D0482208CC1D51FCEF956F461FD47CF6A13
+identical: True

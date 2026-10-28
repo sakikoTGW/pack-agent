@@ -1,0 +1,29 @@
+﻿--- 17:26:42 pad cli discover
+kernels 4
+  0.2.1-rc.2     desktop bundle: E:\DSH-App\DeepSeek Harness.exe   E:\DSH-App\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh\lib\bin.js
+  0.2.0-rc.2     desktop bundle: E:\新建文件夹 (5)\DSH Desktop\DSH Desktop.exe   E:\新建文件夹 (5)\DSH Desktop\resources\app.asar\node_modules\@deepseek-ai\dsh\lib\bin.js
+  0.1.0-rc.7     launcher script: E:\dsh-tui\start.cmd   declared:@deepseek-ai/dsh@0.1.0-rc.7
+  0.1.0-rc.7     pad version store   E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\versions\0.1.0-rc.7\node_modules\@deepseek-ai\dsh\lib\bin.js
+shells  2
+  running  0.2.1-rc.2 E:\DSH-App\DeepSeek Harness.exe   home E:\DSH-Home   userData C:\Users\Brs\AppData\Roaming\@deepseek-ai\dsh-desktop   kernel 0.2.1-rc.2   pid 28032   (running process)
+  stopped  0.11.1     E:\新建文件夹 (5)\DSH Desktop\DSH Desktop.exe   home C:\Users\Brs\AppData\Roaming\dsh-desktop\harness   userData C:\Users\Brs\AppData\Roaming\dsh-desktop   kernel 0.2.0-rc.2   (shortcut: C:\Users\Brs\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\DSH Desktop.lnk)
+tui     4
+  running  @deepseek-harness-tui/dsh-tui 0.8.3   home E:\dsh-tui\dsh-home   profile dsh-tui   kernel 0.1.0-rc.7   pid 57716   launcher E:\dsh-tui\start.cmd   (profile dependency)
+  idle     @deepseek-harness-tui/dsh-tui 0.9.3   home E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\123\home   profile dsh-tui   kernel -      (profile dependency)
+  idle     @deepseek-harness-tui/dsh-tui 0.9.3   home e:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\pad-op-clone\home   profile pad-op-tui   kernel -      (profile dependency)
+  idle     @deepseek-harness-tui/dsh-tui 0.9.3   home e:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\pad-op-tmp\home   profile pad-op-tui   kernel -      (profile dependency)
+cli     4
+  idle     0.2.1-rc.2   E:\DSH-App\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh\lib\bin.js   (kernel: desktop bundle: E:\DSH-App\DeepSeek Harness.exe)
+  idle     0.2.1-rc.2   E:\DSH-App\resources\runtime\cli\bin\dsh.cmd   (shim: E:\DSH-App\resources\runtime\cli\bin\dsh.cmd)
+  running  0.1.0-rc.7   E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\versions\0.1.0-rc.7\node_modules\@deepseek-ai\dsh\lib\bin.js   pid 57716   (pad version store)
+  idle     0.2.0-rc.2   E:\新建文件夹 (5)\DSH Desktop\resources\app.asar\node_modules\@deepseek-ai\dsh\lib\bin.js   (pad.json#launch.dshCli)
+homes   8
+  running  [desktop]  15 sessions  E:\DSH-Home   (drive root: E:\)
+  idle     [web]  4 sessions  C:\Users\Brs\AppData\Roaming\dsh-desktop\harness   (shell: shortcut: C:\Users\Brs\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\DSH Desktop.lnk)
+  idle     [desktop]  1 sessions  C:\Users\Brs\.dsh   (known: ~/.dsh)
+  idle     [dsh-tui]  1 sessions  E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\123\home   (pad instance)
+  idle     [pad-op-tui]  1 sessions  e:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\pad-op-clone\home   (pad instance)
+  idle     [pad-op-tui]  1 sessions  e:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\pad-op-tmp\home   (pad instance)
+  idle     [web]  0 sessions  C:\Users\Brs   (known: user profile (profiles/ at root))
+  running  [dsh-tui]  0 sessions  E:\dsh-tui\dsh-home   (drive root: E:\)
+

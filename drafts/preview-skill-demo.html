@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>放假拷配置拷到想打人</title>
+</head>
+<body style="margin:0;padding:0;background:#e6e8eb;">
+
+<section style="max-width:677px;margin:0 auto;background:#fbfbfa;color:#1c1c1c;font-family:'Source Han Sans SC','Noto Sans SC',-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:17px;line-height:1.85;">
+
+  <section style="padding:36px 24px 12px;">
+    <h1 style="margin:0 0 22px;font-size:28px;line-height:1.35;font-weight:800;color:#111;">
+      <span leaf="">放假拷配置</span><br />
+      <span leaf="">拷到想打人</span>
+    </h1>
+    <p style="margin:0 0 16px;color:#2a2a2a;"><span leaf="">Claude Code 一套目录，Codex 又一套。skills、规则、MCP 分开放；卸的时候，已经不知道该删哪几个文件。</span></p>
+    <p style="margin:0 0 16px;color:#2a2a2a;"><span leaf="">Hermes 更气人：</span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;"><span leaf="">install</span></span><span leaf=""> 绿灯，</span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;"><span leaf="">config.yaml</span></span><span leaf=""> 里也有 hook，下一轮对话罐头是空的。我对着本机 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;"><span leaf="">agent/shell_hooks.py</span></span><span leaf=""> 看过——</span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;"><span leaf="">pre_llm_call</span></span><span leaf=""> 只要 stdout 里的 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;background:#ecf4f3;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">{"context":"..."}</span></span><span leaf="">。我们当时吐 Claude 那套形状，解析结果直接是 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;"><span leaf="">None</span></span><span leaf="">。不是报错，是静默当没发生。</span></p>
+    <p style="margin:0 0 16px;color:#2a2a2a;"><span leaf="">文件在了，壳可以不认。拷文件夹解决不了这件事。</span></p>
+    <p style="margin:0 0 16px;color:#2a2a2a;"><span leaf="">于是做了 <strong style="color:#0f766e;">Agent Modpack</strong>：面向已经在用 Cursor、Claude Code、Codex、Hermes 的人。你把要用的 skills、规则和 MCP 点名成一个角色，导出一份 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;background:#ecf4f3;color:#0f766e;padding:1px 6px;border-radius:3px;">.pack.json</span><span leaf="">，装进本机壳；安装时记下写过哪些路径，</span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;"><span leaf="">eject</span></span><span leaf=""> 只按这本账删。搬走的是配置，不是模型，也不是账单。像 MC 整合包那样整份带走。</span></p>
+    <p style="margin:0 0 10px;color:#2a2a2a;"><span leaf="">装包用这个 CLI（源码在 </span><a href="https://github.com/sakikoTGW/pack-agent" style="color:#576b95;text-decoration:none;"><span leaf="">sakikoTGW/pack-agent</span></a><span leaf="">，npm </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;"><span leaf="">@sakikotgw/pack-agent</span></span><span leaf="">，要 Bun）：</span></p>
+  </section>
+
+  <section style="margin:0 16px 12px;padding:12px 14px;background:#111827;border-radius:4px;">
+    <p style="margin:0;font-family:ui-monospace,Consolas,Monaco,monospace;font-size:12px;line-height:1.65;color:#e5e7eb;word-break:break-all;"><span leaf="">npx --yes -p @sakikotgw/pack-agent packagent install foo.pack.json</span></p>
+  </section>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 20px;font-size:15px;color:#555;"><span leaf="">我这台 Windows 上，旧文档那种 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;"><span leaf="">npx --package … -- pack-agent</span></span><span leaf=""> 会提示找不到命令。写成上面这样才行。</span></p>
+    <p style="margin:0 0 10px;color:#2a2a2a;"><span leaf="">说跑过，就得真跑。</span></p>
+    <p style="margin:0 0 10px;color:#2a2a2a;"><span leaf="">空目录里只丢一份 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;background:#ecf4f3;color:#0f766e;padding:1px 6px;border-radius:3px;">packer.pack.json</span><span leaf="">，装进 Codex：</span></p>
+  </section>
+
+  <section style="margin:0 16px 12px;padding:12px 14px;background:#111827;border-radius:4px;">
+    <p style="margin:0;font-family:ui-monospace,Consolas,Monaco,monospace;font-size:12px;line-height:1.65;color:#e5e7eb;word-break:break-all;"><span leaf="">npx --yes -p @sakikotgw/pack-agent packagent install .\packer.pack.json --runtime codex</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/explorer-skills-after-install.png" alt="装完" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">装完：技能目录里出现 agent-pack</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 16px;color:#2a2a2a;"><span leaf="">装完我没急着庆祝。文件在了，我还是怕它装聋。当面问：看得到 skill「agent-pack」吗？它说能，用途也讲对了。</span></p>
+    <p style="margin:0 0 10px;color:#2a2a2a;"><span leaf="">然后卸：</span></p>
+  </section>
+
+  <section style="margin:0 16px 12px;padding:12px 14px;background:#111827;border-radius:4px;">
+    <p style="margin:0;font-family:ui-monospace,Consolas,Monaco,monospace;font-size:12px;line-height:1.65;color:#e5e7eb;word-break:break-all;"><span leaf="">npx --yes -p @sakikotgw/pack-agent packagent eject --name packer</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/explorer-skills-after-eject.png" alt="卸完" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">卸完：技能目录空了</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 16px;color:#2a2a2a;"><span leaf="">再问同一句。忘了。</span></p>
+    <p style="margin:0 0 16px;color:#2a2a2a;"><span leaf="">就这样。装得上，认得出，卸得掉。</span></p>
+    <p style="margin:0 0 10px;color:#2a2a2a;"><span leaf="">你要是也在几家壳之间搬同一套习惯，自己封一份再装：</span></p>
+  </section>
+
+  <section style="margin:0 16px 16px;padding:12px 14px;background:#111827;border-radius:4px;">
+    <pre style="margin:0;font-family:ui-monospace,Consolas,Monaco,monospace;font-size:12px;line-height:1.65;color:#e5e7eb;white-space:pre-wrap;">npm install -g @sakikotgw/pack-agent
+packagent agents init
+packagent export --agent &lt;角色id&gt;
+packagent install .\.agent-pack\exports\&lt;包名&gt;.pack.json</pre>
+  </section>
+
+  <section style="padding:0 24px 36px;">
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf="">只想拷一个 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;"><span leaf="">SKILL.md</span></span><span leaf=""> 走人的，会嫌重——正常，别装这套。</span></p>
+    <p style="margin:0;color:#2a2a2a;"><span leaf="">打牌那篇还在：《一个连进阶1都无法通关的 STS2_Skill？》。先这样。</span></p>
+  </section>
+
+</section>
+</body>
+</html>

@@ -36,6 +36,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         AddHandler(Hyperlink.RequestNavigateEvent, new RequestNavigateEventHandler(OnMdLink));
         PreviewKeyDown += Window_PreviewKeyDown;
+        StageRailList.CollapseClicked += () => ToggleRail();
         ApplyWindowPrefs();
         ApplyBrand();
         Show("launch");
@@ -53,7 +54,10 @@ public partial class MainWindow : Window
             {
                 var tab = App.ShotPage switch
                 {
-                    "manage" => TabManage,
+                    "manage" or "manage-edit" or "manage-open" => TabManage,
+                    // 注意：`X or _ when G` 的 when 是整个 arm 的守卫，`relations` 本身不含
+                    // "relations-" 会被守卫否决——所以这里用显式布尔，不玩模式组合。
+                    _ when App.ShotPage.StartsWith("relations") => TabManage,
                     "tasks" => TabTasks,
                     "download" or "market" or "dl-tasks" => TabDownload,
                     "settings" or "settings-ui" or "settings-download" or "settings-other"
@@ -61,7 +65,14 @@ public partial class MainWindow : Window
                     _ => TabLaunch,
                 };
                 tab.IsChecked = true;
-                if (App.ShotPage == "versions") ShowInner("versions", "版本选择");
+                if (App.ShotPath is not null)
+                    System.IO.File.AppendAllText(App.ShotPath + ".pill.txt",
+                        $"set {tab.Name} manage={TabManage.IsChecked} launch={TabLaunch.IsChecked}\n");
+                if (App.ShotPage is "versions" or "versions-open")
+                    ShowInner("versions", "版本选择");
+                if (App.ShotPage == "makepack") ShowInner("makepack", "导出整合包", "versions");
+                if (App.ShotPage == "bundles") ShowInner("bundles", "实例与组合包", "manage");
+                if (App.ShotPage == "relations" || App.ShotPage.StartsWith("relations-")) ShowRelations();
                 if (App.ShotPage is "instance" or "instance-settings" or "instance-plugins" or "instance-bundles")
                     ShowInner("instance", "版本设置");
                 if (App.ShotPage == "market" && Page("download") is DownloadView market)
@@ -77,34 +88,154 @@ public partial class MainWindow : Window
                 }
             }
             if (App.ShotPath is not null) ScheduleShot(App.ShotPath);
+            if (App.ShotPath is null) PrewarmPages();
         };
+    }
+
+    /// <summary>
+    /// Building a page's visual tree costs more than animating it. Pay that while the
+    /// window is idle (one page per idle turn, so it never becomes a startup hitch), and
+    /// the first click on 管理 / 下载 / 设置 only pays layout.
+    /// </summary>
+    void PrewarmPages()
+    {
+        var queue = new Queue<string>(["manage", "download", "settings", "tasks"]);
+        void Step()
+        {
+            if (queue.Count == 0) return;
+            var name = queue.Dequeue();
+            try
+            {
+                var page = Page(name);
+                if (page is FrameworkElement fe && fe.Parent is null)
+                    fe.Measure(new Size(Math.Max(ActualWidth, 800), Math.Max(ActualHeight, 520)));
+                // 管理 paints from a disk scan; start it now so the first switch has cards to
+                // stagger instead of an empty grid.
+                if (page is WorkbenchView wb) wb.Prepare();
+            }
+            catch (Exception ex) { App.ReportPage(ex); }
+            Dispatcher.BeginInvoke(new Action(Step), DispatcherPriority.ApplicationIdle);
+        }
+        Dispatcher.BeginInvoke(new Action(Step), DispatcherPriority.ApplicationIdle);
     }
 
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
         WinIcon.Apply(this);
+        Dwm.Round(this);
     }
 
     /// <summary>
-    /// Window geometry comes from pad.json. Clamp to the work area so a 150% DPI
-    /// 1080p panel does not hang off the bottom edge.
+    /// Window geometry belongs to the page, not to the pointer (D26). Management carries the
+    /// card grid and takes 72%x86% of the work area; every other page stays compact at the
+    /// size recorded in pad.json. Both are clamped so a 150% DPI panel never hangs off-screen.
     /// </summary>
     public void ApplyWindowPrefs()
     {
         var ui = AppState.Current.Settings.Ui;
-        var work = SystemParameters.WorkArea;
-        var wantW = ui.WindowWidth;
-        var wantH = ui.WindowHeight;
-        if (work.Width > 0) wantW = (int)Math.Min(wantW, Math.Max(880, work.Width - 24));
-        if (work.Height > 0) wantH = (int)Math.Min(wantH, Math.Max(520, work.Height - 24));
-        Width = wantW;
-        Height = wantH;
-        OuterShell.Margin = new Thickness(ui.WindowMargin);
+        // The opaque window owns no outer band: DWM draws the shadow and the corners.
+        OuterShell.Margin = AllowsTransparency ? new Thickness(ui.WindowMargin) : new Thickness(0);
         ChromeRow.Height = new GridLength(ui.ChromeHeight);
-        Opacity = ui.WindowOpacity / 100.0;
+        // Window.Opacity only exists on a layered window; on an opaque one it is ignored
+        // by the compositor, so do not pretend to apply it.
+        if (AllowsTransparency) Opacity = ui.WindowOpacity / 100.0;
+        // Settings applied from the page: the ring is always drawn there.
+        Fx.Edge(EdgeRing, true, 1);
+        ApplyPageSize(_page, animate: false);
         ApplyHiddenTabs();
         ApplySkin();
+    }
+
+    /// <summary>Last sizing decision; surfaced in the --shot sidecar so a mismatch is provable.</summary>
+    string _lastSize = "(none)";
+
+    public bool ApplyPageSize(string page, bool animate)
+    {
+        var work = SystemParameters.WorkArea;
+        var maxW = Math.Max(880, work.Width - 24);
+        var maxH = Math.Max(520, work.Height - 24);
+
+        double wantW, wantH;
+        if (page is "manage" or "bundles" or "relations")
+        {
+            wantW = Math.Min(Math.Max(work.Width * 0.72, 1200), maxW);
+            wantH = Math.Min(Math.Max(work.Height * 0.86, 760), maxH);
+        }
+        else
+        {
+            var ui = AppState.Current.Settings.Ui;
+            wantW = Math.Min(ui.WindowWidth, maxW);
+            wantH = Math.Min(ui.WindowHeight, maxH);
+        }
+
+        if (Math.Abs(Width - wantW) < 1 && Math.Abs(Height - wantH) < 1) return false;
+
+        // Anchor the top-right corner. The window widens to the LEFT first, then the bottom
+        // edge travels down. Centring would move four edges at once and read as one blurry
+        // jump; two anchored beats read as two edges.
+        var left = Math.Max(work.Left, Math.Min(Left + (Width - wantW), work.Right - wantW));
+        var top = Math.Max(work.Top, Math.Min(Top, work.Bottom - wantH));
+
+        _lastSize = $"{page}: want {wantW:F0}x{wantH:F0} from {Width:F0}x{Height:F0} animate={animate} fx={Fx.Animated}";
+
+        if (!animate || !Fx.Animated)
+        {
+            _stagedGen++;
+            Fx.StopBounds();
+            Width = wantW;
+            Height = wantH;
+            Left = left;
+            Top = top;
+            return false;
+        }
+
+        var grow = wantW > Width || wantH > Height;
+        BeginStagedBounds(left, top, wantW, wantH, grow);
+        return true;
+    }
+
+    int _stagedGen;
+
+    /// <summary>
+    /// Two beats with a deliberate hold between them: widen to the left (~190ms), hold a
+    /// beat (~70ms), then let the bottom edge travel down (~190ms). Shrinking mirrors the
+    /// path — bottom up, hold, left in — so the window leaves the way it arrived.
+    /// </summary>
+    void BeginStagedBounds(double left, double top, double width, double height, bool grow)
+    {
+        const int beat = 190;
+        const int hold = 70;
+        var gen = ++_stagedGen;
+        if (grow)
+        {
+            Fx.StepBounds(this, left, null, width, null, beat);
+            AfterDelay(beat + hold, () =>
+            {
+                if (gen != _stagedGen) return;
+                Fx.StepBounds(this, null, top, null, height, beat);
+            });
+        }
+        else
+        {
+            Fx.StepBounds(this, null, top, null, height, beat);
+            AfterDelay(beat + hold, () =>
+            {
+                if (gen != _stagedGen) return;
+                Fx.StepBounds(this, left, null, width, null, beat);
+            });
+        }
+    }
+
+    void AfterDelay(int ms, Action run)
+    {
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ms) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            run();
+        };
+        timer.Start();
     }
 
     /// <summary>Hide manage/download per pad.json; F12 restores them for this run.</summary>
@@ -235,7 +366,9 @@ public partial class MainWindow : Window
     void ScheduleShot(string path)
     {
         var other = AppState.Current.Settings.Other;
-        var ms = App.ShotPage == "market" ? other.ShotMarketDelayMs : other.ShotDelayMs;
+        var ms = App.ShotPage is "market" or "relations" || App.ShotPage.StartsWith("relations-sessions")
+                ? Math.Max(other.ShotMarketDelayMs, 8000)
+                : other.ShotDelayMs;
         var timer = new System.Windows.Threading.DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(ms),
@@ -257,7 +390,8 @@ public partial class MainWindow : Window
                 png.Save(fs);
                 System.IO.File.WriteAllText(path + ".txt",
                     $"logical {ActualWidth}x{ActualHeight}\ndpi {dpi.DpiScaleX}x{dpi.DpiScaleY}\npixels {w}x{h}\n"
-                    + $"host {(Host.Content as FrameworkElement)?.ActualWidth}x{(Host.Content as FrameworkElement)?.ActualHeight}\n");
+                    + $"host {(Host.Content as FrameworkElement)?.ActualWidth}x{(Host.Content as FrameworkElement)?.ActualHeight}\n"
+                    + $"size {_lastSize}\n");
             }
             catch (Exception ex)
             {
@@ -273,11 +407,14 @@ public partial class MainWindow : Window
         : _pages[name] = name switch
         {
             "launch" => new LaunchView(this),
-            "manage" => new ManageView(this),
+            "manage" => new WorkbenchView(this),
+            "bundles" => new ManageView(this),
+            "relations" => new RelationsWebView(),
             "tasks" => new TaskView(this),
             "download" => new DownloadView(this),
             "settings" => new SettingsView(),
             "versions" => new VersionsView(this),
+            "makepack" => new MakePackView(this),
             "instance" => new InstanceView(this),
             _ => new LaunchView(this),
         };
@@ -353,6 +490,9 @@ public partial class MainWindow : Window
             InnerTitle.Text = InstanceSetupTitle();
     }
 
+    /// <summary>制作整合包取消/做完 → 回版本选择（还是内页，不回启动页）。</summary>
+    public void BackToVersions() => ShowInner("versions", "版本选择");
+
     static string InstanceSetupTitle()
     {
         var n = AppState.Current.SelectedInstance?.Name;
@@ -376,9 +516,36 @@ public partial class MainWindow : Window
             if (page is DependencyObject d)
                 VisualTreeGuard.ThrowIfSelfHosted(d);
             var same = ReferenceEquals(Host.Content, page);
+
+            // Order matters: detach the old page, start the bounds travel, attach the rail,
+            // then hand the motion to the page's own parts. The page is visible the whole
+            // time — a switch must never show a blank rectangle — and each page arrives with
+            // its own choreography (see MotionFor).
             if (!same) Host.Content = page;
-            if (!same) Fx.PageIn(page);
-            if (page is IRefreshable r) r.OnShown();
+            var resizing = ApplyPageSize(name, animate: true);
+            AttachStageRail(page, animate: false);
+            if (!same)
+            {
+                if (!resizing) UpdateLayout();
+                Fx.BusyFor(resizing ? 820 : 460);
+                Fx.EnterPage(page, MotionFor(name));
+                if (resizing)
+                {
+                    // The edge cannot be drawn crisply while the window is between sizes:
+                    // fade it out for the travel, back in once the bounds have landed.
+                    Fx.Edge(EdgeRing, false, 90);
+                    AfterDelay(470, () => Fx.Edge(EdgeRing, true, 160));
+                }
+                else
+                {
+                    Fx.Edge(EdgeRing, true, 1);
+                }
+            }
+
+            // Data refresh reads the disk and process table. Run it after the motion has
+            // landed, not while it paints.
+            if (page is IRefreshable r)
+                RefreshAfterEntrance(page, r, same ? 0 : resizing ? 720 : 340);
         }
         catch (Exception ex)
         {
@@ -386,8 +553,181 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// One motion per page, and they are meant to look different: 启动 is a combo (hero block
+    /// travels, the controls cascade under it), 管理 is a wave ordered by screen position,
+    /// 下载 slides in from its rail, 设置 and 版本 assemble one part at a time. A switch
+    /// should feel like a different place, not the same template replayed.
+    /// </summary>
+    static PageMotion MotionFor(string name) => name switch
+    {
+        "launch" => PageMotion.Combo,
+        "manage" => PageMotion.Wave,
+        "download" => PageMotion.Slide,
+        "settings" => PageMotion.Sequential,
+        "versions" => PageMotion.Sequential,
+        "tasks" => PageMotion.Drift,
+        "instance" or "bundles" or "makepack" => PageMotion.Rows,
+        "relations" => PageMotion.Drift,
+        _ => PageMotion.Drift,
+    };
+
+    void RefreshAfterEntrance(UIElement page, IRefreshable refresh, int delayMs)
+    {
+        void Run()
+        {
+            if (!ReferenceEquals(Host.Content, page)) return;
+            try { refresh.OnShown(); }
+            catch (Exception ex) { App.ReportPage(ex); }
+        }
+
+        if (delayMs <= 0)
+        {
+            Dispatcher.BeginInvoke(new Action(Run), DispatcherPriority.Background);
+            return;
+        }
+        var timer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(Fx.Animated ? delayMs : 40),
+        };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            Run();
+        };
+        timer.Start();
+    }
+
+    // ------------------------------------------------------------------ 舞台侧栏
+
+    const double RailW = 236;
+    bool _railOpen = true;
+
+    /// <summary>
+    /// 侧栏容器归舞台（D35）：页面带来自己的视角，挂接 = 把视角灌进容器；
+    /// 其余页面容器向左滑出、内容区连续重排。页面只有"重新组合"，没有"换了一个"。
+    /// </summary>
+    void AttachStageRail(UIElement page, bool animate)
+    {
+        switch (page)
+        {
+            case WorkbenchView wb:
+                wb.AttachRail(StageRailList);
+                ShowRail(animate);
+                break;
+            case RelationsWebView rw:
+                rw.AttachRail(StageRailList);
+                rw.GoBack = () => Show("manage");
+                ShowRail(animate);
+                break;
+            default:
+                HideRail(animate);
+                break;
+        }
+    }
+
+    void ShowRail(bool animate = true)
+    {
+        StageRailList.ShowCollapse = true;
+        RailEdge.Visibility = Visibility.Collapsed;
+        StageRail.Visibility = Visibility.Visible;
+        if (!_railOpen)
+        {
+            // 页面换了但用户收着侧栏：保持收起，把手留在原位
+            StageRail.Width = 0;
+            StageRailShift.X = -RailW;
+            RailEdge.Visibility = Visibility.Visible;
+            return;
+        }
+        if (!animate)
+        {
+            // A page switch must not animate layout: resizing this rail reflows the
+            // whole page every frame. Snap it, and let the page entrance be the motion.
+            StageRail.BeginAnimation(FrameworkElement.WidthProperty, null);
+            StageRail.Width = RailW;
+            StageRailShift.BeginAnimation(TranslateTransform.XProperty, null);
+            StageRailShift.X = 0;
+            return;
+        }
+        Fx.WidthTo(StageRail, RailW);
+        Fx.Slide(StageRailShift, 0);
+    }
+
+    void HideRail(bool animate = true)
+    {
+        RailEdge.Visibility = Visibility.Collapsed;
+        if (StageRail.Visibility != Visibility.Visible) { StageRail.Width = 0; return; }
+        if (!animate || !Fx.Animated)
+        {
+            StageRail.BeginAnimation(FrameworkElement.WidthProperty, null);
+            StageRail.Width = 0;
+            StageRailShift.BeginAnimation(TranslateTransform.XProperty, null);
+            StageRailShift.X = -RailW;
+            StageRail.Visibility = Visibility.Collapsed;
+            return;
+        }
+        Fx.WidthTo(StageRail, 0);
+        Fx.Slide(StageRailShift, -RailW);
+        var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(280) };
+        t.Tick += (_, _) =>
+        {
+            t.Stop();
+            if (StageRail.Width < 1) StageRail.Visibility = Visibility.Collapsed;
+        };
+        t.Start();
+    }
+
+    void ToggleRail()
+    {
+        _railOpen = !_railOpen;
+        if (_railOpen)
+        {
+            RailEdge.Visibility = Visibility.Collapsed;
+            StageRail.Visibility = Visibility.Visible;
+            Fx.WidthTo(StageRail, RailW);
+            Fx.Slide(StageRailShift, 0);
+        }
+        else
+        {
+            Fx.WidthTo(StageRail, 0);
+            Fx.Slide(StageRailShift, -RailW);
+            var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(280) };
+            t.Tick += (_, _) =>
+            {
+                t.Stop();
+                if (StageRail.Width < 1 && !_railOpen)
+                {
+                    StageRail.Visibility = Visibility.Collapsed;
+                    RailEdge.Visibility = Visibility.Visible;
+                }
+            };
+            t.Start();
+        }
+    }
+
+    void RailEdge_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_railOpen) ToggleRail();
+    }
+
+    /// <summary>
+    /// 关系页：舞台上的另一种组合。标签条不动、侧栏不动、窗口模式不变——
+    /// 只有内容区把卡片换成图；返回入口在内容区头部，不再整块换 Chrome。
+    /// </summary>
+    public void ShowRelations()
+    {
+        if (_page == "relations") return;
+        Swap("relations");
+    }
+
     void Back_Click(object sender, RoutedEventArgs e)
     {
+        // 内页里的返回：制作整合包 → 版本选择（还是内页）。
+        if (_back == "versions")
+        {
+            ShowInner("versions", "版本选择", "launch");
+            return;
+        }
         // Returning from an inner page re-checks its owning tab, which fires Tab_Checked.
         var tab = _back switch
         {
@@ -475,12 +815,13 @@ public partial class MainWindow : Window
             Margin = new Thickness(0, 8, 0, 0),
             Child = body,
             RenderTransform = shift,
+            IsHitTestVisible = false, // toast 只提示，不挡下面；进度卡单独可点
         };
         ToastLayer.Children.Add(card);
 
         if (Fx.Animated)
         {
-            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            var ease = new PowerEase { Power = 4.6, EasingMode = EasingMode.EaseOut };
             card.BeginAnimation(OpacityProperty,
                 new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(180))) { EasingFunction = ease });
             shift.BeginAnimation(TranslateTransform.YProperty,
@@ -499,6 +840,346 @@ public partial class MainWindow : Window
             var fade = Fx.ToastOut(shift);
             fade.Completed += (_, _) => ToastLayer.Children.Remove(card);
             card.BeginAnimation(OpacityProperty, fade);
+        };
+        life.Start();
+    }
+
+    Border? _progressCard;
+    TextBlock? _progressTitle;
+    TextBlock? _progressLine;
+    TextBlock? _progressPct;
+    Border? _progressTrack;
+    Border? _progressFill;
+    double? _progressFraction;
+    JobRecord? _progressJob;
+    bool _progressCollapsed;
+    StackPanel? _progressDetail;
+    StackPanel? _progressActions;
+
+    /// <summary>
+    /// 右下角长方形进度卡：logo + 标题 + 百分比 + 一行「已复制 x/y MB · 速度 · 剩余」+ 进度条。
+    /// 右上角「-」收起、」×」隐藏；任务还在跑时可在这里直接取消/删除；点卡片跳下载任务。
+    /// </summary>
+    public void Progress(string text, double? fraction = null, string? title = null, JobRecord? job = null)
+    {
+        if (App.ShotPath is not null) return;
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(() => Progress(text, fraction, title, job)));
+            return;
+        }
+        if (_progressCard is null) BuildProgressCard();
+        if (job is not null) _progressJob = job;
+        _progressLine!.Text = text;
+        if (!string.IsNullOrWhiteSpace(title)) _progressTitle!.Text = title;
+        _progressFraction = fraction;
+        if (fraction is { } f)
+        {
+            _progressPct!.Text = $"{Math.Clamp(f, 0, 1) * 100:0}%";
+            _progressPct.Visibility = Visibility.Visible;
+            _progressFill!.Visibility = Visibility.Visible;
+            UpdateProgressFill();
+        }
+        else
+        {
+            _progressPct!.Text = "";
+            _progressPct.Visibility = Visibility.Collapsed;
+            _progressFill!.Visibility = Visibility.Collapsed;
+        }
+        if (_progressActions is not null)
+            _progressActions.Visibility = _progressJob is { CanCancel: true } && !_progressCollapsed
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+    }
+
+    void BuildProgressCard()
+    {
+        _progressTitle = new TextBlock
+        {
+            Foreground = (Brush)FindResource("TextPrimary"),
+            FontSize = 13,
+            FontWeight = FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            Margin = new Thickness(10, 0, 0, 0),
+        };
+        _progressPct = new TextBlock
+        {
+            Foreground = (Brush)FindResource("AccentText"),
+            FontSize = 12,
+            FontWeight = FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(10, 0, 8, 0),
+        };
+        var logo = new Image
+        {
+            Width = 26,
+            Height = 26,
+            Stretch = Stretch.Uniform,
+            Source = Skin.LoadBitmap(null, new Uri("pack://application:,,,/Assets/pad-logo.png")),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var minus = new Button
+        {
+            Style = (Style)FindResource("BtnGhost"),
+            Content = "–",
+            Width = 22,
+            Height = 22,
+            Padding = new Thickness(0),
+            FontSize = 14,
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = "收起",
+        };
+        var close = new Button
+        {
+            Style = (Style)FindResource("BtnGhost"),
+            Content = "✕",
+            Width = 22,
+            Height = 22,
+            Padding = new Thickness(0),
+            FontSize = 10,
+            Margin = new Thickness(2, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = "隐藏（任务继续，在下载任务里看）",
+        };
+        minus.Click += (_, _) =>
+        {
+            _progressCollapsed = !_progressCollapsed;
+            if (_progressDetail is not null)
+                _progressDetail.Visibility = _progressCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            if (_progressActions is not null)
+                _progressActions.Visibility = _progressCollapsed || _progressJob is not { CanCancel: true }
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+            minus.Content = _progressCollapsed ? "+" : "–";
+            minus.ToolTip = _progressCollapsed ? "展开" : "收起";
+        };
+        close.Click += (_, _) =>
+        {
+            Toast("进度卡已隐藏，可在下载任务里看");
+            ProgressDone(0);
+        };
+        var head = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+        head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        head.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        head.Children.Add(logo);
+        Grid.SetColumn(_progressTitle, 1);
+        head.Children.Add(_progressTitle);
+        Grid.SetColumn(_progressPct, 2);
+        head.Children.Add(_progressPct);
+        var controls = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        controls.Children.Add(minus);
+        controls.Children.Add(close);
+        Grid.SetColumn(controls, 3);
+        head.Children.Add(controls);
+
+        _progressLine = new TextBlock
+        {
+            Foreground = (Brush)FindResource("TextMuted"),
+            FontSize = 11.5,
+            TextWrapping = TextWrapping.Wrap,
+            MaxWidth = 380,
+            Margin = new Thickness(0, 0, 0, 8),
+        };
+        _progressTrack = new Border
+        {
+            Height = 5,
+            CornerRadius = new CornerRadius(3),
+            Background = (Brush)FindResource("LineDivider"),
+        };
+        _progressFill = new Border
+        {
+            Height = 5,
+            CornerRadius = new CornerRadius(3),
+            Background = (Brush)FindResource("Accent"),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Width = 0,
+        };
+        var track = new Grid();
+        track.Children.Add(_progressTrack);
+        track.Children.Add(_progressFill);
+        _progressTrack.SizeChanged += (_, _) => UpdateProgressFill();
+
+        var cancel = new Button
+        {
+            Style = (Style)FindResource("BtnDanger"),
+            Content = "取消",
+            Height = 24,
+            Padding = new Thickness(10, 0, 10, 0),
+            FontSize = 11.5,
+        };
+        cancel.Click += (_, _) =>
+        {
+            if (_progressJob is null) return;
+            try
+            {
+                AppState.Current.Launcher.CancelJob(_progressJob.Id);
+                Toast("已取消 " + _progressJob.Title);
+            }
+            catch (Exception ex) { Toast(PadError.Describe(ex), bad: true); }
+            ProgressDone(300);
+        };
+        var delete = new Button
+        {
+            Style = (Style)FindResource("BtnSm"),
+            Content = "删除",
+            Height = 24,
+            Margin = new Thickness(6, 0, 0, 0),
+            Padding = new Thickness(10, 0, 10, 0),
+            FontSize = 11.5,
+        };
+        delete.Click += (_, _) =>
+        {
+            if (_progressJob is null) return;
+            try
+            {
+                AppState.Current.Launcher.DeleteJob(_progressJob.Id);
+                Toast("已删除 " + _progressJob.Title);
+            }
+            catch (Exception ex) { Toast(PadError.Describe(ex), bad: true); }
+            ProgressDone(300);
+        };
+        var pause = new Button
+        {
+            Style = (Style)FindResource("BtnSm"),
+            Content = "暂停",
+            Height = 24,
+            Padding = new Thickness(10, 0, 10, 0),
+            FontSize = 11.5,
+        };
+        pause.Click += (_, _) =>
+        {
+            if (_progressJob is null) return;
+            try
+            {
+                var paused = AppState.Current.Launcher.ListJobs().FirstOrDefault(j => j.Id == _progressJob.Id)?.Paused == true;
+                if (paused)
+                {
+                    AppState.Current.Launcher.ResumeJob(_progressJob.Id);
+                    pause.Content = "暂停";
+                    Toast("已继续 " + _progressJob.Title);
+                }
+                else
+                {
+                    AppState.Current.Launcher.PauseJob(_progressJob.Id);
+                    pause.Content = "继续";
+                    Toast("已暂停 " + _progressJob.Title);
+                }
+            }
+            catch (Exception ex) { Toast(PadError.Describe(ex), bad: true); }
+        };
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 8, 0, 0),
+            Visibility = Visibility.Collapsed,
+        };
+        actions.PreviewMouseLeftButtonUp += (_, e) => e.Handled = true;
+        actions.Children.Add(pause);
+        actions.Children.Add(cancel);
+        actions.Children.Add(delete);
+        _progressActions = actions;
+
+        _progressDetail = new StackPanel();
+        _progressDetail.Children.Add(_progressLine);
+        _progressDetail.Children.Add(track);
+
+        var body = new StackPanel();
+        body.Children.Add(head);
+        body.Children.Add(_progressDetail);
+        body.Children.Add(actions);
+        _progressCard = new Border
+        {
+            Width = 400,
+            Background = (Brush)FindResource("BgCard"),
+            BorderBrush = (Brush)FindResource("LineBorder"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
+            Padding = new Thickness(14, 10, 10, 12),
+            Margin = new Thickness(0, 8, 0, 0),
+            Child = body,
+            Cursor = Cursors.Hand,
+            ToolTip = "打开下载任务",
+        };
+        var self = _progressCard;
+        self.MouseLeftButtonUp += (_, _) => OpenDownloadTasks();
+        // 用局部 self：ProgressDone 会把 _progressCard 置空，鼠标离开时才不会 NRE（02:49:27 崩溃）。
+        self.MouseEnter += (_, _) => self.Background = (Brush)FindResource("AccentWash");
+        self.MouseLeave += (_, _) => self.Background = (Brush)FindResource("BgCard");
+        ToastLayer.Children.Add(_progressCard);
+        if (Fx.Animated)
+        {
+            var shift = new TranslateTransform();
+            _progressCard.RenderTransform = shift;
+            _progressCard.BeginAnimation(OpacityProperty,
+                new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(160)))
+                {
+                    EasingFunction = new PowerEase { Power = 4.6, EasingMode = EasingMode.EaseOut },
+                });
+            shift.BeginAnimation(TranslateTransform.YProperty,
+                new DoubleAnimation(16, 0, new Duration(TimeSpan.FromMilliseconds(220)))
+                {
+                    EasingFunction = new PowerEase { Power = 4.6, EasingMode = EasingMode.EaseOut },
+                });
+        }
+    }
+
+    void UpdateProgressFill()
+    {
+        if (_progressFill is null || _progressTrack is null) return;
+        var width = Math.Max(0, _progressTrack.ActualWidth * Math.Clamp(_progressFraction ?? 0, 0, 1));
+        if (!Fx.Animated)
+        {
+            _progressFill.BeginAnimation(FrameworkElement.WidthProperty, null);
+            _progressFill.Width = width;
+            return;
+        }
+        _progressFill.BeginAnimation(FrameworkElement.WidthProperty,
+            new DoubleAnimation(width, new Duration(TimeSpan.FromMilliseconds(220)))
+            {
+                EasingFunction = new PowerEase { Power = 3, EasingMode = EasingMode.EaseOut },
+            });
+    }
+
+    /// <summary>点进度卡：跳到下载页的「下载任务」（同一个 jobs.json）。</summary>
+    public void OpenDownloadTasks()
+    {
+        Show("download");
+        TabDownload.IsChecked = true;
+        if (Page("download") is DownloadView dv) dv.OpenShelf("dltasks");
+    }
+
+    public void ProgressDone(int delayMs = 900)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(() => ProgressDone(delayMs)));
+            return;
+        }
+        var card = _progressCard;
+        _progressCard = null;
+        _progressTitle = null;
+        _progressLine = null;
+        _progressPct = null;
+        _progressTrack = null;
+        _progressFill = null;
+        _progressFraction = null;
+        _progressJob = null;
+        _progressCollapsed = false;
+        _progressDetail = null;
+        _progressActions = null;
+        if (card is null) return;
+        var life = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(Math.Max(0, delayMs)),
+        };
+        life.Tick += (_, _) =>
+        {
+            life.Stop();
+            ToastLayer.Children.Remove(card);
         };
         life.Start();
     }
@@ -764,6 +1445,15 @@ public partial class MainWindow : Window
             var any = System.IO.Directory.EnumerateFiles(state.Launcher.Root).Any(LaunchPolicy.IsSidecarZip);
             if (!any) return;
             var packs = new Packs(state.Launcher);
+            // 先留一份进插件包库：自动导入会删掉根目录的 zip，库里这份让「插件包」
+            // 列表还能看到它、可再建实例（PCL 的 modpack 目录语义）。
+            try
+            {
+                foreach (var zip in System.IO.Directory.EnumerateFiles(state.Launcher.Root)
+                             .Where(LaunchPolicy.IsSidecarZip))
+                    packs.CollectToLibrary(zip);
+            }
+            catch { /* 库拷贝失败不挡自动导入 */ }
             var fail = packs.Unavailable();
             if (fail is not null)
             {
@@ -772,6 +1462,7 @@ public partial class MainWindow : Window
             }
             await packs.ScanDrop(null, CancellationToken.None);
             state.Reload();
+            _ = state.ReloadPackCatalog();
         }
         catch (Exception ex)
         {
@@ -831,6 +1522,9 @@ public partial class MainWindow : Window
             Toast(PadError.Describe(ex), bad: true);
         }
     }
+
+    /// <summary>把探测到的 home 直接收编成实例（不弹选目录对话框，D36）。</summary>
+    public Task AdoptHomePath(string home) => AdoptHomeAt(home, "已收编本机 DSH");
 
     void TitleBar_Drag(object sender, MouseButtonEventArgs e)
     {

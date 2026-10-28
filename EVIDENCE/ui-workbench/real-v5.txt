@@ -1,0 +1,18 @@
+﻿管理首页 v5 — 柔光卡片 (2026-10-24)
+
+参照：soft card / claymorphism 轻量派（白卡浮在浅灰画布、大圆角、弥散阴影、克制用色）
+只学表达，不学功能布局。
+
+具体数值（已写进 D29）
+  画布 #EAEFF3   卡片 #FAFCFD      靠明度差分卡，不靠描边
+  圆角 22        内边距 24/20
+  阴影 blur 28 · depth 7 · opacity 0.10，hover 抬到 0.16
+  字阶 22 标题 / 34 数字 / 11 标签
+  侧栏 26x26 chip（首字）+ 名称 + 状态点，选中项 AccentWash 圆角底
+  主按钮「+ 卡片」实心 pill
+
+踩到的坑（已记 D29）
+  UserControl.Resources 里定义的样式，用 Application.Current.Resources[...] 取会得到 null，
+  索引器不抛异常 -> 样式静默失效 -> 第一版整页没有卡片面。改用 Resources[...]。
+
+数据仍是实时的：工具调用 738 次（pwsh 543 / edit 91 / read 54 / read_image 29 / write 21）

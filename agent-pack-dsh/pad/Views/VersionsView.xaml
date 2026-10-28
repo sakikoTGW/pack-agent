@@ -139,7 +139,68 @@
     </Border>
 
     <ScrollViewer Grid.Column="1" Padding="25,25,25,10" VerticalScrollBarVisibility="Auto">
-      <Grid>
+      <StackPanel>
+        <!-- 整合包（插件部分）= 组件 + 对应内核（PCL「可安装 Mod」位）：本机搜到的整合包，选中后建实例。 -->
+        <Border Style="{StaticResource Slab}" Padding="20,16,18,14" Margin="0,0,0,10">
+          <StackPanel>
+            <DockPanel Margin="0,0,0,6">
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Style="{StaticResource BtnPrimary}" Content="导出" Click="MakePack_Click"
+                        v:Ico.Of="{StaticResource I.Download}" Margin="0,0,8,0"
+                        ToolTip="把整合包导出成 .pack.zip" />
+                <Button Style="{StaticResource Btn}" Content="刷新"
+                        Click="RefreshPackCatalog_Click" v:Ico.Of="{StaticResource I.Data}" />
+              </StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="整合包"
+                              v:Ico.Of="{StaticResource I.Pack}" />
+            </DockPanel>
+            <ItemsControl x:Name="PackList" ItemsSource="{Binding PackCatalog}" Margin="0,6,0,0">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Style="{StaticResource Slab}" Padding="14,10,12,10" Margin="0,0,0,6"
+                          ToolTip="{Binding Path}">
+                    <Border.ContextMenu>
+                      <ContextMenu>
+                        <MenuItem Header="导出便携包…" Click="ExportPack_Click" />
+                        <MenuItem Header="导出整合包…" Click="ExportPackPortable_Click" />
+                        <MenuItem Header="导出整合包（文件夹）…" Click="ExportPackPortableFolder_Click" />
+                      </ContextMenu>
+                    </Border.ContextMenu>
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+                      <ContentControl Grid.Column="0" Style="{StaticResource QuantMono}" Content="包"
+                                      v:Ico.Of="{StaticResource I.Pack}" VerticalAlignment="Center" />
+                      <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                          <TextBlock Text="{Binding Title}" FontSize="{StaticResource FsBody}"
+                                     FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
+                                     TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding Version}" FontSize="{StaticResource FsMicro}"
+                                     Foreground="{StaticResource TextMuted}" Margin="8,1,0,0" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0"
+                                   Text="{Binding SummaryText}" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                      <Button Grid.Column="2" Style="{StaticResource BtnPrimary}" Content="新建实例"
+                              Tag="{Binding}" Click="CreateFromPack_Click" VerticalAlignment="Center"
+                              ToolTip="用这个整合包新建实例" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Border x:Name="PackEmpty" Style="{StaticResource Slab}" Padding="14,10,14,10"
+                    Visibility="Collapsed">
+              <TextBlock x:Name="PackEmptyText" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                         Text="本机没有整合包。" />
+            </Border>
+          </StackPanel>
+        </Border>
+
         <Border Style="{StaticResource Slab}" Padding="25,22,25,25" MaxWidth="420"
                 HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,40,0,0"
                 Visibility="{Binding NeedsSetup, Converter={StaticResource B2V}}">
@@ -157,14 +218,18 @@
           <Border Style="{StaticResource Slab}" Padding="20,16,18,16">
             <StackPanel>
               <ContentControl Style="{StaticResource SlabHead}" Content="DSH 版本" Margin="0,0,0,10"
-                              v:Ico.Of="{StaticResource I.Gear}" />
+                              v:Ico.Of="{StaticResource I.Download}" />
               <StackPanel Orientation="Horizontal">
-                <ComboBox x:Name="PinRelease" Width="220" Height="28"
-                          ItemsSource="{Binding Releases}">
+                <ComboBox x:Name="PinRelease" Width="380" Height="28">
                   <ComboBox.ItemTemplate>
                     <DataTemplate>
-                      <TextBlock Text="{Binding Version}" FontFamily="{StaticResource FontMono}"
-                                 FontSize="{StaticResource FsSmall}" />
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Version}" FontFamily="{StaticResource FontMono}"
+                                   FontSize="{StaticResource FsSmall}" />
+                        <TextBlock Text="{Binding Source}" FontSize="{StaticResource FsMicro}"
+                                   Foreground="{StaticResource TextMuted}" Margin="9,0,0,0"
+                                   Visibility="{Binding HasSource, Converter={StaticResource B2V}}" />
+                      </StackPanel>
                     </DataTemplate>
                   </ComboBox.ItemTemplate>
                 </ComboBox>
@@ -174,143 +239,50 @@
             </StackPanel>
           </Border>
 
-          <ItemsControl x:Name="VerGroups" ItemsSource="{Binding Source={StaticResource LaunchSrc}}">
-            <ItemsControl.GroupStyle>
-              <GroupStyle>
-                <GroupStyle.ContainerStyle>
-                  <Style TargetType="{x:Type GroupItem}">
-                    <Setter Property="Template">
-                      <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type GroupItem}">
-                          <Border Style="{StaticResource Slab}" Padding="20,14,18,8">
-                            <Expander IsExpanded="True" FontFamily="{StaticResource FontUI}"
-                                      FontSize="{StaticResource FsBody}" FontWeight="Bold"
-                                      Foreground="{StaticResource AccentText}">
-                              <Expander.Header>
-                                <TextBlock>
-                                  <TextBlock.Text>
-                                    <MultiBinding StringFormat="{}{0} ({1})">
-                                      <Binding Path="Name" />
-                                      <Binding Path="ItemCount" />
-                                    </MultiBinding>
-                                  </TextBlock.Text>
-                                </TextBlock>
-                              </Expander.Header>
-                              <ItemsPresenter Margin="0,8,0,4" />
-                            </Expander>
-                          </Border>
-                        </ControlTemplate>
-                      </Setter.Value>
-                    </Setter>
-                  </Style>
-                </GroupStyle.ContainerStyle>
-              </GroupStyle>
-            </ItemsControl.GroupStyle>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <Button Style="{StaticResource PickRow}" Height="56" Margin="0,0,0,2"
-                        Click="Pick_Click" Tag="{Binding}"
-                        MouseRightButtonUp="Profile_Setup">
-                  <Grid>
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="Auto" />
-                      <ColumnDefinition Width="*" />
-                      <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <local:InstMark Grid.Column="0" Width="34" Height="34" VerticalAlignment="Center" />
-                    <StackPanel Grid.Column="1" Margin="13,0,12,0" VerticalAlignment="Center"
-                                HorizontalAlignment="Left">
-                      <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding Name}" FontSize="{StaticResource FsTitle}"
-                                   FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" />
-                        <ContentControl Style="{StaticResource QuantLoud}" Content="在跑"
-                                        v:Ico.Of="{StaticResource I.Play}" Margin="9,1,0,0"
-                                        Visibility="{Binding Running, Converter={StaticResource B2V}}" />
-                      </StackPanel>
-                      <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0"
-                                 Text="{Binding Summary}" />
-                    </StackPanel>
-                    <Button Grid.Column="2" Style="{StaticResource IcoBtn}" Click="Setup_Click"
-                            Tag="{Binding}" ToolTip="版本设置" VerticalAlignment="Center">
-                      <v:Ico Glyph="{StaticResource I.Gear}" Height="13" />
-                    </Button>
-                  </Grid>
-                </Button>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-
-          <Border Style="{StaticResource Slab}" Padding="20,16,18,12">
-            <Expander IsExpanded="False" FontFamily="{StaticResource FontUI}"
-                      FontSize="{StaticResource FsBody}" FontWeight="Bold"
-                      Foreground="{StaticResource AccentText}">
-              <Expander.Header>
-                <TextBlock Text="整合包" />
-              </Expander.Header>
-              <StackPanel Margin="0,10,0,4">
-                <ItemsControl x:Name="MatchPacks" ItemsSource="{Binding PackRows}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <Grid Height="44" Margin="0,0,0,4">
-                        <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="*" />
-                          <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel VerticalAlignment="Center">
-                          <TextBlock Text="{Binding Title}" FontSize="{StaticResource FsBody}"
+          <!-- 容器 = 本实例的启动配置 + 本机探测到的桌面端 / TUI。识别到就列在这里；
+               点一行只是选中（学 PCL），右侧只有设置齿轮。 -->
+          <Border Style="{StaticResource Slab}" Padding="20,14,18,10">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="容器"
+                              v:Ico.Of="{StaticResource I.Terminal}" />
+              <ListBox x:Name="ContainerList" Style="{StaticResource PlainList}" Margin="0,6,0,0"
+                       SelectionChanged="ContainerList_Sel">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <Grid ToolTip="{Binding DetailText}">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="44" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+                      <TextBlock Grid.Column="0" Text="{Binding Kind}"
+                                 FontSize="{StaticResource FsMicro}"
+                                 Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" />
+                      <local:InstMark Grid.Column="1" Width="34" Height="34" VerticalAlignment="Center" />
+                      <StackPanel Grid.Column="2" Margin="13,0,12,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                          <TextBlock Text="{Binding Name}" FontSize="{StaticResource FsTitle}"
                                      FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" />
-                          <TextBlock Style="{StaticResource Muted}" Margin="0,2,0,0"
-                                     Text="{Binding StateText}" />
+                          <!-- 在跑 = 呼吸绿灯，不写字 -->
+                          <local:RunLamp Width="12" Height="12" Margin="8,0,0,0"
+                                         VerticalAlignment="Center" Running="{Binding Running}" />
                         </StackPanel>
-                        <Button Grid.Column="1" VerticalAlignment="Center" Tag="{Binding Id}"
-                                Click="ToggleMatchPack_Click" Style="{StaticResource Btn}" Width="64"
-                                Content="{Binding Enabled, Converter={StaticResource PackAction}}" />
-                      </Grid>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <TextBlock x:Name="MatchPackEmpty" Style="{StaticResource Muted}" Margin="0,4,0,0"
-                           Visibility="Collapsed" />
-              </StackPanel>
-            </Expander>
-          </Border>
-
-          <Border Style="{StaticResource Slab}" Padding="20,16,18,16">
-            <Expander IsExpanded="False" FontFamily="{StaticResource FontUI}"
-                      FontSize="{StaticResource FsBody}" FontWeight="Bold"
-                      Foreground="{StaticResource AccentText}">
-              <Expander.Header>
-                <TextBlock Text="安装新版本" />
-              </Expander.Header>
-              <StackPanel Margin="0,12,0,0">
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="176" />
-                    <ColumnDefinition Width="12" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                  </Grid.ColumnDefinitions>
-                  <TextBox Grid.Column="0" x:Name="NewProfile" Text="dsh-tui" Tag="名称" />
-                  <ComboBox Grid.Column="2" x:Name="ProfileKind" Width="152" SelectedIndex="0">
-                    <ComboBoxItem Content="终端 (dsh-tui)" Tag="tui" />
-                    <ComboBoxItem Content="网页 (web)" Tag="web" />
-                    <ComboBoxItem Content="空白（base）" Tag="base" />
-                  </ComboBox>
-                  <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Left"
-                              Margin="12,0,0,0">
-                    <Button x:Name="AddProfileBtn" Style="{StaticResource BtnPrimary}" Content="创建并安装"
-                            Click="AddProfile_Click" v:Ico.Of="{StaticResource I.Plus}" />
-                    <ContentControl x:Name="AddSpinner" Style="{StaticResource Spinner}" Margin="10,0,0,0"
-                                    VerticalAlignment="Center" Visibility="Collapsed" />
-                  </StackPanel>
-                </Grid>
-                <TextBox x:Name="ProfileLog" Style="{StaticResource LogBox}" Height="0"
-                         Visibility="Collapsed" Margin="0,12,0,0" />
-              </StackPanel>
-            </Expander>
+                        <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0"
+                                   Text="{Binding Summary}" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                      <Button Grid.Column="3" Style="{StaticResource IcoBtn}" Click="Setup_Click"
+                              Tag="{Binding}" ToolTip="设置" VerticalAlignment="Center">
+                        <v:Ico Glyph="{StaticResource I.Gear}" Height="13" />
+                      </Button>
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
           </Border>
         </StackPanel>
-      </Grid>
+      </StackPanel>
     </ScrollViewer>
   </Grid>
 </UserControl>

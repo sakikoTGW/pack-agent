@@ -5,7 +5,7 @@ using System.Windows.Threading;
 namespace Pad.Core;
 
 /// <summary>One launchable row: an instance's profile, the counterpart of a PCL version.</summary>
-public sealed class ProfileVm(Instance inst, DshProfile profile) : Observable
+public class ProfileVm(Instance inst, DshProfile profile) : Observable
 {
     public Instance Instance { get; } = inst;
     public DshProfile Profile { get; } = profile;
@@ -15,22 +15,191 @@ public sealed class ProfileVm(Instance inst, DshProfile profile) : Observable
     public string TargetText => $"{InstanceName} · {Name}";
     public string Release => Instance.Dsh.Version;
 
-    public string Kind => Profile.HasTui ? "终端" : Profile.IsWeb ? "网页" : "自定义";
+    public virtual string Kind => Profile.HasTui ? "终端" : Profile.IsWeb ? "网页" : "自定义";
 
     /// <summary>Sort key so 终端 sits above 网页, like PCL cards.</summary>
-    public int GroupOrder => Profile.HasTui ? 0 : Profile.IsWeb ? 1 : 2;
+    public virtual int GroupOrder => Profile.HasTui ? 0 : Profile.IsWeb ? 1 : 2;
 
-    /// <summary>What this profile actually is, stated in DSH's own words.</summary>
-    public string Summary => $"{Kind} · {Release}";
+    /// <summary>列表里只留最关键的一行（版本）；其余都进 <see cref="DetailText"/>（tooltip / 设置）。</summary>
+    public virtual string Summary => Release;
 
-    public string Badge => Profile.HasTui ? "TUI" : Profile.IsWeb ? "WEB" : Name.Length > 0
+    /// <summary>一行放不下的细节：tooltip 和设置卡片用，不摊在列表里。</summary>
+    public virtual string DetailText =>
+        string.Join(Environment.NewLine,
+            $"{Kind} · {Release}",
+            $"实例 {InstanceName}",
+            string.IsNullOrWhiteSpace(Instance.Home) ? "" : $"home {Instance.Home}",
+            Running ? "在跑" : "未跑");
+
+    public virtual string Badge => Profile.HasTui ? "TUI" : Profile.IsWeb ? "WEB" : Name.Length > 0
         ? Name[..1].ToUpperInvariant() : "?";
 
     public bool Manageable => Profile.HasApiProxy;
 
+    /// <summary>本机探测出来的行（不是 PAD 实例的 profile），见 <see cref="DetectedTuiRow"/>。</summary>
+    public virtual bool IsDetected => false;
+
+    /// <summary>探测到的 home 是否需要/可以收编成 PAD 实例。</summary>
+    public virtual bool CanAdopt => false;
+
+    public virtual string? DetectedHome => null;
+
+    /// <summary>探测行自带图标（桌面端的 resources\icon.png 等）；null = 走 InstMark 原来的载体图标链。</summary>
+    public virtual string? IconPath => null;
+
+    /// <summary>桌面端自己的应用图标：&lt;exe 目录&gt;\resources\icon.png / tray.ico。</summary>
+    public static string? ShellIconPath(string? exe)
+    {
+        if (string.IsNullOrWhiteSpace(exe)) return null;
+        try
+        {
+            var dir = Path.GetDirectoryName(exe!.Trim().Trim('"'));
+            if (string.IsNullOrWhiteSpace(dir)) return null;
+            foreach (var name in new[] { "icon.png", "icon.ico", "tray.ico" })
+            {
+                var p = Path.Combine(dir!, "resources", name);
+                if (File.Exists(p)) return p;
+            }
+        }
+        catch { /* 读不到图标就退回默认链 */ }
+        return null;
+    }
+
+    /// <summary>官方桌面端（DeepSeek Harness）还是第三方壳（DSH Desktop 等）。</summary>
+    public static bool IsOfficialShell(string? exe)
+    {
+        if (string.IsNullOrWhiteSpace(exe)) return false;
+        try
+        {
+            var trimmed = exe!.Trim().Trim('"');
+            var name = Path.GetFileNameWithoutExtension(trimmed);
+            if (name.Contains("DeepSeek", StringComparison.OrdinalIgnoreCase)) return true;
+            var info = System.Diagnostics.FileVersionInfo.GetVersionInfo(trimmed);
+            return (info.ProductName ?? "").Contains("DeepSeek", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>home 缩写（末两级），列表里放得下。</summary>
+    protected static string ShortHomeText(string? path, int max = 22)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return "-";
+        var full = path!.TrimEnd('\\', '/');
+        var name = Path.GetFileName(full);
+        var parent = Path.GetFileName(Path.GetDirectoryName(full) ?? "");
+        var text = string.IsNullOrWhiteSpace(parent) ? name : parent + "/" + name;
+        return text.Length > max ? "…" + text[^max..] : text;
+    }
+
+    /// <summary>@scope/pkg → pkg。</summary>
+    protected static string ShortPackageName(string? package)
+    {
+        if (string.IsNullOrWhiteSpace(package)) return "TUI";
+        var name = package!.Trim();
+        var slash = name.LastIndexOf('/');
+        return slash >= 0 ? name[(slash + 1)..] : name;
+    }
+
     bool _running;
     public bool Running { get => _running; set => Set(ref _running, value); }
 }
+
+/// <summary>
+/// 本机探测到的 TUI（不是 PAD 实例的 profile）：出现在版本选择页的「容器」列表里，
+/// 点一下/点收编就把它所在的 home 收编成实例。渲染复用 ProfileVm + 合成 Instance/Profile。
+/// </summary>
+public sealed class DetectedTuiRow(Tui tui, bool canAdopt) : ProfileVm(Synthetic(tui), SyntheticProfile(tui))
+{
+    public override bool IsDetected => true;
+
+    public override bool CanAdopt => canAdopt && !string.IsNullOrWhiteSpace(tui.Home);
+
+    public override string? DetectedHome => tui.Home;
+
+    public override string Kind => "TUI";
+
+    /// <summary>版本放一行；包名/内核/home 都进 tooltip 与设置卡。</summary>
+    public override string Summary => tui.Version ?? "";
+
+    public override string DetailText =>
+        string.Join(Environment.NewLine,
+            $"{ShortPackageName(tui.Package)} {tui.Version}",
+            $"内核 {tui.DeclaredKernel ?? "?"}",
+            Running ? "在跑" : "未跑",
+            string.IsNullOrWhiteSpace(tui.Home) ? "" : $"home {tui.Home}");
+
+    public override string Badge => "TUI";
+
+    static Instance Synthetic(Tui tui) => new()
+    {
+        Id = "detected-tui:" + (tui.Home ?? tui.Package),
+        Name = (tui.Home ?? tui.Package) + " 的本机 TUI",
+        Home = tui.Home ?? "",
+        Dsh = new InstanceDsh { Version = tui.DeclaredKernel ?? tui.Version ?? "" },
+        Adopted = true,
+    };
+
+    static DshProfile SyntheticProfile(Tui tui) => new()
+    {
+        Name = (tui.Profile ?? ShortPackageName(tui.Package)) + "（本机）",
+        Bundles = [tui.Package],
+    };
+}
+
+/// <summary>本机探测到的桌面端（官方/非官方 Electron 壳）：出现在「容器」列表里，可收编其 home。</summary>
+public sealed class DetectedShellRow(Shell shell, bool canAdopt) : ProfileVm(Synthetic(shell), SyntheticProfile(shell))
+{
+    public override bool IsDetected => true;
+
+    public override bool CanAdopt => canAdopt && !string.IsNullOrWhiteSpace(shell.Home);
+
+    public override string? DetectedHome => shell.Home;
+
+    /// <summary>官方桌面端 = 官方小黑鲸图标；第三方 = 壳自己的 resources\icon.png。</summary>
+    public override string? IconPath => ShellIconPath(shell.Exe);
+
+    public override string Kind => IsOfficialShell(shell.Exe) ? "官方" : "第三方";
+
+    /// <summary>版本放一行；pid/home/userData 进 tooltip 和设置卡。</summary>
+    public override string Summary => shell.KernelVersion ?? shell.Version ?? "";
+
+    public override string DetailText
+    {
+        get
+        {
+            var lines = new List<string>
+            {
+                $"{(IsOfficialShell(shell.Exe) ? "官方" : "第三方")}桌面端 {shell.Version}",
+                $"内核 {shell.KernelVersion ?? "?"}",
+                Running ? $"在跑 pid {shell.Pid}" : "未跑",
+            };
+            if (!string.IsNullOrWhiteSpace(shell.UserData)) lines.Add($"userData {shell.UserData}");
+            if (!string.IsNullOrWhiteSpace(shell.Home)) lines.Add($"home {shell.Home}");
+            return string.Join(Environment.NewLine, lines);
+        }
+    }
+
+    public override string Badge => "DSH";
+
+    static Instance Synthetic(Shell shell) => new()
+    {
+        Id = "detected-shell:" + shell.Exe,
+        Name = Path.GetFileNameWithoutExtension(shell.Exe),
+        Home = shell.Home ?? "",
+        Dsh = new InstanceDsh { Version = shell.KernelVersion ?? shell.Version ?? "" },
+        Adopted = true,
+    };
+
+    static DshProfile SyntheticProfile(Shell shell) => new()
+    {
+        Name = Path.GetFileNameWithoutExtension(shell.Exe),
+        Bundles = [],
+    };
+}
+
 
 /// <summary>A live run PAD started.</summary>
 public sealed class RunVm(RunEntry entry, string instanceName) : Observable
@@ -113,6 +282,14 @@ public sealed class AppState : Observable
     public ObservableCollection<string> Roots { get; } = [];
     public ObservableCollection<PackRow> PackRows { get; } = [];
 
+    /// <summary>本机能搜到的整合包（插件部分 + 对应内核）。PCL 的「可安装 Mod」位。</summary>
+    public ObservableCollection<PackCard> PackCatalog { get; } = [];
+
+    /// <summary>上一次整合包扫描的错误（空 = 正常）；UI 直接显示，不弹栈。</summary>
+    public string PackCatalogError { get; private set; } = "";
+
+    int _packCatalogGen;
+
     readonly DispatcherTimer _timer;
 
     AppState()
@@ -121,7 +298,12 @@ public sealed class AppState : Observable
         Runner = new Runner(Launcher);
         Settings = Launcher.Settings();
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-        _timer.Tick += (_, _) => RefreshRunning();
+        _timer.Tick += (_, _) =>
+        {
+            // A page switch is animating: process/disk work on the UI thread now would
+            // land inside the motion. Skip this beat; the next one is 2s away.
+            if (!Views.Fx.Busy) RefreshRunning();
+        };
         LoadRoots();
         var switched = PreferSharedRoot();
         _timer.Start();
@@ -250,9 +432,52 @@ public sealed class AppState : Observable
         RaiseStep();
     }
 
-    void RebuildLaunchables()
+    /// <summary>
+    /// 整合包目录（插件部分 + 内核）：走 ts 侧同一套发现/投影代码（Packs.Catalog），
+    /// worker 上跑；这层只持有结果，不判断"哪个包能建实例"。
+    /// </summary>
+    public async Task ReloadPackCatalog()
     {
-        Launchables.Clear();
+        var gen = ++_packCatalogGen;
+        List<PackCard> rows;
+        try
+        {
+            // exe 旁是 PCL 式 sidecar zip 的位置；launcher root / library / 盘根命名
+            // 由 ts 侧自己的默认根负责，不在这里重复扫。
+            var roots = AppContext.BaseDirectory;
+            rows = await Task.Run(() => new Packs(Launcher).Catalog(roots, null, null, CancellationToken.None));
+        }
+        catch (Exception ex)
+        {
+            if (gen != _packCatalogGen) return;
+            PackCatalogError = PadError.Describe(ex);
+            PackCatalog.Clear();
+            Raise(nameof(PackCatalogError));
+            return;
+        }
+        if (gen != _packCatalogGen) return;
+        // 只有带 dsh.version（能钉内核）的才是能建 DSH 实例的整合包。exports 里的
+        // Cursor/Claude agent 配置包没有 dsh 层，建不了实例；把它们列成「整合包」
+        // 只会让人误会（用户 2026-10-28："一个组件一个整合包"）。
+        // 同一个包常同时躺在 library 和桌面/下载里；列表按「名字+版本」只留一份，
+        // 优先留 PAD 自己库里的那份（用户看到的是"一个包"，不是同一个包两行）。
+        rows = rows
+            .Where(r => !string.IsNullOrWhiteSpace(r.Kernel)
+                        || (r.Kind ?? "").Contains("pinst", StringComparison.OrdinalIgnoreCase))
+            .GroupBy(r => ((r.Title ?? "").Trim().ToLowerInvariant(), (r.Version ?? "").Trim()))
+            .Select(g => g
+                .OrderByDescending(r => (r.Source ?? "").Contains("library", StringComparison.OrdinalIgnoreCase))
+                .ThenBy(r => r.Path, StringComparer.OrdinalIgnoreCase)
+                .First())
+            .ToList();
+        PackCatalog.Clear();
+        foreach (var row in rows) PackCatalog.Add(row);
+        PackCatalogError = "";
+        Raise(nameof(PackCatalogError));
+    }
+
+    void RebuildLaunchables()
+    {        Launchables.Clear();
         var inst = SelectedInstance;
         if (inst is null)
         {
@@ -392,6 +617,9 @@ public sealed class AppState : Observable
         Settings.LastProfile = SelectedProfile?.Name;
         Launcher.SaveSettings(Settings);
     }
+
+    /// <summary>Persist the current settings (normalize + write) without touching selection.</summary>
+    public void SaveSettings() => ApplySettings(Settings);
 
     public void ApplySettings(PadSettings s)
     {

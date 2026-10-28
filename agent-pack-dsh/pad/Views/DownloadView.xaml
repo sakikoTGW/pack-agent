@@ -10,15 +10,30 @@
     <local:BoolToVis x:Key="B2V" />
     <local:BoolToVis x:Key="B2VNot" Invert="True" />
     <DataTemplate x:Key="DlJobRow">
-      <Grid Height="72" Margin="0,0,0,2">
+      <Grid Height="72" Margin="0,0,0,2" Background="Transparent"
+            MouseLeftButtonUp="Row_Click" Tag="{Binding Job}" Cursor="Hand">
+        <Grid.Style>
+          <Style TargetType="Grid">
+            <Setter Property="Background" Value="Transparent" />
+            <Style.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource AccentWash}" />
+              </Trigger>
+            </Style.Triggers>
+          </Style>
+        </Grid.Style>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <ContentControl Grid.Column="0" Style="{StaticResource MonogramTile}"
-                        Content="{Binding Monogram}" VerticalAlignment="Center"
-                        Margin="0,0,14,0" />
+        <!-- 图标只显示任务自己的图（整合包/实例图标，InstMark 统一解析），
+             状态不再画图标：运行用呼吸灯，暂停/完成/失败看文字和按钮。 -->
+        <Grid Grid.Column="0" Width="50" Height="50" VerticalAlignment="Center" Margin="0,0,14,0">
+          <v:InstMark IconPath="{Binding IconPath}" />
+          <local:RunLamp Running="{Binding ShowRunningLamp}" Width="10" Height="10"
+                         HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,2,2" />
+        </Grid>
         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
           <TextBlock FontSize="{StaticResource FsTitle}" FontWeight="SemiBold"
                      Foreground="{StaticResource TextPrimary}"
@@ -31,11 +46,27 @@
                        Visibility="{Binding ShowMeter, Converter={StaticResource B2V}}" />
         </StackPanel>
         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-          <Button Style="{StaticResource BtnDanger}" Content="取消" Height="26"
+          <Button Style="{StaticResource BtnSm}" Content="暂停" Height="26"
+                  Padding="9,0" FontSize="{StaticResource FsSmall}"
+                  Click="Pause_Click" Tag="{Binding Job}"
+                  Visibility="{Binding CanPause, Converter={StaticResource B2V}}"
+                  v:Ico.Of="{StaticResource I.Pause}" />
+          <Button Style="{StaticResource BtnSm}" Content="继续" Height="26"
+                  Padding="9,0" FontSize="{StaticResource FsSmall}"
+                  Click="Pause_Click" Tag="{Binding Job}"
+                  Visibility="{Binding CanResume, Converter={StaticResource B2V}}"
+                  v:Ico.Of="{StaticResource I.Play}" />
+          <Button Style="{StaticResource BtnDanger}" Content="取消" Height="26" Margin="6,0,0,0"
                   Padding="11,0" FontSize="{StaticResource FsSmall}"
                   Click="Cancel_Click" Tag="{Binding Job}"
                   Visibility="{Binding CanCancel, Converter={StaticResource B2V}}"
                   v:Ico.Of="{StaticResource I.Stop}" />
+          <Button Style="{StaticResource BtnSm}" Content="删除" Height="26" Margin="6,0,0,0"
+                  Padding="9,0" FontSize="{StaticResource FsSmall}"
+                  ToolTip="取消并从列表删除"
+                  Click="Delete_Click" Tag="{Binding Job}"
+                  Visibility="{Binding CanCancel, Converter={StaticResource B2V}}"
+                  v:Ico.Of="{StaticResource I.Close}" />
           <Button Style="{StaticResource BtnSm}" Content="在文件夹中显示"
                   Click="Folder_Click" Tag="{Binding Job}"
                   Visibility="{Binding CanForget, Converter={StaticResource B2V}}"

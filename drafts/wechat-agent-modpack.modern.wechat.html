@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>WeChat Article</title>
+</head>
+<body style="margin: 0; padding: 0;">
+
+<!-- 微信公众号复制容器：背景色使用 solid hex，并在外层、内容层、文本层重复声明，降低粘贴后丢失风险 -->
+<section data-wechat-root="article" style="background-color:#faf9f5;padding:0;margin:0;">
+
+<!-- 顶部标签 -->
+<section style="max-width:600px;margin:0 auto;padding:28px 16px 12px;background-color:#faf9f5;">
+    <p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:12px;font-weight:600;color:#1B365D;letter-spacing:1px;text-transform:uppercase;margin:0 0 8px;background-color:#faf9f5;"><span style="background-color:#e8ecf2;padding:2px 8px;border-radius:3px;">GUIDE</span></p>
+    <section style="margin:10px 0 0;background-color:#faf9f5;"><section style="width:56px;border-top:1px solid #dddad2;height:0;margin:0 auto 0 0;background-color:#faf9f5;"><span><br /></span></section></section>
+
+</section>
+
+<!-- 章节 1 -->
+<section style="max-width:600px;margin:0 auto;padding:20px 16px;background-color:#faf9f5;">
+<section style="background-color:#faf9f5;padding:0;margin:0;">
+
+<h1 style="font-family:'PingFang SC','Hiragino Sans GB',sans-serif;font-weight:650;color:#1a1a1a;word-break:break-word;background-color:#faf9f5;font-size:28px;line-height:1.24;margin:0 0 16px;padding:0;"><span style="background-color:#faf9f5;">我做了个 Agent 整合包：一份 .pack.json，装进 Claude Code / Codex</span></h1>
+<section style="background-color:#f0f2f6;border:1px solid #dddad2;padding:12px 14px;margin:0 0 16px;border-radius:8px;">
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#8a8a82;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0;padding:0;word-break:break-word;background-color:#f0f2f6;"><span style="background-color:#f0f2f6;">Agent Modpack · <a href="https://github.com/sakikoTGW/pack-agent" style="color:#1B365D;text-decoration:underline;text-underline-offset:3px;background-color:#f0f2f6;"><span style="background-color:#f0f2f6;">@sakikotgw/pack-agent</span></a></span></p>
+</section>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">换电脑、换 Claude Code 到 Codex，skills 和 MCP 常常散掉。同事丢三个 skill 文件夹过来，还得自己猜 rule 写哪、装完怎么卸。</span></p>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">OpenSkills 一类工具解决的是「装一份 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">SKILL.md</span></code>」。还有一堆工具做「本机一份源配置，symlink 到所有 agent」。</span></p>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">我要的是第三种：<strong style="color:#1B365D;font-weight:600;background-color:#faf9f5;"><span style="background-color:#faf9f5;">把整个角色打成能甩给别人的包</span></strong>——skills、rules、MCP、经验罐头一起走，能看清单，能按账本卸干净。</span></p>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">于是开源了 <strong style="color:#1B365D;font-weight:600;background-color:#faf9f5;"><span style="background-color:#faf9f5;">Agent Modpack</span></strong>（CLI：<code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">packagent</span></code>）。</span></p>
+<section style="margin:26px 0 26px;background-color:#faf9f5;"><section style="width:36%;max-width:168px;border-top:1px solid #dddad2;height:0;margin:0 auto;background-color:#faf9f5;"><span><br /></span></section></section>
+
+</section>
+</section>
+
+<!-- 章节 2 -->
+<section style="max-width:600px;margin:0 auto;padding:32px 16px;background-color:#faf9f5;">
+<section style="background-color:#faf9f5;padding:0;margin:0;">
+
+<h2 style="font-family:'PingFang SC','Hiragino Sans GB',sans-serif;font-weight:650;color:#1a1a1a;word-break:break-word;background-color:#faf9f5;font-size:23px;line-height:1.24;margin:30px 0 14px;padding:0 0 0 10px;border-left:3px solid #1B365D;"><span style="background-color:#faf9f5;">最快试一把</span></h2>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">有人甩给你一个 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">foo.pack.json</span></code>（要 Node、网络、<a href="https://bun.sh" style="color:#1B365D;text-decoration:underline;text-underline-offset:3px;background-color:#faf9f5;"><span style="background-color:#faf9f5;">Bun</span></a>）：</span></p>
+<pre style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;border:1px solid #dddad2;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 16px;line-height:1.5;white-space:pre-wrap;word-break:break-word;"><code style="font-family:'SF Mono',Menlo,Consolas,monospace;background-color:#eeecea;color:#1B365D;">npx --yes -p @sakikotgw/pack-agent packagent install foo.pack.json</code></pre>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">跟任意 coding agent 说「装一下这个」——用上面这条。</span></p>
+<section style="background-color:#f0f2f6;border:1px solid #dddad2;padding:12px 14px;margin:0 0 16px;border-radius:8px;">
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#8a8a82;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0;padding:0;word-break:break-word;background-color:#f0f2f6;"><span style="background-color:#f0f2f6;">Windows 上别用旧写法 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">npx --package … -- pack-agent</span></code>，会报「不是内部或外部命令」。</span></p>
+</section>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">长期用：</span></p>
+<pre style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;border:1px solid #dddad2;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 16px;line-height:1.5;white-space:pre-wrap;word-break:break-word;"><code style="font-family:'SF Mono',Menlo,Consolas,monospace;background-color:#eeecea;color:#1B365D;">npm install @sakikotgw/pack-agent
+packagent detect
+packagent install foo.pack.json --runtime claude-code</code></pre>
+<section style="margin:26px 0 26px;background-color:#faf9f5;"><section style="width:36%;max-width:168px;border-top:1px solid #dddad2;height:0;margin:0 auto;background-color:#faf9f5;"><span><br /></span></section></section>
+
+</section>
+</section>
+
+<!-- 章节 3 -->
+<section style="max-width:600px;margin:0 auto;padding:32px 16px;background-color:#faf9f5;">
+<section style="background-color:#faf9f5;padding:0;margin:0;">
+
+<h2 style="font-family:'PingFang SC','Hiragino Sans GB',sans-serif;font-weight:650;color:#1a1a1a;word-break:break-word;background-color:#faf9f5;font-size:23px;line-height:1.24;margin:30px 0 14px;padding:0 0 0 10px;border-left:3px solid #1B365D;"><span style="background-color:#faf9f5;">自己打包装角色</span></h2>
+<pre style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;border:1px solid #dddad2;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0 0 16px;line-height:1.5;white-space:pre-wrap;word-break:break-word;"><code style="font-family:'SF Mono',Menlo,Consolas,monospace;background-color:#eeecea;color:#1B365D;">packagent agents init
+packagent export --agent &lt;角色名&gt;
+packagent show .agent-pack/exports/&lt;角色名&gt;.pack.json
+packagent install .agent-pack/exports/&lt;角色名&gt;.pack.json
+packagent eject --name &lt;角色名&gt;</code></pre>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">角色写在 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">.agent-pack/agents.yaml</span></code>。不带 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">--agent</span></code> 直接 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">export</span></code> 会被硬拒绝——一个包只封一个角色。</span></p>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;"><code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">detect</span></code> 看本机有哪些 harness。默认对能装的各投一份；只想 Claude Code 就加 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">--runtime claude-code</span></code>。</span></p>
+<section style="margin:26px 0 26px;background-color:#faf9f5;"><section style="width:36%;max-width:168px;border-top:1px solid #dddad2;height:0;margin:0 auto;background-color:#faf9f5;"><span><br /></span></section></section>
+
+</section>
+</section>
+
+<!-- 章节 4 -->
+<section style="max-width:600px;margin:0 auto;padding:32px 16px;background-color:#faf9f5;">
+<section style="background-color:#faf9f5;padding:0;margin:0;">
+
+<h2 style="font-family:'PingFang SC','Hiragino Sans GB',sans-serif;font-weight:650;color:#1a1a1a;word-break:break-word;background-color:#faf9f5;font-size:23px;line-height:1.24;margin:30px 0 14px;padding:0 0 0 10px;border-left:3px solid #1B365D;"><span style="background-color:#faf9f5;">装成功了，上下文却是空的</span></h2>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">Hermes 上我踩过一脚：hook 写进配置了，<code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">install</span></code> 也报成功，下一轮对话里经验罐头是空的。</span></p>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">Hermes 的 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">pre_llm_call</span></code> 只认 stdout 里的 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">{&amp;quot;context&amp;quot;:&amp;quot;...&amp;quot;}</span></code>。当时脚本吐的是 Claude 那套 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">hookSpecificOutput</span></code>。用 Hermes 自己的解析函数喂进去，结果是 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">None</span></code>——不是报错，是静默当没发生。</span></p>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">改成正确形状之后，同样的 marker 才能进 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">context</span></code>。</span></p>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">这件事把产品钉死了：装的是角色拼进模型前的那截输入，不是「磁盘上多了几个文件夹」。</span></p>
+<section style="background-color:#f0f2f6;border:1px solid #dddad2;padding:12px 14px;margin:0 0 16px;border-radius:8px;">
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#8a8a82;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0;padding:0;word-break:break-word;background-color:#f0f2f6;"><span style="background-color:#f0f2f6;">看报告里的 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">skipped</span></code> 和 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">notes</span></code>，别只看 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">ok: true</span></code>。OpenClaw / Hermes 的全局扫描目录默认不写，要显式 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">--global-config</span></code>。早期无条件写全局，临时目录会在 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">~/.hermes</span></code> 攒死路径。</span></p>
+</section>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">经验罐头默认不当 skill——走 SessionStart / <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">pre_llm_call</span></code> 注入，避免污染技能检索。缺瓶口录制的包标 L1，换模型会漂。</span></p>
+<section style="margin:26px 0 26px;background-color:#faf9f5;"><section style="width:36%;max-width:168px;border-top:1px solid #dddad2;height:0;margin:0 auto;background-color:#faf9f5;"><span><br /></span></section></section>
+
+</section>
+</section>
+
+<!-- 章节 5 -->
+<section style="max-width:600px;margin:0 auto;padding:32px 16px;background-color:#faf9f5;">
+<section style="background-color:#faf9f5;padding:0;margin:0;">
+
+<h2 style="font-family:'PingFang SC','Hiragino Sans GB',sans-serif;font-weight:650;color:#1a1a1a;word-break:break-word;background-color:#faf9f5;font-size:23px;line-height:1.24;margin:30px 0 14px;padding:0 0 0 10px;border-left:3px solid #1B365D;"><span style="background-color:#faf9f5;">它不做什么</span></h2>
+<ul style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;color:#1a1a1a;line-height:1.75;margin:0 0 16px;padding-left:24px;list-style-type:disc;background-color:#faf9f5;">
+<li style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;color:#1a1a1a;line-height:1.75;text-align:justify;margin:0 0 8px;padding:0 0 8px;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">不是 skill 商店，不去发现十几万个 skill  </span></li>
+<li style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;color:#1a1a1a;line-height:1.75;text-align:justify;margin:0 0 8px;padding:0 0 8px;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">不是「一份源目录永远 symlink」的同步器  </span></li>
+<li style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;color:#1a1a1a;line-height:1.75;text-align:justify;margin:0 0 8px;padding:0 0 8px;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">默认不碰全局配置；Cursor 的 skill 投射会跳过，但仍可能写项目级 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">.cursor/mcp.json</span></code> 挂上 MCP</span></li>
+</ul>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">心智上可以记一句：Harness 像启动器，<code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">.pack.json</span></code> 像整合包清单。CLI 就是启动器。</span></p>
+<section style="margin:26px 0 26px;background-color:#faf9f5;"><section style="width:36%;max-width:168px;border-top:1px solid #dddad2;height:0;margin:0 auto;background-color:#faf9f5;"><span><br /></span></section></section>
+
+</section>
+</section>
+
+<!-- 章节 6 -->
+<section style="max-width:600px;margin:0 auto;padding:32px 16px;background-color:#faf9f5;">
+<section style="background-color:#faf9f5;padding:0;margin:0;">
+
+<h2 style="font-family:'PingFang SC','Hiragino Sans GB',sans-serif;font-weight:650;color:#1a1a1a;word-break:break-word;background-color:#faf9f5;font-size:23px;line-height:1.24;margin:30px 0 14px;padding:0 0 0 10px;border-left:3px solid #1B365D;"><span style="background-color:#faf9f5;">链接</span></h2>
+<ul style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;color:#1a1a1a;line-height:1.75;margin:0 0 16px;padding-left:24px;list-style-type:disc;background-color:#faf9f5;">
+<li style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;color:#1a1a1a;line-height:1.75;text-align:justify;margin:0 0 8px;padding:0 0 8px;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">GitHub：<a href="https://github.com/sakikoTGW/pack-agent" style="color:#1B365D;text-decoration:underline;text-underline-offset:3px;background-color:#faf9f5;"><span style="background-color:#faf9f5;">https://github.com/sakikoTGW/pack-agent</span></a>  </span></li>
+<li style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;color:#1a1a1a;line-height:1.75;text-align:justify;margin:0 0 8px;padding:0 0 8px;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">npm：<a href="https://www.npmjs.com/package/@sakikotgw/pack-agent" style="color:#1B365D;text-decoration:underline;text-underline-offset:3px;background-color:#faf9f5;"><span style="background-color:#faf9f5;">https://www.npmjs.com/package/@sakikotgw/pack-agent</span></a>  </span></li>
+<li style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;color:#1a1a1a;line-height:1.75;text-align:justify;margin:0 0 8px;padding:0 0 8px;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">规范（含 Hermes 假成功）：仓库 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">docs/PACK_SPEC.md</span></code></span></li>
+</ul>
+<p style="font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:15px;font-weight:400;color:#1a1a1a;line-height:1.75;letter-spacing:0.008em;text-align:justify;margin:0 0 16px;padding:0;word-break:break-word;background-color:#faf9f5;"><span style="background-color:#faf9f5;">有 pack 想让人试：把 <code style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:14px;color:#1B365D;background-color:#eeecea;padding:2px 6px;border-radius:3px;"><span style="background-color:#eeecea;">.pack.json</span></code> 丢过去，让对方自己装。</span></p>
+
+</section>
+</section>
+
+</section>
+<!-- 整体背景容器结束 -->
+
+</body>
+</html>

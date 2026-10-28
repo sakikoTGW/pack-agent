@@ -113,14 +113,22 @@
   <Thickness x:Key="PadCard">18,15,18,17</Thickness>
   <Thickness x:Key="PadRow">12,10,12,11</Thickness>
 
-  <!-- Three duration buckets and three easings. Micro carries colour and press,
-       short carries hover and reveals, med carries the segmented indicator. -->
-  <Duration x:Key="DMicro">0:0:0.12</Duration>
-  <Duration x:Key="DShort">0:0:0.18</Duration>
+  <!-- Motion tokens, designed by response time rather than by "feels nice":
+       90ms  press/colour — feedback has to land with the press, not after it
+       160ms hover/reveal — seen dozens of times a day: present, never showy
+       220ms segmented     — the pill follows the click, no bounce
+       320ms page settle   — the one big motion; everything else waits for it.
+       Curves: CubicEase starts too gently to read as "direct" (Apple's response
+       principle), so entrances use an exponential settle. PowerEase is WPF's
+       closest stand-in for a critically damped spring — no overshoot anywhere. -->
+  <Duration x:Key="DMicro">0:0:0.09</Duration>
+  <Duration x:Key="DShort">0:0:0.16</Duration>
   <Duration x:Key="DMed">0:0:0.22</Duration>
+  <Duration x:Key="DPage">0:0:0.32</Duration>
 
-  <CubicEase x:Key="EaseOut" EasingMode="EaseOut" />
-  <CubicEase x:Key="EaseIn" EasingMode="EaseIn" />
-  <CubicEase x:Key="EaseInOut" EasingMode="EaseInOut" />
+  <PowerEase x:Key="EaseOut" EasingMode="EaseOut" Power="3.2" />
+  <PowerEase x:Key="EaseIn" EasingMode="EaseIn" Power="2.4" />
+  <PowerEase x:Key="EaseInOut" EasingMode="EaseInOut" Power="2.6" />
+  <PowerEase x:Key="EaseSettle" EasingMode="EaseOut" Power="4.6" />
 
 </ResourceDictionary>

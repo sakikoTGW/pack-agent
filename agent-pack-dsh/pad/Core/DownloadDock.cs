@@ -8,7 +8,7 @@ public static class DownloadDock
 {
     static readonly HashSet<string> Kinds = new(StringComparer.Ordinal)
     {
-        "plugin-add", "plugin-update", "plugin-remove", "install-version",
+        "plugin-add", "plugin-update", "plugin-remove", "install-version", "portable-export",
     };
 
     public static bool IsDownload(JobRecord job) => Kinds.Contains(job.Kind);
@@ -93,6 +93,18 @@ public sealed class JobCard
             return string.Join(" · ", bits);
         }
     }
+    /// <summary>任务自己的图标图像（整合包/实例图标），不是状态图标。</summary>
+    public string? IconPath => Job.Icon;
+    public bool IsPaused => Job.Paused;
+    public bool IsDone => Job.Status == "done";
+    public bool IsFailed => Job.Status == "failed";
+    public bool IsCancelled => Job.Status == "cancelled";
+    public bool CanPause => Job.CanCancel && !Job.Paused;
+    public bool CanResume => Job.CanCancel && Job.Paused;
+    public bool ShowRunningLamp => Job.CanCancel && !Job.Paused;
+    // 一套逻辑：任务行图标只看「这是不是下载任务」（本页永远都是），
+    // 类型/状态不要各挑一个图标——状态交给呼吸灯、暂停图标和进度条表达。
+    public string PauseText => Job.Paused ? "继续" : "暂停";
     public string Monogram
     {
         get

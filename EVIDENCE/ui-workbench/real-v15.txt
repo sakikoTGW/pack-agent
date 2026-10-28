@@ -1,0 +1,26 @@
+﻿关系图改用 WebView2 + d3（原型已跑通）(2026-10-24)
+
+栈
+  Microsoft.Web.WebView2 1.0.4314.35（运行时本机已有 155.0.4283.62）
+  d3 v7 本地化：Assets/web/d3.min.js（280KB，不走 CDN）
+  页面：Assets/web/relations.html，由 C# 注入 JSON，前端用 d3.tree() 布局
+
+为什么换
+  WPF 侧：MSAGL 只到 .NET Framework（NU1701），GraphX 3.0 API 与文档差异大
+  前端侧：d3-hierarchy / elkjs / React Flow 是这类图的成熟实现
+
+数据流向
+  Graph.Build() → JSON → ExecuteScriptAsync("render(...)") → SVG
+  布局：d3.tree() nodeSize([206,132])，父节点自动居中于子节点
+  交互：d3.zoom 已接入（滚轮缩放、拖拽平移）
+
+两个必须记住的事实
+  1 WebView2 是独立合成层，不在 WPF 的 RenderTargetBitmap 里 ——
+    --shot 拍到的永远是一块空白。已在 RelationsWebView.CaptureForShot() 里
+    用 CoreWebView2.CapturePreviewAsync 另存 <shot>.web.png 作为验证证据。
+  2 Assets/web/** 必须在 csproj 里声明 Content + CopyToOutputDirectory，
+    否则页面找不到（第一次就是这么失败的）。
+
+仍未解决
+  11 个 agent 同层 -> 画布过宽 -> fit 缩放到 0.5 左右，字变小
+  下一步要么折叠（前 N 个 + 展开），要么默认 1:1 可平移

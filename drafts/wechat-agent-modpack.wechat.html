@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent Modpack：Agent 也有整合包了——一包带走一个角色</title>
+</head>
+<body style="margin:0;padding:0;background:#e8eaed;">
+
+<section style="max-width:677px;margin:0 auto;background:#ffffff;color:#1f1f1f;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:16px;line-height:1.85;">
+  <section style="margin:0;overflow:hidden;">
+    <img src="wechat-assets/cover-uika-sakiko-cover-ready.png" alt="封面" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <section style="padding:28px 20px 8px;">
+    <h1 style="margin:0 0 18px;font-size:24px;line-height:1.4;font-weight:800;color:#111111;">
+      <span leaf="">Agent Modpack：Agent 也有整合包了——一包带走一个角色</span>
+    </h1>
+  </section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">换过 coding agent 的人都懂这一幕：你在 Claude Code 里调顺了 skills、rules 和 MCP，换到 Codex 却面对另一套目录。你拷过去一半，漏掉一半；想卸载时，已经不知道该删哪些文件。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">也有人说：把文件夹丢给 agent，让它「装一下」不就行了？</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><strong style="color:#0f766e;"><span leaf="">agent 确实装得动。但要装完整、装正确，并且还能卸干净，是另一回事。</span></strong></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">今天和大家分享我做完并开源的东西——</span><strong style="color:#0f766e;"><span leaf="">Agent Modpack</span></strong><span leaf="">。</span></p></section>
+  <section style="margin:0 16px 16px;background:#f0fafa;border-radius:0 8px 8px 0;border-left:4px solid #0f766e;padding:14px 16px;">
+    <p style="margin:0 0 6px;font-size:16px;font-weight:800;color:#0f766e;line-height:1.6;">
+      <span leaf="">像装 MC 整合包一样，你可以用它安装自己的 agent。</span>
+    </p>
+    <p style="margin:0;font-size:14px;color:#475569;line-height:1.7;">
+      <span leaf="">你把一个角色打成一份 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">.pack.json</span></span><span leaf="">，装进本机上的壳，再按账本执行 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">eject</span></span><span leaf="">。</span>
+    </p>
+  </section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">本工具面向已经在用 Cursor、Claude Code、Codex、Hermes 的人。你把要用的 skills、规则和 MCP 点名进包，导出可携带的文件；adapter 再写入各家目录。它只处理配置的打包与安装，不包含模型，也不涉及各家计费。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">我最近已经把它开源了。老规矩，先上链接。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;text-align:justify;"><span leaf="">GitHub：</span><a href="https://github.com/sakikoTGW/pack-agent" style="color:#576b95;text-decoration:none;"><span leaf="">https://github.com/sakikoTGW/pack-agent</span></a></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 16px;color:#1f1f1f;text-align:justify;"><span leaf="">npm：</span><span style="font-family:Consolas,Monaco,monospace;font-size:15px;"><span leaf="">@sakikotgw/pack-agent</span></span><span leaf="">（需要 Bun ≥ 1.1）</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">你可以把一份包甩给任意 coding agent，并说一句「装一下这个」：</span></p></section>
+  <section style="margin:0 16px 10px;border-radius:8px;overflow:hidden;background:#0f172a;">
+    <section style="padding:12px 14px;">
+      <p style="margin:0;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.7;color:#e2e8f0;word-break:break-all;"><span leaf="">npx --yes -p @sakikotgw/pack-agent packagent install foo.pack.json</span></p>
+    </section>
+  </section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 14px;color:#888;text-align:justify;font-size:13px;"><span leaf="">在 Windows 上请使用 -p … packagent 这种写法。旧写法 --package … -- pack-agent 会失败。</span></p></section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border-radius:8px;">
+    <img src="wechat-assets/decor/banner-pack-flow.png" alt="一份角色包 · 多家壳" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 18px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">一份角色包 · 多家壳</span></p>
+  <section style="padding:0 20px 6px;">
+    <p style="margin:12px 0 8px;font-size:19px;font-weight:800;color:#111;border-left:4px solid #0f766e;padding-left:12px;">
+      <span leaf="">一、实现了什么</span>
+    </p>
+    <p style="margin:0 0 14px;font-size:14px;color:#64748b;"><span leaf="">我先把能力说清楚。截图演示放在下一节。</span></p>
+  </section>
+  <section style="padding:0 20px 4px;">
+    <p style="margin:0 0 12px;font-size:16px;font-weight:800;color:#1C1917;">
+      <span style="display:inline-block;background:#ecf4f3;color:#0f766e;border-radius:4px;padding:1px 8px;margin-right:6px;font-size:13px;font-weight:900;"><span leaf="">1</span></span>
+      <span leaf="">角色级打包，不是单页 skill</span>
+    </p>
+  </section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">OpenSkills 一类工具解决的是 </span><strong><span leaf="">skill 装载</span></strong><span leaf="">。Agent Modpack 做的是 </span><strong style="color:#0f766e;"><span leaf="">整份角色快照</span></strong><span leaf="">：</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">你在 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">agents.yaml</span></span><span leaf=""> 里点名要用的 skills、rules 和 MCP。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">你运行 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">export --agent</span></span><span leaf="">，工具会打出一份 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">.pack.json</span></span><span leaf="">。若漏写 </span><span style="font-family:Consolas,Monaco,monospace;font-size:13px;"><span leaf="">--agent</span></span><span leaf="">，命令会直接拒绝。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">包内的 bundle 会内嵌正文，换机器也能安装。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">你运行 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">show</span></span><span leaf="">，可以在安装前查看清单，就像装整合包前先看 mod 列表。</span></p></section>
+  <section style="padding:0 20px 4px;">
+    <p style="margin:0 0 12px;font-size:16px;font-weight:800;color:#1C1917;">
+      <span style="display:inline-block;background:#ecf4f3;color:#0f766e;border-radius:4px;padding:1px 8px;margin-right:6px;font-size:13px;font-weight:900;"><span leaf="">2</span></span>
+      <span leaf="">装进本机壳，按账本卸干净</span>
+    </p>
+  </section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">你运行 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">detect</span></span><span leaf="">，可以看到本机有哪些 harness 在场。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">你运行 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">install</span></span><span leaf="">，adapter 会把内容写入各家目录。若只想装一家，可以加 </span><span style="font-family:Consolas,Monaco,monospace;font-size:13px;"><span leaf="">--runtime</span></span><span leaf="">。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">安装成功后，工具会写入 install-ledger。你运行 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">eject --name</span></span><span leaf="">，工具会按账本回滚。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">若遇到同名冲突，默认策略是 </span><span style="font-family:Consolas,Monaco,monospace;font-size:13px;"><span leaf="">--on-conflict stop</span></span><span leaf="">，工具不会偷偷覆盖。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">多包并存时，工具按包名记账。你卸其中一个，不会拆掉另一个。</span></p></section>
+  <section style="padding:0 20px 4px;">
+    <p style="margin:0 0 12px;font-size:16px;font-weight:800;color:#1C1917;">
+      <span style="display:inline-block;background:#ecf4f3;color:#0f766e;border-radius:4px;padding:1px 8px;margin-right:6px;font-size:13px;font-weight:900;"><span leaf="">3</span></span>
+      <span leaf="">skill 与 MCP 同包；人敲 CLI，agent 也能装</span>
+    </p>
+  </section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">一份 pack 可以同时投射 skills 与 MCP，这样「整角色」才站得住。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">你在壳里接上 pack-agent 的 MCP 后，AI 可以调用 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">pack_install</span></span><span leaf=""> 与 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">pack_eject</span></span><span leaf="">。这些调用与 CLI 走同一套逻辑。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">你可以让 agent 自己装。你甩给它的应是一份 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">.pack.json</span></span><span leaf=""> 合同，而不是一堆散目录。</span></p></section>
+  <section style="padding:0 20px 4px;">
+    <p style="margin:0 0 12px;font-size:16px;font-weight:800;color:#1C1917;">
+      <span style="display:inline-block;background:#ecf4f3;color:#0f766e;border-radius:4px;padding:1px 8px;margin-right:6px;font-size:13px;font-weight:900;"><span leaf="">4</span></span>
+      <span leaf="">经验另路，不焊进 skill</span>
+    </p>
+  </section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">skills、rules、MCP 适合写「相对稳定、可以落盘当合同」的东西。对话里用顺的脾气不是这一类：例如冲突时默认停还是覆盖、哪条路试通过——它会跟着会话往前漂。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">如果把这类习惯蒸馏进 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">SKILL.md</span></span><span leaf="">，落盘那一刻就被钉死；下一轮对话里脾气已经变了，磁盘上的 skill 却还假装没变。所以</span><strong><span leaf="">故意不把经验焊进 skill 树</span></strong><span leaf="">：skill 继续管稳定合同，经验单独开一条会变的路。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">具体做法：基座文案可以进包（</span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">.agent-pack/experiences/</span></span><span leaf="">），装上壳的 hook 之后，每一轮把最新内容写入 </span><span style="font-family:Consolas,Monaco,monospace;font-size:14px;background:#f0f4f4;color:#0f766e;padding:1px 5px;border-radius:3px;"><span leaf="">live.json</span></span><span leaf="">，再注回下一轮上下文。经验继续活在「会变」的那一层，而不是伪装成又一份静态 skill。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">另外，若还没录到各家壳真正发给模型的那一层（瓶口），包会标 </span><strong><span leaf="">L1</span></strong><span leaf="">：配置仍可搬，但不保证换壳、换模型后请求体字节级一致。L1 是诚实标签，不是经验机制本身。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 10px;color:#1f1f1f;"><span leaf="">功能一览：</span></p></section>
+  <section style="margin:0 12px 16px;overflow-x:auto;border:1px solid #e5e5e5;border-radius:6px;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.5;min-width:360px;">
+      <thead>
+        <tr style="background:#ecf4f3;">
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#0f766e;">能力</th>
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">入口</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;">点名角色</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:12px;color:#0f766e;">agents init / agents.yaml</td></tr>
+        <tr style="background:#fafbfb;"><td style="padding:8px;border-bottom:1px solid #eee;">导出 / 预览</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:12px;color:#0f766e;">export --agent / show</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;">检测 / 安装 / 卸载</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:12px;color:#0f766e;">detect / install / eject</td></tr>
+        <tr style="background:#fafbfb;"><td style="padding:8px;border-bottom:1px solid #eee;">同步</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:12px;color:#0f766e;">sync --agent</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;">壳内自装自卸</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:12px;color:#0f766e;">MCP pack_*</td></tr>
+        <tr style="background:#fafbfb;"><td style="padding:8px;">零全局安装试用</td><td style="padding:8px;font-family:Consolas,Monaco,monospace;font-size:12px;color:#0f766e;">npx -p @sakikotgw/pack-agent …</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section style="padding:0 20px 4px;"><p style="margin:0 0 12px;font-size:16px;font-weight:800;color:#1C1917;"><span leaf="">其实很简单，只需要 3 步</span></p></section>
+  <section style="margin:0 16px 8px;border-radius:8px;overflow:hidden;background:#0f172a;">
+    <section style="padding:12px 14px;">
+      <p style="margin:0 0 6px;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.65;color:#94a3b8;"><span leaf=""># 1. 安装</span></p>
+      <p style="margin:0 0 10px;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.65;color:#e2e8f0;word-break:break-all;"><span leaf="">npm install -g @sakikotgw/pack-agent</span></p>
+      <p style="margin:0 0 6px;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.65;color:#94a3b8;"><span leaf=""># 2. 点名并导出</span></p>
+      <p style="margin:0 0 4px;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.65;color:#e2e8f0;word-break:break-all;"><span leaf="">packagent agents init</span></p>
+      <p style="margin:0 0 10px;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.65;color:#e2e8f0;word-break:break-all;"><span leaf="">packagent export --agent &lt;角色id&gt;</span></p>
+      <p style="margin:0 0 6px;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.65;color:#94a3b8;"><span leaf=""># 3. 装进本机壳</span></p>
+      <p style="margin:0;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.65;color:#e2e8f0;word-break:break-all;"><span leaf="">packagent install .\.agent-pack\exports\&lt;包名&gt;.pack.json</span></p>
+    </section>
+  </section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 16px;color:#64748b;text-align:justify;font-size:14px;"><span leaf="">若只想临时装一次，你可以直接用文首那条 npx 命令。</span></p></section>
+  <section style="margin:0 16px 4px;overflow:hidden;">
+    <img src="wechat-assets/decor/divider-soft.png" alt="" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <section style="padding:0 20px 6px;">
+    <p style="margin:12px 0 8px;font-size:19px;font-weight:800;color:#111;border-left:4px solid #0f766e;padding-left:12px;">
+      <span leaf="">二、演示</span>
+    </p>
+    <p style="margin:0 0 14px;font-size:14px;color:#64748b;"><span leaf="">下面的截图都是本机实录。</span></p>
+  </section>
+  <section style="padding:0 20px 4px;"><p style="margin:0 0 12px;font-size:16px;font-weight:800;color:#1C1917;"><span leaf="">演示 1：点名、导出、show</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">我先在表里点名角色，再运行 export --agent：</span></p></section>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/cli-02b-agents-yaml.png" alt="agents.yaml 点名" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">agents.yaml 点名</span></p>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/cli-04-export.png" alt="export 打出 .pack.json" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">export 打出 .pack.json</span></p>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">安装前，我再运行 show：</span></p></section>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/cli-05-show.png" alt="show：装前看包内容" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">show：装前看包内容</span></p>
+  <section style="padding:0 20px 4px;"><p style="margin:8px 0 12px;font-size:16px;font-weight:800;color:#1C1917;"><span leaf="">演示 2：在 Codex 上安装、确认、卸载</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">我在空目录里实测。安装前，目录里几乎只有一份包：</span></p></section>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/explorer-01-before.png" alt="装前：只有 packer.pack.json" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">装前：只有 packer.pack.json</span></p>
+  <section style="margin:0 16px 10px;border-radius:8px;overflow:hidden;background:#0f172a;">
+    <section style="padding:12px 14px;">
+      <p style="margin:0;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.7;color:#e2e8f0;word-break:break-all;"><span leaf="">npx --yes -p @sakikotgw/pack-agent packagent install .\packer.pack.json --runtime codex</span></p>
+    </section>
+  </section>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/explorer-skills-after-install.png" alt="装完：skills 里出现 agent-pack" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">装完：skills 里出现 agent-pack</span></p>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">目录里出现文件，还不算装成功。我用 codex exec 当面提问，它能答出 agent-pack 的用途。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">账本会记下工具写过哪些路径：</span></p></section>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/explorer-ledger-after-install.png" alt="ledger：安装账本" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">ledger：安装账本</span></p>
+  <section style="margin:0 16px 10px;border-radius:8px;overflow:hidden;background:#0f172a;">
+    <section style="padding:12px 14px;">
+      <p style="margin:0;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.7;color:#e2e8f0;word-break:break-all;"><span leaf="">npx --yes -p @sakikotgw/pack-agent packagent eject --name packer</span></p>
+    </section>
+  </section>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/explorer-skills-after-eject.png" alt="卸完：技能目录空了" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">卸完：技能目录空了</span></p>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">我再用同一句话去问，它已经答不上来了。</span></p></section>
+  <section style="padding:0 20px 4px;"><p style="margin:8px 0 12px;font-size:16px;font-weight:800;color:#1C1917;"><span leaf="">演示 3：在 Hermes 上同包投射 skill 与 MCP；由 AI 自己装卸</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">安装完成后，skills 列表和 MCP 列表里都出现了 agent-pack：</span></p></section>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/hermes-04-skills-after.png" alt="skills 出现 agent-pack" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">skills 出现 agent-pack</span></p>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/hermes-05-mcp-after.png" alt="mcp 出现 agent-pack" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">mcp 出现 agent-pack</span></p>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">我在壳里接好 MCP 之后，让 AI 自己调用装卸工具：</span></p></section>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/mcp-23-install.png" alt="pack_install：AI 自己装" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">pack_install：AI 自己装</span></p>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/mcp-25-eject.png" alt="pack_eject：AI 自己卸" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">pack_eject：AI 自己卸</span></p>
+  <section style="margin:8px 16px 6px;overflow:hidden;border-radius:8px;">
+    <img src="wechat-assets/decor/banner-ledger.png" alt="install · ledger · eject" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 12px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">install · ledger · eject</span></p>
+  <section style="padding:0 20px 6px;">
+    <p style="margin:12px 0 8px;font-size:19px;font-weight:800;color:#111;border-left:4px solid #0f766e;padding-left:12px;">
+      <span leaf="">三、它怎么工作（架构与原理）</span>
+    </p>
+    <p style="margin:0 0 14px;font-size:14px;color:#64748b;"><span leaf="">这一节再往下一层：一份包为什么能进入很多壳，卸载时又为什么找得回路径。</span></p>
+  </section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">你可以先记住下面这三层心智模型，后面的表会更好读：</span></p></section>
+<section style="margin:0 16px 14px;overflow-x:auto;border:1px solid #e5e5e5;border-radius:6px;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.5;min-width:320px;">
+      <thead>
+        <tr style="background:#ecf4f3;">
+          <th style="padding:10px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#0f766e;width:22%;">层</th>
+          <th style="padding:10px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">是什么</th>
+          <th style="padding:10px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">例子</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:9px 8px;border-bottom:1px solid #eee;color:#0f766e;font-weight:700;">Harness</td>
+          <td style="padding:9px 8px;border-bottom:1px solid #eee;color:#475569;">跑 loop 的壳</td>
+          <td style="padding:9px 8px;border-bottom:1px solid #eee;color:#475569;">Claude Code / Codex / Hermes</td>
+        </tr>
+        <tr style="background:#fafbfb;">
+          <td style="padding:9px 8px;border-bottom:1px solid #eee;color:#0f766e;font-weight:700;">Agent</td>
+          <td style="padding:9px 8px;border-bottom:1px solid #eee;color:#475569;">在壳上选定的角色</td>
+          <td style="padding:9px 8px;border-bottom:1px solid #eee;color:#475569;">agents.yaml 点名的那一套</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 8px;color:#0f766e;font-weight:700;">Prefunction</td>
+          <td style="padding:9px 8px;color:#475569;">能打进 pack、搬走的部分</td>
+          <td style="padding:9px 8px;color:#475569;">skills / rules / MCP / 罐头</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">Prefunction </span><strong><span leaf="">不会搬动模型权重</span></strong><span leaf="">，它只影响壳拼出来的 fixed_input。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">数据会按这条链路流动：</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">1. 你在 agents.yaml 里定义角色。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">2. 你运行 export，得到内嵌正文的 .pack.json。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">3. 你运行 install，adapter 写入各 harness 的装载口。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">4. 工具写入 install-ledger。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<span leaf="">5. 你运行 eject --name，工具按账本回滚。</span></p></section>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/arch-overview.png" alt="架构总览" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">架构总览</span></p>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">你也可以先查本机情况：</span></p></section>
+  <section style="margin:0 16px 4px;overflow:hidden;border:1px solid #e5e5e5;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/cli-01-detect.png" alt="packagent detect" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 10px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">packagent detect</span></p>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 12px;color:#1f1f1f;text-align:justify;"><span leaf="">这里有两件关键设计：</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<strong><span leaf="">统一度量衡</span></strong><span leaf="">：.pack.json 加 bundle，让角色可以版本化、可以分享、可以 eject。</span></p></section>
+  <section style="padding:0 20px 0;"><p style="margin:0 0 6px;color:#1f1f1f;"><span style="color:#0f766e;font-weight:700;">·</span>&nbsp;<strong><span leaf="">adapter</span></strong><span leaf="">：各家目录、注入时机和 MCP 合并方式不同，由适配器负责投射。若缺少瓶口录制，包会标成 L1。</span></p></section>
+
+<section style="padding:0 20px 6px;">
+    <p style="margin:4px 0 8px;font-size:19px;font-weight:800;color:#111;border-left:4px solid #0f766e;padding-left:12px;">
+      <span leaf="">四、对照与清单（密表区）</span>
+    </p>
+    <p style="margin:0 0 14px;font-size:14px;color:#64748b;"><span leaf="">下面是对照表与清单。若前面已经够用，你可以直接跳过。</span></p>
+    <p style="margin:0 0 10px;font-size:15px;font-weight:700;color:#111;"><span leaf="">和拷目录 / OpenSkills 差在哪</span></p>
+  </section>
+
+  <section style="margin:0 12px 16px;overflow-x:auto;border:1px solid #e5e5e5;border-radius:6px;">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;line-height:1.45;min-width:520px;">
+      <thead>
+        <tr style="background:#ecf4f3;">
+          <th style="padding:9px 6px;text-align:left;border-bottom:1px solid #d5e3e1;color:#0f766e;width:14%;"></th>
+          <th style="padding:9px 6px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">拷目录</th>
+          <th style="padding:9px 6px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">OpenSkills</th>
+          <th style="padding:9px 6px;text-align:left;border-bottom:1px solid #d5e3e1;color:#0f766e;font-weight:800;">Modpack</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#0f766e;font-weight:700;">载体</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#475569;">散文件夹</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#475569;">多为 SKILL.md</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#1f1f1f;">.pack.json + bundle</td>
+        </tr>
+        <tr style="background:#fafbfb;">
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#0f766e;font-weight:700;">范围</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#475569;">看记性</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#475569;">装 skill</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#1f1f1f;">skills/rules/MCP</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#0f766e;font-weight:700;">卸载</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#475569;">不知删哪</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#475569;">少跨组件账本</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#1f1f1f;">ledger + eject</td>
+        </tr>
+        <tr style="background:#fafbfb;">
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#0f766e;font-weight:700;">跨壳</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#475569;">口述路径</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#475569;">一家约定</td>
+          <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#1f1f1f;">adapter 投射</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 6px;color:#0f766e;font-weight:700;">何时用</td>
+          <td style="padding:8px 6px;color:#475569;">临时试一把</td>
+          <td style="padding:8px 6px;color:#475569;">只要 skill</td>
+          <td style="padding:8px 6px;color:#1f1f1f;">整角色、能卸、能分享</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section style="padding:0 20px 8px;">
+    <p style="margin:0 0 10px;font-size:15px;font-weight:700;color:#111;"><span leaf="">默认行为</span></p>
+  </section>
+
+  <section style="margin:0 12px 16px;overflow-x:auto;border:1px solid #e5e5e5;border-radius:6px;">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;line-height:1.45;min-width:420px;">
+      <thead>
+        <tr style="background:#ecf4f3;">
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#0f766e;">行为</th>
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">默认</th>
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">想改就…</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#475569;">装到哪</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#475569;">detect 到的多家</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">--runtime &lt;id&gt;</td>
+        </tr>
+        <tr style="background:#fafbfb;">
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#475569;">Cursor</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#b91c1c;font-weight:700;">跳过</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">--runtime cursor</td>
+        </tr>
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#475569;">用户全局配置</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#b91c1c;font-weight:700;">不写</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">--global-config</td>
+        </tr>
+        <tr style="background:#fafbfb;">
+          <td style="padding:8px;color:#475569;">同名冲突</td>
+          <td style="padding:8px;font-family:Consolas,Monaco,monospace;font-size:11px;color:#475569;">stop</td>
+          <td style="padding:8px;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">--on-conflict skip|replace</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section style="padding:0 20px 8px;">
+    <p style="margin:0 0 10px;font-size:15px;font-weight:700;color:#111;"><span leaf="">保真度</span></p>
+  </section>
+
+  <section style="margin:0 12px 16px;overflow-x:auto;border:1px solid #e5e5e5;border-radius:6px;">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;line-height:1.45;min-width:400px;">
+      <thead>
+        <tr style="background:#ecf4f3;">
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#0f766e;width:14%;">层</th>
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">包里有什么</th>
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">install 后</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#0f766e;font-weight:700;">L1</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#475569;">skills / rules / MCP</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#475569;">各 harness 原生目录</td>
+        </tr>
+        <tr style="background:#fafbfb;">
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#0f766e;font-weight:700;">L2</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#475569;">prompt / schema / reminders</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;color:#475569;">规则或经验罐头 + hook</td>
+        </tr>
+        <tr>
+          <td style="padding:8px;color:#0f766e;font-weight:700;">L3+</td>
+          <td style="padding:8px;color:#475569;">装配顺序 / loop</td>
+          <td style="padding:8px;color:#475569;">写入 pack，尽力投射</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+  <p style="margin:0 20px 16px;font-size:13px;color:#64748b;text-align:justify;">
+    <span leaf="">换模型之后，行为会漂移。若缺少瓶口录制，包就标成 L1：配置可以搬，但不保证各家发给模型的请求体在字节级一致。</span>
+  </p>
+
+  <section style="padding:0 20px 8px;">
+    <p style="margin:0 0 10px;font-size:15px;font-weight:700;color:#111;"><span leaf="">支持的 Harness（装载口摘要）</span></p>
+  </section>
+
+  <section style="margin:0 12px 8px;overflow-x:auto;border:1px solid #e5e5e5;border-radius:6px;">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;line-height:1.4;min-width:540px;">
+      <thead>
+        <tr style="background:#ecf4f3;">
+          <th style="padding:8px 6px;text-align:left;border-bottom:1px solid #d5e3e1;color:#0f766e;">id</th>
+          <th style="padding:8px 6px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">skills</th>
+          <th style="padding:8px 6px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">rules</th>
+          <th style="padding:8px 6px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">MCP</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;color:#0f766e;">claude-code</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">.claude/skills</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">CLAUDE.md</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">.mcp.json</td>
+        </tr>
+        <tr style="background:#fafbfb;">
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;color:#0f766e;">codex</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">.agents/skills</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">AGENTS.md</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">.codex/config.toml</td>
+        </tr>
+        <tr>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;color:#0f766e;">opencode</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">.opencode/skills</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">AGENTS.md</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">opencode.json</td>
+        </tr>
+        <tr style="background:#fafbfb;">
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;color:#0f766e;">hermes</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">external_dirs</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">AGENTS.md</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">~/.hermes/…</td>
+        </tr>
+        <tr>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;color:#0f766e;">openclaw</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">extraDirs</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">AGENTS.md</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">mcporter 等</td>
+        </tr>
+        <tr style="background:#fafbfb;">
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;color:#0f766e;">gemini-cli</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">.gemini/skills</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">GEMINI.md</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">settings</td>
+        </tr>
+        <tr>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;color:#0f766e;">windsurf</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">.windsurf/skills</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">—</td>
+          <td style="padding:7px 6px;border-bottom:1px solid #eee;color:#475569;">mcp_config</td>
+        </tr>
+        <tr style="background:#fafbfb;">
+          <td style="padding:7px 6px;font-family:Consolas,Monaco,monospace;color:#0f766e;">github-copilot</td>
+          <td style="padding:7px 6px;color:#475569;">—</td>
+          <td style="padding:7px 6px;color:#475569;">copilot-instructions</td>
+          <td style="padding:7px 6px;color:#475569;">.vscode/mcp.json</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+  <p style="margin:8px 20px 22px;font-size:13px;color:#64748b;">
+    <span leaf="">完整字段与边界见仓库里的 </span><span style="font-family:Consolas,Monaco,monospace;font-size:12px;"><span leaf="">docs/PACK_SPEC.md</span></span><span leaf="">。</span>
+  </p>
+
+  <!-- ========== 五、开发者 ========== -->
+  <section style="padding:0 20px 6px;">
+    <p style="margin:4px 0 8px;font-size:19px;font-weight:800;color:#111;border-left:4px solid #0f766e;padding-left:12px;">
+      <span leaf="">五、给开发者</span>
+    </p>
+    <p style="margin:0 0 14px;font-size:14px;color:#64748b;"><span leaf="">若你要接入 MCP、修改 adapter，或把 pack 嵌进自己的工作流，请看这一节。</span></p>
+    <p style="margin:0 0 10px;font-size:15px;font-weight:700;color:#111;"><span leaf="">常用 CLI</span></p>
+  </section>
+
+  <section style="margin:0 12px 16px;overflow-x:auto;border:1px solid #e5e5e5;border-radius:6px;">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;line-height:1.45;min-width:400px;">
+      <thead>
+        <tr style="background:#ecf4f3;">
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#0f766e;width:48%;">命令</th>
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">作用</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:7px 8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">packagent detect</td><td style="padding:7px 8px;border-bottom:1px solid #eee;color:#475569;">本机在场 / Will install to</td></tr>
+        <tr style="background:#fafbfb;"><td style="padding:7px 8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">packagent agents init</td><td style="padding:7px 8px;border-bottom:1px solid #eee;color:#475569;">生成 agents.yaml</td></tr>
+        <tr><td style="padding:7px 8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">export --agent &lt;id&gt;</td><td style="padding:7px 8px;border-bottom:1px solid #eee;color:#475569;">导出角色包</td></tr>
+        <tr style="background:#fafbfb;"><td style="padding:7px 8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">show / install / eject</td><td style="padding:7px 8px;border-bottom:1px solid #eee;color:#475569;">预览 / 安装 / 按账本卸</td></tr>
+        <tr><td style="padding:7px 8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">list / status / diff</td><td style="padding:7px 8px;border-bottom:1px solid #eee;color:#475569;">列表 / lock+ledger / 对比</td></tr>
+        <tr style="background:#fafbfb;"><td style="padding:7px 8px;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">sync --agent &lt;id&gt;</td><td style="padding:7px 8px;color:#475569;">export + install</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <p style="margin:0 20px 14px;font-size:13px;color:#64748b;">
+    <span leaf="">CLI 别名还有 </span><span style="font-family:Consolas,Monaco,monospace;font-size:12px;"><span leaf="">pack-agent</span></span><span leaf=""> 与 </span><span style="font-family:Consolas,Monaco,monospace;font-size:12px;"><span leaf="">agent-pack</span></span><span leaf="">。运行时需要 Bun ≥ 1.1。</span>
+  </p>
+
+  <section style="padding:0 20px 8px;">
+    <p style="margin:0 0 10px;font-size:15px;font-weight:700;color:#111;"><span leaf="">MCP 工具（壳内让 AI 调用）</span></p>
+  </section>
+
+  <section style="margin:0 12px 16px;overflow-x:auto;border:1px solid #e5e5e5;border-radius:6px;">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;line-height:1.45;min-width:380px;">
+      <thead>
+        <tr style="background:#ecf4f3;">
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#0f766e;">工具</th>
+          <th style="padding:9px 8px;text-align:left;border-bottom:1px solid #d5e3e1;color:#334155;">作用</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:7px 8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">pack_detect</td><td style="padding:7px 8px;border-bottom:1px solid #eee;color:#475569;">检测 harness</td></tr>
+        <tr style="background:#fafbfb;"><td style="padding:7px 8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">pack_export / show</td><td style="padding:7px 8px;border-bottom:1px solid #eee;color:#475569;">导出 / 预览</td></tr>
+        <tr><td style="padding:7px 8px;border-bottom:1px solid #eee;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">pack_install / sync / eject</td><td style="padding:7px 8px;border-bottom:1px solid #eee;color:#475569;">装 / 同步 / 卸</td></tr>
+        <tr style="background:#fafbfb;"><td style="padding:7px 8px;font-family:Consolas,Monaco,monospace;font-size:11px;color:#0f766e;">pack_list / status / select</td><td style="padding:7px 8px;color:#475569;">列表 / 状态 / 选择</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section style="padding:0 20px 4px;">
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#111;"><span leaf="">项目侧目录</span></p>
+  </section>
+  <section style="margin:0 16px 14px;border-radius:8px;overflow:hidden;background:#0f172a;">
+    <section style="padding:12px 14px;">
+      <p style="margin:0;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.7;color:#e2e8f0;white-space:pre-wrap;"><span leaf="">.agent-pack/
+  agents.yaml
+  exports/*.pack.json
+  applied/&lt;pack&gt;-ledger.json
+  lock.json
+  experiences/</span></p>
+    </section>
+  </section>
+
+  <section style="padding:0 20px 16px;">
+    <p style="margin:0 0 14px;color:#1f1f1f;text-align:justify;font-size:14px;">
+      <span leaf="">Schema：</span><span style="font-family:Consolas,Monaco,monospace;font-size:13px;"><span leaf="">ccui-pack/v0.2</span></span><span leaf="">。开发说明：</span><span style="font-family:Consolas,Monaco,monospace;font-size:13px;"><span leaf="">docs/DEVELOPERS.zh-CN.md</span></span><span leaf=""> · 规范：</span><span style="font-family:Consolas,Monaco,monospace;font-size:13px;"><span leaf="">docs/PACK_SPEC.md</span></span><span leaf="">。</span>
+    </p>
+    <p style="margin:0 0 16px;color:#1f1f1f;text-align:justify;">
+      <span leaf="">欢迎提交 Issue 与 PR。</span>
+    </p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border-radius:8px;">
+    <img src="wechat-assets/cover-uika-sakiko-cover-ready.png" alt="这是封面" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:4px 20px 18px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">这是封面</span></p>
+
+  <section style="padding:0 20px 28px;">
+    <p style="margin:0 0 6px;color:#1f1f1f;">
+      <span leaf="">GitHub：</span><a href="https://github.com/sakikoTGW/pack-agent" style="color:#576b95;text-decoration:none;"><span leaf="">https://github.com/sakikoTGW/pack-agent</span></a>
+    </p>
+    <p style="margin:0 0 16px;color:#1f1f1f;">
+      <span leaf="">npm：</span><span style="font-family:Consolas,Monaco,monospace;font-size:15px;"><span leaf="">@sakikotgw/pack-agent</span></span>
+    </p>
+    <p style="margin:0;color:#888;font-size:13px;">
+      <span leaf="">转载时请注明项目地址。文中截图均为本机实录。</span>
+    </p>
+  </section>
+
+</section>
+</body>
+</html>

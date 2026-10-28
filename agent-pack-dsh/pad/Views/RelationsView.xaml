@@ -1,0 +1,34 @@
+<UserControl x:Class="Pad.Views.RelationsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource BgPage}">
+  <UserControl.Resources>
+    <DropShadowEffect x:Key="RelShadow" BlurRadius="28" ShadowDepth="7" Direction="270"
+                      Opacity="0.10" Color="#20303F" />
+    <Style x:Key="RelCard" TargetType="Border">
+      <Setter Property="Background" Value="{StaticResource BgCard}" />
+      <Setter Property="CornerRadius" Value="22" />
+      <Setter Property="Effect" Value="{StaticResource RelShadow}" />
+      <Setter Property="Padding" Value="24,20,24,20" />
+    </Style>
+  </UserControl.Resources>
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="30,20,26,28">
+      <DockPanel LastChildFill="False" Margin="2,0,0,16">
+        <TextBlock DockPanel.Dock="Left" Text="关系" FontSize="22" FontWeight="Bold"
+                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center" />
+        <TextBlock x:Name="Summary" DockPanel.Dock="Left" Margin="14,0,0,0"
+                   VerticalAlignment="Bottom" FontSize="11"
+                   Foreground="{StaticResource TextMuted}" />
+      </DockPanel>
+
+      <Border x:Name="Host" Style="{StaticResource RelCard}">
+        <StackPanel x:Name="Tree" />
+      </Border>
+
+      <TextBlock Style="{StaticResource Muted}" Margin="2,12,0,0" FontSize="11"
+                 Text="工作区 → 实例 → agent（会话）。同一工作区下的多个实例共用目录，但各自独立。" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

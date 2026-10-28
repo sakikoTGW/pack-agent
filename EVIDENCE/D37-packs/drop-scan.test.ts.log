@@ -1,0 +1,3 @@
+﻿✓ scan-drop imports pinst, deletes on success, keeps failures, skips nested
+✓ drop-scan
+

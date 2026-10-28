@@ -1,0 +1,28 @@
+﻿界面状态持久化 (2026-10-25)
+
+存哪
+  <启动器根>/ui-state.json
+  { "Active": "sessions", "Views": { "sessions": ["root","root.1","root.1.0"] } }
+  单独一个文件，不塞进 pad.json —— 它是"看的位置"，不是配置
+
+存什么
+  当前标签（按项目 / 按会话）
+  每个视图展开了哪些节点（root / root.i / root.i.j）
+
+怎么存
+  页面在展开、收起、切标签时 postMessage 给宿主
+  宿主 WebMessageReceived -> UiState.Save()，写盘失败静默（下次重来）
+
+怎么读
+  启动时 UiState.Load()，随 payload 下发 expanded 与 active
+  页面 openSet() 优先用存档；没有存档才默认只展开根
+
+验证（两步，都有证据）
+  1 先跑 --shot-page relations-sessions-two（展开 dsh/workspace + 本机 DSH）
+    检查 ui-state.json：Active=sessions，Views.sessions=[root, root.1, root.1.0]
+  2 再跑普通的 --shot-page relations-sessions（不带任何展开指令）
+    页面直接以"按会话"打开，且 dsh/workspace 与 本机 DSH 是展开的
+    -> 读档生效，重启后不会回到默认折叠
+
+未做
+  窗口尺寸/侧栏折叠宽度等其他界面状态的持久化（目前只存关系页）

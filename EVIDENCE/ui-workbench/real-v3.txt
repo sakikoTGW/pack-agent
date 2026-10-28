@@ -1,0 +1,23 @@
+﻿管理首页 — 侧栏 + 可自排卡片 (2026-10-24)
+
+布局
+  左栏  项目列表（实例），可收起 232 <-> 64，收起后只剩首字与状态点
+  右栏  卡片区，WrapPanel 自适应，1229 宽下每行 3 张（288 + 14 间距）
+
+卡片模型（D28）
+  type  running | inventory | context | project | note
+  view  ring | count | bar | dots
+  存放  pad.json#ui.cards；空数组 = 默认三张
+  绑定  project 卡跟随侧栏选中的项目（source 为空时）
+
+编辑模式
+  「编辑」切换后每张卡右上角出现 ×，末尾出现虚线 + 卡
+  「+ 卡片」按钮随时可开菜单（在运行 / 已收录 / 上下文 / 项目卡 / 便签）
+
+验证
+  pad --shot <png> --shot-page manage       普通态
+  pad --shot <png> --shot-page manage-edit  编辑态（构造函数里按 ShotPage 强制进入）
+  两页均 logical 1228.6666666666667x876
+
+未做
+  拖拽排序、单卡独立绑定面板、侧栏折叠状态持久化

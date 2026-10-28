@@ -1,0 +1,21 @@
+﻿关系图 v3 — 全量 agent + 子 agent (2026-10-24)
+
+数据层（Core/Graph.cs）
+  去掉 take=5 截断：全部会话都读，计数才算准
+  子 agent 按 subagentCatalog 的 childId 展开，深度 = 层级
+  子会话若不在缓存里，仍画出来，时间标「未落盘」（缺席也是信息）
+  计数全部由结构递归得出，没有手写
+
+界面（Views/RelationsView）
+  三列分层：工作区 → 实例 → agent
+  子 agent 不新开一列：缩进 18px + 细边框卡片 + "└ " 前缀
+  实测：本机 DSH 下 11 个 agent，其中 1 个子 agent
+
+文档（docs/RELATIONS.md）
+  第 7 节改为机器输出：跑 pad cli relations 的结果直接注入（22 行）
+  规矩写进文档：文档里不写数量，要数字就跑命令
+
+顺带暴露的口径不一致
+  本机 DSH 明明在跑（桌面端 harness），关系图显示 idle ——
+  实例的"在跑"来自 PAD 账本（只记录 PAD 自己起的），会话活跃度来自文件 mtime。
+  已记入 RELATIONS.md 第 8 节缺口表。

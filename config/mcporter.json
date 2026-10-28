@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "agent-pack": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "--package",
+        "@sakikotgw/pack-agent",
+        "-y",
+        "packagent-mcp"
+      ],
+      "env": {
+        "AGENT_PACK_CWD": "."
+      },
+      "active": true
+    }
+  }
+}

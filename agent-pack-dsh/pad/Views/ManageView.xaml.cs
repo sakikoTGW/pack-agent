@@ -345,9 +345,35 @@ public partial class ManageView : UserControl, IRefreshable
         finally { BundleBusy(false); }
     }
 
-    async Task Refresh()
+    /// <summary>
+    /// Facts only: which surfaces PAD started for this home, on which port. No verdicts —
+    /// PAD is a launcher (D18); it just shows the ledger it already keeps.
+    /// </summary>
+    void PaintNodes(Instance? inst)
     {
-        LoadBundles();
+        if (inst is null || string.IsNullOrWhiteSpace(inst.Home))
+        {
+            NodesLine.Text = "";
+            return;
+        }
+
+        var parts = new List<string>();
+        try
+        {
+            foreach (var e in Nodes.Ledger.Load(inst.Home))
+                if (Proc.Alive(e.Pid)) parts.Add($"{e.Profile}:{e.Port}");
+        }
+        catch
+        {
+            NodesLine.Text = "";
+            return;
+        }
+
+        NodesLine.Text = parts.Count == 0 ? "" : "运行中 " + string.Join(" · ", parts);
+    }
+
+    async Task Refresh()
+    {        LoadBundles();
         var inst = _state.SelectedInstance;
         if (inst is null)
         {
@@ -359,11 +385,13 @@ public partial class ManageView : UserControl, IRefreshable
             Waiting(false);
             Count("");
             PaintAlive(null);
+            PaintNodes(null);
             return;
         }
 
         var run = LiveRun();
         PaintAlive(run);
+        PaintNodes(inst);
         TargetTitle.Text = run is null
             ? $"{inst.Name} · {inst.Dsh.Version}"
             : $"{run.InstanceName} · {run.Profile}";

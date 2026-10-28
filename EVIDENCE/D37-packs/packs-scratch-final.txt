@@ -1,0 +1,12 @@
+﻿--- 19:21:13 pad cli pack list
+packs   9
+  cos-best-llm                 0.3.0        内核 -              组件 9    E:\pack-agent\.agent-pack\exports\cos-best-llm.pack.json
+  cos-best-llm                 0.3.0        内核 -              组件 9    E:\pack-agent\.agent-pack\exports\cos-best-llm.pack.zip
+  demo                         0.1.0        内核 -              组件 1    E:\pack-agent\test\fixtures\demo.pack.json
+  example                      0.1.0        内核 0.1.0-rc.7     组件 1    E:\tmp\pad-pack-create\library\packs\example.pack.json
+  example                      0.1.0        内核 0.1.0-rc.7     组件 1    E:\tmp\pad-pack-create\library\packs\example.pack.zip
+  harness-engineer             0.3.0        内核 -              组件 9    E:\pack-agent\.agent-pack\exports\harness-engineer.pack.json
+  packer                       0.3.0        内核 -              组件 2    E:\pack-agent\.agent-pack\exports\packer.pack.json
+  packer                       0.3.0        内核 -              组件 2    E:\pack-agent\.agent-pack\exports\packer.pack.zip
+  packer-mcp                   0.3.0        内核 -              组件 2    E:\pack-agent\.agent-pack\exports\packer-mcp.pack.json
+

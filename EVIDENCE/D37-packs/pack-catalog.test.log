@@ -1,0 +1,4 @@
+﻿✓ packs catalog：.pack.json/.pack.zip/.pinst.zip 三行 + 坏包 errors（不抛）+ --query/--deep + CLI --json（scanned=15, fixture=3, errors=2）
+✓ pack project：.pack.zip 投影成功（pack-agent-modpack-beta-pack/catalog.json，units=3） + .pack.json 老路径回归 + 多包并存
+✓ pack-catalog
+

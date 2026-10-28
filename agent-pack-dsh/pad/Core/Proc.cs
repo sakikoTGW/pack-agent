@@ -24,8 +24,21 @@ public static class Proc
         return found;
     }
 
+    /// <summary>Drop a cached lookup (e.g. after PAD installed bun itself).</summary>
+    public static void Forget(string name)
+    {
+        lock (WhichCache) { WhichCache.Remove(name); }
+    }
+
     static string? WhichUncached(string name)
     {
+        // Absolute path (e.g. packmaker.exe found beside PAD) is not a PATH lookup.
+        try
+        {
+            if (Path.IsPathRooted(name) && File.Exists(name)) return name;
+        }
+        catch { /* malformed name */ }
+
         var exts = (Environment.GetEnvironmentVariable("PATHEXT") ?? ".EXE;.CMD;.BAT")
             .Split(';', StringSplitOptions.RemoveEmptyEntries);
         var dirs = (Environment.GetEnvironmentVariable("PATH") ?? "")
@@ -94,6 +107,7 @@ public static class Proc
         };
         if (env is not null)
             foreach (var (k, v) in env) psi.Environment[k] = v;
+        PrependToolPath(psi);
 
         using var proc = new Process { StartInfo = psi, EnableRaisingEvents = true };
         var tail = new Queue<string>();
@@ -153,7 +167,42 @@ public static class Proc
         };
         if (env is not null)
             foreach (var (k, v) in env) psi.Environment[k] = v;
+        PrependToolPath(psi);
         return Process.Start(psi);
+    }
+
+    /// <summary>
+    /// Put the resolved Bun/pnpm directories in front of the child PATH. The packagent CLI is
+    /// started with node and then spawns `bun` by name; DSH installs/packages go through
+    /// `pnpm`. If either lives somewhere that is not on the launching shell's PATH, that
+    /// grandchild lookup would fail.
+    /// </summary>
+    public static void PrependToolPath(ProcessStartInfo psi)
+    {
+        var dirs = new[] { Bun.Dir(), Pnpm.Dir() }
+            .Where(d => !string.IsNullOrWhiteSpace(d))
+            .Select(d => d!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (dirs.Count == 0) return;
+
+        var current = "";
+        foreach (var key in psi.Environment.Keys.ToArray())
+        {
+            if (string.Equals(key, "Path", StringComparison.OrdinalIgnoreCase))
+            {
+                current = psi.Environment[key] ?? "";
+                break;
+            }
+        }
+        if (current.Length == 0) current = Environment.GetEnvironmentVariable("PATH") ?? "";
+        var parts = current
+            .Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim('"'))
+            .ToList();
+        var missing = dirs.Where(d => !parts.Contains(d, StringComparer.OrdinalIgnoreCase)).ToList();
+        if (missing.Count == 0) return;
+        psi.Environment["Path"] = string.Join(";", missing) + ";" + current;
     }
 
     /// <summary>

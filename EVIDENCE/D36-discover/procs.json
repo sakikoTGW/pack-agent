@@ -1,0 +1,202 @@
+[
+  {
+    "Pid": 28032,
+    "ParentPid": 40088,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 --disable-direct-composition",
+    "DshHome": "E:\\DSH-Home",
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 26928,
+    "ParentPid": 28032,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 --type=gpu-process --disable-direct-composition --user-data-dir=\u0022C:\\Users\\Brs\\AppData\\Roaming\\@deepseek-ai/dsh-desktop\u0022 --gpu-preferences=WAAAAAAAAADgAAAEAAAAAAAAAAAAAGAAQAAAAAAAAAADAAAAAAAAADgAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAAoAAAAAAAAAAgAAAAAAAAAEAAAAAIAAAABAAAAAAAAAAgAAAAAAAAACAAAAAAAAAA= --field-trial-handle=1868,i,4973853494326162933,8077308448024485785,262144 --enable-features=AllowWindowCaptureExclusionInRemoteSessions,PdfUseShowSaveFilePicker --disable-features=DropInputEventsWhilePaintHolding,LocalNetworkAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version --pseudonymization-salt-handle=1872,i,14935152117701666144,17339256262667404579,4 --trace-process-track-uuid=3190708988185955192 --mojo-platform-channel-handle=1864 /prefetch:2",
+    "DshHome": "E:\\DSH-Home",
+    "DshProfile": null,
+    "UserDataDir": "C:\\Users\\Brs\\AppData\\Roaming\\@deepseek-ai/dsh-desktop",
+    "ProfileArg": null
+  },
+  {
+    "Pid": 39776,
+    "ParentPid": 28032,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-type=none --user-data-dir=\u0022C:\\Users\\Brs\\AppData\\Roaming\\@deepseek-ai/dsh-desktop\u0022 --standard-schemes=dsh-app --secure-schemes=dsh-app --cors-schemes=dsh-app --fetch-schemes=dsh-app --streaming-schemes=dsh-app --code-cache-schemes=dsh-app --field-trial-handle=1868,i,4973853494326162933,8077308448024485785,262144 --enable-features=AllowWindowCaptureExclusionInRemoteSessions,PdfUseShowSaveFilePicker --disable-features=DropInputEventsWhilePaintHolding,LocalNetworkAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version --pseudonymization-salt-handle=1872,i,14935152117701666144,17339256262667404579,4 --trace-process-track-uuid=3190708989122997041 --mojo-platform-channel-handle=2328 /prefetch:11",
+    "DshHome": "E:\\DSH-Home",
+    "DshProfile": null,
+    "UserDataDir": "C:\\Users\\Brs\\AppData\\Roaming\\@deepseek-ai/dsh-desktop",
+    "ProfileArg": null
+  },
+  {
+    "Pid": 31884,
+    "ParentPid": 28032,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 --type=renderer --user-data-dir=\u0022C:\\Users\\Brs\\AppData\\Roaming\\@deepseek-ai/dsh-desktop\u0022 --standard-schemes=dsh-app --secure-schemes=dsh-app --cors-schemes=dsh-app --fetch-schemes=dsh-app --streaming-schemes=dsh-app --code-cache-schemes=dsh-app --app-path=\u0022E:\\DSH-App\\resources\\app.asar\u0022 --enable-sandbox --video-capture-use-gpu-memory-buffer --lang=zh-CN --device-scale-factor=1.5 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=4 --launch-time-ticks=215240292 --field-trial-handle=1868,i,4973853494326162933,8077308448024485785,262144 --enable-features=AllowWindowCaptureExclusionInRemoteSessions,PdfUseShowSaveFilePicker --disable-features=DropInputEventsWhilePaintHolding,LocalNetworkAccessChecks,NetworkServiceSandbox,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version --pseudonymization-salt-handle=1872,i,14935152117701666144,17339256262667404579,4 --trace-process-track-uuid=3190708990060038890 --mojo-platform-channel-handle=3068 /prefetch:1",
+    "DshHome": null,
+    "DshProfile": null,
+    "UserDataDir": "C:\\Users\\Brs\\AppData\\Roaming\\@deepseek-ai/dsh-desktop",
+    "ProfileArg": null
+  },
+  {
+    "Pid": 17724,
+    "ParentPid": 28032,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 --expose-internals E:\\DSH-App\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh-desktop-host\\lib\\index.js E:\\DSH-App\\resources\\app.asar\\dsh E:\\DSH-Home\\profiles\\desktop E:\\DSH-App\\resources\\runtime\\primary-runtime E:\\DSH-App\\resources\\runtime\\primary-runtime\\dependencies\\pnpm\\bin\\pnpm.mjs E:\\DSH-App\\resources\\runtime\\bin",
+    "DshHome": "E:\\DSH-Home",
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 16968,
+    "ParentPid": 17724,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 E:\\DSH-App\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh-subprocess-local\\lib\\runner.js -- \u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 E:\\DSH-Home\\profiles\\desktop\\node_modules\\dsh-browser-cdp\\bin\\cdp-cast-worker.mjs \u0022{\\\u0022captureBackend\\\u0022:\\\u0022auto\\\u0022,\\\u0022ffmpegFallbackReason\\\u0022:\\\u0022\\\u0022,\\\u0022streamProfile\\\u0022:\\\u0022balanced\\\u0022,\\\u0022cdpFps\\\u0022:20,\\\u0022cdpQuality\\\u0022:55,\\\u0022cdpMaxWidth\\\u0022:960,\\\u0022cdpBackstopIntervalMs\\\u0022:3000,\\\u0022ffmpegFps\\\u0022:20,\\\u0022ffmpegMaxWidth\\\u0022:1280,\\\u0022ffmpegBitrateKbps\\\u0022:4000,\\\u0022ffmpegEncoder\\\u0022:\\\u0022auto\\\u0022,\\\u0022ffmpegPath\\\u0022:\\\u0022\\\u0022,\\\u0022ffmpegResolvedPath\\\u0022:\\\u0022\\\u0022}\u0022",
+    "DshHome": null,
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 16764,
+    "ParentPid": 16968,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 E:\\DSH-Home\\profiles\\desktop\\node_modules\\dsh-browser-cdp\\bin\\cdp-cast-worker.mjs \u0022{\\\u0022captureBackend\\\u0022:\\\u0022auto\\\u0022,\\\u0022ffmpegFallbackReason\\\u0022:\\\u0022\\\u0022,\\\u0022streamProfile\\\u0022:\\\u0022balanced\\\u0022,\\\u0022cdpFps\\\u0022:20,\\\u0022cdpQuality\\\u0022:55,\\\u0022cdpMaxWidth\\\u0022:960,\\\u0022cdpBackstopIntervalMs\\\u0022:3000,\\\u0022ffmpegFps\\\u0022:20,\\\u0022ffmpegMaxWidth\\\u0022:1280,\\\u0022ffmpegBitrateKbps\\\u0022:4000,\\\u0022ffmpegEncoder\\\u0022:\\\u0022auto\\\u0022,\\\u0022ffmpegPath\\\u0022:\\\u0022\\\u0022,\\\u0022ffmpegResolvedPath\\\u0022:\\\u0022\\\u0022}\u0022",
+    "DshHome": "E:\\DSH-Home",
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 35456,
+    "ParentPid": 17724,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 E:\\DSH-App\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh-subprocess-local\\lib\\runner.js -- \u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 E:\\DSH-Home\\profiles\\desktop\\node_modules\\dsh-browser-cdp\\runtime\\ego-linux\\bin\\ego-browser.mjs nodejs",
+    "DshHome": null,
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 37496,
+    "ParentPid": 17724,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 E:\\DSH-App\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh-subprocess-local\\lib\\runner.js -- C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo -NoProfile -NonInteractive -Command \u0022[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); $OutputEncoding = [System.Text.UTF8Encoding]::new($false); [Console]::OutputEncoding=[System.Text.Encoding]::UTF8\n$running = Get-CimInstance Win32_Process -Filter \\\u0022Name=\u0027node.exe\u0027\\\u0022 | Where-Object { $_.CommandLine -like \u0027*serve.mjs*\u0027 }\nif(-not $running){\n  Start-Process -FilePath \u0027node\u0027 -ArgumentList \u0027E:\\\u81EA\u52A8\u586B\u7F51\u7533\\product\\tools\\serve.mjs\u0027,\u00278791\u0027 -WindowStyle Hidden\n  Start-Sleep -Seconds 2\n  \\\u0022\u5DF2\u91CD\u542F\u9759\u6001\u670D\u52A1\\\u0022\n} else { \\\u0022\u670D\u52A1\u5728\u8DD1: $($running.ProcessId -join \u0027,\u0027)\\\u0022 }\ntry{\n  $r=Invoke-WebRequest \u0027http://127.0.0.1:8791/sidepanel/preview.html\u0027 -UseBasicParsing -TimeoutSec 5\n  \\\u0022HTTP $($r.StatusCode)\\\u0022\n  $k=Invoke-WebRequest \u0027http://127.0.0.1:8791/__testkey.txt\u0027 -UseBasicParsing -TimeoutSec 5\n  \\\u0022\u6D4B\u8BD5 key \u53EF\u8BFB: \u957F\u5EA6 $($k.Content.Trim().Length)\\\u0022\n}catch{ \\\u0022\u4ECD\u4E0D\u53EF\u7528: $($_.Exception.Message)\\\u0022 }\u0022",
+    "DshHome": null,
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 38580,
+    "ParentPid": 17724,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 E:\\DSH-App\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh-subprocess-local\\lib\\runner.js -- C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo -NoProfile -NonInteractive -Command \u0022[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); $OutputEncoding = [System.Text.UTF8Encoding]::new($false); [Console]::OutputEncoding=[System.Text.Encoding]::UTF8\n$fx=\u0027E:\\\u81EA\u52A8\u586B\u7F51\u7533\\work\\openjobautofill-cn\\fixtures\u0027\n$running = Get-CimInstance Win32_Process -Filter \\\u0022Name=\u0027python.exe\u0027\\\u0022 | Where-Object { $_.CommandLine -like \u0027*8765*\u0027 }\nif(-not $running){\n  Start-Process -FilePath \u0027python\u0027 -ArgumentList \u0027-m\u0027,\u0027http.server\u0027,\u00278765\u0027 -WorkingDirectory $fx -WindowStyle Hidden\n  Start-Sleep -Seconds 2\n  \\\u0022fixture \u670D\u52A1\u5DF2\u542F\u52A8\\\u0022\n} else { \\\u0022fixture \u670D\u52A1\u5728\u8DD1\\\u0022 }\ntry{ $r=Invoke-WebRequest \u0027http://127.0.0.1:8765/\u672C\u5730\u7F51\u7533\u6D4B\u8BD5\u9875.html\u0027 -UseBasicParsing -TimeoutSec 5; \\\u0022\u9875\u9762 HTTP $($r.StatusCode)\\\u0022 }catch{ \\\u0022\u542F\u52A8\u5931\u8D25: $($_.Exception.Message)\\\u0022 }\u0022",
+    "DshHome": null,
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 7656,
+    "ParentPid": 51876,
+    "Exe": "E:\\Anonbot\\harness\\mem\\target\\release\\anon-mem.exe",
+    "CommandLine": "\u0022E:\\Anonbot\\harness\\mem\\target\\release\\anon-mem.exe\u0022",
+    "DshHome": null,
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 12920,
+    "ParentPid": 52284,
+    "Exe": "E:\\Anonbot\\harness\\embed\\target\\release\\anon-embed.exe",
+    "CommandLine": "\u0022E:\\Anonbot\\harness\\embed\\target\\release\\anon-embed.exe\u0022",
+    "DshHome": null,
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 59676,
+    "ParentPid": 7620,
+    "Exe": "E:\\Anonbot\\harness\\orchestrator\\anon-harness.exe",
+    "CommandLine": "\u0022E:\\Anonbot\\harness\\orchestrator\\anon-harness.exe\u0022 listen --addr :8787",
+    "DshHome": null,
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 62568,
+    "ParentPid": 17724,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 E:\\DSH-App\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh-subprocess-local\\lib\\runner.js -- C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo -NoProfile -NonInteractive -Command \u0022[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); $OutputEncoding = [System.Text.UTF8Encoding]::new($false); dotnet build \u0027E:\\pack-agent\\agent-pack-dsh\\pad\\Pad.csproj\u0027 -c Debug --nologo -v minimal \u0027-p:OutputPath=E:\\pack-agent\\.tmp\\pad-check\\\u0027 2\u003E\u00261 | Select-Object -First 30\u0022",
+    "DshHome": null,
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 52196,
+    "ParentPid": 17724,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 E:\\DSH-App\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh-subprocess-local\\lib\\runner.js -- C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo -NoProfile -NonInteractive -Command \u0022[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); $OutputEncoding = [System.Text.UTF8Encoding]::new($false); $padExe=\u0027E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\pack-agent-for DSH.exe\u0027\n$p=Get-Process | Where-Object { $_.ProcessName -like \u0027pack-agent-for*\u0027 }; if($p){ $null=$p.CloseMainWindow(); Start-Sleep -Seconds 2; $p | Stop-Process -Force -EA 0; Start-Sleep -Seconds 1 }\ndotnet build \u0027E:\\pack-agent\\agent-pack-dsh\\pad\\Pad.csproj\u0027 -c Debug --nologo -v minimal 2\u003E\u00261 | Select-Object -Last 4\nStart-Process -FilePath $padExe -WorkingDirectory (Split-Path -LiteralPath $padExe)\nStart-Sleep -Seconds 3\n$env:PACK_LAUNCHER_ROOT=\u0027E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\u0027\n$bin=\u0027E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\versions\\0.1.0-rc.7\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js\u0027\n$env:DSH_HOME=\u0027E:\\dsh-tui\\dsh-home\u0027\n$demo=Start-Process -FilePath \u0027C:\\Program Files\\nodejs\\node.exe\u0027 -ArgumentList @(\u0027E:\\tmp\\demo-tui.js\u0027, $bin, \u0027--profile\u0027,\u0027dsh-tui\u0027) -PassThru -WindowStyle Hidden\nStart-Sleep -Seconds 1\n$pad=\u0027E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\pad.json\u0027\n$orig=[System.IO.File]::ReadAllText($pad)\n[System.IO.File]::WriteAllText($pad,$orig.Replace(\u0027\\\u0022shotDelayMs\\\u0022: 3200\u0027,\u0027\\\u0022shotDelayMs\\\u0022: 12000\u0027),[System.Text.UTF8Encoding]::new($false))\n$shot=Start-Process -FilePath $padExe -ArgumentList @(\u0027--shot\u0027,\u0027E:\\tmp\\pad-manage-open3.png\u0027,\u0027--shot-page\u0027,\u0027manage-open\u0027,\u0027--shot-exit\u0027) -WorkingDirectory (Split-Path -LiteralPath $padExe) -PassThru\nStart-Sleep -Seconds 3\n[System.IO.File]::WriteAllText($pad,$orig,[System.Text.UTF8Encoding]::new($false))\nStart-Sleep -Seconds 18\nWrite-Host \\\u0022shot exited=$($shot.HasExited) demo alive=$(-not $demo.HasExited)\\\u0022\nStop-Process -Id $demo.Id -Force -EA 0\n$env:DSH_HOME=$null\nGet-Item \u0027E:\\tmp\\pad-manage-open3.png\u0027 -EA 0 | Select-Object Length,LastWriteTime\u0022",
+    "DshHome": null,
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 48760,
+    "ParentPid": 64796,
+    "Exe": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\pack-agent-for DSH.exe",
+    "CommandLine": "\u0022E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\pack-agent-for DSH.exe\u0022",
+    "DshHome": "E:\\DSH-Home",
+    "DshProfile": "desktop",
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 60520,
+    "ParentPid": 17724,
+    "Exe": "E:\\DSH-App\\DeepSeek Harness.exe",
+    "CommandLine": "\u0022E:\\DSH-App\\DeepSeek Harness.exe\u0022 E:\\DSH-App\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh-subprocess-local\\lib\\runner.js -- C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo -NoProfile -NonInteractive -Command \u0022[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); $OutputEncoding = [System.Text.UTF8Encoding]::new($false); $ev=\u0027E:\\pack-agent\\EVIDENCE\\D36-discover\u0027\n$padExe=\u0027E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\pack-agent-for DSH.exe\u0027\n$env:PACK_LAUNCHER_ROOT=\u0027E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\u0027\n$bin=\u0027E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\versions\\0.1.0-rc.7\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js\u0027\n$env:DSH_HOME=\u0027E:\\dsh-tui\\dsh-home\u0027\n$demo=Start-Process -FilePath \u0027C:\\Program Files\\nodejs\\node.exe\u0027 -ArgumentList @(\u0027E:\\tmp\\demo-tui.js\u0027, $bin, \u0027--profile\u0027,\u0027dsh-tui\u0027) -PassThru -WindowStyle Hidden\nStart-Sleep -Seconds 2\n\u0026 $padExe cli discover --json --out \\\u0022$ev\\inventory.json\\\u0022 2\u003E\u00261 | Out-Null\n\u0026 $padExe cli discover 2\u003E\u00261 | Out-String | Set-Content \\\u0022$ev\\discover.txt\\\u0022 -Encoding UTF8\n\u0026 $padExe cli procs --json --out \\\u0022$ev\\procs.json\\\u0022 2\u003E\u00261 | Out-Null\n\u0026 $padExe cli procs 2\u003E\u00261 | Out-String | Set-Content \\\u0022$ev\\procs.txt\\\u0022 -Encoding UTF8\n\u0026 $padExe cli sniff 2\u003E\u00261 | Out-String | Set-Content \\\u0022$ev\\sniff.txt\\\u0022 -Encoding UTF8\nCopy-Item \u0027E:\\tmp\\pad-manage-open3.png\u0027 \\\u0022$ev\\workbench-dsh.png\\\u0022 -Force\n$pad=\\\u0022$env:PACK_LAUNCHER_ROOT\\pad.json\\\u0022\n$orig=[System.IO.File]::ReadAllText($pad)\n[System.IO.File]::WriteAllText($pad,$orig.Replace(\u0027\\\u0022shotDelayMs\\\u0022: 3200\u0027,\u0027\\\u0022shotDelayMs\\\u0022: 12000\u0027),[System.Text.UTF8Encoding]::new($false))\n$shot=Start-Process -FilePath $padExe -ArgumentList @(\u0027--shot\u0027,\u0027E:\\tmp\\pad-settings-final.png\u0027,\u0027--shot-page\u0027,\u0027settings-launch\u0027,\u0027--shot-exit\u0027) -WorkingDirectory (Split-Path -LiteralPath $padExe) -PassThru\nStart-Sleep -Seconds 3\n[System.IO.File]::WriteAllText($pad,$orig,[System.Text.UTF8Encoding]::new($false))\nStart-Sleep -Seconds 16\nCopy-Item \u0027E:\\tmp\\pad-settings-final.png\u0027 \\\u0022$ev\\settings-scan.png\\\u0022 -Force -EA 0\nStop-Process -Id $demo.Id -Force -EA 0\n$env:DSH_HOME=$null\nGet-ChildItem $ev | Select-Object Name,Length | Format-Table -AutoSize\nWrite-Host \\\u0022=== running rows in evidence ===\\\u0022; Get-Content \\\u0022$ev\\discover.txt\\\u0022 -Encoding UTF8 | Select-String -Pattern \u0027running\u0027 | ForEach-Object { $_.Line }\u0022",
+    "DshHome": null,
+    "DshProfile": null,
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 58828,
+    "ParentPid": 65324,
+    "Exe": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\pack-agent-for DSH.exe",
+    "CommandLine": "\u0022E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\pack-agent-for DSH.exe\u0022 cli procs --json --out E:\\pack-agent\\EVIDENCE\\D36-discover\\procs.json",
+    "DshHome": "E:\\dsh-tui\\dsh-home",
+    "DshProfile": "desktop",
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 53168,
+    "ParentPid": 52944,
+    "Exe": "C:\\Program Files\\nodejs\\node.exe",
+    "CommandLine": "\u0022C:\\Program Files\\nodejs\\node.exe\u0022 E:\\\u81EA\u52A8\u586B\u7F51\u7533\\product\\tools\\serve.mjs 8791",
+    "DshHome": "E:\\DSH-Home",
+    "DshProfile": "desktop",
+    "UserDataDir": null,
+    "ProfileArg": null
+  },
+  {
+    "Pid": 57716,
+    "ParentPid": 65324,
+    "Exe": "C:\\Program Files\\nodejs\\node.exe",
+    "CommandLine": "\u0022C:\\Program Files\\nodejs\\node.exe\u0022 E:\\tmp\\demo-tui.js E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\versions\\0.1.0-rc.7\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js --profile dsh-tui",
+    "DshHome": "E:\\dsh-tui\\dsh-home",
+    "DshProfile": "desktop",
+    "UserDataDir": null,
+    "ProfileArg": "dsh-tui"
+  }
+]

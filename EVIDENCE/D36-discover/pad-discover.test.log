@@ -1,0 +1,4 @@
+﻿✓ asar 打包器格式自检（[4][L+8][L+4][L] / dataBase=L+16 / entry offset 字符串）
+  Kernels 6 · Shells 3 · Tuis 2 · Homes 7 · procs 21（含假 TUI pid 7076）
+✓ pad-discover（asar 内核 / npx 内核 / declared 内核 / 桌面壳 / TUI / homes 全命中；在跑 TUI 的 Running+Pid 与 cli procs 的 DshHome+ProfileArg 都对上，7776ms）
+

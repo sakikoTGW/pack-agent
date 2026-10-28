@@ -1,0 +1,24 @@
+﻿关系页改为 JSON 驱动的视图 (2026-10-25)
+
+两个面向（同一份数据，两个镜头）
+  按项目  workspace · 实例数 · agent 数 · 在跑数
+  按会话  会话标题 · 工作区 · 实例 · 主/子 agent · 最后活动
+
+不硬编码
+  Core/ViewCatalog.cs
+    视图定义由 JSON 决定：{ id, title, orientation, renderer, source, columns[] }
+    加载顺序：Assets/views/*.json（随包）→ <launcher root>/views/*.json（用户覆盖）
+    同 id 的后者覆盖前者；文件坏了跳过，不影响其他视图
+  Assets/views/views.json   内置两个视图
+  Assets/web/page.html      通用表格渲染器：按 columns 生成表头与单元格，
+                           不写死任何字段名（state 列渲染成 pill 是唯一特例）
+  Core/RelationsWebView     C# 只提供数据集（projects / sessions）
+加视图 = 加一份 JSON；加数据 = 加一个数据集函数
+
+验证
+  --shot-page relations           默认"按项目"
+  --shot-page relations-sessions  强制"按会话"
+  WebView2 内容另存 <shot>.web.png（RenderTargetBitmap 拍不到它）
+
+踩到并修掉的坑
+  Pad.Core.Views 与 Pad.Views 命名空间冲突 -> 改名 ViewCatalog

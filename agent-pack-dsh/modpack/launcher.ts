@@ -1095,6 +1095,31 @@ export async function runLauncherCli(argv: string[]): Promise<void> {
       out(await scanDropZips(root))
       return
     }
+    if (group === 'packs') {
+      // 顶层已吃掉 --root/--json，positional = ['packs', '--query', q, '--roots', 'a;b', '--deep', dir]
+      const tail = positional.slice(1)
+      let query = ''
+      const roots: string[] = []
+      const deep: string[] = []
+      for (let i = 0; i < tail.length; i++) {
+        const a = tail[i]
+        if (a === '--query') query = tail[++i] || ''
+        else if (a === '--roots') {
+          roots.push(
+            ...String(tail[++i] || '')
+              .split(';')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          )
+        } else if (a === '--deep') {
+          const dir = tail[++i]
+          if (dir) deep.push(dir)
+        }
+      }
+      const { scanPackCatalog } = await import('./pack-catalog.js')
+      out(await scanPackCatalog(root, { query, roots, deep }))
+      return
+    }
     if (group === 'credentials') {
       const {
         getGlobalCredentials,
@@ -1261,6 +1286,7 @@ function printLauncherHelp(): void {
   packagent dsh launcher import <pack.json|pack.zip|*.pinst.zip> [--name <id>]
   packagent dsh launcher export <id> [--out x.pinst.zip]
   packagent dsh launcher scan-drop
+  packagent dsh launcher packs [--query <q>] [--roots <a;b>] [--deep <dir>]   本机插件包目录（只读）
   packagent dsh launcher portable-init [dir]   打一份带启动器的整合包目录
   packagent dsh launcher credentials list|get [<name>]|set [<name>] <file.yaml>
   packagent dsh launcher market  list [<category>]|search <q>|install <id> <name>

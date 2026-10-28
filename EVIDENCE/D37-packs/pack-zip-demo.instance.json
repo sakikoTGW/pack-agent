@@ -1,0 +1,40 @@
+{
+  "schema": "pack-agent.launcher.instance/v2",
+  "id": "pack-zip-demo",
+  "name": "pack-zip-demo",
+  "dsh": {
+    "version": "0.1.0-rc.7"
+  },
+  "home": "E:\\tmp\\pad-pack-create\\instances\\pack-zip-demo\\home",
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\tmp\\pad-pack-create\\instances\\pack-zip-demo\\workspace"
+  },
+  "status": "ready",
+  "lastProfile": "web",
+  "note": null,
+  "display": {
+    "info": "",
+    "logo": null,
+    "star": false,
+    "category": ""
+  },
+  "launch": null,
+  "source": {
+    "kind": "pack",
+    "packId": "example",
+    "packTitle": "example",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\tmp\\pad-pack-create\\library\\packs\\example.pack.zip"
+  },
+  "adopted": false,
+  "adoptedFingerprint": null,
+  "created": "2026-10-27T11:21:15.0288770+00:00",
+  "updated": "2026-10-27T11:21:19.167Z",
+  "packs": {
+    "allowSet": "default"
+  },
+  "plugins": {
+    "disabled": []
+  }
+}

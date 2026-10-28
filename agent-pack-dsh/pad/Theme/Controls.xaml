@@ -59,6 +59,10 @@
 
   <!-- ============================ surfaces ============================ -->
 
+  <!-- No DropShadowEffect here on purpose. An Effect puts the element in its own
+       intermediate surface, re-rasterised on every frame it moves or fades — on a
+       card list that is the difference between 60fps and a stutter. The border and
+       the surface colour already separate a card from the page. -->
   <Style x:Key="Card" TargetType="Border">
     <Setter Property="Background" Value="{StaticResource BgCard}" />
     <Setter Property="CornerRadius" Value="{StaticResource RadCard}" />
@@ -66,11 +70,6 @@
     <Setter Property="BorderBrush" Value="{StaticResource LineDivider}" />
     <Setter Property="Padding" Value="{StaticResource PadCard}" />
     <Setter Property="Margin" Value="0,0,0,14" />
-    <Setter Property="Effect">
-      <Setter.Value>
-        <DropShadowEffect BlurRadius="10" ShadowDepth="1" Direction="270" Opacity="0.055" Color="#FF19222A" />
-      </Setter.Value>
-    </Setter>
   </Style>
 
   <!-- PCL's card: 25 down each side, and enough room above the body that the card's
@@ -412,6 +411,8 @@
     <Setter Property="Height" Value="50" />
     <Setter Property="FontSize" Value="17" />
   </Style>
+
+
 
   <Style x:Key="MonogramLg" TargetType="ContentControl" BasedOn="{StaticResource Monogram}">
     <Setter Property="Width" Value="58" />

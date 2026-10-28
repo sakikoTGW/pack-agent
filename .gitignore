@@ -16,6 +16,11 @@ node_modules/
 # Local clones of WeChat layout OSS (see drafts/wechat-oss-pipeline.md)
 drafts/_vendor/
 
+# drafts/: heavy local artifacts (0 files tracked as of 2026-10-22 — see STATE.md)
+# evolve/ 92.5 MB / wechat-assets/ 80.1 MB; the small .md/.html drafts stay visible
+drafts/evolve/
+drafts/wechat-assets/
+
 # WeChat Official Account credentials (local publish only)
 drafts/wechat-assets/.wechat.env
 
@@ -70,3 +75,9 @@ agent-pack-dsh/portable/.pack-agent-repo
 # Local harness smoke / indexer scratch
 agent-pack-dsh/.smoke/
 agent-pack-dsh/.agent-pack/
+
+# PAD split: local build artifacts / temp verification data
+.tmp/
+agent-pack-dsh/packmaker/bin/
+agent-pack-dsh/pad/Assets/7z/7z.exe
+agent-pack-dsh/pad/Assets/7z/7z.dll

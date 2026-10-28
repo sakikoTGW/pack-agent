@@ -46,9 +46,12 @@ public sealed class JobRecord
     [JsonPropertyName("updatedAt")] public string UpdatedAt { get; set; } = "";
     [JsonPropertyName("leaves")] public List<JobLeaf>? Leaves { get; set; }
     [JsonPropertyName("label")] public string? Label { get; set; }
+    [JsonPropertyName("paused")] public bool Paused { get; set; }
+    [JsonPropertyName("icon")] public string? Icon { get; set; }
 
     public string StatusText => Status switch
     {
+        "running" when Paused => "已暂停",
         "running" => "进行中",
         "done" => "完成",
         "failed" => "失败",
@@ -65,6 +68,7 @@ public sealed class JobRecord
         "plugin-add" => "装组合包",
         "plugin-remove" => "移除组合包",
         "plugin-update" => "更新组合包",
+        "portable-export" => "打整合包",
         _ => Kind,
     };
 
@@ -195,6 +199,21 @@ public sealed class InstanceLaunch
 }
 
 /// <summary>
+/// Where an instance came from. A missing <c>source</c> in an older
+/// <c>instance.json</c> means "kernel" (built from a pinned release, not from a pack) —
+/// nothing may write that field on load.
+/// </summary>
+public sealed class InstanceSource
+{
+    /// <summary>"pack" | "kernel"</summary>
+    [JsonPropertyName("kind")] public string Kind { get; set; } = "";
+    [JsonPropertyName("packId")] public string? PackId { get; set; }
+    [JsonPropertyName("packTitle")] public string? PackTitle { get; set; }
+    [JsonPropertyName("packVersion")] public string? PackVersion { get; set; }
+    [JsonPropertyName("packPath")] public string? PackPath { get; set; }
+}
+
+/// <summary>
 /// One isolated <c>DSH_HOME</c> — the counterpart of a <c>.minecraft</c> folder.
 /// The profile roster is not stored here; it is discovered from
 /// <c>$DSH_HOME/profiles/*/package.json</c> so PAD and DSH cannot disagree.
@@ -212,6 +231,8 @@ public sealed class Instance
     [JsonPropertyName("note")] public string? Note { get; set; }
     [JsonPropertyName("display")] public InstanceDisplay? Display { get; set; }
     [JsonPropertyName("launch")] public InstanceLaunch? Launch { get; set; }
+    /// <summary>Pack this instance was built from. Null (or absent in old files) = kernel.</summary>
+    [JsonPropertyName("source")] public InstanceSource? Source { get; set; }
     [JsonPropertyName("adopted")] public bool Adopted { get; set; }
     [JsonPropertyName("adoptedFingerprint")] public string? AdoptedFingerprint { get; set; }
     [JsonPropertyName("created")] public string Created { get; set; } = "";
@@ -385,6 +406,14 @@ public sealed class LaunchPrefs
     [JsonPropertyName("tuiPackage")] public string TuiPackage { get; set; } = "";
     /// <summary>Absolute path to node.exe. Empty = <c>node</c> on PATH.</summary>
     [JsonPropertyName("nodePath")] public string NodePath { get; set; } = "";
+
+    /// <summary>
+    /// Absolute path to the dsh CLI entry (<c>…/@deepseek-ai/dsh/lib/bin.js</c>).
+    /// Empty = release record, then sniff. The sibling of <see cref="NodePath"/>:
+    /// PCL asks where Java is, PAD asks where node and dsh are (D21).
+    /// A path inside <c>app.asar</c> is accepted.
+    /// </summary>
+    [JsonPropertyName("dshCli")] public string DshCli { get; set; } = "";
     /// <summary>One command line run before dsh. Empty = none.</summary>
     [JsonPropertyName("preCommand")] public string PreCommand { get; set; } = "";
     /// <summary>Whether the launch script waits for preCommand to finish.</summary>
@@ -484,6 +513,8 @@ public sealed class UiPrefs
     [JsonPropertyName("hiddenTabs")] public List<string> HiddenTabs { get; set; } = [];
     /// <summary>藏启动页「版本选择 / 版本设置」入口。F12 临时解除到本次进程。</summary>
     [JsonPropertyName("hideVersionEntry")] public bool HideVersionEntry { get; set; }
+    /// <summary>管理页首页的卡片。空 = 用默认三张（在运行 / 已收录 / 上下文）。</summary>
+    [JsonPropertyName("cards")] public List<CardPref> Cards { get; set; } = [];
 
     public void Clamp()
     {
@@ -521,10 +552,29 @@ public sealed class UiPrefs
     public static UiPrefs Defaults() => new();
 }
 
+/// <summary>
+/// 管理页首页的一张卡片。数据源 × 表现形 × 点击行为（D28）。
+/// type: running | inventory | context | project | note
+/// view: ring | count | bar | dots
+/// </summary>
+public sealed class CardPref
+{
+    [JsonPropertyName("type")] public string Type { get; set; } = "running";
+    /// <summary>project 卡绑定哪个实例；空 = 跟随侧栏选中的项目。</summary>
+    [JsonPropertyName("source")] public string Source { get; set; } = "";
+    /// <summary>表现形；空 = 该类型的默认形。</summary>
+    [JsonPropertyName("view")] public string View { get; set; } = "";
+    /// <summary>note 卡的正文。</summary>
+    [JsonPropertyName("text")] public string Text { get; set; } = "";
+    /// <summary>占几列。1 = 常规方卡，2 = 宽卡（图表类默认 2）。</summary>
+    [JsonPropertyName("cols")] public int Cols { get; set; } = 1;
+
+    public CardPref Clone() => new() { Type = Type, Source = Source, View = View, Text = Text, Cols = Cols };
+}
+
 /// <summary>一个 npm 货架：左栏一项。</summary>
 public sealed class ShelfPref
-{
-    [JsonPropertyName("id")] public string Id { get; set; } = "";
+{    [JsonPropertyName("id")] public string Id { get; set; } = "";
     [JsonPropertyName("label")] public string Label { get; set; } = "";
     [JsonPropertyName("query")] public string Query { get; set; } = "";
 }
@@ -633,6 +683,14 @@ public sealed class OtherPrefs
     /// <summary>Local random id, generated once at first boot. Never uploaded.</summary>
     [JsonPropertyName("identify")] public string Identify { get; set; } = "";
 
+    /// <summary>
+    /// Opt-in experimental features by id; empty means all off. Same posture as DSH's
+    /// own experimental bundles: shipped, but off until a person turns it on (D20).
+    /// </summary>
+    [JsonPropertyName("experiments")] public List<string> Experiments { get; set; } = [];
+
+    public bool Has(string id) => Experiments.Contains(id, StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Not persisted; set when a corrupt pad.json was recovered.</summary>
     [JsonIgnore] public string? LoadWarning { get; set; }
 
@@ -645,6 +703,11 @@ public sealed class OtherPrefs
         ShotDelayMs = Math.Clamp(ShotDelayMs, 500, 30000);
         ShotMarketDelayMs = Math.Clamp(ShotMarketDelayMs, 500, 60000);
         if (UpdateChannel is not ("release" or "off")) UpdateChannel = "release";
+        Experiments = (Experiments ?? [])
+            .Where(e => !string.IsNullOrWhiteSpace(e))
+            .Select(e => e.Trim().ToLowerInvariant())
+            .Distinct()
+            .ToList();
     }
 
     public static OtherPrefs Defaults() => new();

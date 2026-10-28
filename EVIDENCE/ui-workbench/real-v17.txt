@@ -1,0 +1,23 @@
+﻿按会话改成图（renderer 可切换）(2026-10-25)
+
+视图定义（Assets/views/views.json）
+  projects  renderer=table   三行数据，表最省地方
+  sessions  renderer=graph   树：工作区 → 实例 → agent → 子 agent
+
+渲染器（Assets/web/page.html）
+  table  按 columns 生成表头与单元格，不写死字段
+  graph  d3.tree() 整齐树 + 直线连接 + d3.zoom（滚轮缩放、拖拽平移）
+  两者由 JSON 的 renderer 字段选择，页面里没有 switch 到具体视图 id
+
+一个刻意的取舍
+  图的等比缩放会为了"全塞进去"把字压到看不清。
+  现在：缩放下限 0.8（保证可读），超出部分靠拖拽看。
+  代价：一屏看不全。要一屏看全就得折叠（待定）。
+
+验证
+  --shot-page relations           按项目（表）
+  --shot-page relations-sessions  按会话（图）
+  两张 .web.png 都是 WebView2 自己的截图（RenderTargetBitmap 拍不到它）
+
+顺带修
+  Assets/views/** 之前没复制到输出目录 -> csproj 加 Content + CopyToOutputDirectory

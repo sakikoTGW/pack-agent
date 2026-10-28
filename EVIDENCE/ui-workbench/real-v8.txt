@@ -1,0 +1,21 @@
+﻿管理首页 v8 — 读项目自己的图 (2026-10-24)
+
+新增 Core/Logos.cs
+  标记图  logo / icon / avatar / brand / mark      -> 侧栏 chip
+  界面图  ui / screenshot / preview / cover / banner / hero -> 项目卡封面
+  位置    项目根 · .pad · assets · public · static · docs · images
+  格式    png jpg jpeg webp ico（含 logo-light.png 这类前缀变体）
+  找不到才退回首字 chip；结果按 workspace 路径缓存
+
+验证用的样本（可删）
+  .pack-launcher\instances\pad-op-tmp\workspace\logo.png   128x128 圆角方块
+  .pack-launcher\instances\123\workspace\ui.png            640x320 假界面
+  删掉后对应位置会退回"首字 chip / 无封面"。
+
+顺带查出的数据问题（不是本功能的 bug）
+  instance.json 显示：pad-op-clone 的 workspace 指向
+  instances\pad-op-tmp\workspace —— 克隆时没有重写路径。
+  表现：两个实例共用目录、共用 logo、共用会话。
+
+封面排版
+  封面 92 高 + 圆角 14；出现封面时下半部改为紧凑（数字 24 + 状态），否则会被卡片高度裁掉。

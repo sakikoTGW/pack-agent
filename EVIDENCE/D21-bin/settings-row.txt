@@ -1,0 +1,17 @@
+﻿D21 补完：设置页里的 dsh CLI 路径 (2026-10-23 02:0x)
+
+D21 之前，launch.dshCli 只能手改 pad.json。现在设置页「启动」组里多了一行：
+
+  发行号    0.1.0-rc.7
+  dsh-tui   未找到
+  $DSH_HOME  C:\Users\Brs\AppData\Roaming\dsh-desktop\harness      [浏览]
+  dsh CLI    ...\app.asar\node_modules\@deepseek-ai\dsh\lib\bin.js  [浏览]
+
+- 输入框 LostFocus 即保存（走 Launch_Save，和其它启动项同一套）
+- 「浏览」选 bin.js 后立刻写回并回落保存
+- 与既有「选择 DSH」的区别：那个是 pin（把 CLI 拷进版本库），这个是直接指向现成路径，
+  支持 app.asar 内的路径（D21 的 Exists 判定）
+
+验证方式：PAD 自带 --shot 自渲染，不靠眼看：
+  pack-agent-for DSH.exe --shot <png> --shot-page settings --shot-exit
+  产物 EVIDENCE/D21-bin/settings-row.png（1500x930）

@@ -1,0 +1,21 @@
+﻿共用 workspace 的分组 (2026-10-24)
+
+原则调整
+  共用 workspace 不一定错 —— 一个项目可以同时开 web 和 tui。
+  所以不是"禁止"，是"分组 + 各自可辨"。
+
+侧栏结构
+  [图标] 123            a26e12d1
+         pad-op-tmp/workspace 2        <- 分组头（末级叫 workspace 时取上级）
+    [P]  pad-op-clone   65613b1e
+    [P]  pad-op-tmp     dba49290        <- 缩进 10px
+  [图标] 本机 DSH       29fc4b86
+
+每行仍显示自己的指纹；同组内两条指纹不同（65613b1e vs dba49290），
+说明它们不是同一个 DSH，只是共用一个工作目录。
+行 tooltip 给出完整 home 路径，进一步区分。
+
+代码位置
+  Views/WorkbenchView.xaml.cs :: PaintProjects   按 workspace 分组
+  Views/WorkbenchView.xaml.cs :: WorkspaceHeader 分组头
+  Core/Fingerprint.cs                            指纹（home|workspace|version|bundles -> SHA-256 前 8 位）

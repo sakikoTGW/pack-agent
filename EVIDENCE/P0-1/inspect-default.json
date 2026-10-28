@@ -1,0 +1,33 @@
+{
+  "home": "C:\\Users\\Brs\\AppData\\Roaming\\dsh-desktop\\harness",
+  "found": true,
+  "sessions": 10,
+  "newestSession": "session-9ec8056c-788a-41c6-8d0b-cdb162c30078",
+  "newestAt": "2026-10-22T10:11:56.5650000\u002B08:00",
+  "model": "deepseek-official/deepseek-flash max",
+  "tools": 71,
+  "toolsTokens": 12755,
+  "systemTokens": 2105,
+  "contextTokens": 136440,
+  "pressureTokens": 189117,
+  "contextWindow": 1000000,
+  "compactions": 0,
+  "homes": [
+    {
+      "home": "C:\\Users\\Brs\\AppData\\Roaming\\dsh-desktop\\harness",
+      "found": true,
+      "sessions": 10,
+      "tools": 71,
+      "toolsTokens": 12755,
+      "contextTokens": 136440
+    },
+    {
+      "home": "C:\\Users\\Brs\\.dsh",
+      "found": true,
+      "sessions": 1,
+      "tools": 0,
+      "toolsTokens": 0,
+      "contextTokens": 0
+    }
+  ]
+}

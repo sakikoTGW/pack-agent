@@ -19,7 +19,12 @@ public sealed class Runner(Launcher launcher)
     public string ScriptPath(Instance inst, string profile) =>
         Path.Combine(_l.InstanceDir(inst.Id), $"launch-{profile}.cmd");
 
-    public string WriteScript(Instance inst, string profile, PadSettings? settings = null)
+    /// <summary>
+    /// Render the double-clickable <c>launch-*.cmd</c>.
+    /// <paramref name="heal"/> relinks pnpm junctions first — needed before a real launch
+    /// on a copied kit, but far too slow to run when merely refreshing text (D22).
+    /// </summary>
+    public string WriteScript(Instance inst, string profile, PadSettings? settings = null, bool heal = true)
     {
         var bin = _l.DshBin(inst.Dsh.Version);
         var ov = inst.Launch;
@@ -70,16 +75,19 @@ public sealed class Runner(Launcher launcher)
             CredentialsGate.CopyDistributorToHome(_l, inst, settings);
 
         var credSrc = CredentialSource(inst, settings);
-        PnpmHeal.Relink(Path.Combine(_l.VersionDir(inst.Dsh.Version), "node_modules"));
-        PnpmHeal.ClearProfilesFallback(inst.Home);
-        var profiles = Path.Combine(inst.Home, "profiles");
-        if (Directory.Exists(profiles))
-            foreach (var dir in Directory.EnumerateDirectories(profiles))
-            {
-                if (string.Equals(Path.GetFileName(dir), "node_modules", StringComparison.OrdinalIgnoreCase))
-                    continue;
-                PnpmHeal.Relink(Path.Combine(dir, "node_modules"));
-            }
+        if (heal)
+        {
+            PnpmHeal.Relink(Path.Combine(_l.VersionDir(inst.Dsh.Version), "node_modules"));
+            PnpmHeal.ClearProfilesFallback(inst.Home);
+            var profiles = Path.Combine(inst.Home, "profiles");
+            if (Directory.Exists(profiles))
+                foreach (var dir in Directory.EnumerateDirectories(profiles))
+                {
+                    if (string.Equals(Path.GetFileName(dir), "node_modules", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    PnpmHeal.Relink(Path.Combine(dir, "node_modules"));
+                }
+        }
         if (credSrc is not null && File.Exists(credSrc))
         {
             var credDst = Path.Combine(inst.Home, ".credentials.yaml");
@@ -124,10 +132,24 @@ public sealed class Runner(Launcher launcher)
 
         var path = ScriptPath(inst, profile);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        // cmd.exe reads .cmd as ANSI unless a UTF-8 BOM is present. Chinese
-        // DSH_HOME / workspace paths otherwise become garbage and node never starts.
-        File.WriteAllText(path, sb.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        // cmd.exe reads a .cmd in the console's OEM code page. A UTF-8 BOM makes the very
+        // first line parse as garbage ("锘緻echo off"), and UTF-8 without a BOM turns any
+        // non-ASCII path into mojibake. Write OEM and neither happens.
+        File.WriteAllText(path, sb.ToString(), CmdEncoding());
         return path;
+    }
+
+    /// <summary>The console OEM code page, so cmd.exe reads the script the way it was written.</summary>
+    static Encoding CmdEncoding()
+    {
+        try
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            var oem = System.Globalization.CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
+            if (oem > 0) return Encoding.GetEncoding(oem);
+        }
+        catch { /* provider unavailable: fall back to BOM-less UTF-8 */ }
+        return new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
     }
 
     static string? NonEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
@@ -186,6 +208,15 @@ public sealed class Runner(Launcher launcher)
     /// <summary>Launch a terminal profile in whichever terminal the user configured.</summary>
     public LaunchResult Launch(Instance inst, string profile, PadSettings settings)
     {
+        // Pointing PAD at a home that a running client owns ends badly: the generated
+        // script clears profiles/node_modules and overwrites .credentials.yaml in that
+        // very home. Refuse before touching anything.
+        if (LaunchPolicy.LiveHomeOwner(inst.Home) is { } holder)
+            throw new PadError("PA121", "that DSH home belongs to a running client", inst.Home,
+                "lock held by " + holder,
+                ["用 PAD 自己的实例启动（新建一个），不要指向正在运行的客户端 home",
+                 "pad cli node open <own home> --surface web"]);
+
         var meta = _l.Profiles(inst).FirstOrDefault(p => p.Name == profile);
         var web = LaunchPolicy.WaitForWebReady(meta?.IsWeb == true);
         return web ? LaunchWeb(inst, profile, settings) : LaunchTerminal(inst, profile, settings);

@@ -1,0 +1,63 @@
+﻿--- 17:26:45 pad cli procs
+procs   20
+  28032   p40088   E:\DSH-App\DeepSeek Harness.exe
+          home=E:\DSH-Home  profile=-  userData=-
+          cmd="E:\DSH-App\DeepSeek Harness.exe" --disable-direct-composition
+  26928   p28032   E:\DSH-App\DeepSeek Harness.exe
+          home=E:\DSH-Home  profile=-  userData=C:\Users\Brs\AppData\Roaming\@deepseek-ai/dsh-desktop
+          cmd="E:\DSH-App\DeepSeek Harness.exe" --type=gpu-process --disable-direct-composition --user-data-dir="C:\Users\Brs\AppData\Roaming\@deepseek-ai/dsh-desktop" --gpu-preferences=WAAAAAAA…
+  39776   p28032   E:\DSH-App\DeepSeek Harness.exe
+          home=E:\DSH-Home  profile=-  userData=C:\Users\Brs\AppData\Roaming\@deepseek-ai/dsh-desktop
+          cmd="E:\DSH-App\DeepSeek Harness.exe" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-type=none --user-data-dir="C:\Users\Brs\AppData\Roam…
+  31884   p28032   E:\DSH-App\DeepSeek Harness.exe
+          home=-  profile=-  userData=C:\Users\Brs\AppData\Roaming\@deepseek-ai/dsh-desktop
+          cmd="E:\DSH-App\DeepSeek Harness.exe" --type=renderer --user-data-dir="C:\Users\Brs\AppData\Roaming\@deepseek-ai/dsh-desktop" --standard-schemes=dsh-app --secure-schemes=dsh-app --cors…
+  17724   p28032   E:\DSH-App\DeepSeek Harness.exe
+          home=E:\DSH-Home  profile=-  userData=-
+          cmd="E:\DSH-App\DeepSeek Harness.exe" --expose-internals E:\DSH-App\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh-desktop-host\lib\index.js E:\DSH-App\resources\app.asar\dsh E:\…
+  16968   p17724   E:\DSH-App\DeepSeek Harness.exe
+          home=-  profile=-  userData=-
+          cmd="E:\DSH-App\DeepSeek Harness.exe" E:\DSH-App\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh-subprocess-local\lib\runner.js -- "E:\DSH-App\DeepSeek Harness.exe" E:\DSH-Home\pr…
+  16764   p16968   E:\DSH-App\DeepSeek Harness.exe
+          home=E:\DSH-Home  profile=-  userData=-
+          cmd="E:\DSH-App\DeepSeek Harness.exe" E:\DSH-Home\profiles\desktop\node_modules\dsh-browser-cdp\bin\cdp-cast-worker.mjs "{\"captureBackend\":\"auto\",\"ffmpegFallbackReason\":\"\",\"st…
+  35456   p17724   E:\DSH-App\DeepSeek Harness.exe
+          home=-  profile=-  userData=-
+          cmd="E:\DSH-App\DeepSeek Harness.exe" E:\DSH-App\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh-subprocess-local\lib\runner.js -- "E:\DSH-App\DeepSeek Harness.exe" E:\DSH-Home\pr…
+  37496   p17724   E:\DSH-App\DeepSeek Harness.exe
+          home=-  profile=-  userData=-
+          cmd="E:\DSH-App\DeepSeek Harness.exe" E:\DSH-App\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh-subprocess-local\lib\runner.js -- C:\Windows\System32\WindowsPowerShell\v1.0\power…
+  38580   p17724   E:\DSH-App\DeepSeek Harness.exe
+          home=-  profile=-  userData=-
+          cmd="E:\DSH-App\DeepSeek Harness.exe" E:\DSH-App\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh-subprocess-local\lib\runner.js -- C:\Windows\System32\WindowsPowerShell\v1.0\power…
+  7656    p51876   E:\Anonbot\harness\mem\target\release\anon-mem.exe
+          home=-  profile=-  userData=-
+          cmd="E:\Anonbot\harness\mem\target\release\anon-mem.exe"
+  12920   p52284   E:\Anonbot\harness\embed\target\release\anon-embed.exe
+          home=-  profile=-  userData=-
+          cmd="E:\Anonbot\harness\embed\target\release\anon-embed.exe"
+  59676   p7620    E:\Anonbot\harness\orchestrator\anon-harness.exe
+          home=-  profile=-  userData=-
+          cmd="E:\Anonbot\harness\orchestrator\anon-harness.exe" listen --addr :8787
+  62568   p17724   E:\DSH-App\DeepSeek Harness.exe
+          home=-  profile=-  userData=-
+          cmd="E:\DSH-App\DeepSeek Harness.exe" E:\DSH-App\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh-subprocess-local\lib\runner.js -- C:\Windows\System32\WindowsPowerShell\v1.0\power…
+  52196   p17724   E:\DSH-App\DeepSeek Harness.exe
+          home=-  profile=-  userData=-
+          cmd="E:\DSH-App\DeepSeek Harness.exe" E:\DSH-App\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh-subprocess-local\lib\runner.js -- C:\Windows\System32\WindowsPowerShell\v1.0\power…
+  48760   p64796   E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\pack-agent-for DSH.exe
+          home=E:\DSH-Home  profile=desktop  userData=-
+          cmd="E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\pack-agent-for DSH.exe"
+  60520   p17724   E:\DSH-App\DeepSeek Harness.exe
+          home=-  profile=-  userData=-
+          cmd="E:\DSH-App\DeepSeek Harness.exe" E:\DSH-App\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh-subprocess-local\lib\runner.js -- C:\Windows\System32\WindowsPowerShell\v1.0\power…
+  61584   p65324   E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\pack-agent-for DSH.exe
+          home=E:\dsh-tui\dsh-home  profile=desktop  userData=-
+          cmd="E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\pack-agent-for DSH.exe" cli procs
+  53168   p52944   C:\Program Files\nodejs\node.exe
+          home=E:\DSH-Home  profile=desktop  userData=-
+          cmd="C:\Program Files\nodejs\node.exe" E:\自动填网申\product\tools\serve.mjs 8791
+  57716   p65324   C:\Program Files\nodejs\node.exe
+          home=E:\dsh-tui\dsh-home  profile=dsh-tui  userData=-
+          cmd="C:\Program Files\nodejs\node.exe" E:\tmp\demo-tui.js E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\versions\0.1.0-rc.7\node_modules\@deepseek-ai\dsh\lib…
+

@@ -1,0 +1,10 @@
+﻿--- 17:26:45 pad cli sniff
+{
+  "Bin": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\versions\\0.1.0-rc.7\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+  "Version": "0.1.0-rc.7",
+  "Tui": "E:\\dsh-tui\\dsh-home\\profiles\\dsh-tui\\node_modules\\@deepseek-harness-tui\\dsh-tui",
+  "Home": "E:\\DSH-Home",
+  "HomeExists": true,
+  "SourceCli": "E:\\tmp\\pack-agent\\dsh-src\\deepseek-harness-master\\apps\\cli"
+}
+

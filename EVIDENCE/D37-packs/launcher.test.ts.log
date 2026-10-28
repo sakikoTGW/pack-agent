@@ -1,0 +1,9 @@
+﻿✓ PA001 rustc shape
+✓ two version dirs
+✓ instance homes isolated
+✓ PA006 blocks remove of pinned version
+✓ two pids in runtime.json
+✓ stop A leaves B running
+✓ packagent dsh launcher --help
+✓ launcher P0
+

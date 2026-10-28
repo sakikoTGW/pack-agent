@@ -1,0 +1,6 @@
+﻿✓ 源码回归：Models/Packs/Launcher/Cli/AppState/VersionsView 关键实现都在
+  目录 8 条 · example：内核 0.1.0-rc.7 · 来源 library · 组件 1 skill / 1 个 · E:\tmp\pack-agent\pad-pack-1793099813702-offswl\launcher\library\packs\example.pack.json
+  缺内核：退出 1 + error[PA001] "that release is not installed"，且没建 instances/x
+  找不到包：退出 1 + error[PA012] "no such pack"，help 指向 pad cli pack list
+✓ pad-pack（pack list --json --out 目录行 kernel/source/components/path；缺内核 PA001 不建目录；找不到包 PA012；源码回归，3013ms）
+

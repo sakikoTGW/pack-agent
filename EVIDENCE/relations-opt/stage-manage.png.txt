@@ -1,0 +1,5 @@
+logical 1228.6666666666667x876
+dpi 1.5x1.5
+pixels 1843x1314
+host 962x791.3333333333334
+size manage: want 1229x876 from 1000x620 animate=False fx=True

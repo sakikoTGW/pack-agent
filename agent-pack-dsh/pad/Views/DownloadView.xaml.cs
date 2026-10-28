@@ -1,8 +1,9 @@
 using System.Diagnostics;
 using System.Net.Http;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Controls;
+
 using System.Windows.Media;
 using System.Windows.Threading;
 using Pad.Core;
@@ -111,7 +112,7 @@ public partial class DownloadView : UserControl, IRefreshable
         _state.ReloadReleases();
         // State the tool situation before the user hits install and gets a wall of pnpm text.
         var node = Proc.Which("node");
-        var pnpm = Proc.Which("pnpm");
+        var pnpm = Pnpm.Locate();
         Tool(NodePip, NodeLine, node, "不在 PATH");
         Tool(PnpmPip, PnpmLine, pnpm, "不在 PATH");
 
@@ -389,6 +390,50 @@ public partial class DownloadView : UserControl, IRefreshable
         catch (Exception ex) { _win.Toast(PadError.Describe(ex), bad: true); }
     }
 
+    /// <summary>删除任务行：正在跑的先取消并结束进程，再从列表移除；不动已装文件。</summary>
+    void Delete_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: JobRecord job }) return;
+        try
+        {
+            _state.Launcher.DeleteJob(job.Id);
+            _win.Toast("已删除 " + job.Title);
+            PaintDlTasks();
+        }
+        catch (Exception ex) { _win.Toast(PadError.Describe(ex), bad: true); }
+    }
+
+    /// <summary>暂停/继续：worker 在复制/压缩循环里检查暂停标记（不丢进度）。</summary>
+    void Pause_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: JobRecord job }) return;
+        try
+        {
+            if (job.Paused) _state.Launcher.ResumeJob(job.Id);
+            else _state.Launcher.PauseJob(job.Id);
+            _win.Toast(job.Paused ? "已继续 " + job.Title : "已暂停 " + job.Title);
+            PaintDlTasks();
+        }
+        catch (Exception ex) { _win.Toast(PadError.Describe(ex), bad: true); }
+    }
+
+    void Row_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: JobRecord job }) return;
+        // 点按钮时不触发行的“打开文件夹”。
+        if (e.OriginalSource is DependencyObject source && FindParent<Button>(source) is not null) return;
+        Reveal.Path(FolderOf(job));
+    }
+
+    static T? FindParent<T>(DependencyObject? node) where T : DependencyObject
+    {
+        while (node is not null)
+        {
+            if (node is T hit) return hit;
+            node = System.Windows.Media.VisualTreeHelper.GetParent(node);
+        }
+        return null;
+    }
     void Forget_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: JobRecord job }) return;

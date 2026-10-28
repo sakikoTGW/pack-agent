@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>换个壳，半个月配置就像没配过</title>
+</head>
+<body style="margin:0;padding:0;background:#e6e8eb;">
+
+<section style="max-width:677px;margin:0 auto;background:#fbfbfa;color:#1c1c1c;font-family:'Source Han Sans SC','Noto Sans SC',-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;font-size:17px;line-height:1.85;">
+
+  <section style="padding:32px 24px 8px;background:linear-gradient(165deg,#fbfbfa 0%,#f0f4f4 55%,#e8f0ef 100%);">
+    <p style="margin:0 0 10px;font-size:11px;letter-spacing:0.22em;color:#0f766e;font-weight:700;"><span leaf="">AGENT MODPACK</span></p>
+    <h1 style="margin:0 0 14px;font-size:26px;line-height:1.35;font-weight:800;color:#111;">
+      <span leaf="">换个壳，</span><br />
+      <span leaf="">半个月配置就像没配过</span>
+    </h1>
+    <p style="margin:0;padding:12px 14px;background:#ecf4f3;border-left:3px solid #0f766e;font-size:15px;color:#134e4a;font-weight:600;">
+      <span leaf="">像装 MC 整合包一样，装你的 agent。</span>
+    </p>
+  </section>
+
+  <section style="padding:16px 24px 8px;">
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf="">练习结束了。睦抱着吉他站在门口。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf="">祥子没叫她留下谈乐队。笔记本亮着，资源管理器开着一个几乎空的文件夹，只有一份 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;background:#ecf4f3;color:#0f766e;padding:1px 6px;border-radius:3px;">packer.pack.json</span><span leaf="">。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>睦。看一下这个。别走。</span></p>
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……嗯。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>我把 Cursor 里用顺的那套——skills、规则、还有 MCP——整夹拷进 Codex。文件在。我问它看不看得到「agent-pack」。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf="">它说没有。</span></p>
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……在，却没有。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>Cursor 认一套目录，Codex 认另一套。我塞错层了。MCP 更烦，装的时候点几下，卸的时候凭感觉删，删完半残。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf="">半个月配的东西，换个壳，就像没配过。</span></p>
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……像……换场地……线乱了。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>……对。玩 MC 的人不会靠拖 mods 文件夹换启动器。他们用整合包：一份文件，装得上，卸得掉，换启动器还能落到对的位置。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>我就做了这个。<strong style="color:#0f766e;">Agent Modpack</strong>。</span></p>
+    <p style="margin:0 0 6px;color:#2a2a2a;"><a href="https://github.com/sakikoTGW/pack-agent" style="color:#576b95;text-decoration:none;"><span leaf="">https://github.com/sakikoTGW/pack-agent</span></a></p>
+    <p style="margin:0 0 14px;font-size:15px;color:#555;"><span leaf="">npm：</span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;"><span leaf="">@sakikotgw/pack-agent</span></span><span leaf="">（Bun ≥ 1.1）</span></p>
+    <p style="margin:0 0 10px;color:#2a2a2a;"><span leaf="">把「一个角色」打成一份 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;background:#ecf4f3;color:#0f766e;padding:1px 6px;border-radius:3px;">.pack.json</span><span leaf="">。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf="">角色不是人格——是 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;">agents.yaml</span><span leaf=""> 里点名的那组 skills、规则、MCP。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;">install</span> 写进壳，</span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;">eject</span><span leaf=""> 按账本删。换壳时 adapter 改路径，不用手改。</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/arch-overview.png" alt="架构" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">点名 → 打包 → 投射；右边是账本</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>本机有哪些壳，先看一眼。</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/cli-01-detect.png" alt="detect" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">detect</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……好几家。</span></p>
+    <p style="margin:0 0 10px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>嗯。先看一家。空目录，只放这份包，装进 Codex：</span></p>
+  </section>
+
+  <section style="margin:0 16px 14px;padding:12px 14px;background:#111827;border-radius:4px;">
+    <p style="margin:0;font-family:ui-monospace,Consolas,Monaco,monospace;font-size:12px;line-height:1.65;color:#e5e7eb;word-break:break-all;"><span leaf="">npx --yes -p @sakikotgw/pack-agent packagent install .\packer.pack.json --runtime codex</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/explorer-skills-after-install.png" alt="装完" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">装完：.agents/skills 里出现 agent-pack</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 12px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>文件在了不算。我当面问它——</span></p>
+  </section>
+
+  <section style="margin:0 16px 14px;padding:14px 16px;background:#ecf4f3;border-left:3px solid #0f766e;border-radius:0 4px 4px 0;">
+    <p style="margin:0;font-size:15px;line-height:1.7;color:#134e4a;"><span leaf="">能看到，agent-pack 这个 skill 是用来把 skills、rules、MCP、harness prompts 等内容打包/导出/同步成可移植的 agent 包，也可以安装到不同的 Codex/Claude Code 环境里。</span></p>
+  </section>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……这次……认了。</span></p>
+    <p style="margin:0 0 10px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>再卸。</span></p>
+  </section>
+
+  <section style="margin:0 16px 14px;padding:12px 14px;background:#111827;border-radius:4px;">
+    <p style="margin:0;font-family:ui-monospace,Consolas,Monaco,monospace;font-size:12px;line-height:1.65;color:#e5e7eb;word-break:break-all;"><span leaf="">npx --yes -p @sakikotgw/pack-agent packagent eject --name packer</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/explorer-skills-after-eject.png" alt="卸完" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">卸完：技能目录空了</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>再问同一句。忘了。</span></p>
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……来过。……又走了。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>干净。实录在 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;">%TEMP%\packagent-codex-verify-20260719-040422</span><span leaf="">。</span></p>
+  </section>
+
+  <section style="margin:8px 24px 16px;border-top:1px solid #e2e5e8;"></section>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……MCP 呢。……会不会只带走一半。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>角色接了工具链，MCP 和 skill 进同一份包。只拷 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;">SKILL.md</span><span leaf=""> 不够。Hermes 上这份：装前两边都空。</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/hermes-01-skills-before.png" alt="hermes skills before" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 12px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">Hermes skills 装前为空</span></p>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/hermes-02-mcp-before.png" alt="hermes mcp before" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">Hermes mcp 装前无 agent-pack</span></p>
+
+  <section style="margin:0 16px 14px;padding:12px 14px;background:#111827;border-radius:4px;">
+    <p style="margin:0;font-family:ui-monospace,Consolas,Monaco,monospace;font-size:12px;line-height:1.65;color:#e5e7eb;word-break:break-all;"><span leaf="">npx --yes -p @sakikotgw/pack-agent packagent install .\packer-mcp.pack.json --runtime hermes --global-config</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/hermes-04-skills-after.png" alt="hermes skills after" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 12px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">skills 出现 agent-pack</span></p>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/hermes-05-mcp-after.png" alt="hermes mcp after" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">mcp 也出现 agent-pack</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>有了 skill + MCP，这个角色能自己调 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;">pack_export</span><span leaf=""> / </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;">pack_install</span><span leaf=""> / </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;">pack_eject</span><span leaf="">。我让它把示例角色 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;">hello-pack</span><span leaf=""> 再打一份，装回去——工具包和业务包可以并排。</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/hermes-10-skills-with-hello.png" alt="two packs" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">skills：agent-pack + hello-pack</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……卸一个……另一个呢。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong></span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;">eject --name hello-pack</span><span leaf=""> 只卸 hello-pack。账本按包名记账，不会目录里有东西就一锅端。</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/hermes-13-skills-after-eject.png" alt="after eject hello" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">eject 后 skills</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……谱和效果器……一起装箱。……拿走该拿走的。</span></p>
+    <p style="margin:0 0 8px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>……嗯。</span></p>
+  </section>
+
+  <section style="margin:8px 24px 16px;border-top:1px solid #e2e5e8;"></section>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……驯服过的脾气呢。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>经验跟 skill 不是一类东西。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf="">skills、规则、MCP 落在磁盘上，进包就能带走。<br />经验是对话里用顺的脾气：冲突时默认停还是盖、哪条路试过。它还会变。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf="">写进 skill 会定死；经验却还在漂。所以经验不进 skill 树——基座可以进包，接上壳的 hook 后写入 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;">live.json</span><span leaf="">，下一轮注回上下文。</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/experience-flow.png" alt="experience" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">经验：不进 skill，基座 + live</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>同一会话两轮。第一轮只有「把 packer 迁到 Hermes」；第二轮加上「冲突时默认 stop」。注回去的内容会跟着变。</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/exp-live-inject-turn1.png" alt="turn1" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 12px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">live inject · turn 1</span></p>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/exp-live-inject-turn2.png" alt="turn2" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">live inject · turn 2</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……会变。……不是写在纸上骗自己。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>还没对齐各家壳真正发给模型的那一层时，包上会标 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;">L1</span><span leaf="">，换模型更容易漂。</span></p>
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……同名呢。……会不会盖错。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>默认停。</span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;">--on-conflict stop</span><span leaf="">。不覆盖。</span></p>
+  </section>
+
+  <section style="margin:0 16px 6px;overflow:hidden;border:1px solid #e2e5e8;border-radius:4px;">
+    <img src="wechat-assets/real/proof-shots/cli-09-conflict-stop.png" alt="conflict stop" style="display:block;width:100%;height:auto;border:0;" />
+  </section>
+  <p style="margin:0 24px 14px;font-size:12px;color:#8a8a8a;text-align:center;"><span leaf="">冲突：默认 stop</span></p>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……宁可……少删。</span></p>
+    <p style="margin:0 0 8px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>……对。</span></p>
+  </section>
+
+  <section style="margin:8px 24px 16px;border-top:1px solid #e2e5e8;"></section>
+
+  <section style="padding:0 24px 8px;">
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……跟拷目录……差在哪。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>拷目录：路径各家不同，卸靠手，换壳自己改。<br />只撕一页 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;">SKILL.md</span><span leaf="">：不管 MCP，也不管规则。<br />这份包：整个角色，一份文件，账本卸，adapter 投射。</span></p>
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……一份……就够。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>它不负责让你变强。模型、账单、你驯得怎样，都不在这个文件里。只负责配置还能带走。</span></p>
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……祥。……我想摸摸看。</span></p>
+    <p style="margin:0 0 10px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>……好。</span></p>
+  </section>
+
+  <section style="margin:0 16px 16px;padding:12px 14px;background:#111827;border-radius:4px;">
+    <pre style="margin:0;font-family:ui-monospace,Consolas,Monaco,monospace;font-size:12px;line-height:1.65;color:#e5e7eb;white-space:pre-wrap;">npm install -g @sakikotgw/pack-agent
+packagent agents init
+packagent export --agent &lt;角色id&gt;
+packagent install .\.agent-pack\exports\&lt;包名&gt;.pack.json</pre>
+  </section>
+
+  <section style="padding:0 24px 36px;">
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>先看本机能装哪几家，就 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;">packagent detect</span><span leaf="">。细则在仓库 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:14px;">docs/</span><span leaf="">。Cursor 要显式加 </span><span style="font-family:ui-monospace,Consolas,Monaco,monospace;font-size:13px;">--runtime cursor</span><span leaf="">。</span></p>
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……嗯。……一份包，一个角色。</span></p>
+    <p style="margin:0 0 14px;color:#2a2a2a;"><span leaf=""><strong style="color:#134e4a;">祥子：</strong>下次换机器，先看账本还在不在。</span></p>
+    <p style="margin:0 0 14px;color:#64748b;"><span leaf=""><strong style="color:#0f766e;">睦：</strong>……好。</span></p>
+    <p style="margin:0 0 20px;color:#2a2a2a;"><span leaf="">装得上，认得出，卸得掉；skill 和 MCP 可以一起走；经验还在会变的那一层。</span></p>
+    <p style="margin:0 0 8px;color:#2a2a2a;"><span leaf="">上一篇：《</span><a href="https://mp.weixin.qq.com/s?__biz=MzY0MDQ3NzUwOA==&amp;mid=2247483933&amp;idx=1&amp;sn=21bdb65e401a6823e437c5b3d6b94408" style="color:#576b95;text-decoration:none;"><span leaf="">一个连进阶1都无法通关的 STS2_Skill？</span></a><span leaf="">》</span></p>
+    <p style="margin:0 0 16px;color:#2a2a2a;"><span leaf="">打牌：</span><a href="https://github.com/sakikoTGW/STS2_Skills" style="color:#576b95;text-decoration:none;"><span leaf="">https://github.com/sakikoTGW/STS2_Skills</span></a></p>
+    <p style="margin:0;color:#2a2a2a;"><span leaf="">转载注明项目地址。截图本机实录。</span></p>
+  </section>
+
+</section>
+</body>
+</html>

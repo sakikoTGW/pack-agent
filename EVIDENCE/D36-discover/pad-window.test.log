@@ -1,0 +1,9 @@
+﻿✓ 窗口策略：网址 / 拖包 / 收编 / 不卡 TUI / 嗅探 home
+✓ PAD 窗口接到 import / 收编 / 崩溃 / 分开升 / 拖 zip
+✓ PAD 入口契约：clone/export/v4/任务/凭据/job 日志
+✓ pad-window
+✓ pad cli crash 不经过 pack-agent
+✓ pad cli sniff 能跑
+✓ pad cli release pin 拷进版本库
+✓ pad cli plugin list 不靠管理口也能列出 TUI
+

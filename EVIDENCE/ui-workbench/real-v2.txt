@@ -1,0 +1,14 @@
+﻿管理页改版 — 旧入口已接回 (2026-10-24)
+
+结构
+  manage   -> WorkbenchView   工作台主页（本机 / 项目 / 已停）
+  bundles  -> ManageView      原「实例 + 组合包」控制台，保留为内页
+  入口     工作台「项目」标题右侧的「实例与组合包」按钮
+  返回     顶部返回箭头 -> 管理页
+
+尺寸（D26）
+  manage  1228.7 x 876
+  bundles 1228.7 x 876    <- 管理族页面同样吃大尺寸，内页不再被挤成 620 高
+  实测旁注：logical 1228.6666666666667x876（两页一致）
+
+验证方式：pad --shot <png> --shot-page manage|bundles --shot-exit

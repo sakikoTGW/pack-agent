@@ -1,0 +1,26 @@
+﻿指纹识别 + 载体图标 (2026-10-24)
+
+Core/Fingerprint.cs
+  material = home | workspace | version | 排序后的 profile bundles
+  code     = SHA-256 前 8 位十六进制
+  侧栏每行显示该 8 位；两种"相同"标红：
+    同一个 home       -> 同一个 DSH
+    同一个 workspace  -> 不同实例、同一个工作目录
+  实测
+    123          a26e12d1  灰
+    本机 DSH     29fc4b86  灰
+    pad-op-clone 65613b1e  红  <- 与 pad-op-tmp 共用 workspace
+    pad-op-tmp   dba49290  红
+
+Core/Carriers.cs（载体图标库）
+  1 用户设的 logo（instance.json display.logo）
+  2 项目自己的 logo（workspace 内）
+  3 载体插件自己的图标（package.json 的 icon/logo 字段或包内文件）
+  4 数据库：Assets/carriers.json + <root>/icons/carriers.json + <root>/icons/*.png
+     条目 { match: 包名片段, icon: 图片路径 }；find 按声明文件所在目录解析
+  5 DSH 鲸鱼（桌面端 resources\icon.png）
+  不画字母。
+
+已知：本机 11 个插件都没有自带图标，当前全部落到鲸鱼；
+补图只需把 png 放进 <root>/icons/ 或写一条 carriers.json，不用改代码。
+网络抓取（从仓库取图标）本轮被中断，未实现。

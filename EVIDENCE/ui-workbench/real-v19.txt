@@ -1,0 +1,23 @@
+﻿关系页：侧栏归位 + 一层层展开 (2026-10-25)
+
+侧栏（WPF）
+  工作区（粗）+ 实例（缩进）；运行中的点用强调色
+  点一行 -> ExecuteScriptAsync(expandIds([...])) 在图里展开那一层
+  侧栏是导航，图是内容，两边共用同一套 id：root.i / root.i.j
+
+一层层展开（JS）
+  默认只展开根 -> 第一眼只有 3 张工作区卡，各带 +1 / +1 / +2
+  点 +N 只展开这一层，展开后显示 −
+  展开集合按视图 id 记住
+
+验证矩阵（--shot-page）
+  relations                     按项目（表）
+  relations-sessions            按会话（图·仅工作区）
+  relations-sessions-one        展开 dsh/workspace 一层
+  relations-sessions-two        再展开 本机 DSH 一层
+  relations-sessions-expanded   全展开
+
+截图方法（重要）
+  WebView2 不在 RenderTargetBitmap 里，单拍是空白。
+  现在：CapturePreviewAsync 另存 .web.png，再用 PIL 把它贴回窗口内的位置，
+  拼成一张完整的真实画面（侧栏是 WPF 的，图是 WebView2 的）。

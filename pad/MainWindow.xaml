@@ -8,20 +8,24 @@
         mc:Ignorable="d"
         Title="PAD" Width="1000" Height="620"
         Icon="pack://application:,,,/Assets/pad.ico"
-        WindowStyle="None" AllowsTransparency="True" ResizeMode="CanMinimize"
-        Background="Transparent" WindowStartupLocation="CenterScreen"
+        WindowStyle="None" AllowsTransparency="False" ResizeMode="CanMinimize"
+        Background="{StaticResource BgPage}" WindowStartupLocation="CenterScreen"
         AllowDrop="True" PreviewDragOver="Window_DragOver" Drop="Window_Drop"
         TextOptions.TextFormattingMode="Display"
         ToolTipService.InitialShowDelay="700" ToolTipService.BetweenShowDelay="200"
         FontFamily="{StaticResource FontUI}" UseLayoutRounding="True" SnapsToDevicePixels="True">
 
-  <Border x:Name="OuterShell" Margin="14" Background="Transparent" CornerRadius="10">
-    <Border.Effect>
-      <DropShadowEffect BlurRadius="26" ShadowDepth="3" Direction="270" Opacity="0.28" Color="#FF19222A" />
-    </Border.Effect>
+  <!-- A normal (non-layered) window: DWM composes it on the GPU, so opacity and
+       transform animations never pay for a full-window layered blit. The corner
+       rounding and outer shadow come from DWM (see Core/Dwm.cs) instead of a
+       DropShadowEffect wrapped around the whole visual tree. -->
+  <WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="0" ResizeBorderThickness="0" GlassFrameThickness="0"
+                  CornerRadius="0" UseAeroCaptionButtons="False" />
+  </WindowChrome.WindowChrome>
 
-    <Border CornerRadius="10" ClipToBounds="True" BorderThickness="1"
-            BorderBrush="{StaticResource LineBorder}">
+  <Border x:Name="OuterShell" Margin="0" Background="Transparent" CornerRadius="10">
+    <Border CornerRadius="10">
       <Grid>
         <!-- Steam-style skin: wallpaper under a wash so text stays readable. -->
         <Image x:Name="Wallpaper" Stretch="UniformToFill" StretchDirection="Both"
@@ -116,10 +120,35 @@
             </Grid>
           </Border>
 
-          <ContentControl x:Name="Host" Grid.Row="1" />
+          <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- 舞台常驻侧栏：换页时它不换实例、不换位置，只有内容在列表/树之间重组。
+                 收起 = 整块向左滑出（宽度 + 位移同动画），旁边的内容连续重排。 -->
+            <Border x:Name="StageRail" Width="236" HorizontalAlignment="Left"
+                    Background="{StaticResource BgCard}"
+                    BorderBrush="{StaticResource LineDivider}" BorderThickness="0,0,1,0"
+                    ClipToBounds="True" Visibility="Collapsed">
+              <Border.RenderTransform>
+                <TranslateTransform x:Name="StageRailShift" />
+              </Border.RenderTransform>
+              <v:ProjectRail x:Name="StageRailList" />
+            </Border>
+
+            <!-- 侧栏滑出后留在左缘的把手 -->
+            <Button x:Name="RailEdge" Grid.Column="0" Width="20" MinWidth="20"
+                    HorizontalAlignment="Left" VerticalAlignment="Stretch" Margin="0,10"
+                    Style="{StaticResource BtnGhost}" Content="›" Padding="0"
+                    Visibility="Collapsed" Click="RailEdge_Click" ToolTip="展开侧栏" />
+
+            <ContentControl x:Name="Host" Grid.Column="1" />
+          </Grid>
 
           <StackPanel x:Name="ToastLayer" Grid.Row="1" HorizontalAlignment="Right"
-                      VerticalAlignment="Bottom" Margin="0,0,20,18" IsHitTestVisible="False" />
+                      VerticalAlignment="Bottom" Margin="0,0,20,18" IsHitTestVisible="True" />
 
           <!-- PCL MyMsg: overlay on the main window, no OS title bar. -->
           <Grid x:Name="MsgLayer" Grid.RowSpan="2" Visibility="Collapsed" Panel.ZIndex="40"
@@ -207,6 +236,12 @@
             </Border>
           </Grid>
         </Grid>
+        <!-- 1px edge ring. It is an overlay, not the content border, because a border drawn
+             by the resizing container lands on fractional pixels while the window is between
+             two sizes — that is the bottom edge that blinked. It fades out for the bounds
+             travel and back in when they land (MainWindow.Swap / RevealAfterResize). -->
+        <Border x:Name="EdgeRing" BorderThickness="1" BorderBrush="{StaticResource LineBorder}"
+                IsHitTestVisible="False" />
       </Grid>
     </Border>
   </Border>

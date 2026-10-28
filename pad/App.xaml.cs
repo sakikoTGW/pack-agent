@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
@@ -53,6 +53,10 @@ public partial class App : Application
                 NativeAlert.Error(DialogFor(ex));
         };
 
+        // 上个 PAD 进程留下的假任务先清掉，再开窗口。
+        try { Core.AppState.Current.Launcher.SweepStaleJobs(); } catch { /* 不影响启动 */ }
+        // 整合包首次启动：先把折叠的 node_modules 解出来，再开主窗口。
+        PortableBootstrap.RunIfNeeded();
         Core.AppState.Current.ApplyUiBoot();
         new MainWindow().Show();
         if (ShotPath is null)

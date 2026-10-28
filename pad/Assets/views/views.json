@@ -1,0 +1,31 @@
+[
+  {
+    "id": "projects",
+    "title": "按项目",
+    "orientation": "project",
+    "renderer": "table",
+    "source": "projects",
+    "note": "以工作区为单位看结构",
+    "columns": [
+      { "key": "label", "label": "工作区", "width": 280 },
+      { "key": "instances", "label": "实例", "width": 70, "align": "right" },
+      { "key": "agents", "label": "agent", "width": 70, "align": "right" },
+      { "key": "running", "label": "在跑", "width": 70, "align": "right" }
+    ]
+  },
+  {
+    "id": "sessions",
+    "title": "按会话",
+    "orientation": "session",
+    "renderer": "graph",
+    "source": "sessions",
+    "note": "以 agent（会话）为单位平铺",
+    "columns": [
+      { "key": "title", "label": "会话", "width": 340 },
+      { "key": "project", "label": "工作区", "width": 220 },
+      { "key": "instance", "label": "实例", "width": 150 },
+      { "key": "state", "label": "归属", "width": 80 },
+      { "key": "when", "label": "最后活动", "width": 110, "align": "right" }
+    ]
+  }
+]

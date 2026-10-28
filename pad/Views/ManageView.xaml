@@ -82,6 +82,8 @@
                          TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
               <ContentControl x:Name="AdBox" Style="{StaticResource QuantMono}" Margin="0"
                               v:Ico.Of="{StaticResource I.Globe}" />
+              <TextBlock x:Name="NodesLine" Style="{StaticResource Muted}" Margin="15,0,0,0"
+                         TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
             </StackPanel>
           </StackPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">

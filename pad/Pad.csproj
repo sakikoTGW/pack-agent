@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -22,17 +22,30 @@
     <Resource Include="Assets\pad-logo.png" />
     <Resource Include="Assets\pad.ico" />
     <Resource Include="Assets\api\*.png" />
+    <!-- WebView2 页面按文件读，必须落在输出目录，不能打进资源 -->
+    <Content Include="Assets\web\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- 视图定义是数据，不是资源：用户可以直接改 -->
+    <Content Include="Assets\views\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- 7-Zip 多线程压缩（约 2.4MB）：便携包 zip 用，缺了就退回 .NET 单线程 -->
+    <Content Include="Assets\7z\**\*" CopyToOutputDirectory="PreserveNewest" />
     <EmbeddedResource Include="..\modpack\registries\crash-rules.json" LogicalName="Pad.registries.crash-rules.json" />
     <EmbeddedResource Include="..\modpack\registries\faq.json" LogicalName="Pad.registries.faq.json" />
     <EmbeddedResource Include="..\modpack\registries\pad-pages.json" LogicalName="Pad.registries.pad-pages.json" />
     <EmbeddedResource Include="..\modpack\registries\pa-codes.json" LogicalName="Pad.registries.pa-codes.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
+  </ItemGroup>
+
   <Target Name="CopyCrashRegistries" AfterTargets="Build">
     <MakeDir Directories="$(OutputPath)registries" />
-    <Copy SourceFiles="..\modpack\registries\crash-rules.json;..\modpack\registries\faq.json;..\modpack\registries\pad-pages.json"
-          DestinationFolder="$(OutputPath)registries"
-          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="..\modpack\registries\crash-rules.json;..\modpack\registries\faq.json;..\modpack\registries\pad-pages.json" DestinationFolder="$(OutputPath)registries" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- 制作整合包用的是 Go 写的 packmaker（stdlib zip，严格校验）；有构建产物就一起带上。 -->
+  <Target Name="CopyPackmaker" AfterTargets="Build" Condition="Exists('..\packmaker\bin\packmaker.exe')">
+    <Copy SourceFiles="..\packmaker\bin\packmaker.exe" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

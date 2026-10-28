@@ -1,0 +1,29 @@
+<UserControl x:Class="Pad.Views.RelationsWebView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+             Background="{StaticResource BgPage}">
+  <!-- 项目侧栏在舞台层（MainWindow 持有），本页只占内容区：
+       标签条不动、侧栏不动，从管理页过来时是"元素重组"，不是换页。 -->
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <StackPanel Orientation="Horizontal" Margin="24,16,24,10">
+      <Button x:Name="BackBtn" Style="{StaticResource BtnGhost}" Height="28" Padding="10,0"
+              Margin="0,2,12,0" Content="‹ 管理" Click="Back_Click" ToolTip="回到管理卡片页" />
+      <TextBlock Text="关系" FontSize="22" FontWeight="Bold"
+                 Foreground="{StaticResource TextPrimary}" />
+      <TextBlock x:Name="Summary" Margin="14,7,0,0" FontSize="11"
+                 Foreground="{StaticResource TextMuted}" />
+    </StackPanel>
+
+    <Border Grid.Row="1" Margin="24,0,24,20" CornerRadius="16" ClipToBounds="True"
+            Background="{StaticResource BgCard}" BorderBrush="{StaticResource LineDivider}"
+            BorderThickness="1">
+      <wv2:WebView2 x:Name="Web" DefaultBackgroundColor="Transparent" />
+    </Border>
+  </Grid>
+</UserControl>

@@ -148,6 +148,17 @@ public partial class LaunchFloat : Window
             if (LaunchPolicy.LaunchHarnessReady(
                     state.Launcher.HarnessAlive(profile.Instance.Id, profile.Name)))
                 return;
+
+            // The script echoes "[PAD] dsh exited with N" when the CLI refuses to boot.
+            // Once that is on disk the harness will never come up: report it instead of
+            // burning the rest of the start timeout (D23 #3).
+            if (LaunchPolicy.LaunchLogExited(state.Launcher.LogsDir(profile.Instance.Id)) is { } gone)
+            {
+                var tail = gone.Tail.Length > 700 ? gone.Tail[^700..] : gone.Tail;
+                throw new PadError("PA120", "dsh exited before the Harness came up",
+                    $"instance `{profile.Instance.Id}` · profile {profile.Name} · exit {gone.Exit}",
+                    tail, ["看这台实例的日志目录", "pad cli inspect <home>"]);
+            }
         }
         throw new PadError("PA025", "Harness did not start",
             $"instance `{profile.Instance.Id}`", profile.Name,

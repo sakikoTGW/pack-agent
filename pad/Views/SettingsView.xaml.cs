@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using Pad.Core;
@@ -17,6 +18,9 @@ public partial class SettingsView : UserControl, IRefreshable
     string? _detailRef;
     CredentialsGate.ImportedApi? _detailRow;
     CancellationTokenSource? _probeCts;
+    Inventory? _dshInventory;
+    int _dshScanGen;
+    int _probeGen;
 
     public SettingsView()
     {
@@ -47,7 +51,9 @@ public partial class SettingsView : UserControl, IRefreshable
         _loading = true;
         var wt = Proc.Which("wt");
         OptWt.IsEnabled = wt is not null;
-        WtHint.Text = wt is null ? "没有 wt.exe" : "";
+        OptWt.ToolTip = wt is null
+            ? "没有找到 wt.exe，会回退 conhost"
+            : "Windows Terminal（wt.exe）· 没装时自动回退 conhost";
 
         var s = _state.Settings;
         var pinned = _state.Launcher.Releases().FirstOrDefault();
@@ -62,14 +68,10 @@ public partial class SettingsView : UserControl, IRefreshable
             DshBinLine.Text = "版本库空";
             DshVerLine.Text = "";
         }
-        var probe = DshSniff.Probe(s.Launch.DshHome, s.Launch.TuiPackage);
-        SniffLine.Text = string.IsNullOrWhiteSpace(probe.Bin) || RelToRoot(probe.Bin) == DshBinLine.Text
-            ? ""
-            : "自动搜索 " + probe.Bin;
-        DshTuiLine.Text = probe.Tui ?? "未找到";
-        DshHomeBox.Text = string.IsNullOrWhiteSpace(s.Launch.DshHome)
-            ? (probe.HomeExists ? probe.Home : "")
-            : s.Launch.DshHome;
+        // 嗅探会扫盘根/模块目录（轻量但不可忽略）：放到 worker 上，填到再显示（D21/D22）。
+        DshHomeBox.Text = string.IsNullOrWhiteSpace(s.Launch.DshHome) ? "" : s.Launch.DshHome;
+        DshCliBox.Text = s.Launch.DshCli;
+        _ = LoadProbeAsync(++_probeGen, s);
         OptWt.IsChecked = s.Kind == TerminalKind.WindowsTerminal && wt is not null;
         OptConhost.IsChecked = s.Kind == TerminalKind.Conhost
                                || (s.Kind == TerminalKind.WindowsTerminal && wt is null);
@@ -170,6 +172,230 @@ public partial class SettingsView : UserControl, IRefreshable
         }
         PaintApiReady();
         _loading = false;
+        if (_dshInventory is null) _ = ScanDshAsync();
+    }
+
+    // ------------------------------------------------------------------ 本机 DSH 探测
+
+    /// <summary>轻量嗅探（PATH/模块目录/盘根命名）：CLI 与 TUI 各报一条，worker 上跑。</summary>
+    async Task LoadProbeAsync(int gen, PadSettings s)
+    {
+        DshSniff.Report probe;
+        try
+        {
+            var home = s.Launch.DshHome;
+            var tui = s.Launch.TuiPackage;
+            probe = await Task.Run(() => DshSniff.Probe(home, tui));
+        }
+        catch
+        {
+            return;
+        }
+        if (gen != _probeGen) return;
+        SniffLine.Text = string.IsNullOrWhiteSpace(probe.Bin) || RelToRoot(probe.Bin) == DshBinLine.Text
+            ? ""
+            : "自动搜索 " + probe.Bin;
+        DshTuiLine.Text = probe.Tui ?? "未找到";
+        if (string.IsNullOrWhiteSpace(DshHomeBox.Text) && probe.HomeExists)
+            DshHomeBox.Text = probe.Home;
+    }
+
+    async void DshScan_Click(object sender, RoutedEventArgs e) => await ScanDshAsync(force: true);
+
+    /// <summary>
+    /// Enumerate every DSH on this machine (desktop shells, TUIs, CLIs, kernels, homes).
+    /// The scan touches process/registry/disk, so it never runs on the UI thread (D21).
+    /// </summary>
+    async Task ScanDshAsync(bool force = false)
+    {
+        if (!force && _dshInventory is not null) return;
+        var gen = ++_dshScanGen;
+        DshScanSummary.Text = "正在探测本机 DSH…";
+        DshScanRows.Children.Clear();
+        Inventory inv;
+        try
+        {
+            inv = await Task.Run(() => Discover.Run(_state.Launcher, [], CancellationToken.None));
+        }
+        catch (Exception ex)
+        {
+            if (gen == _dshScanGen) DshScanSummary.Text = PadError.Describe(ex);
+            return;
+        }
+        if (gen != _dshScanGen) return;
+        _dshInventory = inv;
+        PaintDshInventory(inv);
+    }
+
+    void PaintDshInventory(Inventory inv)
+    {
+        DshScanSummary.Text =
+            $"内核 {inv.Kernels.Count} · 桌面端 {inv.Shells.Count} · TUI {inv.Tuis.Count} · " +
+            $"CLI {inv.Clis.Count} · home {inv.Homes.Count}";
+
+        DshScanRows.Children.Clear();
+        if (inv.Kernels.Count + inv.Shells.Count + inv.Tuis.Count + inv.Clis.Count + inv.Homes.Count == 0)
+        {
+            DshScanRows.Children.Add(new TextBlock
+            {
+                Text = "没找到本机 DSH。",
+                FontSize = 12,
+                Foreground = (Brush)FindResource("TextMuted"),
+                Margin = new Thickness(8, 8, 0, 6),
+            });
+            return;
+        }
+
+        var usedShells = new HashSet<Shell>();
+        var usedTuis = new HashSet<Tui>();
+        var usedClis = new HashSet<DshCli>();
+
+        foreach (var k in inv.Kernels)
+        {
+            var shells = inv.Shells.Where(s => SameKey(s.KernelIdentity, k.Identity)).ToList();
+            var tuis = inv.Tuis.Where(t => SameKey(t.DeclaredKernel, k.Version)).ToList();
+            var clis = inv.Clis.Where(c => SameKey(c.KernelIdentity, k.Identity)).ToList();
+            foreach (var s in shells) usedShells.Add(s);
+            foreach (var t in tuis) usedTuis.Add(t);
+            foreach (var c in clis) usedClis.Add(c);
+
+            var carriers = shells.Count + tuis.Count + clis.Count;
+            AddGroup($"内核 {k.Version}", carriers == 0
+                ? "没有载体引用它"
+                : $"{carriers} 个载体 · {k.Source}");
+            foreach (var s in shells)
+                AddRow("桌面端", $"{Path.GetFileName(s.Exe)}  {s.Version}".Trim(),
+                    Running(s.Running), s.KernelVersion is null ? "未声明内核" : "", s.Exe);
+            foreach (var t in tuis)
+                AddRow("TUI", $"{t.Package}  {t.Version}".Trim(),
+                    Running(t.Running), t.Profile ?? "", t.PackageDir ?? t.Home);
+            foreach (var c in clis)
+                AddRow("CLI", ShortPath(c.Bin), Running(c.Running), c.Version ?? "", c.Bin);
+        }
+
+        var looseShells = inv.Shells.Where(s => !usedShells.Contains(s)).ToList();
+        var looseTuis = inv.Tuis.Where(t => !usedTuis.Contains(t)).ToList();
+        var looseClis = inv.Clis.Where(c => !usedClis.Contains(c)).ToList();
+        if (looseShells.Count + looseTuis.Count + looseClis.Count > 0)
+        {
+            AddGroup("未声明内核", "启动脚本 / profile 里没有 @deepseek-ai/dsh@ver");
+            foreach (var s in looseShells)
+                AddRow("桌面端", $"{Path.GetFileName(s.Exe)}  {s.Version}".Trim(), Running(s.Running), "", s.Exe);
+            foreach (var t in looseTuis)
+                AddRow("TUI", $"{t.Package}  {t.Version}".Trim(), Running(t.Running), t.Profile ?? "", t.PackageDir ?? t.Home);
+            foreach (var c in looseClis)
+                AddRow("CLI", ShortPath(c.Bin), Running(c.Running), c.Version ?? "", c.Bin);
+        }
+
+        if (inv.Homes.Count > 0)
+        {
+            AddGroup($"数据目录 · {inv.Homes.Count} 个", "会话与凭据跟着 home 走");
+            foreach (var h in inv.Homes)
+                AddRow("home", ShortPath(h.Path),
+                    Running(h.Running), h.Sessions > 0 ? $"{h.Sessions} sessions" : "", h.Path);
+        }
+
+        if (string.IsNullOrWhiteSpace(_state.Settings.Launch.TuiPackage) && inv.Tuis.FirstOrDefault() is { } tui)
+            DshTuiLine.Text = $"{tui.Package} {tui.Version}  {tui.PackageDir ?? tui.Home}";
+        if (string.IsNullOrWhiteSpace(_state.Settings.Launch.DshCli) && inv.Clis.FirstOrDefault() is { } cli)
+            DshCliBox.Text = cli.Bin;
+    }
+
+    /// <summary>One line of the inventory: kind on the left, identity in the middle, state on the right.</summary>
+    void AddRow(string kind, string main, string state, string note, string? tip)
+    {
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(54) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        grid.Children.Add(new TextBlock
+        {
+            Text = kind,
+            FontSize = 11,
+            Foreground = (Brush)FindResource("TextMuted"),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+
+        var mainText = new TextBlock
+        {
+            Text = main,
+            FontFamily = (FontFamily)FindResource("FontMono"),
+            FontSize = 11.5,
+            Foreground = (Brush)FindResource("TextBody"),
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 12, 0),
+        };
+        Grid.SetColumn(mainText, 1);
+        grid.Children.Add(mainText);
+
+        var right = string.Join("  ", new[] { state, note }.Where(x => !string.IsNullOrWhiteSpace(x)));
+        if (right.Length > 0)
+        {
+            var rightText = new TextBlock
+            {
+                Text = right,
+                FontSize = 11,
+                Foreground = (Brush)FindResource(state == "在跑" ? "SuccessText" : "TextMuted"),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(rightText, 2);
+            grid.Children.Add(rightText);
+        }
+
+        var host = new Border
+        {
+            Padding = new Thickness(8, 3, 8, 3),
+            Child = grid,
+            CornerRadius = new CornerRadius(6),
+            ToolTip = string.IsNullOrWhiteSpace(tip) ? null : tip,
+        };
+        host.MouseEnter += (_, _) => host.Background = (Brush)FindResource("AccentWash");
+        host.MouseLeave += (_, _) => host.Background = Brushes.Transparent;
+        DshScanRows.Children.Add(host);
+    }
+
+    void AddGroup(string title, string hint)
+    {
+        DshScanRows.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 11.5,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = (Brush)FindResource("TextPrimary"),
+            Margin = new Thickness(8, 12, 0, 1),
+        });
+        if (!string.IsNullOrWhiteSpace(hint))
+        {
+            DshScanRows.Children.Add(new TextBlock
+            {
+                Text = hint,
+                FontFamily = (FontFamily)FindResource("FontMono"),
+                FontSize = 10.5,
+                Foreground = (Brush)FindResource("TextMuted"),
+                Margin = new Thickness(8, 0, 0, 4),
+                TextTrimming = TextTrimming.CharacterEllipsis,
+            });
+        }
+    }
+
+    static string Running(bool running) => running ? "在跑" : "";
+
+    static bool SameKey(string? a, string? b) =>
+        !string.IsNullOrWhiteSpace(a) && !string.IsNullOrWhiteSpace(b) &&
+        string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>用户目录缩写，探测结果一行放得下。</summary>
+    static string ShortPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return "-";
+        var user = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var text = path!;
+        if (text.StartsWith(appData, StringComparison.OrdinalIgnoreCase)) text = "%APPDATA%" + text[appData.Length..];
+        else if (text.StartsWith(user, StringComparison.OrdinalIgnoreCase)) text = "~" + text[user.Length..];
+        return text.TrimEnd('\\');
     }
 
     void PaintRegistryButtons(IReadOnlyList<RegistryPreset> presets)
@@ -302,6 +528,7 @@ public partial class SettingsView : UserControl, IRefreshable
         s.Launch.PauseOnError = PauseOnError.IsChecked == true;
         s.Launch.TelemetryDisabled = TelemetryOff.IsChecked == true;
         s.Launch.DshHome = DshHomeBox.Text.Trim();
+        s.Launch.DshCli = DshCliBox.Text.Trim();
         s.Launch.NodePath = ComboTag(NodeKind) == "custom"
             ? (NodeBox.Text ?? "").Trim()
             : "";
@@ -317,6 +544,24 @@ public partial class SettingsView : UserControl, IRefreshable
     }
 
     void Launch_Sel(object sender, SelectionChangedEventArgs e) => Launch_Save(sender, e);
+
+    /// <summary>
+    /// Point PAD at an existing dsh CLI without copying it into the version store.
+    /// Distinct from 「选择 DSH」 which pins (copies) a release (D21).
+    /// </summary>
+    void BrowseDshCli_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFileDialog
+        {
+            Title = "选择 dsh 的 lib/bin.js",
+            Filter = "dsh CLI|bin.js|JavaScript|*.js|所有|*.*",
+            FileName = "bin.js",
+            CheckFileExists = false,
+        };
+        if (dlg.ShowDialog() != true) return;
+        DshCliBox.Text = dlg.FileName;
+        Launch_Save(sender, e);
+    }
 
     void NodeKind_Sel(object sender, SelectionChangedEventArgs e)
     {
@@ -535,7 +780,10 @@ public partial class SettingsView : UserControl, IRefreshable
 
     async void PinSniffed_Click(object sender, RoutedEventArgs e)
     {
-        var bin = DshSniff.Bin() ?? PickBin();
+        var bin = _dshInventory?.Clis
+                      .Select(c => c.Bin)
+                      .FirstOrDefault(b => b.EndsWith("bin.js", StringComparison.OrdinalIgnoreCase))
+                  ?? DshSniff.Bin() ?? PickBin();
         if (bin is null) return;
         await PinBin(bin);
     }
@@ -666,7 +914,9 @@ public partial class SettingsView : UserControl, IRefreshable
         if (Window.GetWindow(this) is MainWindow win)
         {
             win.ApplySkin();
-            win.Opacity = s.Ui.WindowOpacity / 100.0;
+            // Opaque window: the compositor ignores Window.Opacity, only a layered
+            // window honours it. The slider stays for compatibility of stored settings.
+            if (win.AllowsTransparency) win.Opacity = s.Ui.WindowOpacity / 100.0;
         }
     }
 

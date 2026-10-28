@@ -32,6 +32,9 @@ const ENTRY_KEYS: Record<string, Set<string>> = {
   'faq': new Set(['id', 'title', 'markdown', 'requires', 'disabled']),
   'migrate': new Set(['id', 'fromSchema', 'toSchema', 'primitive', 'requires', 'disabled']),
   'compat-snapshot-spec': new Set(['id', 'field', 'source', 'value', 'requires', 'disabled']),
+  // PAD 顶栏页注册表（PadRegistry 随包内嵌的那份）；少这一项时 loadRegistryStore 会
+  // 直接 PA017 unknown registry，import/scan-drop 全链跟着红。
+  'pad-pages': new Set(['id', 'title', 'handler', 'requires', 'disabled']),
 }
 
 type Envelope = {

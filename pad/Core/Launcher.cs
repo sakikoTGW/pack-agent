@@ -135,21 +135,33 @@ public sealed class Launcher
             {
                 WriteAtomic(pkg, JsonSerializer.Serialize(new { name = $"dsh-pin-{version}", @private = true }, Json));
             }
-            WriteAtomic(Path.Combine(dir, ".npmrc"), "ignore-workspace-root-check=true\n");
+            WriteAtomic(Path.Combine(dir, ".npmrc"),
+                "ignore-workspace-root-check=true\nstrict-dep-builds=false\ndangerously-allow-all-builds=true\n");
             UpdateLeaf(job.Id, "resolve-meta", 5, 5);
 
             // No --store-dir by default: pnpm's own global store is already warm on the
             // user's machine; only an explicit cacheDir routes it to the launcher's store.
+            // pnpm >=10 默认拦依赖的 build scripts（node-pty/koffi 等原生包会装坏）；
+            // 显式放开，否则 pnpm 以 ERR_PNPM_IGNORED_BUILDS 退出、PAD 误判安装失败。
+            await Pnpm.EnsureAsync(log, token);
             log?.Report($"pnpm add @deepseek-ai/dsh@{version}");
-            var add = await Proc.Run("pnpm", $"add @deepseek-ai/dsh@{version}", dir, log, token, PnpmEnv());
+            var add = await Proc.Run("pnpm",
+                $"add @deepseek-ai/dsh@{version} --config.strictDepBuilds=false --config.dangerouslyAllowAllBuilds=true",
+                dir, log, token, PnpmEnv());
             if (token.IsCancellationRequested)
             {
                 FinishJob(job.Id, "cancelled");
                 throw new OperationCanceledException();
             }
             if (add.ExitCode != 0)
-                throw new PadError("PA010", "pnpm add failed for this release",
+            {
+                var err = add.Tail
+                    .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault(l => l.Contains("ERR_", StringComparison.OrdinalIgnoreCase))
+                    ?? add.Tail.Trim();
+                throw new PadError("PA010", "pnpm add 失败" + (err.Length > 0 ? "：" + err : ""),
                     $"versions/{version}", add.Tail, ["检查网络与 registry", "确认 pnpm 可用"]);
+            }
             UpdateLeaf(job.Id, "download", 80, 80);
 
             var rec = new DshRelease { Version = version, InstalledAt = NowIso() };
@@ -245,7 +257,12 @@ public sealed class Launcher
         return sb.ToString().Trim('-');
     }
 
-    public Instance CreateInstance(string name, string version)
+    /// <summary>
+    /// Make an instance for a pinned release. <paramref name="profile"/> is the instance's
+    /// default profile (what the launch button picks before anyone touches the selector);
+    /// blank keeps the old behaviour — follow the global <c>pad.json</c> choice.
+    /// </summary>
+    public Instance CreateInstance(string name, string version, string? profile = null)
     {
         var id = Slug(name);
         if (id.Length == 0)
@@ -293,6 +310,7 @@ public sealed class Launcher
             Dsh = new InstanceDsh { Version = version },
             Home = home,
             Workspace = ws,
+            LastProfile = string.IsNullOrWhiteSpace(profile) ? null : profile.Trim(),
             Created = NowIso(),
             Updated = NowIso(),
         };
@@ -301,6 +319,66 @@ public sealed class Launcher
         LlmProviders.ApplyToHome(home, LoadLlmProviders());
         return inst;
     }
+
+    /// <summary>
+    /// Build an instance out of a pack: pin the kernel it declares, remember where it came
+    /// from, then hand the whole projection + allow chain to TypeScript. Projection failing
+    /// leaves the instance on disk with its source already written — the caller shows the
+    /// original error instead of deleting the user's half-built instance.
+    /// </summary>
+    public async Task<Instance> CreateFromPack(PackCard card, string? name,
+        IProgress<string>? log, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        if (string.IsNullOrWhiteSpace(card.Path))
+            throw new PadError("PA012", "pack has no path", string.IsNullOrWhiteSpace(card.Id) ? "pack" : card.Id,
+                null, ["pad cli pack list"]);
+
+        // `pack project` now reads both manifests: JSON packs directly, `.pack.zip` by
+        // unpacking first (TS pack-ops). `.pinst.zip` is an instance export — building an
+        // instance from it belongs to the import chain, so refuse that before anything is
+        // written instead of letting it die as a JSON parse error later.
+        if (!IsProjectable(card))
+            throw new PadError("PA012", "this pack must be imported, not projected", card.Path,
+                string.IsNullOrWhiteSpace(card.Kind) ? "not a pack" : $"kind {card.Kind}",
+                ["pad cli import \"" + card.Path + "\"", "pinst / 实例导出包走「导入整合包」入口"]);
+
+        var kernel = (card.Kernel ?? "").Trim();
+        if (kernel.Length == 0)
+            throw new PadError("PA012", "pack is missing dsh.version", card.Path,
+                "包里没有内核版本，无法建实例",
+                ["给 pack.json 补 dsh.version", "pad cli pack list"]);
+
+        // A kernel that is not in the version store is CreateInstance's own PA001 (same
+        // error the download page throws) — reuse it instead of inventing a second answer.
+        var displayName = !string.IsNullOrWhiteSpace(name) ? name!
+            : !string.IsNullOrWhiteSpace(card.Title) ? card.Title
+            : card.Id;
+        var inst = CreateInstance(displayName, kernel, card.Profile);
+        inst.Source = new InstanceSource
+        {
+            Kind = "pack",
+            PackId = card.Id,
+            PackTitle = card.Title,
+            PackVersion = card.Version,
+            PackPath = card.Path,
+        };
+        SaveInstance(inst);
+        await new Packs(this).Project(inst, card.Path, log, ct);
+        return inst;
+    }
+
+    /// <summary>
+    /// <c>pack project</c> takes <c>.pack.json</c> and <c>.pack.zip</c> (the TS side unpacks
+    /// the zip itself). <c>.pinst.zip</c> is an instance export and goes through import.
+    /// A catalog row with no <see cref="PackCard.Kind"/> (older payloads) falls back to the
+    /// file extension instead of refusing on a missing field.
+    /// </summary>
+    static bool IsProjectable(PackCard card) =>
+        string.Equals(card.Kind, "pack.json", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(card.Kind, "pack.zip", StringComparison.OrdinalIgnoreCase)
+        || (string.IsNullOrWhiteSpace(card.Kind)
+            && string.Equals(Path.GetExtension(card.Path), ".json", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// PCL version-isolation analog for the workspace. <c>$DSH_HOME</c> stays
@@ -387,8 +465,9 @@ public sealed class Launcher
                 var file = Path.GetFileNameWithoutExtension(path);
                 if (file.Length <= 7 || !file.StartsWith("launch-", StringComparison.Ordinal)) continue;
                 var profile = file["launch-".Length..];
-                try { runner.WriteScript(inst, profile, settings); }
+                try { runner.WriteScript(inst, profile, settings, heal: false); }
                 catch (PadError) { /* no node yet; next launch will write */ }
+                catch (Exception) { /* best effort: a broken script must not break the caller (D22) */ }
             }
         }
     }
@@ -744,6 +823,70 @@ public sealed class Launcher
         catch { return []; }
     }
 
+    /// <summary>
+    /// PAD 重启后，上个进程留下的 running/queued 任务已经没人在跑：标成失败，
+    /// 否则下载任务里会永远挂着一条 0.0%/s 的假任务（用户 2026-10-28 截图遇到两条）。
+    /// 两分钟内还在更新的任务不动（可能另一个 PAD 实例真的在跑）。
+    /// </summary>
+    public int SweepStaleJobs(TimeSpan? staleAfter = null)
+    {
+        var file = ReadJson<JobsFile>(JobsPath);
+        if (file is null) return 0;
+        var limit = DateTimeOffset.UtcNow - (staleAfter ?? TimeSpan.FromMinutes(2));
+        var n = 0;
+        foreach (var row in file.Jobs)
+        {
+            if (!row.CanCancel) continue;
+            if (DateTimeOffset.TryParse(row.UpdatedAt, out var updated) && updated > limit) continue;
+            row.Status = "failed";
+            row.UpdatedAt = NowIso();
+            row.Label = string.IsNullOrWhiteSpace(row.Label) ? row.KindText + "（PAD 重启后中断）" : row.Label + "（PAD 重启后中断）";
+            n++;
+        }
+        if (n > 0) WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        return n;
+    }
+    readonly HashSet<string> _pausedJobs = new(StringComparer.Ordinal);
+
+    /// <summary>暂停任务：worker 在复制/压缩循环里看到 paused 就停住等继续（不丢进度）。</summary>
+    public void PauseJob(string jobId)
+    {
+        _pausedJobs.Add(jobId);
+        var file = ReadJson<JobsFile>(JobsPath);
+        var row = file?.Jobs.FirstOrDefault(j => j.Id == jobId);
+        if (row is not null)
+        {
+            row.Paused = true;
+            row.UpdatedAt = NowIso();
+            WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        }
+    }
+
+    public void ResumeJob(string jobId)
+    {
+        _pausedJobs.Remove(jobId);
+        var file = ReadJson<JobsFile>(JobsPath);
+        var row = file?.Jobs.FirstOrDefault(j => j.Id == jobId);
+        if (row is not null)
+        {
+            row.Paused = false;
+            row.UpdatedAt = NowIso();
+            WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        }
+    }
+
+    public bool IsPaused(string jobId) => _pausedJobs.Contains(jobId);
+
+    /// <summary>在复制/压缩循环里调用：暂停时 Thread.Sleep 等继续；取消时抛 OperationCanceledException。</summary>
+    public void WaitWhilePaused(string jobId, CancellationToken ct)
+    {
+        while (_pausedJobs.Contains(jobId))
+        {
+            ct.ThrowIfCancellationRequested();
+            Thread.Sleep(200);
+        }
+        ct.ThrowIfCancellationRequested();
+    }
     public JobRecord? CancelJob(string jobId)
     {
         if (!File.Exists(JobsPath)) return null;
@@ -774,6 +917,26 @@ public sealed class Launcher
     }
 
     /// <summary>Chrome「全部清除」：只清已结束的，正在下的留下。</summary>
+    /// <summary>删除任务行：正在跑的先取消并结束进程，再从 jobs.json 移除；不动已装的文件。</summary>
+    public void DeleteJob(string jobId)
+    {
+        var file = ReadJson<JobsFile>(JobsPath);
+        if (file is null) return;
+        var row = file.Jobs.FirstOrDefault(j => j.Id == jobId);
+        if (row is null) return;
+        if (row.CanCancel)
+        {
+            CancelJob(jobId);
+            if (row.Pid is int pid && pid > 0)
+            {
+                try { using var proc = System.Diagnostics.Process.GetProcessById(pid); proc.Kill(true); }
+                catch { /* 进程已经没了 */ }
+            }
+        }
+        file.Jobs.RemoveAll(j => j.Id == jobId);
+        WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        try { File.Delete(JobLogPath(jobId)); } catch { /* 没日志就算了 */ }
+    }
     public void ForgetFinishedJobs()
     {
         if (!File.Exists(JobsPath)) return;
@@ -790,8 +953,17 @@ public sealed class Launcher
         $"{kind}-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}-{Random.Shared.Next(1000, 9999)}";
 
     public JobRecord StartJob(string kind, string? instance, List<JobLeaf>? leaves = null,
-        string? label = null)
+        string? label = null, string? iconPath = null)
     {
+        if (string.IsNullOrWhiteSpace(iconPath) && !string.IsNullOrWhiteSpace(instance))
+        {
+            try
+            {
+                var inst = Instances().FirstOrDefault(i => i.Id == instance);
+                if (inst is not null) iconPath = InstIcon.MarkFile(inst);
+            }
+            catch { /* 图标只是装饰，取不到就兜底 */ }
+        }
         var rec = new JobRecord
         {
             Id = NewJobId(kind),
@@ -802,6 +974,7 @@ public sealed class Launcher
             UpdatedAt = NowIso(),
             Leaves = leaves,
             Label = label,
+            Icon = iconPath,
         };
         UpsertJob(rec);
         AppendJobLog(rec.Id, $"start {kind}");
@@ -1105,16 +1278,28 @@ public sealed class Launcher
     /// inside a single-file exe. When an instance id is given, that release and
     /// instance are copied in. Credentials are stripped. Paths are rewritten
     /// to the copy.</summary>
-    public string ExportPortable(string destDir, string? includeInstanceId = null)
+    public string ExportPortable(string destDir, string? includeInstanceId = null, CancellationToken ct = default,
+        Action<string>? phase = null, IProgress<(int Done, int Total)>? copyProgress = null, string? jobId = null)
     {
+        var timing = Path.Combine(Path.GetTempPath(), "pad-export-timing.log");
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        void Mark(string step)
+        {
+            try { File.AppendAllText(timing, $"{DateTime.Now:HH:mm:ss.fff} {step} +{clock.ElapsedMilliseconds}ms\n"); }
+            catch { /* 只是诊断日志 */ }
+        }
+        try { File.Delete(timing); } catch { /* ignore */ }
+        Mark("start");
         destDir = Path.GetFullPath(destDir);
         Directory.CreateDirectory(destDir);
         CopyHostExe(destDir);
+        Mark("host-exe");
         var repoMark = Path.Combine(destDir, ".pack-agent-repo");
         if (File.Exists(repoMark)) File.Delete(repoMark);
 
         var destRoot = new Launcher(Path.Combine(destDir, ".pack-launcher"));
         CopyLauncherRegistries(destRoot);
+        Mark("registries");
 
         if (!string.IsNullOrWhiteSpace(includeInstanceId))
         {
@@ -1123,16 +1308,26 @@ public sealed class Launcher
                     includeInstanceId, ["pad cli instance list"]);
             var ver = inst.Dsh.Version;
             var srcVer = VersionDir(ver);
-            if (Directory.Exists(srcVer)) CopyTree(srcVer, destRoot.VersionDir(ver));
-            CopyTree(InstanceDir(inst.Id), destRoot.InstanceDir(inst.Id));
+            Mark("version-copy-start");
+            phase?.Invoke("复制版本库…");
+            if (Directory.Exists(srcVer)) CopyTreeLink(srcVer, destRoot.VersionDir(ver), ct, copyProgress, jobId);
+            Mark("version-copy");
+            phase?.Invoke("复制实例…");
+            CopyTreeLink(InstanceDir(inst.Id), destRoot.InstanceDir(inst.Id), ct);
+            Mark("instance-copy");
             var cred = Path.Combine(destRoot.InstanceDir(inst.Id), "home", ".credentials.yaml");
             if (File.Exists(cred)) File.Delete(cred);
             var libCred = Path.Combine(destRoot.Root, "library", "credentials.yaml");
             if (File.Exists(libCred)) File.Delete(libCred);
+            Mark("strip");
             destRoot.StripPortableEphemeral(inst.Id);
+            Mark("strip-done");
             var destHome = Path.Combine(destRoot.InstanceDir(inst.Id), "home");
             PnpmHeal.ClearProfilesFallback(destHome);
+            Mark("relink-start");
+            phase?.Invoke("修复依赖链接…");
             PnpmHeal.Relink(Path.Combine(destRoot.VersionDir(ver), "node_modules"));
+            Mark("relink-done");
             var destProfiles = Path.Combine(destHome, "profiles");
             if (Directory.Exists(destProfiles))
                 foreach (var dir in Directory.EnumerateDirectories(destProfiles))
@@ -1150,6 +1345,8 @@ public sealed class Launcher
                 destRoot.SaveInstance(copied);
             }
             destRoot.RewriteLaunchScripts(copied);
+            Mark("scripts");
+            phase?.Invoke("整理启动脚本…");
             var rec = destRoot.Releases().FirstOrDefault(r => r.Version == ver);
             if (rec is not null && string.IsNullOrWhiteSpace(rec.EnginesNode))
             {
@@ -1162,7 +1359,8 @@ public sealed class Launcher
                 if (!Directory.Exists(srcNode))
                     srcNode = Path.Combine(Root, "runtime", "node", "22.19.0");
                 if (Directory.Exists(srcNode))
-                    CopyTree(srcNode, Path.Combine(destRoot.Root, "runtime", "node", rec.EnginesNode));
+                    CopyTreeLink(srcNode, Path.Combine(destRoot.Root, "runtime", "node", rec.EnginesNode), ct);
+                    Mark("runtime-copy");
             }
         }
 
@@ -1186,6 +1384,7 @@ public sealed class Launcher
             ?? throw new PadError("PA117", "portable-export needs a single-file PAD",
                 destDir, Environment.ProcessPath ?? "",
                 ["dotnet publish -p:PublishSingleFile=true", "set PACK_PAD_HOST_EXE to that exe"]);
+        if (File.Exists(dest) && new FileInfo(dest).Length == new FileInfo(src).Length) return; // 续传跳过
         File.Copy(src, dest, overwrite: true);
     }
 
@@ -1285,6 +1484,7 @@ public sealed class Launcher
                 PnpmHeal.Relink(Path.Combine(VersionDir(inst.Dsh.Version), "node_modules"));
                 PnpmHeal.Relink(Path.Combine(inst.Home, "profiles", profile, "node_modules"));
             }, token);
+            await Pnpm.EnsureAsync(log, token);
             log?.Report($"dsh plugin --profile {profile} {action} {spec}");
             var res = await Proc.Run("node", $"\"{bin}\" plugin --profile {profile} {action} {spec}",
                 inst.Workspace.Path, log, token, env);
@@ -1511,8 +1711,194 @@ public sealed class Launcher
         return rec;
     }
 
-    static void CopyTree(string from, string to)
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+    static extern bool CreateHardLinkW(string newFileName, string existingFileName, IntPtr securityAttributes);
+
+    /// <summary>
+    /// 并行 staging：串行只做目录/链接（便宜），文件收集成清单后用多线程建硬链接/复制。
+    /// 实测串行逐文件只有 59 个/秒（杀软逐文件延迟），并行 16 路能跑满杀软窗口。
+    /// 保留 junction（不展开：展开会把 .pnpm 复制成好几份），收件方启动时会 PnpmHeal.Relink。
+    /// </summary>
+    void CopyTreeLink(string from, string to, CancellationToken ct,
+        IProgress<(int Done, int Total)>? progress = null, string? jobId = null)
     {
+        from = Path.GetFullPath(from);
+        to = Path.GetFullPath(to);
+        Directory.CreateDirectory(to);
+        var files = new List<(string Src, string Dst)>();
+        var links = new List<(string Link, string Target)>();
+        var skipped = 0;
+        var stack = new Stack<(string Src, string Dst)>();
+        stack.Push((from, to));
+        while (stack.Count > 0)
+        {
+            ct.ThrowIfCancellationRequested();
+            var (srcDir, dstDir) = stack.Pop();
+            Directory.CreateDirectory(dstDir);
+            List<string> fileNames, dirs;
+            try
+            {
+                fileNames = Directory.EnumerateFiles(srcDir).ToList();
+                dirs = Directory.EnumerateDirectories(srcDir).ToList();
+            }
+            catch { continue; }
+
+            foreach (var file in fileNames)
+            {
+                var real = file;
+                try
+                {
+                    if ((File.GetAttributes(file) & FileAttributes.ReparsePoint) != 0)
+                        real = new FileInfo(file).ResolveLinkTarget(true)?.FullName ?? file;
+                }
+                catch { /* 用原路径 */ }
+                var dstFile = Path.Combine(dstDir, Path.GetFileName(file));
+                // 断点续传：上次已复制/已硬链接好的文件直接跳过（大小 + 修改时间都一致）。
+                if (ExistingFileMatches(real, dstFile)) { skipped++; continue; }
+                files.Add((real, dstFile));
+            }
+            foreach (var dir in dirs)
+            {
+                ct.ThrowIfCancellationRequested();
+                var destDir = Path.Combine(dstDir, Path.GetFileName(dir));
+                FileAttributes attr;
+                try { attr = File.GetAttributes(dir); }
+                catch { continue; }
+                if ((attr & FileAttributes.ReparsePoint) != 0)
+                {
+                    // 先收集，后面并行建 junction（串行 mklink 是导出慢的元凶）。
+                    try
+                    {
+                        var target = new DirectoryInfo(dir).LinkTarget;
+                        if (!string.IsNullOrWhiteSpace(target))
+                        {
+                            var full = Path.IsPathRooted(target)
+                                ? target
+                                : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(dir)!, target));
+                            if (ExistingJunctionMatches(destDir, full)) { skipped++; continue; }
+                            links.Add((destDir, full));
+                        }
+                    }
+                    catch { /* 坏链接就跳过 */ }
+                    continue;
+                }
+                stack.Push((dir, destDir));
+            }
+        }
+
+        var total = skipped + files.Count + links.Count;
+        var done = skipped;
+        if (progress is not null && total > 0) progress.Report((done, total));
+        void Report()
+        {
+            if (progress is null) return;
+            var n = Interlocked.Increment(ref done);
+            if (n % 128 == 0 || n == total) progress.Report((n, total));
+        }
+
+        Parallel.ForEach(links, new ParallelOptions
+        {
+            MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount * 2, 8, 32),
+            CancellationToken = ct,
+        }, pair =>
+        {
+            if (jobId is not null) WaitWhilePaused(jobId, ct);
+            try { EnsureJunction(pair.Link, pair.Target); } catch { /* 坏链接 */ }
+            Report();
+        });
+
+        var options = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount * 2, 8, 32),
+            CancellationToken = ct,
+        };
+        Parallel.ForEach(files, options, pair =>
+        {
+            if (jobId is not null) WaitWhilePaused(jobId, ct);
+            try
+            {
+                if (!CreateHardLinkW(pair.Dst, pair.Src, IntPtr.Zero))
+                    File.Copy(pair.Src, pair.Dst, overwrite: true);
+            }
+            catch
+            {
+                try { File.Copy(pair.Src, pair.Dst, overwrite: true); } catch { /* 跳过坏文件 */ }
+            }
+            Report();
+        });
+    }
+
+    static bool ExistingFileMatches(string src, string dst)
+    {
+        try
+        {
+            var s = new FileInfo(src);
+            var d = new FileInfo(dst);
+            return d.Exists && d.Length == s.Length &&
+                   Math.Abs((d.LastWriteTimeUtc - s.LastWriteTimeUtc).TotalSeconds) < 1;
+        }
+        catch { return false; }
+    }
+
+    static bool ExistingJunctionMatches(string link, string target)
+    {
+        try
+        {
+            if (!Directory.Exists(link)) return false;
+            if ((File.GetAttributes(link) & FileAttributes.ReparsePoint) == 0) return false;
+            var existing = new DirectoryInfo(link).LinkTarget;
+            if (string.IsNullOrWhiteSpace(existing)) return false;
+            return string.Equals(Path.GetFullPath(existing), Path.GetFullPath(target),
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch { return false; }
+    }
+
+    static void EnsureJunction(string link, string target)
+    {
+        if (ExistingJunctionMatches(link, target)) return;
+        try
+        {
+            if (Directory.Exists(link))
+            {
+                if ((File.GetAttributes(link) & FileAttributes.ReparsePoint) != 0) Directory.Delete(link);
+                else return; // 真实目录不碰
+            }
+        }
+        catch { /* 交给创建逻辑 */ }
+        PnpmHeal.Junction(link, target, isDir: true);
+    }
+    /// <summary>
+    /// 大批量复制用 robocopy（多线程，比逐文件 File.Copy 快一个数量级；实测 490MB/3.2 万文件
+    /// 逐文件复制 0.3MB/s，robocopy 展开 junction 后 2.2GB/22.9 万文件只要 ~3.5 分钟）。
+    /// 注意：默认会展开 junction，便携包换机器后才能用（保留链接会指向本机全局 store）。
+    /// </summary>
+    static void CopyTreeFast(string from, string to, CancellationToken ct)
+    {
+        Directory.CreateDirectory(to);
+        var psi = new System.Diagnostics.ProcessStartInfo("robocopy")
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        foreach (var arg in new[] { from, to, "/E", "/MT:16", "/R:1", "/W:1", "/NFL", "/NDL", "/NJH", "/NJS", "/NP" })
+            psi.ArgumentList.Add(arg);
+        using var proc = System.Diagnostics.Process.Start(psi)
+            ?? throw new PadError("PA028", "robocopy 启动失败", from + " → " + to, from, ["确认系统里有 robocopy"]);
+        using var reg = ct.Register(() => { try { if (!proc.HasExited) proc.Kill(true); } catch { /* 已经退出 */ } });
+        var outputTask = proc.StandardOutput.ReadToEndAsync();
+        var errorTask = proc.StandardError.ReadToEndAsync();
+        proc.WaitForExit();
+        var log = outputTask.GetAwaiter().GetResult() + errorTask.GetAwaiter().GetResult();
+        if (proc.ExitCode > 7)
+            throw new PadError("PA028", "复制失败（robocopy " + proc.ExitCode + "）",
+                from + " → " + to, log.Trim(), ["看目标目录权限/磁盘空间"]);
+    }
+    static void CopyTree(string from, string to, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
         from = Path.GetFullPath(from);
         to = Path.GetFullPath(to);
         FileAttributes attr;
@@ -1524,7 +1910,7 @@ public sealed class Launcher
         // pnpm siblings such as @deepseek-ai/dsh-app-boot.
         if ((attr & FileAttributes.ReparsePoint) != 0)
         {
-            RecreateReparsePoint(from, to);
+            RecreateReparsePoint(from, to, ct);
             return;
         }
 
@@ -1535,19 +1921,29 @@ public sealed class Launcher
             {
                 var name = Path.GetFileName(dir);
                 if (name is "." or "..") continue;
-                CopyTree(dir, Path.Combine(to, name));
+                CopyTree(dir, Path.Combine(to, name), ct);
             }
             foreach (var file in Directory.EnumerateFiles(from))
-                CopyTree(file, Path.Combine(to, Path.GetFileName(file)));
+                CopyTree(file, Path.Combine(to, Path.GetFileName(file)), ct);
             return;
         }
 
         var parent = Path.GetDirectoryName(to);
         if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
+        // 断点续传：上次已经复制好、大小和时间都一致的文件直接跳过。
+        try
+        {
+            var srcInfo = new FileInfo(from);
+            var dstInfo = new FileInfo(to);
+            if (dstInfo.Exists && dstInfo.Length == srcInfo.Length &&
+                dstInfo.LastWriteTimeUtc == srcInfo.LastWriteTimeUtc)
+                return;
+        }
+        catch { /* 读不到就照常覆盖复制 */ }
         File.Copy(from, to, overwrite: true);
     }
 
-    static void RecreateReparsePoint(string from, string to)
+    static void RecreateReparsePoint(string from, string to, CancellationToken ct = default)
     {
         var isDir = (File.GetAttributes(from) & FileAttributes.Directory) != 0;
         var target = isDir ? new DirectoryInfo(from).LinkTarget : new FileInfo(from).LinkTarget;
@@ -1559,7 +1955,7 @@ public sealed class Launcher
                 foreach (var dir in Directory.EnumerateDirectories(from))
                     CopyTree(dir, Path.Combine(to, Path.GetFileName(dir)));
                 foreach (var file in Directory.EnumerateFiles(from))
-                    CopyTree(file, Path.Combine(to, Path.GetFileName(file)));
+                    CopyTree(file, Path.Combine(to, Path.GetFileName(file)), ct);
             }
             else
             {
@@ -1749,10 +2145,17 @@ public sealed class Launcher
         var dir = Path.Combine(inst.Home, "profiles", profile);
         if (!Directory.Exists(dir)) return;
         var npmrc = Path.Combine(dir, ".npmrc");
-        var line = "ignore-workspace-root-check=true";
         var text = File.Exists(npmrc) ? File.ReadAllText(npmrc) : "";
-        if (text.Contains(line, StringComparison.Ordinal)) return;
-        File.WriteAllText(npmrc, text.Length > 0 ? $"{text.TrimEnd()}\n{line}\n" : $"{line}\n");
+        var lines = new[]
+        {
+            "ignore-workspace-root-check=true",
+            "strict-dep-builds=false",
+            "dangerously-allow-all-builds=true",
+        };
+        var missing = lines.Where(l => !text.Contains(l, StringComparison.Ordinal)).ToArray();
+        if (missing.Length == 0) return;
+        File.WriteAllText(npmrc,
+            (text.Length > 0 ? text.TrimEnd() + "\n" : "") + string.Join("\n", missing) + "\n");
     }
 
     // ---- sessions (the save files) ---------------------------------------
@@ -1951,6 +2354,8 @@ public sealed class Launcher
         s.Normalize();
         s.Other.LoadWarning = null;
         WriteAtomic(SettingsPath, JsonSerializer.Serialize(s, Json));
-        RewriteLaunchScripts();
+        // Deliberately no RewriteLaunchScripts() here (D22): it walks the pnpm store and
+        // can block for seconds, and a failure there must not fail a settings save.
+        // Launch scripts regenerate on the next launch, or via `pad cli rewrite-scripts`.
     }
 }

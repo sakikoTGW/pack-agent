@@ -155,10 +155,91 @@ public static class LaunchPolicy
         return null;
     }
 
+    /// <summary>
+    /// The lockfile of a client that already owns this home, or null. Checks the home
+    /// itself and its parent, because the desktop client keeps its lock beside — not in
+    /// — the harness home it hands to DSH.
+    /// </summary>
+    public static string? LiveHomeOwner(string home)
+    {
+        if (string.IsNullOrWhiteSpace(home)) return null;
+        var dirs = new List<string> { home.TrimEnd('\\', '/') };
+        var parent = Path.GetDirectoryName(home.TrimEnd('\\', '/'));
+        if (!string.IsNullOrWhiteSpace(parent)) dirs.Add(parent!);
+
+        foreach (var dir in dirs)
+        {
+            var lockPath = Path.Combine(dir, "lockfile");
+            if (!File.Exists(lockPath)) continue;
+            try
+            {
+                using var fs = new FileStream(lockPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (IOException)
+            {
+                return lockPath;
+            }
+            catch { /* not a lock we can judge */ }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// The newest launch log under <paramref name="logsDir"/>, when it already records that
+    /// the CLI exited. The generated script echoes <c>[PAD] dsh exited with N</c> on a
+    /// non-zero exit; waiting for the full start timeout after that is pure latency.
+    /// </summary>
+    public static (int Exit, string Tail)? LaunchLogExited(string logsDir)
+    {
+        try
+        {
+            if (!Directory.Exists(logsDir)) return null;
+            var newest = new DirectoryInfo(logsDir).GetFiles("*.log")
+                .OrderByDescending(f => f.LastWriteTimeUtc).FirstOrDefault();
+            if (newest is null) return null;
+
+            using var fs = new FileStream(newest.FullName, FileMode.Open, FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(fs);
+            var text = reader.ReadToEnd();
+
+            const string marker = "[PAD] dsh exited with";
+            var at = text.LastIndexOf(marker, StringComparison.Ordinal);
+            if (at < 0) return null;
+
+            var line = text[at..].Split('\n')[0].Trim();
+            var digits = new string(line.Where(char.IsDigit).ToArray());
+            var code = int.TryParse(digits, out var n) ? n : 1;
+            return (code, text.Length > 3000 ? text[^3000..] : text);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public static bool SamePath(string a, string b) =>
         string.Equals(Path.GetFullPath(a).TrimEnd('\\', '/'),
             Path.GetFullPath(b).TrimEnd('\\', '/'),
             StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Existence that understands a packaged app: a path inside <c>…/app.asar/…</c> is
+    /// not a real file, so <c>File.Exists</c> says no forever. The archive itself is a
+    /// real file, so test that instead. Without this the desktop-shipped dsh CLI can
+    /// never be configured (D21).
+    /// </summary>
+    public static bool Exists(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        var at = path.IndexOf(".asar", StringComparison.OrdinalIgnoreCase);
+        if (at >= 0)
+        {
+            var archive = path[..(at + 5)];
+            if (File.Exists(archive) && path.Length > archive.Length) return true;
+        }
+        return File.Exists(path);
+    }
 
     /// <summary>
     /// pnpm records the packer machine's <c>.pnpm</c> in <c>.modules.yaml</c>.

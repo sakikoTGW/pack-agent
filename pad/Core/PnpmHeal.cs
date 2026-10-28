@@ -635,6 +635,8 @@ public static class PnpmHeal
             File.CreateSymbolicLink(link, Path.GetRelativePath(parent!, target));
             return;
         }
+        // 快路径：原生 junction（3 万个链接几秒；cmd mklink 每个要 ~17ms，导出会卡 8 分钟）。
+        if (Reparse.TryCreateJunction(link, target)) return;
         try
         {
             Directory.CreateSymbolicLink(link, Path.GetRelativePath(parent!, target));

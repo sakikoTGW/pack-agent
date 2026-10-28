@@ -186,7 +186,7 @@ public static class DshSniff
         return BinBeside(path);
     }
 
-    public static string? TuiPackage()
+    public static string? TuiPackage(string? configuredHome = null)
     {
         foreach (var root in ModuleRoots())
         {
@@ -198,8 +198,136 @@ public static class DshSniff
             var dir = Path.Combine(root, "node_modules", "@deepseek-harness-tui", "dsh-tui");
             if (Directory.Exists(dir)) return dir;
         }
-        return null;
+
+        // A TUI is a profile dependency: the terminal plugin lives inside
+        // <home>/profiles/<profile>/node_modules, not in a global module root.
+        foreach (var home in HomeCandidates(configuredHome))
+        {
+            foreach (var profile in Take(SafeDirs(Path.Combine(home, "profiles"))))
+            {
+                foreach (var name in TuiDependencies(profile))
+                {
+                    var dir = Path.Combine(profile, "node_modules",
+                        name.Replace('/', Path.DirectorySeparatorChar));
+                    if (Directory.Exists(dir)) return dir;
+                }
+            }
+        }
+
+        // The plugin also keeps a per-user state dir even when its package lives
+        // in a home this scan cannot see; that dir is still evidence a TUI exists.
+        var state = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dsh-tui");
+        return Directory.Exists(state) ? state : null;
     }
+
+    static IEnumerable<string> HomeCandidates(string? configuredHome)
+    {
+        var appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var raw in new[]
+        {
+            configuredHome,
+            Environment.GetEnvironmentVariable("DSH_HOME"),
+            Path.Combine(home, ".dsh"),
+            Path.Combine(appdata, "dsh-desktop", "harness"),
+            Path.Combine(appdata, "@deepseek-ai", "dsh-desktop", "harness"),
+        })
+        {
+            if (string.IsNullOrWhiteSpace(raw)) continue;
+            string full;
+            try { full = Path.GetFullPath(raw.Trim().Trim('"')); }
+            catch { continue; }
+            if (seen.Add(full) && LooksLikeHome(full)) yield return full;
+        }
+
+        // TUI 这种没有注册表的安装只能靠盘根命名找到（E:\dsh-tui\dsh-home）。
+        // 有上限、只认 dsh/harness/deepseek 命名，属于轻量启发而不是全盘遍历。
+        foreach (var root in DriveRoots())
+        {
+            foreach (var dir in Take(SafeDirs(root), 400))
+            {
+                var name = Path.GetFileName(dir);
+                if (!IsDshNamed(name)) continue;
+                if (LooksLikeHome(dir))
+                {
+                    if (seen.Add(dir)) yield return dir;
+                    continue;
+                }
+                foreach (var child in Take(SafeDirs(dir), 40))
+                {
+                    var childName = Path.GetFileName(child);
+                    if (!string.Equals(childName, "home", StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(childName, "dsh-home", StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(childName, "harness", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    if (LooksLikeHome(child) && seen.Add(child)) yield return child;
+                }
+            }
+        }
+    }
+
+    static IEnumerable<string> DriveRoots()
+    {
+        DriveInfo[] drives;
+        try { drives = DriveInfo.GetDrives(); }
+        catch { yield break; }
+        var n = 0;
+        foreach (var drive in drives)
+        {
+            if (++n > 8) break;
+            bool ready;
+            try { ready = drive.IsReady && drive.DriveType == DriveType.Fixed; }
+            catch { ready = false; }
+            if (ready) yield return drive.RootDirectory.FullName;
+        }
+    }
+
+    static bool IsDshNamed(string name) =>
+        name.Contains("dsh", StringComparison.OrdinalIgnoreCase)
+        || name.Contains("harness", StringComparison.OrdinalIgnoreCase)
+        || name.Contains("deepseek", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Profile package.json 里声明的 TUI 包名（依赖或 dsh bundles 都算）。</summary>
+    static IEnumerable<string> TuiDependencies(string profileDir)
+    {
+        var pkg = Path.Combine(profileDir, "package.json");
+        if (!File.Exists(pkg)) yield break;
+        JsonDocument doc;
+        try { doc = JsonDocument.Parse(File.ReadAllText(pkg)); }
+        catch { yield break; }
+
+        using (doc)
+        {
+            var root = doc.RootElement;
+            if (root.TryGetProperty("dependencies", out var deps)
+                && deps.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var dep in deps.EnumerateObject())
+                    if (IsTuiName(dep.Name)) yield return dep.Name;
+            }
+            if (root.TryGetProperty("dsh", out var dsh)
+                && dsh.ValueKind == JsonValueKind.Object
+                && dsh.TryGetProperty("profile", out var profile)
+                && profile.ValueKind == JsonValueKind.Object
+                && profile.TryGetProperty("bundles", out var bundles)
+                && bundles.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in bundles.EnumerateArray())
+                {
+                    var name = item.ValueKind == JsonValueKind.String ? item.GetString() : null;
+                    if (!string.IsNullOrWhiteSpace(name) && IsTuiName(name!)) yield return name!;
+                }
+            }
+        }
+    }
+
+    static bool IsTuiName(string name) =>
+        name.Contains("dsh-tui", StringComparison.OrdinalIgnoreCase)
+        || name.StartsWith("@deepseek-harness-tui/", StringComparison.OrdinalIgnoreCase);
+
 
     public static string? SourceCli()
     {
@@ -225,7 +353,7 @@ public static class DshSniff
         }
         var tui = !string.IsNullOrWhiteSpace(configuredTui) && Directory.Exists(configuredTui)
             ? Path.GetFullPath(configuredTui)
-            : TuiPackage();
+            : TuiPackage(home);
         return new Report(bin, version, tui, home, LooksLikeHome(home), SourceCli());
     }
 
@@ -345,6 +473,16 @@ public static class DshSniff
         {
             yield return dir;
             if (++n >= Cap) yield break;
+        }
+    }
+
+    static IEnumerable<string> Take(IEnumerable<string> dirs, int limit)
+    {
+        var n = 0;
+        foreach (var dir in dirs)
+        {
+            yield return dir;
+            if (++n >= limit) yield break;
         }
     }
 

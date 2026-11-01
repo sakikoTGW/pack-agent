@@ -1024,7 +1024,9 @@ public partial class InstanceView : UserControl, IRefreshable
         catch { /* registry unreachable; 可更新 stays empty */ }
     }
 
-    const int PluginPageSize = 54;
+    /// <summary>每页多少个按窗口高度自适应（约 17px/个），窗口越高一页越多。</summary>
+    int PluginPageSize =>
+        Math.Clamp((int)((Window.GetWindow(this)?.ActualHeight ?? 900) / 17), 24, 84);
     int _pluginPage;
 
     void InstMore_Click(object sender, RoutedEventArgs e)

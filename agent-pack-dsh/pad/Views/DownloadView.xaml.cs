@@ -17,6 +17,9 @@ public partial class DownloadView : UserControl, IRefreshable
     bool _pickingTarget;
     MarketRow? _detail;
     MarketPage? _lastPage;
+
+    /// <summary>每页多少个按窗口高度自适应（近似 17px/个），不再固定 20。</summary>
+    int StorePageSize => Math.Clamp((int)(_win.ActualHeight / 17), 10, 100);
     string _tag = "";
     PluginCatalog? _catalog;
     string _detailHome = "";
@@ -563,13 +566,13 @@ public partial class DownloadView : UserControl, IRefreshable
 
     void Prev_Click(object sender, RoutedEventArgs e)
     {
-        _from = Math.Max(0, _from - Market.PageSize);
+        _from = Math.Max(0, _from - StorePageSize);
         _ = Load();
     }
 
     void Next_Click(object sender, RoutedEventArgs e)
     {
-        _from += Market.PageSize;
+        _from += StorePageSize;
         _ = Load();
     }
 
@@ -594,7 +597,7 @@ public partial class DownloadView : UserControl, IRefreshable
 
         try
         {
-            var page = await Market.Search(Shelf().Query, SearchBox.Text, _from, live.Token);
+            var page = await Market.Search(Shelf().Query, SearchBox.Text, _from, live.Token, StorePageSize);
             if (live.IsCancellationRequested) return;
             Paint(page);
             if (App.ShotPage == "market-more")

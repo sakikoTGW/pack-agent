@@ -151,9 +151,9 @@ public sealed class Market
     /// shelf qualifier rather than replacing it.
     /// </summary>
     public static async Task<MarketPage> Search(string shelfQuery, string text, int from,
-        CancellationToken ct)
+        CancellationToken ct, int pageSize = 0)
     {
-        var size = PageSize;
+        var size = pageSize > 0 ? Math.Clamp(pageSize, 5, 100) : PageSize;
         var q = string.IsNullOrWhiteSpace(text) ? shelfQuery : $"{shelfQuery} {text.Trim()}";
         var host = RegistryBase;
         var url = $"{host}/-/v1/search"

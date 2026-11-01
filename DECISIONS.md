@@ -1195,3 +1195,11 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 - 第一次点 X：卡片说明「收进托盘、实例不停、双击恢复、右键退出」，给「不再提醒 / 每次提醒」选择；
   选不再提醒写 `ui.trayHintDismissed=true`，之后点 X 直接收托盘。
 - 去掉托盘气泡（避免重复提示）；--shot 模式不弹。
+
+## D95 · 2026-11-02 · GitHub Releases 发布与线上更新实测
+- repo：sakikoTGW/pack-agent（public）；tag v0.4.5；资产 pack-agent-for-DSH.exe（187,608,151B，sha256 8e10adc7…）、latest.json、SHA256SUMS.txt。
+- 固定 feed：https://github.com/sakikoTGW/pack-agent/releases/latest/download/latest.json
+- 坑：GitHub 资产名空格→点，feed URL 对不上；统一 dash 名（build-release.ts 已改）。
+- 实测：0.1.0 开发版线上 fetch（70s/179MB，校验通过）→ 启动应用 → exe 替换为 0.4.5（hash 匹配，pending 清）→ 新 exe 自报 0.4.5、newer=false。
+- `OtherPrefs.UpdateFeed` 默认已指向该 feed。
+- 证据：EVIDENCE/D95-github-release。

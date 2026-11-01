@@ -21,6 +21,8 @@ import { spawnSync } from 'node:child_process'
 const REPO = resolve(import.meta.dirname, '..')
 const TMP = process.env.AGENT_PACK_TMP || 'E:\\tmp\\pack-agent'
 const HOST_EXE = 'pack-agent-for DSH.exe'
+// 发布资产名统一用 dash：GitHub 会把资产名里的空格换成点，URL 会对不上。
+const RELEASE_ASSET = 'pack-agent-for-DSH.exe'
 
 function arg(name: string, fallback: string): string {
   const i = process.argv.indexOf(`--${name}`)
@@ -70,15 +72,15 @@ if (!existsSync(single)) throw new Error(`single exe not found: ${single}`)
 // 3) 发布目录
 rmSync(releaseDir, { recursive: true, force: true })
 mkdirSync(releaseDir, { recursive: true })
-const exeOut = join(releaseDir, HOST_EXE)
+const exeOut = join(releaseDir, RELEASE_ASSET)
 copyFileSync(single, exeOut)
 const bytes = readFileSync(exeOut)
 const sha256 = createHash('sha256').update(bytes).digest('hex')
 const size = statSync(exeOut).size
-const feedUrl = baseUrl ? `${baseUrl}/pack-agent-for%20DSH.exe` : 'https://REPLACE-ME/pack-agent-for%20DSH.exe'
+const feedUrl = baseUrl ? `${baseUrl}/${RELEASE_ASSET}` : `https://REPLACE-ME/${RELEASE_ASSET}`
 const createdAt = new Date().toISOString()
 
-const notes = `# PAD ${version}\n\n- 构建：${createdAt}\n- 文件：${HOST_EXE}（${(size / 1048576).toFixed(1)} MB，单文件，内置 pack-runtime）\n- sha256：${sha256}\n`
+const notes = `# PAD ${version}\n\n- 构建：${createdAt}\n- 文件：${RELEASE_ASSET}（${(size / 1048576).toFixed(1)} MB，单文件，内置 pack-runtime）\n- sha256：${sha256}\n`
 const latest = {
   schema: 'pack-agent.pad-update/v1',
   version,
@@ -89,7 +91,7 @@ const latest = {
 }
 writeFileSync(join(releaseDir, 'latest.json'), JSON.stringify(latest, null, 2) + '\n')
 writeFileSync(join(releaseDir, 'notes.md'), notes)
-writeFileSync(join(releaseDir, 'SHA256SUMS.txt'), `${sha256}  ${HOST_EXE}\n`)
+writeFileSync(join(releaseDir, 'SHA256SUMS.txt'), `${sha256}  ${RELEASE_ASSET}\n`)
 writeFileSync(
   join(releaseDir, 'README.txt'),
   [
@@ -99,7 +101,7 @@ writeFileSync(
     'feed 地址 = <你上传的目录>/latest.json（填到 PAD 设置的「更新源」，或发布时用 --base-url 写进 latest.json）。',
     baseUrl ? `本次 base-url：${baseUrl}` : '本次没给 --base-url：latest.json 里的 url 是占位符，上传后手动改成本机可访问地址。',
     '',
-    '用户侧：下载 pack-agent-for DSH.exe 双击即可；新版由 PAD 自己检查/下载/下次启动替换。',
+    '用户侧：下载 pack-agent-for-DSH.exe 双击即可；新版由 PAD 自己检查/下载/下次启动替换。',
     '校验：SHA256SUMS.txt',
     '',
   ].join('\n'),

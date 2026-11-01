@@ -1,0 +1,8 @@
+﻿{
+    "schema":  "pack-agent.pad-update/v1",
+    "version":  "0.4.5",
+    "url":  "https://github.com/sakikoTGW/pack-agent/releases/latest/download/pack-agent-for-DSH.exe",
+    "sha256":  "8e10adc787729101973698c5b9271f88aca85e10f669c54248567b9bd7c28717",
+    "size":  187608151,
+    "notes":  "PAD 0.4.5"
+}

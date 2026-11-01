@@ -1381,13 +1381,43 @@ public sealed class Launcher
     /// </summary>
     void TryStagePackRuntime(string destDir)
     {
+        // 安装器/发布目录已经带 pack-runtime 时：直接复制，不再 bun build / 找索引。
+        var own = Path.Combine(HostDir(), "pack-runtime");
+        if (Directory.Exists(own))
+        {
+            try
+            {
+                var copy = Path.Combine(destDir, "pack-runtime");
+                if (Directory.Exists(copy)) Directory.Delete(copy, recursive: true);
+                CopyTreeLink(own, copy, CancellationToken.None);
+                return;
+            }
+            catch { /* 复制失败退回现场装配 */ }
+        }
+        StagePackRuntime(destDir);
+    }
+
+    static string HostDir()
+    {
+        var path = Environment.ProcessPath;
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(dir)) return dir;
+        }
+        return AppContext.BaseDirectory;
+    }
+
+    /// <summary>装配 pack-runtime（发布/安装器用；导出时优先复制现成的）。</summary>
+    public bool StagePackRuntime(string destDir)
+    {
         var runtime = Path.Combine(destDir, "pack-runtime");
         try
         {
             var repo = FindPackRepo();
             var bun = FindBunExe();
             var index = FindPackIndexExe();
-            if (repo is null || bun is null || index is null) return;
+            if (repo is null || bun is null || index is null) return false;
 
             Directory.CreateDirectory(runtime);
             var bundle = Path.Combine(runtime, "packagent.bundle.js");
@@ -1417,10 +1447,12 @@ public sealed class Launcher
             }
             File.WriteAllText(Path.Combine(runtime, "runtime.json"),
                 "{\n  \"schema\": \"pack-agent.pack-runtime/v1\"\n}\n");
+            return true;
         }
         catch
         {
             try { if (Directory.Exists(runtime)) Directory.Delete(runtime, recursive: true); } catch { }
+            return false;
         }
     }
 

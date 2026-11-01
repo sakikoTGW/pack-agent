@@ -562,6 +562,14 @@ public static class Cli
                     return 0;
                 }
 
+                case "pack-runtime" when cmd == "stage":
+                {
+                    if (rest.Length < 1) return Usage("pad cli pack-runtime stage <dest>");
+                    var ok = launcher.StagePackRuntime(rest[0]);
+                    Say(ok ? $"pack-runtime staged: {Path.GetFullPath(rest[0])}" : "pack-runtime staging skipped");
+                    return ok ? 0 : 1;
+                }
+
                 case "experimental" when cmd == "list":
                 {
                     var settings = launcher.Settings();

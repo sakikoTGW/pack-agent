@@ -9,6 +9,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { ensureRoot } from './launcher.js'
+import { ensurePackIndexBin } from '../scripts/build-pack-index.js'
 import { launchScriptLeaksKey } from './launch-script.ts'
 
 export const HOST_EXE_NAME = 'pack-agent-for DSH.exe'
@@ -270,6 +271,58 @@ export function compileHostExe(outFile: string): string {
   return dest
 }
 
+/**
+ * 把 pack 运行时装配进目录（安装在 kit / 发布目录时调一次）：
+ * bun.exe + bun build 后的 packagent.bundle.js + 预编译 pack-index + 包根资源。
+ * 目标机器不需要仓库/bun/cargo；导出时 PAD 直接复制这份，不再重新装配。
+ */
+export function stagePackRuntime(dir: string, repo = REPO_FROM_HERE): string {
+  const runtime = resolve(dir)
+  rmSync(runtime, { recursive: true, force: true })
+  mkdirSync(runtime, { recursive: true })
+
+  const bunExe = findBunExe()
+  const bundle = join(runtime, 'packagent.bundle.js')
+  const build = spawnSync(
+    bunExe,
+    ['build', join(repo, 'src', 'cli.ts'), '--target=bun', '--outfile', bundle],
+    { encoding: 'utf8' },
+  )
+  if (build.status !== 0 || !existsSync(bundle)) {
+    throw new Error(`bun build failed: ${(build.stdout || '') + (build.stderr || '') || build.status}`)
+  }
+  copyFileSync(bunExe, join(runtime, 'bun.exe'))
+  copyFileSync(ensurePackIndexBin(), join(runtime, 'pack-index.exe'))
+
+  writeFileSync(
+    join(runtime, 'package.json'),
+    JSON.stringify({ name: '@sakikotgw/pack-agent-dsh', version: '0.0.0', private: true }, null, 2) + '\\n',
+  )
+  const registry = join(repo, 'agent-pack-dsh', 'modpack', 'registry.yaml')
+  if (existsSync(registry)) {
+    mkdirSync(join(runtime, 'agent-pack-dsh', 'modpack'), { recursive: true })
+    copyFileSync(registry, join(runtime, 'agent-pack-dsh', 'modpack', 'registry.yaml'))
+  }
+  const skill = join(repo, 'skills', 'agent-pack', 'SKILL.md')
+  if (existsSync(skill)) {
+    mkdirSync(join(runtime, 'skills', 'agent-pack'), { recursive: true })
+    copyFileSync(skill, join(runtime, 'skills', 'agent-pack', 'SKILL.md'))
+  }
+  writeFileSync(join(runtime, 'runtime.json'), JSON.stringify({ schema: 'pack-agent.pack-runtime/v1' }, null, 2) + '\\n')
+  return runtime
+}
+
+function findBunExe(): string {
+  const env = process.env.PAD_BUN
+  if (env && existsSync(env)) return env
+  const exec = process.execPath
+  if (exec && /bun/i.test(exec) && existsSync(exec)) return exec
+  const probe = spawnSync('where', ['bun.exe'], { encoding: 'utf8' })
+  const line = (probe.stdout || '').split(/\r?\n/).find((s) => s.toLowerCase().endsWith('.exe'))
+  if (line && existsSync(line.trim())) return line.trim()
+  throw new Error('bun.exe not found (PAD_BUN / process.execPath / where bun.exe)')
+}
+
 export function initPortableKit(kitDir: string, opts: { repo?: string } = {}): PortableKit {
   const kit = resolve(kitDir)
   const repo = resolve(opts.repo || REPO_FROM_HERE)
@@ -290,5 +343,7 @@ export function initPortableKit(kitDir: string, opts: { repo?: string } = {}): P
   if (stale) compileHostExe(cacheExe)
   copyFileSync(cacheExe, join(kit, HOST_EXE_NAME))
   const hostExe = join(kit, HOST_EXE_NAME)
+  // 安装器自带 pack 运行时：以后导出直接复制，不再重新 bun build / 找索引。
+  stagePackRuntime(join(kit, 'pack-runtime'), repo)
   return { kit, launcherRoot, openBat, hostExe, examplePack, exampleZip }
 }

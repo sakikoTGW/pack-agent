@@ -1137,3 +1137,10 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 - 边界：便携包 +115MB；导出机需要仓库+bun+预编译索引；目标机仍需能执行 bun 子进程，
   否则回落 D85 的原生 list/启停（仅 PAD 侧状态）。
 验证：EVIDENCE/D88-portable-runtime（导出包内 list/allow/deny/project 全通）。
+
+## D89 · 2026-11-02 · 安装器自带 pack-runtime（导出不再现场装配）
+- 安装器（`portable-init` kit）新增 `stagePackRuntime`：bun build 的 bundle + bun.exe + 预编译 pack-index + 包根资源，一次装进 `kit/pack-runtime/`。
+- 导出 `portable-export` 优先复制 exe 旁现成的 `pack-runtime/`；没有才现场装配。
+- 发布目录可用 `pad cli pack-runtime stage <dest>` 一键装配。
+- 结果：导出机不再需要仓库/bun/索引；便携包运行时版本与安装器一致。
+验证：EVIDENCE/D89-installer-runtime（stage 命令、无仓库导出、kit 自带 runtime）。

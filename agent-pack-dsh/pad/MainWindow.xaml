@@ -192,6 +192,8 @@
                 </ScrollViewer>
                 <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
                             Margin="8,12,8,0">
+                  <CheckBox x:Name="MsgCheck" Style="{StaticResource Switch}" Content="不再提醒"
+                            VerticalAlignment="Center" Margin="0,0,18,0" Visibility="Collapsed" />
                   <Button x:Name="MsgOk" Style="{StaticResource BtnPrimary}" Content="确定"
                           MinWidth="88" Height="35" Click="MsgOk_Click" />
                   <Button x:Name="MsgCancel" Style="{StaticResource Btn}" Content="取消"

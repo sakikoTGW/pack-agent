@@ -1191,9 +1191,9 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 - 真机替换：throwaway PAD + 假新版（packmaker.exe）→ fetch → 正常启动（PAD_UPDATE_NO_RESTART=1）→ exe 被替换成假新版、pending 清除、数据未动。
 - 证据：EVIDENCE/D94-release。
 
-## D99 补 · 首次点 X 的托盘说明卡
-- 第一次点 X：卡片说明「收进托盘、实例不停、双击恢复、右键退出」，给「不再提醒 / 每次提醒」选择；
-  选不再提醒写 `ui.trayHintDismissed=true`，之后点 X 直接收托盘。
+## D99 补 · 首次点 X 的托盘说明卡（最终版）
+- 第一次点 X 弹卡片：「PAD 已收进托盘」+ 正文说明（实例不停/双击恢复/右键退出）+ **不再提醒复选框** + **好的** 按钮；
+  勾选好的才写 `ui.trayHintDismissed=true`，之后点 X 直接收托盘。
 - 去掉托盘气泡（避免重复提示）；--shot 模式不弹。
 
 ## D95 · 2026-11-02 · GitHub Releases 发布与线上更新实测

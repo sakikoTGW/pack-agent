@@ -1216,12 +1216,21 @@ public partial class MainWindow : Window
         string? okText = null, string? cancelText = null) =>
         ShowMsg(title, body, input: false, seed: "", warn, previewPath, okText, cancelText) is not null;
 
+    /// <summary>带「不再提醒」复选框的单按钮卡片（托盘提示用）。</summary>
+    public bool AskHint(string title, string body, string checkText, out bool checkedDismiss, string okText = "好的")
+    {
+        var accepted = ShowMsg(title, body, input: false, seed: "", warn: false, previewPath: null,
+            okText: okText, cancelText: null, checkText: checkText, singleButton: true) is not null;
+        checkedDismiss = _msgCheckResult;
+        return accepted;
+    }
+
     /// <summary>PCL MyMsgInput: in-window card with a text box.</summary>
     public string? AskInput(string title, string? body = null, string seed = "", bool warn = false) =>
         ShowMsg(title, body ?? "", input: true, seed, warn);
 
     string? ShowMsg(string title, string body, bool input, string seed, bool warn, string? previewPath = null,
-        string? okText = null, string? cancelText = null)
+        string? okText = null, string? cancelText = null, string? checkText = null, bool singleButton = false)
     {
         if (_msgFrame is not null) return null;
         MsgTitle.Text = title;
@@ -1239,10 +1248,15 @@ public partial class MainWindow : Window
             : new SolidColorBrush(Color.FromArgb(0x99, 0x00, 0x00, 0x00));
         MsgOk.Content = string.IsNullOrWhiteSpace(okText) ? "确定" : okText;
         MsgCancel.Content = string.IsNullOrWhiteSpace(cancelText) ? "取消" : cancelText;
+        MsgCheck.Content = string.IsNullOrWhiteSpace(checkText) ? "不再提醒" : checkText;
+        MsgCheck.IsChecked = false;
+        MsgCheck.Visibility = checkText is null ? Visibility.Collapsed : Visibility.Visible;
+        MsgCancel.Visibility = singleButton ? Visibility.Collapsed : Visibility.Visible;
         MsgOk.Style = (Style)FindResource(warn ? "BtnDanger" : "BtnPrimary");
         MsgOk.IsDefault = !warn;
         MsgCancel.IsDefault = warn;
         _msgAccepted = false;
+        _msgCheckResult = false;
         MsgLayer.Visibility = Visibility.Visible;
         MsgCard.Opacity = 1;
         Fx.PulseIn(MsgCard, true);
@@ -1269,6 +1283,9 @@ public partial class MainWindow : Window
         MsgCancel.IsDefault = false;
         MsgOk.Content = "确定";
         MsgCancel.Content = "取消";
+        MsgCancel.Visibility = Visibility.Visible;
+        MsgCheck.Visibility = Visibility.Collapsed;
+        MsgCheck.IsChecked = false;
         MsgCard.Opacity = 1;
         MsgCard.RenderTransform = null;
         if (!_msgAccepted) return null;
@@ -1283,8 +1300,11 @@ public partial class MainWindow : Window
     {
         if (_msgFrame is null) return;
         _msgAccepted = accepted;
+        _msgCheckResult = MsgCheck.IsChecked == true;
         _msgFrame.Continue = false;
     }
+
+    bool _msgCheckResult;
 
     /// <summary>readme.md overlay on the main window. Headings render; no second HWND.</summary>
     public void ShowMd(string title, string markdown)
@@ -1636,11 +1656,11 @@ public partial class MainWindow : Window
         if (!ui.TrayHintDismissed && App.ShotPath is null && IsVisible)
         {
             // 第一次点 X：说清楚"只是收进托盘、实例不停"，并给一个不再提醒的选择。
-            var dismiss = Ask("PAD 会留在托盘",
-                "点 X 只是把窗口收进托盘：PAD 继续后台运行，正在跑的实例也不会被停止。\n\n" +
-                "双击托盘图标恢复窗口；右键托盘图标可以退出 PAD。\n\n以后还要提醒吗？",
-                okText: "不再提醒", cancelText: "每次提醒");
-            if (dismiss)
+            AskHint("PAD 已收进托盘",
+                "点 X 只是把窗口收进托盘，PAD 和正在跑的实例都没停。\n\n" +
+                "双击托盘图标恢复窗口，右键托盘图标可以退出。",
+                "不再提醒", out var dismissed);
+            if (dismissed)
             {
                 ui.TrayHintDismissed = true;
                 try { AppState.Current.SaveSettings(); } catch { /* ignore */ }

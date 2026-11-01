@@ -1,11 +1,11 @@
-﻿=== 首次点 X 的托盘提示（隔离 root 实测）===
+﻿=== 首次点 X 的托盘提示（最终版：好的 + 不再提醒复选框，隔离 root 实测）===
 A) 第一次点 X
-window visible=True（解释卡盖在窗口上）
-dismiss button=True every button=True（按钮：不再提醒 / 每次提醒）
-invoke 不再提醒 -> window visible=False；pad.json trayHintDismissed=True；进程仍存活（在托盘）
-B) 再启动唤回窗口后点 X
-window visible after 2nd launch=True
-window visible after X=False（直接收托盘）
-hint shown=False（不再弹）
-C) 选「每次提醒」
-window visible=False；pad.json trayHintDismissed=False（下次还会提醒）
+窗口可见（卡片盖在窗口上）
+卡片：标题「PAD 已收进托盘」；复选框「不再提醒」；按钮「好的」（没有旧的"每次提醒"按钮）
+不勾选直接点「好的」→ 窗口收托盘、进程仍在、pad.json trayHintDismissed=False
+B) 再启动唤回窗口，再点 X
+勾上「不再提醒」→ 点「好的」
+窗口收托盘；pad.json trayHintDismissed=True
+C) 之后每次点 X
+直接收托盘，不再弹卡片；再双击 exe 只把窗口拉出来（单实例）
+（自动化说明：卡片在 DispatcherFrame 模态里，UIA 必须先 SetFocus 再点/勾；键盘 Enter 也能关）

@@ -1183,3 +1183,10 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 - 关窗默认缩托盘（ui.closeToTray=true，设置→个性化可关）；--shot 截图模式不受影响。
 - 验证（EVIDENCE/D99-single-instance-tray）：单实例/托盘恢复/不同 root/CLI 并存/closeToTray=false 真退 全部实测通过；pad-window/pad-pack/p2-p3 绿。
 - 边界：只锁窗口实例；CLI 写同 root 仍是并行（自动化需要），需要严格时可加排队。
+
+## D94 · 2026-11-02 · 发布包 + latest.json 托管流程 + 真机替换验证
+- `scripts/build-release.ts`（`bun run release`）：dotnet publish（-p:Version）+ 单文件 payload + latest.json（sha256/size 自检）+ notes/SHA256SUMS + 上传说明；`--base-url` 写死 feed URL。
+- `docs/PAD-RELEASE.md`：GitHub Releases / 对象存储 / 内网 HTTP 三种托管方式与 feed 填法。
+- 发布包 0.4.4：178.9MB，sha256 e04d1a99…；发布包自检 current=0.4.4 newer=false；开发版 0.1.0 对同 feed newer=true。
+- 真机替换：throwaway PAD + 假新版（packmaker.exe）→ fetch → 正常启动（PAD_UPDATE_NO_RESTART=1）→ exe 被替换成假新版、pending 清除、数据未动。
+- 证据：EVIDENCE/D94-release。

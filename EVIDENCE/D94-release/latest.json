@@ -1,0 +1,8 @@
+{
+  "schema": "pack-agent.pad-update/v1",
+  "version": "0.4.4",
+  "url": "https://REPLACE-ME/pack-agent-for%20DSH.exe",
+  "sha256": "e04d1a99f19c918f42fb4202452f8572f264e5b3a636debdd9b95de9d0119459",
+  "size": 187608151,
+  "notes": "PAD 0.4.4"
+}

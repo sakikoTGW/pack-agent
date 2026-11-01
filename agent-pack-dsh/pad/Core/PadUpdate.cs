@@ -155,16 +155,19 @@ public static class PadUpdate
         }
 
         helper = Path.Combine(Path.GetTempPath(), $"pad-update-{Guid.NewGuid():N}.cmd");
-        var script = string.Join("\r\n",
-        [
+        // 测试环境可以只替换、不自动重启（PAD_UPDATE_NO_RESTART=1）。
+        var noRestart = Environment.GetEnvironmentVariable("PAD_UPDATE_NO_RESTART") == "1";
+        var lines = new List<string>
+        {
             "@echo off",
             "chcp 65001 >nul",
             "ping -n 3 127.0.0.1 >nul",
             $"move /Y \"{staged}\" \"{hostPath}\" >nul",
-            $"del \"%~f0\" >nul",
-            $"start \"\" \"{hostPath}\"",
-            "",
-        ]);
+            "del \"%~f0\" >nul",
+        };
+        if (!noRestart) lines.Add($"start \"\" \"{hostPath}\"");
+        lines.Add("");
+        var script = string.Join("\r\n", lines);
         try
         {
             File.WriteAllText(helper, script);

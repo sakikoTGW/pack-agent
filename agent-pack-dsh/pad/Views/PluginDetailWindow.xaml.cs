@@ -1,5 +1,7 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Pad.Core;
 
 namespace Pad.Views;
@@ -63,4 +65,29 @@ public partial class PluginDetailWindow : Window
     }
 
     void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>离屏把本窗口渲染成 PNG（--shot-page plugin-detail 用；不经屏幕捕获）。</summary>
+    public void RenderTo(string path)
+    {
+        try
+        {
+            UpdateLayout();
+            var dpi = VisualTreeHelper.GetDpi(this);
+            var w = (int)Math.Ceiling(ActualWidth * dpi.DpiScaleX);
+            var h = (int)Math.Ceiling(ActualHeight * dpi.DpiScaleY);
+            var rtb = new RenderTargetBitmap(w, h, 96 * dpi.DpiScaleX, 96 * dpi.DpiScaleY,
+                PixelFormats.Pbgra32);
+            rtb.Render(this);
+            var png = new PngBitmapEncoder();
+            png.Frames.Add(BitmapFrame.Create(rtb));
+            using var fs = File.Create(path);
+            png.Save(fs);
+            File.WriteAllText(path + ".txt",
+                $"logical {ActualWidth}x{ActualHeight}\ndpi {dpi.DpiScaleX}x{dpi.DpiScaleY}\npixels {w}x{h}\n");
+        }
+        catch (Exception ex)
+        {
+            try { File.WriteAllText(path + ".txt", ex.ToString()); } catch { }
+        }
+    }
 }

@@ -76,7 +76,8 @@ public partial class MainWindow : Window
                 if (App.ShotPage == "makepack") ShowInner("makepack", "导出整合包", "versions");
                 if (App.ShotPage == "bundles") ShowInner("bundles", "实例与插件", "manage");
                 if (App.ShotPage == "relations" || App.ShotPage.StartsWith("relations-")) ShowRelations();
-                if (App.ShotPage is "instance" or "instance-settings" or "instance-plugins" or "instance-bundles")
+                if (App.ShotPage is "instance" or "instance-settings" or "instance-plugins" or "instance-bundles"
+                    or "plugin-detail")
                     ShowInner("instance", "版本设置");
                 if (App.ShotPage == "market" && Page("download") is DownloadView market)
                     market.OpenShelf("plugin");
@@ -369,7 +370,7 @@ public partial class MainWindow : Window
     void ScheduleShot(string path)
     {
         var other = AppState.Current.Settings.Other;
-        var ms = App.ShotPage is "market" or "relations" || App.ShotPage.StartsWith("relations-sessions")
+        var ms = App.ShotPage is "market" or "relations" or "plugin-detail" || App.ShotPage.StartsWith("relations-sessions")
                 ? Math.Max(other.ShotMarketDelayMs, 8000)
                 : other.ShotDelayMs;
         var timer = new System.Windows.Threading.DispatcherTimer

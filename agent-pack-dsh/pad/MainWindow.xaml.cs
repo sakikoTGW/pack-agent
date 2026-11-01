@@ -1212,14 +1212,16 @@ public partial class MainWindow : Window
     }
 
     /// <summary>PCL MyMsgText: in-window card. Warn puts focus on 取消 so Enter does not confirm delete.</summary>
-    public bool Ask(string title, string body, bool warn = false, string? previewPath = null) =>
-        ShowMsg(title, body, input: false, seed: "", warn, previewPath) is not null;
+    public bool Ask(string title, string body, bool warn = false, string? previewPath = null,
+        string? okText = null, string? cancelText = null) =>
+        ShowMsg(title, body, input: false, seed: "", warn, previewPath, okText, cancelText) is not null;
 
     /// <summary>PCL MyMsgInput: in-window card with a text box.</summary>
     public string? AskInput(string title, string? body = null, string seed = "", bool warn = false) =>
         ShowMsg(title, body ?? "", input: true, seed, warn);
 
-    string? ShowMsg(string title, string body, bool input, string seed, bool warn, string? previewPath = null)
+    string? ShowMsg(string title, string body, bool input, string seed, bool warn, string? previewPath = null,
+        string? okText = null, string? cancelText = null)
     {
         if (_msgFrame is not null) return null;
         MsgTitle.Text = title;
@@ -1235,6 +1237,8 @@ public partial class MainWindow : Window
         MsgDim.Background = warn
             ? new SolidColorBrush(Color.FromArgb(0x99, 0x5A, 0x18, 0x14))
             : new SolidColorBrush(Color.FromArgb(0x99, 0x00, 0x00, 0x00));
+        MsgOk.Content = string.IsNullOrWhiteSpace(okText) ? "确定" : okText;
+        MsgCancel.Content = string.IsNullOrWhiteSpace(cancelText) ? "取消" : cancelText;
         MsgOk.Style = (Style)FindResource(warn ? "BtnDanger" : "BtnPrimary");
         MsgOk.IsDefault = !warn;
         MsgCancel.IsDefault = warn;
@@ -1263,6 +1267,8 @@ public partial class MainWindow : Window
         MsgPreviewBox.Visibility = Visibility.Collapsed;
         MsgOk.IsDefault = false;
         MsgCancel.IsDefault = false;
+        MsgOk.Content = "确定";
+        MsgCancel.Content = "取消";
         MsgCard.Opacity = 1;
         MsgCard.RenderTransform = null;
         if (!_msgAccepted) return null;
@@ -1626,8 +1632,21 @@ public partial class MainWindow : Window
     public void HideToTray()
     {
         try { AppState.Current.SaveSelection(); } catch { /* ignore */ }
+        var ui = AppState.Current.Settings.Ui;
+        if (!ui.TrayHintDismissed && App.ShotPath is null && IsVisible)
+        {
+            // 第一次点 X：说清楚"只是收进托盘、实例不停"，并给一个不再提醒的选择。
+            var dismiss = Ask("PAD 会留在托盘",
+                "点 X 只是把窗口收进托盘：PAD 继续后台运行，正在跑的实例也不会被停止。\n\n" +
+                "双击托盘图标恢复窗口；右键托盘图标可以退出 PAD。\n\n以后还要提醒吗？",
+                okText: "不再提醒", cancelText: "每次提醒");
+            if (dismiss)
+            {
+                ui.TrayHintDismissed = true;
+                try { AppState.Current.SaveSettings(); } catch { /* ignore */ }
+            }
+        }
         Hide();
-        App.TrayIcon?.NotifyHiddenOnce();
     }
 
     /// <summary>从托盘/第二个实例恢复窗口。</summary>

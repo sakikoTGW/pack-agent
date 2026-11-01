@@ -1,0 +1,11 @@
+﻿=== 首次点 X 的托盘提示（隔离 root 实测）===
+A) 第一次点 X
+window visible=True（解释卡盖在窗口上）
+dismiss button=True every button=True（按钮：不再提醒 / 每次提醒）
+invoke 不再提醒 -> window visible=False；pad.json trayHintDismissed=True；进程仍存活（在托盘）
+B) 再启动唤回窗口后点 X
+window visible after 2nd launch=True
+window visible after X=False（直接收托盘）
+hint shown=False（不再弹）
+C) 选「每次提醒」
+window visible=False；pad.json trayHintDismissed=False（下次还会提醒）

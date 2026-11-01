@@ -515,6 +515,8 @@ public sealed class UiPrefs
     [JsonPropertyName("wallpaperDir")] public string WallpaperDir { get; set; } = "";
     /// <summary>关窗时缩到托盘而不是退出（托盘菜单可改）。</summary>
     [JsonPropertyName("closeToTray")] public bool CloseToTray { get; set; } = true;
+    /// <summary>第一次点 X 时解释「收进托盘」的提示，用户选了不再提醒就不再弹。</summary>
+    [JsonPropertyName("trayHintDismissed")] public bool TrayHintDismissed { get; set; }
     /// <summary>可藏的页：manage / download。启动和设置禁止全藏。</summary>
     [JsonPropertyName("hiddenTabs")] public List<string> HiddenTabs { get; set; } = [];
     /// <summary>藏启动页「版本选择 / 版本设置」入口。F12 临时解除到本次进程。</summary>

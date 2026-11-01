@@ -47,7 +47,7 @@ public sealed class MarketRow : System.ComponentModel.INotifyPropertyChanged
 
     public string DateText => Market.RelTime(Date);
 
-    public string TagText => Keywords.Count > 0 ? Keywords[0] : "";
+    public string TagText => Keywords.FirstOrDefault(k => !PluginRow.IsNoiseTag(k)) ?? "";
 
     public bool HasTag => TagText.Length > 0;
 

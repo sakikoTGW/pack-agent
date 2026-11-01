@@ -91,7 +91,7 @@ public sealed class PluginRow : Observable
         "ai", "llm", "agent", "dsh-agent", "extension", "extensions",
     ];
 
-    static bool IsNoiseTag(string tag) =>
+    public static bool IsNoiseTag(string tag) =>
         NoiseTags.Contains(tag, StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyList<string> Tags

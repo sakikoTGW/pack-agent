@@ -512,7 +512,23 @@ public partial class DownloadView : UserControl, IRefreshable
 
     void Warn(string text)
     {
-        MarketErrorText.Text = text;
+        var t = (text ?? "").Trim();
+        MarketErrorTitle.Text = t.Contains("PA033") || t.Contains("没连上")
+            ? "npm 搜索没连上"
+            : "搜索出错了";
+        // 原始错误里 error[..]/--> / | / = help 是给命令行看的；界面只留一句人话 + 一条建议。
+        var lines = t.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .Where(x => x.Length > 0)
+            .Where(x => !x.StartsWith("error[") && !x.StartsWith("-->")
+                        && !x.StartsWith("|") && !x.Contains("= help"))
+            .Select(x => x.Contains("A task was canceled", StringComparison.OrdinalIgnoreCase)
+                ? "连接被取消（超时或网络不通）。" : x)
+            .ToList();
+        MarketErrorText.Text = lines.Count > 0
+            ? string.Join(" ", lines.Take(2))
+            : "请求被取消或超时，可能是网络 / 代理 / registry 不通。";
+        MarketErrorHint.Text = "检查网络或代理；或到 设置 → 下载 改 registry / 超时，然后点重试。";
         MarketError.Visibility = Visibility.Visible;
     }
 
@@ -566,6 +582,7 @@ public partial class DownloadView : UserControl, IRefreshable
         var live = _live = new CancellationTokenSource();
 
         MarketError.Visibility = Visibility.Collapsed;
+        ResultCount.Text = "";
         EmptyCard.Visibility = Visibility.Collapsed;
         var first = ResultList.ItemsSource is null;
         if (first) ResultCard.Visibility = Visibility.Collapsed;
@@ -611,6 +628,8 @@ public partial class DownloadView : UserControl, IRefreshable
             : "无搜索结果，请尝试搜索其英文名称";
         EmptyCard.Visibility = page.Rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
+        ResultCount.Text = $"{page.Total:N0} 个插件";
+        SearchSummary.Text = $"共 {page.Total:N0} 个 · 第 {page.PageIndex + 1}/{page.PageCount} 页";
         PageText.Text = $"{page.PageIndex + 1} / {page.PageCount}";
         FirstBtn.IsEnabled = page.HasPrev;
         PrevBtn.IsEnabled = page.HasPrev;

@@ -53,12 +53,49 @@ scope: 本仓库（E:\pack-agent）与 PAD（WPF）的并行开发
 - "做完了" = **自己起的窗口**（自己的 build 目录、自己的数据根）+ 截图 + pid + 一句"怎么点"。
 - 不把"代码改了/编译过了"当成验收；也不拿别人的窗口冒充自己的结果。
 - 最终验收：Lead 在合并后**只做一次**：关正式 PAD → 编译 → 测试 → 启动 → 截图；其他 agent 此时不编译、不重启。
+## 6. 前台窗口与截图（不打扰用户）
+
+用户在用电脑时，**任何 agent 都不得把 PAD 拉到前台、不得自动点击/重启正式 PAD**。
+这一条比"拿到证据"优先；没有允许就不动屏幕。
+
+### 默认：后台取证
+
+- 截图用 **后台 `PrintWindow(hwnd, PW_RENDERFULLCONTENT)`**，或 PAD 自己的 `--shot` 自截图；
+  **不调用** `SetForegroundWindow` / `BringWindowToTop` / `ShowWindow(SW_RESTORE)` / `AttachThreadInput` 来抢焦点。
+- PAD 已有 `--shot` / `--shot-page` 通道：能自己渲染成 PNG 的页面优先用它（进程自己截图，不打扰桌面）。
+- WebView2 是独立合成层：`PrintWindow` 拍不到；用 PAD 内置的 `CoreWebView2.CapturePreviewAsync`（`RelationsWebView` 里已有实现）
+  做离屏截图，**不要**为了截 WebView2 去前台摆窗口。
+
+### 什么时候允许前台（必须同时满足）
+
+1. 用户明确说"现在验收/现在给我看"；
+2. 同一轮最多一次；先告诉用户"要前置一次窗口"，得到允许再动；
+3. 记录操作前的原前台窗口，验收完 **把焦点还回去**，不顺手做别的点击。
+
+### 禁止清单
+
+- 不允许：`Start-Process` 之后自动 `Focus-Pad` / 循环置顶 / 抢焦点点击；
+- 不允许：为了截图关闭、重启或移动"正式 PAD"；
+- 不允许：每轮都截图；证据只在用户要看或自己验证功能时生成，放 `EVIDENCE/`，正文给路径，不弹窗；
+- 不允许：拿"前台窗口截图"当唯一证据——优先后台截图 + pid + 文件路径。
+
+### 隔离窗口
+
+需要自己动手点的时候，用**自己的 dev 窗口**（见第 2 节数据隔离）：
+
+```powershell
+$env:PACK_LAUNCHER_ROOT = "E:\tmp\pad-roots\<agent>"
+$p = Start-Process "E:\tmp\pad-build\<agent>\pack-agent-for DSH.exe" -PassThru
+# 只操作 $p.Id；验收完自己关掉
+```
+
+dev 窗口启动时尽量 `-WindowStyle Minimized` 或用 `SW_SHOWNOACTIVATE` 显示，不抢用户前台。
 
 ## 附：最后统一编译的口令
 
 ```powershell
-# Lead only, once, after merges:
+# Lead only, once, after merges（先问用户"现在验收吗"）:
 dotnet build agent-pack-dsh\pad\Pad.csproj -c Debug -v m   # 0 warning / 0 error
 bun run agent-pack-dsh/modpack/pad-window.test.ts
-# 然后重启正式 PAD 并截图验收
+# 然后重启正式 PAD 并截图验收（仅此一次，且经用户允许）
 ```

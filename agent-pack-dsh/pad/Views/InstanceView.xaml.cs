@@ -30,6 +30,7 @@ public partial class InstanceView : UserControl, IRefreshable
         _trials = new Trials(_state.Launcher);
         DataContext = _state;
         ShowPane(Checked());
+        HookResize();
     }
 
     string Checked() => new[] { NavOverview, NavSettings, NavPlugins, NavSessions, NavPresets }
@@ -1027,6 +1028,44 @@ public partial class InstanceView : UserControl, IRefreshable
     /// <summary>每页多少个按窗口高度自适应（约 17px/个），窗口越高一页越多。</summary>
     int PluginPageSize =>
         Math.Clamp((int)((Window.GetWindow(this)?.ActualHeight ?? 900) / 17), 24, 84);
+
+    int _pluginPageSizeUsed = 54;
+    System.Windows.Threading.DispatcherTimer? _resizeTimer;
+
+    void HookResize()
+    {
+        SizeChanged += (_, _) =>
+        {
+            _resizeTimer ??= CreateResizeTimer();
+            _resizeTimer.Stop();
+            _resizeTimer.Start();
+        };
+    }
+
+    System.Windows.Threading.DispatcherTimer CreateResizeTimer()
+    {
+        var t = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(220),
+        };
+        t.Tick += (_, _) =>
+        {
+            t.Stop();
+            RepaintPluginsForResize();
+        };
+        return t;
+    }
+
+    void RepaintPluginsForResize()
+    {
+        if (PluginList is null || PanePlugins.Visibility != Visibility.Visible) return;
+        var now = PluginPageSize;
+        if (now == _pluginPageSizeUsed) return;
+        var first = _pluginPage * Math.Max(1, _pluginPageSizeUsed);
+        _pluginPageSizeUsed = now;
+        _pluginPage = Math.Max(0, first / now);
+        PaintPlugins();
+    }
     int _pluginPage;
 
     void InstMore_Click(object sender, RoutedEventArgs e)
@@ -1071,10 +1110,12 @@ public partial class InstanceView : UserControl, IRefreshable
         FilterFav.Content = $"收藏 ({inProfile.Count(r => r.Favorite)})";
 
         var shown = PluginQuery.Apply(inProfile, PluginSearch?.Text ?? "", CurrentPluginFilter()).ToList();
-        var pages = Math.Max(1, (shown.Count + PluginPageSize - 1) / PluginPageSize);
+        var pageSize = PluginPageSize;
+        _pluginPageSizeUsed = pageSize;
+        var pages = Math.Max(1, (shown.Count + pageSize - 1) / pageSize);
         if (_pluginPage >= pages) _pluginPage = pages - 1;
         if (_pluginPage < 0) _pluginPage = 0;
-        var slice = shown.Skip(_pluginPage * PluginPageSize).Take(PluginPageSize).ToList();
+        var slice = shown.Skip(_pluginPage * pageSize).Take(pageSize).ToList();
         PluginList.ItemsSource = slice;
         PluginPager.Visibility = pages > 1 ? Visibility.Visible : Visibility.Collapsed;
         PluginPageText.Text = $"{_pluginPage + 1} / {pages}";

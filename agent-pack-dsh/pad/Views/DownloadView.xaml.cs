@@ -20,6 +20,41 @@ public partial class DownloadView : UserControl, IRefreshable
 
     /// <summary>每页多少个按窗口高度自适应（近似 17px/个），不再固定 20。</summary>
     int StorePageSize => Math.Clamp((int)(_win.ActualHeight / 17), 10, 100);
+
+    int _storePageSizeUsed = 20;
+    DispatcherTimer? _storeResizeTimer;
+
+    void HookResize()
+    {
+        SizeChanged += (_, _) =>
+        {
+            _storeResizeTimer ??= CreateStoreResizeTimer();
+            _storeResizeTimer.Stop();
+            _storeResizeTimer.Start();
+        };
+    }
+
+    DispatcherTimer CreateStoreResizeTimer()
+    {
+        var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(240) };
+        t.Tick += (_, _) =>
+        {
+            t.Stop();
+            ReloadStoreForResize();
+        };
+        return t;
+    }
+
+    void ReloadStoreForResize()
+    {
+        if (!IsVisible || PaneMarket.Visibility != Visibility.Visible) return;
+        var now = StorePageSize;
+        if (now == _storePageSizeUsed) return;
+        var pageIndex = _storePageSizeUsed > 0 ? _from / _storePageSizeUsed : 0;
+        _storePageSizeUsed = now;
+        _from = Math.Max(0, pageIndex * now);
+        _ = Load();
+    }
     string _tag = "";
     PluginCatalog? _catalog;
     string _detailHome = "";
@@ -38,6 +73,7 @@ public partial class DownloadView : UserControl, IRefreshable
         _win = win;
         DataContext = _state;
         Loaded += (_, _) => PaintShelves();
+        HookResize();
         IsVisibleChanged += (_, e) =>
         {
             if (e.NewValue is not true) StopDlPoll();
@@ -597,7 +633,8 @@ public partial class DownloadView : UserControl, IRefreshable
 
         try
         {
-            var page = await Market.Search(Shelf().Query, SearchBox.Text, _from, live.Token, StorePageSize);
+            _storePageSizeUsed = StorePageSize;
+            var page = await Market.Search(Shelf().Query, SearchBox.Text, _from, live.Token, _storePageSizeUsed);
             if (live.IsCancellationRequested) return;
             Paint(page);
             if (App.ShotPage == "market-more")

@@ -1019,3 +1019,35 @@ GIF 用 Python Pillow 合成；脚本不进仓库。
 对照：`EVIDENCE/D68-demo-layout/00-reference-demo.png`（演示稿重渲染）vs `01-project-page.png`（真 PAD 抓帧）。
 差异只剩浏览器/WPF 的字体度量与留白；结构、信息层级、按钮顺序一一对应。
 判据：**"照演示做"= 把演示当视觉/结构规格落到真应用里，不是再维护第二个仿制页面；功能只复用现有实现。**
+
+## D69 · 2026-11-01 · 按原型 v4 做「现在流 + 项目页 + 实例页 + 自动收编」
+用户："现在流也一起，一次做到 v4 全貌。" 基准 = `.tmp/pad-project-mockup.html`（sha EA9C900C…）。
+实现（`Views/WorkbenchV4.cs` + `WorkbenchView` 挂接 + `ProjectRail` 分段）：
+1. **现在**（管理首屏）：三段流 等你输入/在跑/刚完成 + 三格计数；数据 = 各项目 home 的
+   `Dialogs.Read(24)`，分类 `StepOpen`→在跑、`PendingCalls>0`→等你输入、其余→刚完成；点一条进项目页。
+   侧栏加 `项目/实例` 分段、搜索「项目 / 目录」、在跑/已停分组、行右侧端口/上次、底部 自动收编/导入整合包。
+2. **项目页**：Edge 网页窗口状态条（地址·已运行·pid·home + 打开窗口/日志/目录）；
+   卡片 智能体团队（默认/在干活/绑定）/ 工作区 / 任务（作业队列 queued·running，空态明确）/
+   能力（组合包 chips）/ 最近会话（点一条跳对话）；底部 配置与覆盖 + 编辑。
+3. **实例页**：实例清单（名字/home/在跑·已停）+ 两条轴分工（现在/项目/实例）。
+4. **自动收编页**：读 `launch.dshHome` 的 workspace.json（只读）→ 候选行 + 全部收编 + 规则卡；
+   本机 19 工作区→19 项目（顶层目录；v4 的 19→6 是示例数据）。
+差异：v4 的独立「现在」页签没加，做成管理首屏；hover 预览未做（P2）；「对比现状」是演示开关。
+验证：build 0/0；pad-project（新增 v4 页面契约）/pad-window/pad-depth 绿；四页真实窗口抓图 EVIDENCE/D69-v4。
+判据：**v4 是"状态编排"的原型——现在按 agent 状态排、项目是按活的标签、实例是运行体；三页各自只回答一个问题。**
+
+## D72 · 2026-11-01 · 现在页接真实 DSH home + 彩色块 + 悬停预览
+用户指着 v4 原型「现在 + 悬停预览」那版说「这版」。D69 结构对但数据错（只扫 PAD 自建实例 → 0/0/1），
+被 revert 后按这张图恢复并补齐：
+1. **数据源**：新 `Core/NowProbe.cs` 只读 DSH 投影缓存 `storages/session_projcache/sessions/*.json`
+   （每行是 {ver,seq,val}，拆 val 后拿 标题/cwd/preset/轮步/openStep/userQuestions/pendingCalls/turnOutline.draft）；
+   扫 `launch.dshHome`（本机 E:\DSH-Home）+ 项目实例 home，按 cwd 前缀映射项目，未映射用 cwd 目录名。
+   本机实测 2 等你输入 / 0 在跑 / 79 刚完成（真实标题），不再是空页。
+2. **彩色项目块**：行左侧项目色块 + 首字（8 色调色板按名字哈希），侧栏项目行同款；右上口径
+   `自动收编：19 工作区 → 19 项目`（读 workspace.json + ProjectAdopt.Scan）。
+3. **悬停预览**：现在行 hover 弹卡（标题 + 项目·preset·N 轮 + 最近一轮输出气泡 + 工具调用 chip
+   +「点一下 → PAD 把这窗切到对这个对话」）；去掉行 ToolTip，贯彻"悬停=预览"。
+验证：build 0/0；pad-project 契约（含 v4 页面）绿；真实窗口抓图 EVIDENCE/D72-v4-real（01-now-real / 02-hover-preview）。
+边界：hover 只有最近一轮 assistant 输出（投影缓存没有完整 user 消息）；"在跑"取决于 openStep 投影写盘时机；
+演示图的 2/3/3 与项目名是示例数据，PAD 显示本机真实会话。
+判据：**现在页的数据必须来自真实 DSH home，不能只扫 PAD 实例；悬停预览只用盘上可复核的数据，不编造对话。**

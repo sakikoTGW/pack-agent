@@ -275,14 +275,22 @@ public partial class WorkbenchView : UserControl
                 if (_scope is null) _selected = "";
             }
 
-            if (_project is not null)
+            if (_adoptMode)
+            {
+                await LoadAdoptAsync(gen);
+            }
+            else if (_instMode && _scope is null)
+            {
+                // 实例清单只用 insts 本身，没有额外扫描。
+            }
+            else if (_project is not null)
             {
                 if (_scope is not null) await LoadScopeAsync(_scope, gen);
                 if (gen != _loadGen) return;
                 await LoadProjectAsync(_project, gen);
             }
-            else if (_scope is null) await LoadHomeAsync(insts, gen);
-            else await LoadScopeAsync(_scope, gen);
+            else if (_scope is not null) await LoadScopeAsync(_scope, gen);
+            else await LoadNowAsync(insts, gen);
             if (gen != _loadGen) return;
 
             PaintHeader();
@@ -594,6 +602,13 @@ public partial class WorkbenchView : UserControl
             }
         }
         catch { /* 发行号没装 / node 不可用：只显示已绑的 id */ }
+        try
+        {
+            _hubJobs = [.. _state.Launcher.ListJobs()
+                .Where(j => j.Status is "queued" or "running")
+                .Take(20)];
+        }
+        catch { _hubJobs = []; }
         if (gen != _loadGen) return;
         _projectProbe = probe;
         _projectProbeLoading = false;
@@ -724,6 +739,7 @@ public partial class WorkbenchView : UserControl
     {
         var proj = _project!;
         var inst = _scope;
+        HubAdoptBtn.Visibility = Visibility.Collapsed;
         var phase = inst is null ? new ProjectRun(proj.Id, RunPhase.Stopped, "") : _state.StatusOf(inst.Id);
         var run = inst is null ? null : _state.Running.FirstOrDefault(r => r.Entry.Instance == inst.Id);
 
@@ -754,12 +770,14 @@ public partial class WorkbenchView : UserControl
     void PaintProjectCards()
     {
         var proj = _project!;
-        // 排版对齐 D67 演示稿：启动占整行，preset/工作区/对话 一排，环境收尾（卡片高度跟内容走）。
-        CardHost.Children.Add(ProjectCard("启动", 3, ProjectRunCard(proj), "L.Play"));
-        CardHost.Children.Add(ProjectCard("agent preset", 1, ProjectPresetCard(proj), "L.Layers"));
+        // 原型 v4 的项目页：状态条 → 智能体团队 / 工作区 → 任务 / 能力 / 最近会话 → 配置与覆盖。
+        CardHost.Children.Add(ProjectStatusStrip());
+        CardHost.Children.Add(ProjectCard("智能体团队", 2, ProjectTeamCard(), "L.Hash"));
         CardHost.Children.Add(ProjectCard("工作区", 1, ProjectWorkspacesCard(proj), "L.Folder"));
-        CardHost.Children.Add(ProjectCard("对话", 1, ProjectDialogCard(), "L.Chat"));
-        CardHost.Children.Add(ProjectCard("环境", 1, ProjectEnvCard(), "L.Layers"));
+        CardHost.Children.Add(ProjectCard("任务", 1, ProjectTasksCard(), "L.Check"));
+        CardHost.Children.Add(ProjectCard("能力", 1, ProjectCapsCard(), "L.Package"));
+        CardHost.Children.Add(ProjectCard("最近会话", 1, ProjectRecentCard(), "L.Chat"));
+        CardHost.Children.Add(FullCard("配置与覆盖", ProjectConfigStrip(), "L.Sliders"));
     }
 
     /// <summary>项目页的卡：和 ScopeCard 同一套语言，但高度由内容决定（不硬撑 226）。</summary>
@@ -886,7 +904,7 @@ public partial class WorkbenchView : UserControl
         {
             actions.Children.Add(MiniButton("打开对话", "L.Chat",
                 (_, _) => OpenConversation(_scopeDialogs.FirstOrDefault()), primary: true));
-            var webUrl = facts?.PadUrl ?? LatestWebUrl(inst);
+            var webUrl = facts?.PadUrl ?? (inst is null ? null : LatestWebUrl(inst));
             if (!string.IsNullOrWhiteSpace(webUrl))
                 actions.Children.Add(MiniButton("打开界面", "L.External", (_, _) => Reveal.Url(webUrl)));
             else if (facts?.HasWindow == true)
@@ -1263,6 +1281,36 @@ public partial class WorkbenchView : UserControl
     void PaintTransition()
     {
         CardHost.Children.Clear();
+        if (_adoptMode)
+        {
+            CardHost.Children.Add(ScopeCard("读取中", 1, new TextBlock
+            {
+                Text = "正在扫本机 DSH home 里的工作区…",
+                Style = (Style)Application.Current.Resources["Muted"],
+                TextWrapping = TextWrapping.Wrap,
+            }, "L.Clock"));
+            return;
+        }
+        if (_instMode && _scope is null)
+        {
+            CardHost.Children.Add(ScopeCard("读取中", 1, new TextBlock
+            {
+                Text = "正在列实例…",
+                Style = (Style)Application.Current.Resources["Muted"],
+                TextWrapping = TextWrapping.Wrap,
+            }, "L.Clock"));
+            return;
+        }
+        if (InNowPage)
+        {
+            CardHost.Children.Add(ScopeCard("读取中", 1, new TextBlock
+            {
+                Text = "正在看谁在跑、谁在等…",
+                Style = (Style)Application.Current.Resources["Muted"],
+                TextWrapping = TextWrapping.Wrap,
+            }, "L.Clock"));
+            return;
+        }
         if (_project is not null)
         {
             CardHost.Children.Add(ScopeCard("读取中", 1, new TextBlock
@@ -1436,39 +1484,44 @@ public partial class WorkbenchView : UserControl
             _rail.HomePicked -= ShowHome;
             _rail.Picked -= ShowScope;
             _rail.ProjectPicked -= ShowProjectById;
+            _rail.SegmentChanged -= SegmentChanged;
+            _rail.AdoptClicked -= RailAdopt;
+            _rail.ImportClicked -= RailImport;
         }
         _rail = rail;
         _rail.HomePicked += ShowHome;
         _rail.Picked += ShowScope;
         _rail.ProjectPicked += ShowProjectById;
+        _rail.SegmentChanged += SegmentChanged;
+        _rail.AdoptClicked += RailAdopt;
+        _rail.ImportClicked += RailImport;
         if (_lastInsts is not null) FillRail(_lastInsts);
     }
 
-    /// <summary>侧栏按当前视角喂数据：项目页/主页 = 项目视角；实例页 = 实例视角（D66）。</summary>
+    /// <summary>侧栏按当前视角喂数据：现在/项目 = 项目视角；实例 = 实例清单（D69）。</summary>
     void FillRail(IReadOnlyList<Instance> insts)
     {
         if (_rail is null) return;
-        // 截图/直接进项目页时主页数据还没加载：项目列表便宜，就地补一次。
         if (_projects.Count == 0) _projects = new Projects(_state.Launcher).List();
+        if (_instMode)
+        {
+            _rail.FillInstancesV4(insts, _scope?.Id ?? _selected);
+            return;
+        }
         if (_project is not null)
         {
             _rail.FillProjects(ProjectRailRows(), _project.Id);
             return;
         }
-        if (_scope is not null)
-        {
-            _rail.Fill(insts, _scope.Id);
-            return;
-        }
-        if (_projects.Count > 0)
+        if (_adoptMode || InNowPage)
         {
             _rail.FillProjects(ProjectRailRows(), "");
             return;
         }
-        _rail.Fill(insts, "");
+        _rail.Fill(insts, _selected);
     }
 
-    /// <summary>项目行要的事实：工作区数、preset 数、在跑的 profile、状态灯。</summary>
+    /// <summary>项目行要的事实：工作区数、preset 数、在跑的 profile、右侧端口/上次。</summary>
     List<ProjectRail.ProjectRowData> ProjectRailRows()
     {
         var rows = new List<ProjectRail.ProjectRowData>();
@@ -1479,9 +1532,13 @@ public partial class WorkbenchView : UserControl
                 ? new ProjectRun(p.Id, RunPhase.Stopped, "")
                 : _state.StatusOf(inst.Id);
             var run = inst is null ? null : _state.Running.FirstOrDefault(r => r.Entry.Instance == inst.Id);
-            var meta = $"{p.Workspaces.Count} 工作区 · {p.Agents.Count} preset" +
-                       (run is not null ? " · " + run.Profile : "");
-            rows.Add(new ProjectRail.ProjectRowData(p.Id, p.Name, meta, phase.Live));
+            var meta = $"{p.Workspaces.Count} 工作区 · {p.Agents.Count} 智能体";
+            var right = run?.Entry.Port is { } port && port > 0
+                ? $"·{port}"
+                : p.LastRun is { Length: > 0 } last && DateTimeOffset.TryParse(last, out var t)
+                    ? "上次 " + t.LocalDateTime.ToString("HH:mm")
+                    : "";
+            rows.Add(new ProjectRail.ProjectRowData(p.Id, p.Name, meta, phase.Live, right));
         }
         return rows;
     }
@@ -1562,6 +1619,16 @@ public partial class WorkbenchView : UserControl
     void PaintCards(IReadOnlyList<Instance> insts)
     {
         CardHost.Children.Clear();
+        if (_adoptMode)
+        {
+            PaintAdoptCards();
+            return;
+        }
+        if (_instMode && _scope is null)
+        {
+            PaintInstanceCards(insts);
+            return;
+        }
         if (_project is not null)
         {
             PaintProjectCards();
@@ -1572,11 +1639,7 @@ public partial class WorkbenchView : UserControl
             PaintScopeCards();
             return;
         }
-        if (_projects.Count > 0)
-            CardHost.Children.Add(ScopeCard("项目", 2, ProjectAxisBody(), "L.Folder"));
-        foreach (var pref in Prefs())
-            CardHost.Children.Add(Card(pref, insts));
-        if (_editing) CardHost.Children.Add(AddTile());
+        PaintNowCards();
     }
 
     /// <summary>
@@ -1585,9 +1648,15 @@ public partial class WorkbenchView : UserControl
     /// </summary>
     void PaintHeader()
     {
+        if (_adoptMode) { PaintAdoptHeader(); return; }
+        if (_instMode && _scope is null) { PaintInstancesHeader(); return; }
+        if (InNowPage) { BackHomeBtn.Content = "主页"; PaintNowHeader(); return; }
+
         var scoped = _scope is not null;
+        HubAdoptBtn.Visibility = Visibility.Collapsed;
         if (_project is not null)
         {
+            BackHomeBtn.Content = "主页";
             ProjectHeader();
             return;
         }

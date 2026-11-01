@@ -17,6 +17,7 @@ public partial class DownloadView : UserControl, IRefreshable
     bool _pickingTarget;
     MarketRow? _detail;
     MarketPage? _lastPage;
+    string _tag = "";
     PluginCatalog? _catalog;
     string _detailHome = "";
     string _chip = "全部";
@@ -637,7 +638,15 @@ public partial class DownloadView : UserControl, IRefreshable
             IconPath = row.IconPath,
             Latest = "",
         };
-        var win = new PluginDetailWindow(plugin, () => { })
+        var win = new PluginDetailWindow(
+            plugin,
+            install: null,
+            versions: async () =>
+            {
+                var cat = await Market.FetchPackument(row.Name, CancellationToken.None);
+                return cat.Versions.Count > 0 ? cat.Versions : cat.Files.Select(f => f.Version).ToList();
+            },
+            installVersion: _ => { })
         {
             ShowInTaskbar = false,
             Left = -20000,
@@ -649,7 +658,10 @@ public partial class DownloadView : UserControl, IRefreshable
             {
                 try
                 {
-                    await Task.WhenAny(win.ShotsLoaded, Task.Delay(TimeSpan.FromSeconds(8)));
+                    var wait = Task.WhenAll(
+                        Task.WhenAny(win.ShotsLoaded, Task.Delay(TimeSpan.FromSeconds(8))),
+                        Task.WhenAny(win.VersionsLoaded, Task.Delay(TimeSpan.FromSeconds(8))));
+                    await wait;
                     win.RenderTo(path);
                 }
                 finally { win.Close(); }
@@ -658,9 +670,40 @@ public partial class DownloadView : UserControl, IRefreshable
         win.Show();
     }
 
+    bool _tagBuilding;
+    void BuildTagChoices(List<MarketRow> rows)
+    {
+        _tagBuilding = true;
+        try
+        {
+            var tags = rows.Select(r => r.TagText)
+                .Where(t => t.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
+                .Take(8)
+                .ToList();
+            var items = new List<object> { "全部" };
+            items.AddRange(tags);
+            TagBox.ItemsSource = items;
+            TagBox.SelectedItem = _tag.Length > 0 && tags.Contains(_tag, StringComparer.OrdinalIgnoreCase)
+                ? tags.First(t => string.Equals(t, _tag, StringComparison.OrdinalIgnoreCase))
+                : "全部";
+        }
+        finally { _tagBuilding = false; }
+    }
+
+    void Tag_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_tagBuilding) return;
+        _tag = TagBox.SelectedItem as string ?? "";
+        if (_tag == "全部") _tag = "";
+        if (_lastPage is not null) Paint(_lastPage);
+    }
+
     List<MarketRow> ApplyStoreControls(List<MarketRow> rows)
     {
         IEnumerable<MarketRow> q = rows;
+        if (_tag.Length > 0) q = q.Where(r => string.Equals(r.TagText, _tag, StringComparison.OrdinalIgnoreCase));
         if (InstalledOnly.IsChecked == true && TargetInstance.SelectedItem is Instance inst)
         {
             var have = _state.Launcher.ListBundles(inst)
@@ -700,6 +743,7 @@ public partial class DownloadView : UserControl, IRefreshable
     {
         _from = page.From;
         _lastPage = page;
+        BuildTagChoices(page.Rows);
         var shown = ApplyStoreControls(page.Rows);
         foreach (var r in shown) r.Favorite = Favorites.IsFavorite(_state.Launcher.Root, r.Name);
         ResultList.ItemsSource = shown;
@@ -801,7 +845,15 @@ public partial class DownloadView : UserControl, IRefreshable
             Latest = "",
         };
         // 商店详情也用 App Store 式窗口；安装走现有 InstallFrom（默认装最新版本）
-        var win = new PluginDetailWindow(plugin, () => _ = InstallFrom(row, row.Version, null))
+        var win = new PluginDetailWindow(
+            plugin,
+            install: null,
+            versions: async () =>
+            {
+                var cat = await Market.FetchPackument(row.Name, CancellationToken.None);
+                return cat.Versions.Count > 0 ? cat.Versions : cat.Files.Select(f => f.Version).ToList();
+            },
+            installVersion: version => _ = InstallFrom(row, version, null))
         {
             Owner = _win,
         };

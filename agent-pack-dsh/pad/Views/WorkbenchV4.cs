@@ -84,7 +84,6 @@ public partial class WorkbenchView
     async Task LoadNowAsync(IReadOnlyList<Instance> insts, int gen)
     {
         var launcher = _state.Launcher;
-        var settings = _state.Settings;
         var projects = new Projects(launcher).List();
 
         var rows = await Task.Run(() =>
@@ -92,38 +91,11 @@ public partial class WorkbenchView
             var list = new List<NowItem>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            void Add(NowSession s, string home, Project bound)
-            {
-                if (!seen.Add(s.Id)) return;
-                var hot = s.LastAt is { } at && (DateTimeOffset.Now - at).TotalSeconds < 120;
-                var state = s.Waiting && !s.Open ? StateWait : (s.Open || hot ? StateRun : StateDone);
-                var leaf = string.IsNullOrWhiteSpace(s.Cwd)
-                    ? ""
-                    : Path.GetFileName(s.Cwd.TrimEnd('\\', '/'));
-                var what = s.Tool is { Length: > 0 } tool
-                    ? "正在运行 " + tool
-                    : !string.IsNullOrWhiteSpace(s.Draft)
-                        ? ShortDraft(s.Draft)
-                        : s.Open ? "正在改文件 / 跑测试" : "已收尾";
-                list.Add(new NowItem(
-                    bound.Id, bound.Name, s.Title,
-                    $"{leaf} · {s.Preset} · {what}", state, s.LastAt,
-                    s.Id, s.Preset, s.Draft, s.Tool, s.Turns, s.Cwd, home));
-            }
-
             // 现在页只读 PAD 项目实例的会话：项目 = 一个实例/home，隔离由 home 提供。
             foreach (var p in projects)
             {
-                var inst = ResolveProjectInstance(p);
-                if (inst is null) continue;
-                foreach (var s in NowProbe.Read(inst.Home, 40))
-                {
-                    // 只留落在项目工作区里的会话；实例 home 里别处的会话不算这个项目。
-                    var mine = p.Workspaces.Any(w =>
-                        !string.IsNullOrWhiteSpace(s.Cwd)
-                        && s.Cwd.StartsWith(w, StringComparison.OrdinalIgnoreCase));
-                    if (mine) Add(s, inst.Home, p);
-                }
+                foreach (var item in CollectProjectNow(p, requireWorkspaceMatch: true))
+                    if (seen.Add(item.SessionId)) list.Add(item);
             }
             return list;
         });
@@ -134,6 +106,44 @@ public partial class WorkbenchView
         IReadOnlyList<JobRecord> jobs = [];
         try { jobs = launcher.ListJobs(); } catch { }
         _hubJobs = [.. jobs.Where(j => j.Status is "queued" or "running").Take(20)];
+    }
+
+    /// <summary>一个项目的「现在」：只读该项目实例 home 的投影缓存，留下落在项目工作区里的会话。</summary>
+    List<NowItem> CollectProjectNow(Project proj, bool requireWorkspaceMatch = true)
+    {
+        var inst = ResolveProjectInstance(proj);
+        if (inst is null) return [];
+        var list = new List<NowItem>();
+        foreach (var s in NowProbe.Read(inst.Home, 40))
+        {
+            if (requireWorkspaceMatch)
+            {
+                var mine = proj.Workspaces.Any(w =>
+                    !string.IsNullOrWhiteSpace(s.Cwd)
+                    && s.Cwd.StartsWith(w, StringComparison.OrdinalIgnoreCase));
+                if (!mine) continue;
+            }
+            list.Add(MakeNowItem(s, inst.Home, proj));
+        }
+        return list;
+    }
+
+    static NowItem MakeNowItem(NowSession s, string home, Project bound)
+    {
+        var hot = s.LastAt is { } at && (DateTimeOffset.Now - at).TotalSeconds < 120;
+        var state = s.Waiting && !s.Open ? StateWait : (s.Open || hot ? StateRun : StateDone);
+        var leaf = string.IsNullOrWhiteSpace(s.Cwd)
+            ? ""
+            : Path.GetFileName(s.Cwd.TrimEnd('\\', '/'));
+        var what = s.Tool is { Length: > 0 } tool
+            ? "正在运行 " + tool
+            : !string.IsNullOrWhiteSpace(s.Draft)
+                ? ShortDraft(s.Draft)
+                : s.Open ? "正在改文件 / 跑测试" : "已收尾";
+        return new NowItem(
+            bound.Id, bound.Name, s.Title,
+            $"{leaf} · {s.Preset} · {what}", state, s.LastAt,
+            s.Id, s.Preset, s.Draft, s.Tool, s.Turns, s.Cwd, home);
     }
 
     void ShowProjectFromNow(NowItem item)
@@ -372,6 +382,7 @@ public partial class WorkbenchView
         };
         row.MouseLeftButtonUp += (_, _) =>
         {
+            if (_project is not null) { OpenProjectWindow(); return; }
             if (!string.IsNullOrWhiteSpace(item.ProjectId)) { ShowProjectFromNow(item); return; }
             _host.Toast("这条会话不在项目工作区里");
         };

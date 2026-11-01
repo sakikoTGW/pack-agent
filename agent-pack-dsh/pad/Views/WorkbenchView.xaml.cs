@@ -605,7 +605,9 @@ public partial class WorkbenchView : UserControl
                 .Take(20)];
         }
         catch { _hubJobs = []; }
+        var nowRows = await Task.Run(() => CollectProjectNow(proj));
         if (gen != _loadGen) return;
+        _nowItems = nowRows;
         _projectProbe = probe;
         _projectProbeLoading = false;
         PaintHeader();
@@ -765,14 +767,22 @@ public partial class WorkbenchView : UserControl
     void PaintProjectCards()
     {
         var proj = _project!;
-        // 原型 v4 的项目页：状态条 → 智能体团队 / 工作区 → 任务 / 能力 / 最近会话 → 配置与覆盖。
-        CardHost.Children.Add(ProjectStatusStrip());
-        CardHost.Children.Add(ProjectCard("智能体团队", 2, ProjectTeamCard(), "L.Hash"));
-        CardHost.Children.Add(ProjectCard("工作区", 1, ProjectWorkspacesCard(proj), "L.Folder"));
-        CardHost.Children.Add(ProjectCard("任务", 1, ProjectTasksCard(), "L.Check"));
-        CardHost.Children.Add(ProjectCard("能力", 1, ProjectCapsCard(), "L.Package"));
-        CardHost.Children.Add(ProjectCard("最近会话", 1, ProjectRecentCard(), "L.Chat"));
-        CardHost.Children.Add(FullCard("配置与覆盖", ProjectConfigStrip(), "L.Sliders"));
+        // 打开一个项目 = 看这个项目的「现在」：三格计数 + 三段流（和全局现在同一套组件）。
+        if (_nowItems.Count == 0)
+        {
+            CardHost.Children.Add(ScopeCard("这个项目还没有会话", 1, new TextBlock
+            {
+                Text = "点右上角「去启动」跑一次，这里就会出现这个项目的 agent 状态。",
+                Style = (Style)Application.Current.Resources["Muted"],
+                TextWrapping = TextWrapping.Wrap,
+            }, "L.Chat"));
+            return;
+        }
+        CardHost.Children.Add(NowCountStrip());
+        CardHost.Children.Add(NowSection(StateWait, "等你输入"));
+        CardHost.Children.Add(NowSection(StateRun, "在跑"));
+        CardHost.Children.Add(NowSection(StateDone, "刚完成"));
+        _ = proj;
     }
 
     /// <summary>项目页的卡：和 ScopeCard 同一套语言，但高度由内容决定（不硬撑 226）。</summary>

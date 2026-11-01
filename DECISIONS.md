@@ -1064,3 +1064,14 @@ GIF 用 Python Pillow 合成；脚本不进仓库。
 - 项目没会话时现在页为空 = 正确状态（这个项目还没跑过 DSH），不是 bug。
 验证：build 0/0；`pad-project` 绿；实拍 EVIDENCE/D73-cut-adopt/01-now.png。
 判据：**隔离在 home，不在标签；现在页只回答"PAD 项目里的 agent 现在是什么状态"，不冒充全局 DSH 视图。**
+
+## D74 · 2026-11-01 · 打开项目 = 该项目的「现在」
+用户：「每个项目打开应该是类似左边的」（原型 v4 左 PAD 面板的现在页）。
+- `PaintProjectCards` 从卡片堆（智能体团队/工作区/任务/能力/最近会话/配置）改为
+  和全局现在同款：**三格计数 + 三段流 + 彩色块 + hover 预览**；
+- 数据 `LoadProjectAsync → CollectProjectNow(proj)`：只读该项目实例 home 的投影缓存，
+  且只留 cwd 落在项目 `Workspaces` 里的会话（与全局现在同一过滤口径）；
+- 点会话行 = 聚焦该项目的 DSH 窗口；无会话时给空态卡（去启动），不假装有数据；
+- 顶部项目页头保留（名字/状态/主页/关系/版本设置/停止/编辑）。
+验证：build 0/0；pad-project 绿；实拍 EVIDENCE/D74-project-now（01 全局现在 / 02 项目现在）。
+判据：**项目页和现在页共用同一套"状态编排"组件，区别只是 scope（全部项目 vs 单个项目）。**

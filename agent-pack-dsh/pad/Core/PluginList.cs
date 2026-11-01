@@ -67,7 +67,12 @@ public sealed class PluginRow : Observable
     public bool Updatable => !Trial && Latest.Length > 0 && Latest != Version;
     public bool HasDescription => Description.Length > 0;
     public string Detail => TrialRec?.Detail ?? Description;
-    public string SubLine => Description.Length > 0 ? Description : PackageDir;
+    /// <summary>第二行给简介；包没写简介就说清楚，不再拿目录顶替。</summary>
+    public string SubLine => Description.Length > 0 ? Description : "包里没写简介。";
+
+    public bool ShowUpdateButton => Updatable;
+    public bool ShowRefreshButton => !Trial && !Updatable;
+    public string UpdateText => Latest.Length > 0 ? $"{VersionText} → {Latest}" : "可更新";
 
     public string Monogram
     {
@@ -85,7 +90,7 @@ public sealed class PluginRow : Observable
         {
             var tags = new List<string>();
             if (Trial) tags.Add("试验");
-            if (Updatable) tags.Add("可更新");
+            // 「可更新」不再混在普通标签里：行内单独一枚醒目徽标 + 更新按钮。
             foreach (var k in Keywords)
                 if (!tags.Exists(t => t.Equals(k, StringComparison.OrdinalIgnoreCase)))
                     tags.Add(k);

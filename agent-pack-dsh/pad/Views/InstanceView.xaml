@@ -289,7 +289,20 @@
                                    Text="{Binding Spec}" ToolTip="{Binding Spec}" />
                         <ContentControl Style="{StaticResource QuantMono}" Margin="8,1,0,0"
                                         v:Ico.Of="{StaticResource I.Mod}"
-                                        Content="{Binding VersionLine}" />
+                                        Content="{Binding VersionLine}"
+                                        Visibility="{Binding Updatable, Converter={StaticResource B2VNot}}" />
+                        <!-- 可更新：醒目的实色徽标，直接写版本变化 -->
+                        <Border Margin="8,0,0,0" CornerRadius="6" Padding="7,3,8,3"
+                                VerticalAlignment="Center" Background="{StaticResource Accent}"
+                                Visibility="{Binding Updatable, Converter={StaticResource B2V}}">
+                          <StackPanel Orientation="Horizontal">
+                            <v:Ico Glyph="{StaticResource I.Refresh}" Height="10"
+                                   Foreground="{StaticResource TextOnAccent}" />
+                            <TextBlock Text="{Binding UpdateText}" Margin="4,0,0,0"
+                                       FontSize="{StaticResource FsMicro}" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextOnAccent}" />
+                          </StackPanel>
+                        </Border>
                       </StackPanel>
                       <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                         <ItemsControl ItemsSource="{Binding Tags}">
@@ -319,9 +332,14 @@
                               ToolTip="打开该插件目录">
                         <v:Ico Glyph="{StaticResource I.Folder}" Height="12" />
                       </Button>
+                      <Button Style="{StaticResource BtnPrimary}" Content="更新" Height="26"
+                              Padding="11,0" FontSize="{StaticResource FsSmall}" Margin="4,0,0,0"
+                              Click="PluginUpdate_Click" Tag="{Binding}"
+                              ToolTip="dsh plugin --profile update"
+                              Visibility="{Binding ShowUpdateButton, Converter={StaticResource B2V}}" />
                       <Button Style="{StaticResource IcoBtn}" Click="PluginUpdate_Click" Tag="{Binding}"
                               ToolTip="dsh plugin --profile update"
-                              Visibility="{Binding Trial, Converter={StaticResource B2VNot}}">
+                              Visibility="{Binding ShowRefreshButton, Converter={StaticResource B2V}}">
                         <v:Ico Glyph="{StaticResource I.Refresh}" Height="12" />
                       </Button>
                       <Button Style="{StaticResource IcoBtn}" Click="PluginRemove_Click" Tag="{Binding}"

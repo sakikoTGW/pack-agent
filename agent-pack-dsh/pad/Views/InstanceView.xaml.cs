@@ -897,6 +897,20 @@ public partial class InstanceView : UserControl, IRefreshable
         TrialEmpty.Text = "没有试验中的插件";
 
         var names = _state.Launchables.ToList();
+        if (names.Count == 0)
+        {
+            // 收编进来的实例（本机 DSH）没有 Launchables 清单；profile 直接从 home/profiles 读。
+            var vms = _state.Launcher.Profiles(inst).Select(p => (ProfileVm)new ProfileVm(inst, p)).ToList();
+            if (vms.Count > 0)
+            {
+                PluginProfile.ItemsSource = vms;
+                names = vms;
+            }
+        }
+        else if (!ReferenceEquals(PluginProfile.ItemsSource, _state.Launchables))
+        {
+            PluginProfile.ItemsSource = _state.Launchables;
+        }
         var keep = PluginProfile.SelectedItem as ProfileVm;
         var pick = keep is not null && names.Any(n => n.Name == keep.Name) ? keep
             : _state.SelectedProfile ?? names.FirstOrDefault();

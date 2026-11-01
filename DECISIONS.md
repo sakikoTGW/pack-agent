@@ -1120,3 +1120,10 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 - 仍显示「未装到磁盘」的 `@deepseek-ai/dsh-experimental-*` 只在 DSH 桌面端 app.asar 里，下一步从桌面端解析。
 验证：build 0/0；实拍 EVIDENCE/D83-instance-plugins。
 判据：**扫描按“包在哪里”解析，不按“包叫什么”；数据没有的东西就如实显示没有。**
+
+## D84 · 2026-11-01 · 插件行：可更新醒目 + 第二行改简介
+- 「可更新」从普通标签升级为行内实色徽标「↻ 旧版本 → 新版本」+ 实心「更新」按钮；不可更新只留灰刷新图标。
+- 第二行 = 插件简介；没有简介写「包里没写简介。」，不再显示 PackageDir（路径留在打开目录/详情里）。
+- 修收编实例的插件页：`Launchables` 为空时 profile 下拉回退 `Launcher.Profiles(inst)`（通用），本机 DSH 能列出 12 个插件。
+验证：build 0/0；pad-window / pad-pack 绿；实拍 EVIDENCE/D84-plugin-update-ui。
+判据：**插件行的信息顺序是 名字 → 版本/可更新 → 一句话简介；路径只在需要时给，不占正文。**

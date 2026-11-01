@@ -75,7 +75,7 @@
           <Button x:Name="VersionsBtn" DockPanel.Dock="Right" Content="版本设置"
                   Style="{StaticResource BtnSm}" Height="32" Padding="14,0"
                   Click="Versions_Click" Margin="0,0,10,0" Visibility="Collapsed" />
-          <Button x:Name="BundlesBtn" DockPanel.Dock="Right" Content="实例与组合包"
+          <Button x:Name="BundlesBtn" DockPanel.Dock="Right" Content="实例与整合包"
                   Style="{StaticResource BtnGhost}" Height="32" Padding="14,0"
                   Click="OpenBundles_Click" Margin="0,0,10,0" />
           <Button x:Name="RelationsBtn" DockPanel.Dock="Right" Content="关系"

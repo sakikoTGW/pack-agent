@@ -16,7 +16,7 @@ const EMPTY: Record<string, EmptyState> = {
     action: 'packagent dsh launcher instance create <name>',
   },
   'plugin.list': {
-    title: '该 profile 还没有组合包',
+    title: '该 profile 还没有整合包',
     hint: '对该实例 plugin add',
     action: 'packagent dsh launcher plugin add <id> <spec>',
   },

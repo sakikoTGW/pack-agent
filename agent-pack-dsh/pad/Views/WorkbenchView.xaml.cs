@@ -151,7 +151,7 @@ public partial class WorkbenchView : UserControl
         StyleHeaderButton(AddBtn, "+ 卡片", "L.Plus");
         StyleHeaderButton(EditBtn, "编辑", "L.Pencil");
         StyleHeaderButton(VersionsBtn, "版本设置", "L.Sliders");
-        StyleHeaderButton(BundlesBtn, "实例与组合包", "L.Package");
+        StyleHeaderButton(BundlesBtn, "实例与整合包", "L.Package");
         StyleHeaderButton(RelationsBtn, "关系", "L.Share");
         SetRunButton(canStop: false);
     }
@@ -237,7 +237,7 @@ public partial class WorkbenchView : UserControl
     }
 
     void OpenBundles_Click(object sender, RoutedEventArgs e) =>
-        _host.ShowInner("bundles", "实例与组合包", "manage");
+        _host.ShowInner("bundles", "实例与整合包", "manage");
 
     void OpenRelations_Click(object sender, RoutedEventArgs e) =>
         _host.ShowRelations();
@@ -541,7 +541,7 @@ public partial class WorkbenchView : UserControl
         _selected = inst.Id;
         _open = null;
         _heroAnimated = false;
-        _state.SelectedInstance = inst; // 唯一真源：实例与组合包 / 版本设置 跟着走
+        _state.SelectedInstance = inst; // 唯一真源：实例与整合包 / 版本设置 跟着走
         PaintHeader();
         PaintTransition(); // 别把上一个 scope 的卡留在标题下面
         if (_lastInsts is not null) FillRail(_lastInsts);
@@ -842,7 +842,7 @@ public partial class WorkbenchView : UserControl
         var stack = new StackPanel();
         var grid = new UniformGrid { Columns = 2, Rows = 2 };
         grid.Children.Add(Stat("内核", _scope?.Dsh.Version ?? _project?.Dsh.Version ?? "—", "L.Cpu", mono: true));
-        grid.Children.Add(Stat("组合包", _scopeBundles.Count == 0 ? "—" : _scopeBundles.Count.ToString(), "L.Package"));
+        grid.Children.Add(Stat("整合包", _scopeBundles.Count == 0 ? "—" : _scopeBundles.Count.ToString(), "L.Package"));
         grid.Children.Add(Stat("会话", (_scopeInspect?.Sessions ?? 0).ToString(), "L.Chat"));
         grid.Children.Add(Stat("整合包", PacksStat(), "L.Layers"));
         stack.Children.Add(grid);
@@ -1751,7 +1751,7 @@ public partial class WorkbenchView : UserControl
     /// <summary>
     /// 项目页的排版（D57）：
     ///   运行（整行）→ 对话 + 项目 → 环境（整行）。
-    /// 人最想先知道的是"在不在跑、跑在哪、在干什么"；内核/组合包/工具调用这些细节，
+    /// 人最想先知道的是"在不在跑、跑在哪、在干什么"；内核/整合包/工具调用这些细节，
     /// 收进第三行的「环境」卡，不再各占一张卡。
     /// </summary>
     void PaintScopeCards()
@@ -1879,13 +1879,13 @@ public partial class WorkbenchView : UserControl
         Background = brush,
     };
 
-    /// <summary>环境：内核 / 组合包 / 整合包 / 会话 / 上下文 / 工具调用——技术细节，第三行。</summary>
+    /// <summary>环境：内核 / 整合包 / 整合包 / 会话 / 上下文 / 工具调用——技术细节，第三行。</summary>
     UIElement EnvCard(Instance inst)
     {
         var stack = new StackPanel();
         var grid = new UniformGrid { Columns = 3, Rows = 2 };
         grid.Children.Add(Stat("内核", inst.Dsh.Version.Length == 0 ? "—" : inst.Dsh.Version, "L.Cpu", mono: true));
-        grid.Children.Add(Stat("组合包", _scopeBundles.Count == 0 ? "—" : _scopeBundles.Count.ToString(), "L.Package"));
+        grid.Children.Add(Stat("整合包", _scopeBundles.Count == 0 ? "—" : _scopeBundles.Count.ToString(), "L.Package"));
         grid.Children.Add(Stat("整合包", PacksStat(), "L.Layers"));
         grid.Children.Add(Stat("会话", (_scopeInspect?.Sessions ?? 0).ToString(), "L.Chat"));
         grid.Children.Add(Stat("上下文", ContextPercentText(), "L.Gauge"));

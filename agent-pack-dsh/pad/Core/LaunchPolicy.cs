@@ -484,12 +484,12 @@ public static class LaunchPolicy
         var s = spec.ToLowerInvariant();
         if (s.Contains("dsh-tui")) return "TUI";
         if (s.Contains("pad-gateway") || s.Contains("host-apiproxy")) return "管理口";
-        return "组合包";
+        return "整合包";
     }
 
     /// <summary>
     /// Profile-template layers, TUI, and the management port. These stay on
-    /// the manage page as 组合包. Version-settings 插件 lists everything else.
+    /// the manage page as 整合包. Version-settings 插件 lists everything else.
     /// </summary>
     public static bool IsProfileLayer(string spec)
     {

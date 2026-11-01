@@ -797,7 +797,7 @@ public partial class SettingsView : UserControl, IRefreshable
 
     void PickTui_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "dsh-tui 组合包" };
+        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "dsh-tui 整合包" };
         if (dlg.ShowDialog() != true) return;
         var dir = dlg.FolderName;
         var nested = Path.Combine(dir, "@deepseek-harness-tui", "dsh-tui");

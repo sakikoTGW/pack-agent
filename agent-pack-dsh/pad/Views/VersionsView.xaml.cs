@@ -94,7 +94,7 @@ public partial class VersionsView : UserControl, IRefreshable
             _state.Launcher.PinInstance(inst.Id, choice.Release.Version);
             _state.Reload();
             SyncPinCombo();
-            _win.Toast($"已改钉到 {choice.Version}（组合包未验证）");
+            _win.Toast($"已改钉到 {choice.Version}（整合包未验证）");
         }
         catch (Exception ex) { _win.Toast(PadError.Describe(ex), bad: true); }
     }
@@ -764,7 +764,7 @@ public partial class VersionsView : UserControl, IRefreshable
         {
             _state.Launcher.PinInstance(inst.Id, pick);
             _state.Reload();
-            _win.Toast($"已改钉到 {pick}（组合包未验证）");
+            _win.Toast($"已改钉到 {pick}（整合包未验证）");
         }
         catch (Exception ex) { _win.Toast(PadError.Describe(ex), bad: true); }
     }

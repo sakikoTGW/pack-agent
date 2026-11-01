@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bun
+#!/usr/bin/env bun
 /**
  * PAD 窗口这一层：空状态、拖 zip、web 不卡死、收编/崩溃/升级分开。
  * 对照源码，不启 WPF。
@@ -350,7 +350,7 @@ if (!read('Views/ManageView.xaml.cs').includes('PluginOp'))
   fail('管理页更新不走 dsh plugin --profile update')
 if (!read('Views/ManageView.xaml.cs').includes('LoadBundles'))
   fail('没启动时管理页也不列出 TUI / 组合包')
-if (!read('Views/ManageView.xaml.cs').includes('组合包更新不需要管理口'))
+if (!read('Views/ManageView.xaml.cs').includes('看不到正在聊的会话'))
   fail('没有管理口时人不知道还能更新 TUI')
 if (!read('Core/Cli.cs').includes('case "plugin"'))
   fail('pad cli 不能 plugin list/update，管理页和脚本会对不上')

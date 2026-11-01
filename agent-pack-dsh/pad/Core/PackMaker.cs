@@ -5,7 +5,7 @@ namespace Pad.Core;
 
 /// <summary>
 /// 制作整合包。包本身由 Go 写的 <c>packmaker</c> 生成（stdlib zip + 严格校验）：
-/// 至少一个插件（组合包 spec），其余结构勾了才写。PAD 只负责收集字段、调它、报错。
+/// 至少一个插件（整合包 spec），其余结构勾了才写。PAD 只负责收集字段、调它、报错。
 /// </summary>
 public static class PackMaker
 {
@@ -17,7 +17,7 @@ public static class PackMaker
         /// <summary>DSH 发行号（必填；npm 没有这号 import 会 PA012）。</summary>
         public string Kernel { get; set; } = "";
         public string Profile { get; set; } = "web";
-        /// <summary>组合包 spec 列表；和 LocalPlugins 合计至少一个。</summary>
+        /// <summary>整合包 spec 列表；和 LocalPlugins 合计至少一个。</summary>
         public List<string> Plugins { get; set; } = [];
         /// <summary>没上架 npm 的插件：目录整个塞进包里（清单里带 local 指路）。</summary>
         public List<LocalPlugin> LocalPlugins { get; set; } = [];

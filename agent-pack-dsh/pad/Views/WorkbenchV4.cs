@@ -68,7 +68,7 @@ public partial class WorkbenchView
 
     void BackToNow_Click(object sender, RoutedEventArgs e) => ShowHubNow();
 
-    void RailImport() => _host.ShowInner("bundles", "实例与组合包", "manage");
+    void RailImport() => _host.ShowInner("bundles", "实例与整合包", "manage");
 
     void SegmentChanged(bool instances)
     {
@@ -77,7 +77,7 @@ public partial class WorkbenchView
     }
 
     void ImportPack_Click(object sender, RoutedEventArgs e) =>
-        _host.ShowInner("bundles", "实例与组合包", "manage");
+        _host.ShowInner("bundles", "实例与整合包", "manage");
 
     // ---- 首页：现在（D69）---------------------------------------------
 
@@ -803,14 +803,14 @@ public partial class WorkbenchView
         return stack;
     }
 
-    /// <summary>能力：这个实例的插件（组合包 spec）。</summary>
+    /// <summary>能力：这个实例的插件（整合包 spec）。</summary>
     UIElement ProjectCapsCard()
     {
         var stack = new StackPanel();
         var bundles = _scopeBundles;
         stack.Children.Add(new TextBlock
         {
-            Text = bundles.Count == 0 ? "这个实例还没装组合包" : $"插件 {bundles.Count} · 整合包 {_scopePacks.Count}",
+            Text = bundles.Count == 0 ? "这个实例还没装整合包" : $"插件 {bundles.Count} · 整合包 {_scopePacks.Count}",
             FontSize = 9.5, Foreground = Muted, Margin = new Thickness(0, 0, 0, 8),
         });
         var wrap = new WrapPanel();

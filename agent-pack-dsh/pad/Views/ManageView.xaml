@@ -36,18 +36,31 @@
                  ItemsSource="{Binding Instances}" SelectionChanged="Inst_Changed">
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <StackPanel local:Fx.Enter="row" Orientation="Horizontal">
+              <DockPanel local:Fx.Enter="row" LastChildFill="True">
                 <v:InstMark Width="28" Height="28" Margin="0,0,10,0" VerticalAlignment="Center"
-                           DataContext="{Binding}" />
+                           DockPanel.Dock="Left" DataContext="{Binding Inst}" />
+                <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" Margin="8,0,0,0"
+                           FontSize="{StaticResource FsMicro}" Text="{Binding StateText}">
+                  <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                      <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding Live}" Value="True">
+                          <Setter Property="Foreground" Value="{StaticResource Accent}" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </TextBlock.Style>
+                </TextBlock>
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock FontSize="{StaticResource FsBody}" FontWeight="SemiBold"
                              Foreground="{StaticResource TextPrimary}"
                              Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
                   <TextBlock Style="{StaticResource Mono}" FontSize="{StaticResource FsMicro}"
                              Foreground="{StaticResource TextMuted}" Margin="0,3,0,0"
-                             Text="{Binding Dsh.Version}" />
+                             Text="{Binding Version}" />
                 </StackPanel>
-              </StackPanel>
+              </DockPanel>
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
@@ -128,11 +141,17 @@
               <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <v:Ico Glyph="{StaticResource I.Mod}" Height="11" Margin="0,1,6,0"
                        Foreground="{StaticResource TextMuted}" />
-                <TextBlock Text="组合包" Style="{StaticResource Label}" VerticalAlignment="Center" />
+                <TextBlock Text="整合包" Style="{StaticResource Label}" VerticalAlignment="Center" />
               </StackPanel>
-              <ComboBox x:Name="BundleProfile" Width="160" Height="28"
-                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                        SelectionChanged="BundleProfile_Changed" />
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button x:Name="BundleImportBtn" Style="{StaticResource Btn}" Content="装整合包…"
+                        Click="BundleImport_Click" Margin="0,0,8,0"
+                        ToolTip="选 .pack.zip / .pack.json / .pinst.zip，装进这个实例"
+                        v:Ico.Of="{StaticResource I.Pack}" />
+                <ComboBox x:Name="BundleProfile" Width="160" Height="28"
+                          VerticalAlignment="Center"
+                          SelectionChanged="BundleProfile_Changed" />
+              </StackPanel>
             </Grid>
 
             <TextBlock x:Name="BundleEmpty" Style="{StaticResource Muted}" Margin="0,0,0,14"
@@ -186,7 +205,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
-              <TextBox Grid.Column="0" x:Name="BundleSpec" Tag="npm 包名或本地路径"
+              <TextBox Grid.Column="0" x:Name="BundleSpec" Tag="整合包（npm 包名 / 本地路径）"
                        FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}" />
               <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
                 <Button x:Name="BundleAddBtn" Style="{StaticResource Btn}" Content="添加"

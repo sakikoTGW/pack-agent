@@ -89,7 +89,7 @@ public static class InstIcon
     }
 
     /// <summary>
-    /// 侧栏 / 卡片 / 关系图共用的一枚：整合包图 → 载体图标（TUI/桌面端组合包自己的图）。
+    /// 侧栏 / 卡片 / 关系图共用的一枚：整合包图 → 载体图标（TUI/桌面端整合包自己的图）。
     /// null = 调用方自己兜底（鲸鱼或状态点）。项目 logo 不在候选里——它可能是字母（D38）。
     /// </summary>
     public static string? MarkFile(Instance inst)

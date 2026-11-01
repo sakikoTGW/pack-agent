@@ -9,7 +9,7 @@ public readonly record struct PackageMeta(string Version, string Description, Li
 /// <summary>
 /// One row on the version-settings plugin list. Counterpart of a PCL Mod row:
 /// an extra <c>dsh plugin</c> package or a this-run trial, not a profile-layer
-/// 组合包 and not an 整合包. Search uses package.json description / keywords.
+/// 整合包 and not an 整合包. Search uses package.json description / keywords.
 /// </summary>
 public sealed class PluginRow : Observable
 {

@@ -252,7 +252,7 @@
                   <ColumnDefinition Width="120" />
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="profile" Style="{StaticResource Label}" VerticalAlignment="Center" ToolTip="这个 --profile 决定叠哪些组合包；形态由它体现（web → 网页端）" />
+                <TextBlock Text="profile" Style="{StaticResource Label}" VerticalAlignment="Center" ToolTip="这个 --profile 决定叠哪些整合包；形态由它体现（web → 网页端）" />
                 <TextBlock Grid.Column="1" x:Name="DshTuiLine" Style="{StaticResource Mono}"
                            TextWrapping="Wrap" />
               </Grid>
@@ -268,19 +268,26 @@
                 <Button Grid.Column="2" Style="{StaticResource Btn}" Content="浏览" Margin="8,0,0,0"
                         Click="BrowseDshHome_Click" v:Ico.Of="{StaticResource I.Folder}" />
               </Grid>
-              <Grid Height="28" Margin="0,0,0,10">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="120" />
-                  <ColumnDefinition Width="*" />
-                  <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="命令覆盖" Style="{StaticResource Label}" VerticalAlignment="Center" ToolTip="留空 = 用发行号里的 lib/bin.js；要指到桌面端/npx 那份时才填" />
-                <TextBox Grid.Column="1" x:Name="DshCliBox" Height="28" LostFocus="Launch_Save"
-                         FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
-                         ToolTip="指向 dsh 的 lib/bin.js。留空则用发行号里的那份。app.asar 内的路径也可以。" />
-                <Button Grid.Column="2" Style="{StaticResource Btn}" Content="浏览" Margin="8,0,0,0"
-                        Click="BrowseDshCli_Click" v:Ico.Of="{StaticResource I.Folder}" />
-              </Grid>
+              <StackPanel Margin="0,0,0,10">
+                <Grid Height="28">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="命令覆盖" Style="{StaticResource Label}" VerticalAlignment="Center" ToolTip="留空 = 用发行号里的 lib/bin.js；要指到桌面端/npx 那份时才填" />
+                  <TextBox Grid.Column="1" x:Name="DshCliBox" Height="28" LostFocus="Launch_Save"
+                           FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}"
+                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                  <Button Grid.Column="2" Style="{StaticResource Btn}" Content="浏览" Margin="8,0,0,0"
+                          Click="BrowseDshCli_Click" v:Ico.Of="{StaticResource I.Folder}" />
+                </Grid>
+                <!-- 长路径在 28px 的输入框里必然被切；在下面补一行完整的等宽只读行，避免“看起来坏了”。 -->
+                <TextBlock Style="{StaticResource Muted}" Margin="120,4,0,0"
+                           FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsMicro}"
+                           TextWrapping="Wrap" MaxHeight="34"
+                           Text="{Binding Text, ElementName=DshCliBox}" />
+              </StackPanel>
               <WrapPanel>
                 <Button x:Name="PinBinBtn" Style="{StaticResource Btn}" Content="使用本机 DSH"
                         Click="PinSniffed_Click" v:Ico.Of="{StaticResource I.Terminal}" />

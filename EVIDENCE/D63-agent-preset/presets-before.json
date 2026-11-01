@@ -1,0 +1,30 @@
+{
+  "project": "ev-project",
+  "home": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\ev-project\\home",
+  "profile": "web",
+  "defaultId": "standard",
+  "bound": [],
+  "patch": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\ev-project\\home\\profiles\\web\\cordis.patch.yml",
+  "presets": [
+    {
+      "id": "standard",
+      "order": 1,
+      "row": "preset-standard"
+    },
+    {
+      "id": "ptc",
+      "order": 2,
+      "row": "preset-ptc"
+    },
+    {
+      "id": "minimal",
+      "order": 3,
+      "row": "preset-minimal"
+    },
+    {
+      "id": "cordis",
+      "order": 4,
+      "row": "preset-cordis"
+    }
+  ]
+}

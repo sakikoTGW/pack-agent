@@ -302,7 +302,10 @@ public sealed class AppState : Observable
         {
             // A page switch is animating: process/disk work on the UI thread now would
             // land inside the motion. Skip this beat; the next one is 2s away.
-            if (!Views.Fx.Busy) RefreshRunning();
+            if (Views.Fx.Busy) return;
+            RefreshRunning();
+            // 左栏/项目卡的"启动中 / 在跑"跟着同一拍刷新：灯是事实的出口，不是一次性快照（D52）。
+            RefreshStatus();
         };
         LoadRoots();
         var switched = PreferSharedRoot();
@@ -429,6 +432,7 @@ public sealed class AppState : Observable
         RaisePackMatch();
         RebuildLaunchables();
         RefreshRunning();
+        RefreshStatus();
         RaiseStep();
     }
 
@@ -518,6 +522,56 @@ public sealed class AppState : Observable
         Raise(nameof(AnyRunning));
         Raise(nameof(NoneRunning));
         _ = ProbeAgents();
+    }
+
+    // ------------------------------------------------------------------ 项目状态（D52）
+
+    /// <summary>
+    /// 每个实例此刻的状态。整体替换、不改就地：侧栏拿它上灯，项目卡拿它写"启动中 / 在跑 / 未启动"。
+    /// </summary>
+    public IReadOnlyDictionary<string, ProjectRun> Status { get; private set; } =
+        new Dictionary<string, ProjectRun>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>状态快照真的变了才通知：灯和行呼吸按实例 id 就地更新，不重建列表。</summary>
+    public event Action? StatusChanged;
+
+    public ProjectRun StatusOf(string? instanceId)
+    {
+        if (!string.IsNullOrWhiteSpace(instanceId) && Status.TryGetValue(instanceId!, out var run)) return run;
+        return new ProjectRun(instanceId ?? "", RunPhase.Stopped, "");
+    }
+
+    /// <summary>
+    /// 重算项目状态。便宜：账本 JSON + 活 pid + home 锁 + 已灌入的进程现场，不扫进程表；
+    /// 深证据由工作台加载时 <see cref="RunWatch.NoteHomes"/> 灌好。2s 定时器驱动，
+    /// 启动/停止这类动作结束时也可以直接调一次（灯立刻变，不用等下一拍）。
+    /// </summary>
+    public void RefreshStatus()
+    {
+        IReadOnlyDictionary<string, ProjectRun> map;
+        try
+        {
+            map = RunWatch.Scan(Launcher, Instances.ToList(), Launcher.Runtime().Entries);
+        }
+        catch
+        {
+            return; // 灯是事实的出口，读盘失败不能把主流程带倒
+        }
+
+        if (SameStatus(Status, map)) return;
+        Status = map;
+        StatusChanged?.Invoke();
+    }
+
+    static bool SameStatus(
+        IReadOnlyDictionary<string, ProjectRun> a,
+        IReadOnlyDictionary<string, ProjectRun> b)
+    {
+        if (a.Count != b.Count) return false;
+        foreach (var (id, run) in b)
+            if (!a.TryGetValue(id, out var old) || old.Phase != run.Phase || old.Detail != run.Detail)
+                return false;
+        return true;
     }
 
     bool _probing;

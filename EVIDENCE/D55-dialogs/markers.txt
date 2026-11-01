@@ -1,0 +1,8 @@
+﻿MARK 0.1.0-rc.7 · 在跑 · dsh/workspace
+MARK 这台机器上还有 1 个在跑的 DSH home 没进 PAD——那边的对话不在这份实例里：
+MARK E:\DSH-Home
+MARK 19 条对话 · 2 个在执行 · 最后写入 9 秒前
+MARK 在执行：打开PAD · 打开PAD (2)
+MARK 收编
+MARK 在跑 / 证据 / 对话 / 没有对话在执行
+MARK 管理口没连上：跑起来了但没有写出管理口。这个 profile 大概没装 apiproxy —— 到版本选择里给它补上。

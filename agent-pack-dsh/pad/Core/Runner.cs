@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Pad.Core;
 
-public sealed record LaunchResult(int Pid, string Script, string? WebUrl);
+public sealed record LaunchResult(int Pid, string Script, string? WebUrl, string? LogPath = null);
 
 /// <summary>
 /// Starts one profile. PAD does not host DSH: a terminal profile gets a real
@@ -206,7 +206,10 @@ public sealed class Runner(Launcher launcher)
     }
 
     /// <summary>Launch a terminal profile in whichever terminal the user configured.</summary>
-    public LaunchResult Launch(Instance inst, string profile, PadSettings settings)
+    /// <param name="detachWebOutput">CLI callers exit right after launching; a piped child would
+    /// lose its reader (and the URL line) when the process goes away. Detached mode redirects the
+    /// child's output into the log file instead, so the web server survives the caller.</param>
+    public LaunchResult Launch(Instance inst, string profile, PadSettings settings, bool detachWebOutput = false, bool healScripts = true)
     {
         // Pointing PAD at a home that a running client owns ends badly: the generated
         // script clears profiles/node_modules and overwrites .credentials.yaml in that
@@ -219,13 +222,15 @@ public sealed class Runner(Launcher launcher)
 
         var meta = _l.Profiles(inst).FirstOrDefault(p => p.Name == profile);
         var web = LaunchPolicy.WaitForWebReady(meta?.IsWeb == true);
-        return web ? LaunchWeb(inst, profile, settings) : LaunchTerminal(inst, profile, settings);
+        return web
+            ? LaunchWeb(inst, profile, settings, detachWebOutput, healScripts)
+            : LaunchTerminal(inst, profile, settings, healScripts);
     }
 
     /// <summary>Launch a terminal profile in whichever terminal the user configured.</summary>
-    public LaunchResult LaunchTerminal(Instance inst, string profile, PadSettings settings)
+    public LaunchResult LaunchTerminal(Instance inst, string profile, PadSettings settings, bool healScripts = true)
     {
-        var script = WriteScript(inst, profile, settings);
+        var script = WriteScript(inst, profile, settings, heal: healScripts);
         var title = FormatTitle(
             NonEmpty(inst.Launch?.Title) ?? settings.Launch.Title, inst.Name, profile);
         var cwd = inst.Workspace.Path;
@@ -261,11 +266,11 @@ public sealed class Runner(Launcher launcher)
     /// Web binds a port. PAD starts it hidden, reads the log for <c>dsh web: http</c>,
     /// and opens the browser. The process is not killed if the line is late.
     /// </summary>
-    public LaunchResult LaunchWeb(Instance inst, string profile, PadSettings settings)
+    public LaunchResult LaunchWeb(Instance inst, string profile, PadSettings settings, bool detachOutput = false, bool healScripts = true)
     {
         var savedPause = settings.Launch.PauseOnError;
         settings.Launch.PauseOnError = false;
-        var script = WriteScript(inst, profile, settings);
+        var script = WriteScript(inst, profile, settings, heal: healScripts);
         settings.Launch.PauseOnError = savedPause;
 
         var logs = _l.LogsDir(inst.Id);
@@ -273,6 +278,37 @@ public sealed class Runner(Launcher launcher)
         var logPath = Path.Combine(logs, $"{profile}-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.log");
 
         var comspec = Environment.GetEnvironmentVariable("COMSPEC") ?? "cmd.exe";
+
+        if (detachOutput)
+        {
+            // No pipes: the child's stdout goes straight to the log file, so it keeps living
+            // after this CLI process exits. Readiness is polled from that file by ProjectRunner.
+            // `start /b` gives the web server its own (console) std handles: if it inherited the
+            // caller's stdout pipe, the caller's shell would stay attached until the server dies.
+            var detached = new ProcessStartInfo
+            {
+                FileName = comspec,
+                Arguments = $"/d /c start \"\" /b \"{comspec}\" /d /c \"\"{script}\" >> \"{logPath}\" 2>&1\"",
+                WorkingDirectory = inst.Workspace.Path,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            var child = Process.Start(detached)
+                        ?? throw new PadError("PA025", "web profile did not start", $"instance `{inst.Id}`",
+                            script, ["看实例日志目录"]);
+            _l.TrackRun(new RunEntry
+            {
+                Instance = inst.Id,
+                Profile = profile,
+                Version = inst.Dsh.Version,
+                Pid = child.Id,
+                StartedAt = DateTimeOffset.UtcNow.ToString("o"),
+            });
+            inst.LastProfile = profile;
+            _l.SaveInstance(inst);
+            return new LaunchResult(child.Id, script, null, logPath);
+        }
+
         var psi = new ProcessStartInfo
         {
             FileName = comspec,
@@ -327,7 +363,7 @@ public sealed class Runner(Launcher launcher)
         });
         inst.LastProfile = profile;
         _l.SaveInstance(inst);
-        return new LaunchResult(proc.Id, script, null);
+        return new LaunchResult(proc.Id, script, null, logPath);
     }
 
     static Process? StartWindowsTerminal(string script, string title, string cwd, bool reuse)

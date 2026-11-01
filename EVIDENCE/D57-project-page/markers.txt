@@ -1,0 +1,10 @@
+﻿MARK 在跑 / 外部启动 · 进程现场
+MARK 进程 DeepSeek Harness
+MARK pid 68084
+MARK 端口 127.0.0.1:54024
+MARK 配置 desktop
+MARK 已跑 1 小时 4 分
+MARK 内存 319 MB
+MARK 切到窗口 / 打开工作区 / 日志
+MARK 对话 · 1 在执行 / 共 185 条 · 最近 11 秒前
+MARK 环境 / 内核 0.2.1-rc.2 / 组合包 14 / 整合包 — / 会话 185 / 上下文 8% / 工具调用 3271

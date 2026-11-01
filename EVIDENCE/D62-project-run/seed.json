@@ -1,0 +1,19 @@
+{
+  "project": "ev-project",
+  "home": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\ev-project\\home",
+  "registry": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\ev-project\\home\\storages\\workspace.json",
+  "kept": 0,
+  "added": 2,
+  "workspaces": [
+    {
+      "Path": "E:\\tmp\\pack-agent\\proj-evidence\\ws-frontend",
+      "Title": "ws-frontend",
+      "sessions": 0
+    },
+    {
+      "Path": "E:\\tmp\\pack-agent\\proj-evidence\\ws-backend",
+      "Title": "ws-backend",
+      "sessions": 0
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "pack-agent.launcher.runtime/v2",
+  "entries": [
+    {
+      "instance": "ev-project",
+      "profile": "web",
+      "version": "0.2.1-rc.2",
+      "pid": 22656,
+      "port": 0,
+      "controlUrl": null,
+      "startedAt": "2026-10-31T17:04:25.4266953\u002B00:00"
+    }
+  ]
+}

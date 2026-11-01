@@ -1,0 +1,36 @@
+{
+  "unit": {
+    "name": "workspace",
+    "version": 2
+  },
+  "global": {
+    "initialized": true,
+    "workspaceIds": [
+      "22fe3e25-6753-4750-be47-da4db2970c69",
+      "84bd246d-5140-4cfe-8808-6426a580999c"
+    ],
+    "archivedSessionIds": [],
+    "pinnedSessionIds": [],
+    "defaultWorkspaceId": "22fe3e25-6753-4750-be47-da4db2970c69"
+  },
+  "tables": {
+    "workspaces": {
+      "22fe3e25-6753-4750-be47-da4db2970c69": {
+        "path": "E:\\tmp\\pack-agent\\proj-evidence\\ws-frontend",
+        "title": "ws-frontend",
+        "sessionIds": [
+          "session-a36714d1-4b78-451a-a080-efd0244570f2"
+        ],
+        "createdAt": "2026-10-31T16:45:54.2030420+00:00",
+        "updatedAt": "2026-10-31T17:04:25.3402100+00:00"
+      },
+      "84bd246d-5140-4cfe-8808-6426a580999c": {
+        "path": "E:\\tmp\\pack-agent\\proj-evidence\\ws-backend",
+        "title": "ws-backend",
+        "sessionIds": [],
+        "createdAt": "2026-10-31T16:45:54.2030420+00:00",
+        "updatedAt": "2026-10-31T17:04:25.3402100+00:00"
+      }
+    }
+  }
+}

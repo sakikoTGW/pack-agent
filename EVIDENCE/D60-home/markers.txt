@@ -1,0 +1,5 @@
+﻿layout: running(2) + context(1) / projects(2) + note(1) / activity(1) + tools(2)
+data: HomeProject(Inst, Status, Facts, Dialogs, LastDialog) + Dialogs.Summary (dir count + mtime, no JSON parse)
+migration: legacy 7-card default -> new default; custom layouts untouched
+interaction: click project row -> ShowScope; running card -> 进入项目 / 切到窗口; header meta N 个项目 · M 个在跑
+capture: PrintWindow(PW_RENDERFULLCONTENT) on the window handle (overlays no longer corrupt evidence)

@@ -1,0 +1,3 @@
+﻿build (temp output) 0 warning / 0 error
+tests: pad-window exit 0 / pad-depth exit 0 / pad-pack exit 0
+shot: --shot-page manage-project --shot-exit (project-merged.png)

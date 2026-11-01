@@ -1,0 +1,2 @@
+﻿before: home=C:\Users\Brs\AppData\Roaming\dsh-desktop\harness  version=0.1.0-rc.7  adopted=true  created=2026-10-22
+after : home=E:\DSH-Home  version=0.2.1-rc.2  adoptedFingerprint=46845478  (updated 2026-10-31T13:43:38Z)

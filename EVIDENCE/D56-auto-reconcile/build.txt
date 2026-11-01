@@ -1,0 +1,3 @@
+﻿build: dotnet build 0 warning / 0 error
+tests: pad-window / pad-depth / pad-pack green
+live: PAD 自动对账后本机 DSH -> E:\DSH-Home, kernel 0.2.1-rc.2

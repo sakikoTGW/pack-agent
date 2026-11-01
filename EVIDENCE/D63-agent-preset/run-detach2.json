@@ -1,0 +1,11 @@
+{
+  "status": "started",
+  "instance": "ev-project",
+  "profile": "web",
+  "home": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\ev-project\\home",
+  "workspaces": 2,
+  "preset": "minimal",
+  "pid": 70280,
+  "url": "http://127.0.0.1:3080/?token=j7NrUk7exbO2otEkxGYFQTduT84sAy2JdvhtYi7Tp4Y",
+  "script": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\ev-project\\launch-web.cmd"
+}

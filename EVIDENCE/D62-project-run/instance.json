@@ -1,0 +1,23 @@
+{
+  "schema": "pack-agent.launcher.instance/v2",
+  "id": "ev-project",
+  "name": "ev-project",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "home": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\ev-project\\home",
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\ev-project\\workspace"
+  },
+  "status": "ready",
+  "lastProfile": "web",
+  "note": null,
+  "display": null,
+  "launch": null,
+  "source": null,
+  "adopted": false,
+  "adoptedFingerprint": null,
+  "created": "2026-10-31T16:45:54.1680903\u002B00:00",
+  "updated": "2026-10-31T17:04:25.4328485\u002B00:00"
+}

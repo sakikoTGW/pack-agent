@@ -1,0 +1,10 @@
+{
+  "status": "already-running",
+  "instance": "ev-project",
+  "Say": "在跑",
+  "pid": 68128,
+  "port": 3080,
+  "address": "127.0.0.1:3080",
+  "uptime": "4 分钟",
+  "focused": false
+}

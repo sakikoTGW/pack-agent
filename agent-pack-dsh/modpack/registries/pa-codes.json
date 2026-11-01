@@ -46,6 +46,11 @@
     { "id": "PA116", "level": "error", "message": "DEEPSEEK_API_KEY is not configured", "help": ["fill DEEPSEEK_API_KEY in Settings → API Key"] },
     { "id": "PA117", "level": "error", "message": "portable-export needs a single-file PAD", "help": ["dotnet publish -p:PublishSingleFile=true", "set PACK_PAD_HOST_EXE"] },
     { "id": "PA032", "level": "error", "message": "that bundle is already in this profile's layer, so there is nothing to trial", "help": ["remove it from the profile first"] },
-    { "id": "PA040", "level": "error", "message": "UI thread hung, or a page hosts itself in its own Content", "help": ["details are in pad-crash.log"] }
+    { "id": "PA040", "level": "error", "message": "UI thread hung, or a page hosts itself in its own Content", "help": ["details are in pad-crash.log"] },
+    { "id": "PA122", "level": "error", "message": "project definition is invalid", "help": ["fix projects/<id>/project.json, schema pack-agent.launcher.project/v1"] },
+    { "id": "PA123", "level": "error", "message": "project workspace path is not a directory", "help": ["create the directory, or change the binding: pad cli project add"] },
+    { "id": "PA124", "level": "error", "message": "could not write the workspace registry", "note": "PAD never writes a registry DSH would refuse to boot; the old file is kept and a .bak copy is made" },
+    { "id": "PA125", "level": "error", "message": "could not bind agent presets for this project", "help": ["copy the preset into the instance home, then re-seed"] },
+    { "id": "PA126", "level": "error", "message": "project window kind is not supported yet", "help": ["set window.kind to \"web\" in project.json"] }
   ]
 }

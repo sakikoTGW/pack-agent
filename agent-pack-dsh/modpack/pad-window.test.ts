@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+﻿#!/usr/bin/env bun
 /**
  * PAD 窗口这一层：空状态、拖 zip、web 不卡死、收编/崩溃/升级分开。
  * 对照源码，不启 WPF。
@@ -1420,6 +1420,169 @@ if (!read('Views/InstanceView.xaml').includes('InstMark'))
   for (const rel of ['Views/WorkbenchView.xaml.cs', 'Views/RelationsView.xaml.cs', 'Views/RelationsWebView.xaml.cs'])
     if (read(rel).includes('Logos.Mark')) fail(`${rel} 还在拿项目 logo 当实例图标`)
 }
+{
+  // 管理页的侧栏与右栏必须联动（D54）：主页行 = 本机概览，项目行 = 该项目自己的页。
+  const rail = read('Views/ProjectRail.xaml.cs')
+  if (!rail.includes('HomePicked'))
+    fail('侧栏没有主页行事件：进了项目页就回不到本机概览')
+  if (!/items\s*=\s*new List<\(string, FrameworkElement\)>\s*\{\s*\("home", HomeRow\(\)\)/.test(rail))
+    fail('侧栏第一行不是固定的主页行')
+  const wb = read('Views/WorkbenchView.xaml.cs')
+  if (!/\.Picked \+= ShowScope/.test(wb))
+    fail('管理页没订侧栏 Picked：点项目右栏还是本机仪表盘')
+  if (!/\.HomePicked \+= ShowHome/.test(wb))
+    fail('管理页没订主页行：项目页没有出口')
+  if (!/_scope = inst/.test(wb))
+    fail('点项目不设右栏 scope')
+  if (!wb.includes('PaintScopeCards') || !wb.includes('RunHeroCard(') || !wb.includes('EnvCard('))
+    fail('项目页没有按项目取数的卡片（只换标题不算）')
+  if (!wb.includes('_state.SelectedInstance = inst'))
+    fail('点项目不写全局选中实例，实例与组合包 / 版本设置 会看错项目')
+  const wx = read('Views/WorkbenchView.xaml')
+  if (!wx.includes('x:Name="PageTitle"'))
+    fail('管理页标题还是写死的「本机」，项目页改不了标题')
+  if (!wx.includes('x:Name="BackHomeBtn"') || !wx.includes('x:Name="RunBtn"'))
+    fail('项目页没有回主页 / 启动动作')
+  if (!read('MainWindow.xaml.cs').includes('manage-project'))
+    fail('--shot-page 没有 manage-project，项目页截图不可复现')
+}
+{
+  // 对话可见（D55）：项目页要说清"这个 home 有哪些对话、哪几条在执行"；
+  // 机器上在跑但没进 PAD 的 home 也要摆出来——否则人现在聊的会话永远看不到。
+  if (!existsSync(join(pad, 'Core/Dialogs.cs')))
+    fail('缺 Core/Dialogs.cs：会话摘要没有数据源')
+  const dialogs = read('Core/Dialogs.cs')
+  if (!dialogs.includes('session_projcache'))
+    fail('Dialogs 不读 session_projcache，对话列表从哪来')
+  if (!dialogs.includes('openStep') || !dialogs.includes('Executing'))
+    fail('Dialogs 不用 DSH 自己的 openStep 判断"这一条在执行"')
+  if (!dialogs.includes('pendingCalls'))
+    fail('Dialogs 不看 pendingCalls，正在跑的工具调用看不到')
+  const wb = read('Views/WorkbenchView.xaml.cs')
+  const hero = wb.split('UIElement RunHeroCard')[1]?.split('UIElement EnvCard')[0] ?? ''
+  if (!hero.includes('StatusOf'))
+    fail('运行卡还在只看 PAD 账本：左边绿灯、右边写"未启动"')
+  if (!hero.includes('_scopeFacts'))
+    fail('运行卡没接进程现场（pid/端口/已跑/内存）')
+  if (!wb.includes('DialogCard(') || !wb.includes('_scopeDialogs'))
+    fail('项目页没有对话卡')
+  if (!wb.includes('Gateway.Tree') || !wb.includes('GatewayReady'))
+    fail('对话没接管理口的活状态（session.list）')
+  if (!wb.includes('dialog.Executing'))
+    fail('对话卡没把 openStep 摆出来')
+  if (wb.includes('OtherHomesBar') || wb.includes('AdoptHomePath'))
+    fail('还有"没进 PAD 的 home"横幅：那是绕根因的补丁（D56 改成自动对账）')
+}
+{
+  // 项目页读得懂（D57）：运行卡要给出 pid / 端口 / 已跑 / 内存，而不是一句"不是 PAD 起的所以没有"。
+  if (!existsSync(join(pad, 'Core/RunFacts.cs')))
+    fail('缺 Core/RunFacts.cs：运行现场没有数据源')
+  const facts = read('Core/RunFacts.cs')
+  if (!facts.includes('Ports.Listening') || !facts.includes('WorkingSet') || !facts.includes('Uptime'))
+    fail('RunFacts 不取端口/内存/已跑，运行卡还是空话')
+  if (!facts.includes('ConfigProfile'))
+    fail('RunFacts 不取运行 profile')
+  if (!existsSync(join(pad, 'Core/Ports.cs')) || !read('Core/Ports.cs').includes('GetExtendedTcpTable'))
+    fail('没有 TCP 表读取：pid → 端口只能靠猜')
+  if (!existsSync(join(pad, 'Core/ShellActivate.cs')))
+    fail('缺 ShellActivate：外部启动的壳窗口切不过去')
+  const wb = read('Views/WorkbenchView.xaml.cs')
+  if (!wb.includes('RunHeroCard') || !wb.includes('EnvCard') || !wb.includes('Stat('))
+    fail('项目页还是九张卡片平铺，没按"先运行、后环境"重排')
+  if (!wb.includes('ScopeCard("运行", 3'))
+    fail('运行卡没占整行（人最想先知道的东西没有位置）')
+  if (wb.includes('不是 PAD 起的（PAD 账本里没有），所以这里没有端口 / pid'))
+    fail('运行卡还在写"没有端口/pid"——pid/端口可以从进程现场和 TCP 表拿到')
+  if (!wb.includes('切到窗口') || !wb.includes('ShellActivate'))
+    fail('外部在跑的实例没有"切到窗口"入口')
+  const dialogs = read('Core/Dialogs.cs')
+  if (!dialogs.includes('DialogRow'))
+    fail('对话数据源丢了')
+}
+{
+  // 图标 / logo / 交互反馈 / 动效（D58）：学开源图标库的用法，但形状按本仓 1024 单位重画。
+  const icons = read('Theme/Icons.xaml')
+  for (const key of ['I.Cpu', 'I.Plug', 'I.Clock', 'I.Chat', 'I.Layers', 'I.Activity', 'I.Memory', 'I.External', 'I.Home'])
+    if (!icons.includes(`x:Key="${key}"`)) fail(`图标库缺 ${key}（D58 的统计/按钮图标）`)
+  if (!icons.includes('Lucide') || !icons.includes('Tabler') || !icons.includes('Simple Icons'))
+    fail('图标来源没写清（Lucide / Tabler / Simple Icons 的许可与借鉴要点）')
+  if (!existsSync(join(pad, 'Core/AppIcon.cs')) || !read('Core/AppIcon.cs').includes('SHGetFileInfo'))
+    fail('缺 AppIcon：运行卡拿不到外壳的真实 logo')
+  if (!read('Core/AppIcon.cs').includes('library'))
+    fail('AppIcon 不缓存，每次画卡都去抠图标')
+  const wb = read('Views/WorkbenchView.xaml.cs')
+  if (!wb.includes('Clipboard.SetText') || !wb.includes('已复制'))
+    fail('统计值点一下没有复制反馈')
+  if (!wb.includes('Icon(iconKey') && !wb.includes('Icon('))
+    fail('没有图标构造 helper')
+  if (!wb.includes('ScopeCard') || !wb.includes('TranslateTransform') || !wb.includes('MouseEnter'))
+    fail('卡片没有 hover 反馈/轻抬')
+  if (!wb.includes('AppIcon.PathFor') || !wb.includes('InstMark'))
+    fail('运行卡没有真实 logo / 兜底实例芯片')
+  if (!wb.includes('_heroAnimated') || !wb.includes('Fx.PulseIn'))
+    fail('运行现场到达时没有进场动效（且不能每 2s 重播）')
+  if (!wb.includes('CardIcon('))
+    fail('主页卡片标题没有图标')
+  const wx = read('Views/WorkbenchView.xaml')
+  if (!wx.includes('x:Name="ScopeLogoHost"') || !wx.includes('x:Name="ScopeLamp"'))
+    fail('页头没有实例 logo / 运行灯')
+}
+{
+  // 线性图标（D59）：Lucide（ISC）路径数据 + 描边控件；卡片 hover 层级；项目自定义 logo。
+  if (!existsSync(join(pad, 'Theme/LineIcons.xaml')))
+    fail('缺 Theme/LineIcons.xaml：线性图标没有资源字典')
+  const line = read('Theme/LineIcons.xaml')
+  if (!line.includes('Lucide') || !line.includes('ISC'))
+    fail('线性图标没写来源与许可（Lucide ISC）')
+  for (const key of ['L.Play', 'L.Chat', 'L.Folder', 'L.Layers', 'L.Cpu', 'L.Plug', 'L.Clock',
+                     'L.Settings', 'L.Sliders', 'L.Memory', 'L.Hash', 'L.Home', 'L.Package', 'L.File', 'L.External',
+                     'L.Window', 'L.Gauge', 'L.Wrench', 'L.Note', 'L.Image'])
+    if (!line.includes(`x:Key="${key}"`)) fail(`线性图标缺 ${key}`)
+  if (!line.includes('StrokeThickness') || !line.includes('StrokeStartLineCap'))
+    fail('线性图标不是描边渲染（还是填充分支）')
+  if (!existsSync(join(pad, 'Views/LineIco.cs')) || !read('Views/LineIco.cs').includes('OfProperty'))
+    fail('缺 LineIco 控件（描边图标 + 按钮附加形式）')
+  if (!read('App.xaml').includes('Theme/LineIcons.xaml'))
+    fail('LineIcons 资源字典没合并进 App')
+  const wb = read('Views/WorkbenchView.xaml.cs')
+  if (!wb.includes('SetupHeaderIcons') || !wb.includes('BtnContent('))
+    fail('页头按钮没统一成线性图标')
+  if (!wb.includes('HoverLift') || !wb.includes('DropShadowEffect') || !wb.includes('LineBorder'))
+    fail('卡片 hover 没有阴影加深 + 描边浮现')
+  if (!wb.includes('PickLogo') || !wb.includes('OpenFileDialog'))
+    fail('项目不能自定义 logo（没有选图流程）')
+  if (!wb.includes('display logo') && !wb.includes('Display?.Logo'))
+    fail('自定义 logo 没有进 logo 优先级')
+  if (!wb.includes('换 logo'))
+    fail('项目卡没有「换 logo」入口')
+}
+{
+  // 自动对账（D56）：本机在用的 home 换了，PAD 自己跟过去——不弹窗、不让用户点。
+  const launcher = read('Core/Launcher.cs')
+  const adopted = launcher.split('HomeAlreadyAdopted')[1]?.split('/// <summary>')[0] ?? ''
+  if (/i\.Adopted \|\|/.test(adopted))
+    fail('HomeAlreadyAdopted 又拿"任意 adopted 实例"当这个 home 已收编')
+  if (!adopted.includes('SamePath(i.Home, home)'))
+    fail('HomeAlreadyAdopted 不比 home 本身，收编提示会被旧实例永久挡住')
+  if (!launcher.includes('ReconcileMachineHome'))
+    fail('没有自动对账：本机 DSH 永远指着收编那天的旧 home')
+  const reconcile = launcher.split('public Instance? ReconcileMachineHome')[1]?.split('/// <summary>')[0] ?? ''
+  if (!reconcile.includes('ProbeHomes') || !reconcile.includes('Launch.DshHome'))
+    fail('对账不读进程现场的 DSH_HOME / pad.json 配置，判据只有一个来源')
+  if (!reconcile.includes('adopted.Count != 1'))
+    fail('对账在多份 adopted 实例里也敢改指（那是猜）')
+  if (!reconcile.includes('SaveInstance'))
+    fail('对账只改了内存不落盘，下次启动又回去')
+  if (!reconcile.includes('KernelVersion'))
+    fail('对账不把内核钉对齐到在跑的壳，会留下"新 home + 旧内核"')
+  const win = read('MainWindow.xaml.cs')
+  if (!win.includes('AutoReconcileHome'))
+    fail('启动时不自动对账')
+  if (/if \(App\.ShotPath is null\) OfferAdoptIfNeeded\(\);/.test(win))
+    fail('启动时先弹手动收编：自动对账没排在它前面')
+  if (read('Views/WorkbenchView.xaml').includes('x:Name="OtherHomesBar"'))
+    fail('横幅容器还在')
+}
 if (read('Views/LaunchView.xaml').includes('x:Name="InstanceSheet"'))
   fail('启动页还留着这份实例卡')
 if (!read('MainWindow.xaml.cs').includes('BrandText.Text'))
@@ -1769,6 +1932,82 @@ if (!read('Views/InstanceView.xaml.cs').includes('ListCredentials'))
 if (!mainWindowCs.includes('ShowTab'))
   fail('空态按钮不能切顶栏')
 
+// ---- 运行灯 D53：管理页「项目」行要能看出谁在启动 / 在跑，灯和这一栏一起呼吸 ----
+// 用户 2026-10-31：「你要让 PAD 能读取哪个在启动、在运行，右边出现绿灯。并让这一栏呼吸闪烁。」
+// 三态的判据只许落在 RunWatch 一处：左栏、项目卡、pad cli status 都是它的出口。
+{
+  // (1) 判定源：三态 + ProjectRun 的 Live/Say；证据来自 PAD 账本、节点账本、home 锁、进程现场、启动登记。
+  const watch = read('Core/RunWatch.cs')
+  if (!watch.includes('public enum RunPhase'))
+    fail('RunWatch 没有 RunPhase（未启动 / 启动中 / 在跑）')
+  if (!/enum RunPhase\s*\{[\s\S]{0,300}Stopped[\s\S]{0,120}Starting[\s\S]{0,120}Running/.test(watch))
+    fail('RunPhase 不是 Stopped / Starting / Running 三态')
+  if (!watch.includes('record ProjectRun(') || !watch.includes('RunPhase Phase') || !watch.includes('string Detail'))
+    fail('ProjectRun 没带 InstanceId / Phase / Detail')
+  if (!watch.includes('bool Live') || !watch.includes('string Say'))
+    fail('ProjectRun 没有 Live / Say，灯和文案会各说各的')
+  if (!/void MarkStarting\(/.test(watch) || !/void ClearStarting\(/.test(watch) || !watch.includes('public static bool Starting('))
+    fail('RunWatch 没有启动登记 MarkStarting / ClearStarting / Starting，点了启动要等账本才亮')
+  if (!watch.includes('void NoteHomes(') || !watch.includes('ProbeHomes('))
+    fail('RunWatch 没有 NoteHomes / ProbeHomes，进程现场这路证据进不来')
+  if (!/Scan\([\s\S]{0,200}Launcher launcher[\s\S]{0,200}IReadOnlyList<Instance>[\s\S]{0,220}IReadOnlyList<RunEntry>/.test(watch))
+    fail('RunWatch.Scan 没吃 launcher / instances / PAD 账本，界面和 CLI 会各算一套')
+  if (!watch.includes('LaunchPolicy.LiveHomeOwner') || !watch.includes('Nodes.Ledger.Load'))
+    fail('RunWatch 只信 PAD 账本：桌面壳独占 home / pad cli node open 起的实例会漏灯')
+  // 进程现场会假绿灯：PAD 自己也带 DSH_HOME（继承宿主 harness / 从实例终端被拉起），必须排除。
+  if (!watch.includes('IsPadItself') || !read('Core/Discover.cs').includes('RunWatch.IsPadItself'))
+    fail('进程现场没排除 PAD 自己：PAD 从某实例终端启动时，那一行会假亮')
+
+  // (2) AppState 持有状态快照，真变了才通知；定时器和动作结束都刷得到。
+  const st = read('Core/AppState.cs')
+  if (!st.includes('IReadOnlyDictionary<string, ProjectRun> Status'))
+    fail('AppState 没有 Status 快照')
+  if (!st.includes('event Action? StatusChanged'))
+    fail('AppState 没有 StatusChanged，灯只能等重建才变')
+  if (!st.includes('public void RefreshStatus()') || !st.includes('public ProjectRun StatusOf('))
+    fail('AppState 没有 RefreshStatus / StatusOf，左栏和项目卡拿不到状态')
+
+  // (3) 左栏项目行：状态从 AppState 来，变了跟着刷，在跑时整行呼吸。
+  const railRun = read('Views/ProjectRail.xaml.cs')
+  if (!railRun.includes('AppState.Current.StatusOf('))
+    fail('项目侧栏没从 AppState.Current.StatusOf 取状态')
+  if (!/StatusChanged\s*\+=/.test(railRun))
+    fail('项目侧栏没订 StatusChanged，运行中不会自己亮')
+  if (!railRun.includes('Fx.Breathe('))
+    fail('项目侧栏在跑的行没有呼吸闪烁')
+  if (!railRun.includes('new RunLamp'))
+    fail('项目侧栏没有 RunLamp 绿灯')
+
+  // (4) 管理页项目卡：同一份状态，也要有灯（只有左栏亮不算）。
+  const wbRun = read('Views/WorkbenchView.xaml.cs')
+  if (!wbRun.includes('RunWatch.NoteHomes('))
+    fail('管理页没把在跑 home 灌给 RunWatch（双击启动的实例会漏灯）')
+  if (!wbRun.includes('RefreshStatus()') || !wbRun.includes('StatusOf('))
+    fail('管理页项目卡没刷新 / 没读项目状态')
+  if (!wbRun.includes('new RunLamp'))
+    fail('管理页项目卡没有 RunLamp')
+
+  // (5) 启动浮窗：点下去立刻「启动中」，窗口关掉清登记。
+  const lf = read('Views/LaunchFloat.xaml.cs')
+  if (!lf.includes('RunWatch.MarkStarting(') || !lf.includes('RunWatch.ClearStarting('))
+    fail('启动浮窗没登记 / 清除启动中状态，点了启动要等账本才亮')
+
+  // (6) 呼吸只有一个实现：Breathe 起、Calm 停。
+  const fx = read('Views/Fx.cs')
+  if (!fx.includes('public static void Breathe(FrameworkElement element'))
+    fail('Fx 没有 Breathe，呼吸闪烁没有落点')
+  if (!fx.includes('public static void Calm(FrameworkElement element'))
+    fail('Fx 没有 Calm，不跑了呼吸还停不下来')
+
+  // (7) 命令行读同一份状态：pad cli status [--json] [--out <path>]。
+  const cliSrc = read('Core/Cli.cs')
+  if (!cliSrc.includes('case "status"'))
+    fail('pad cli 没有 status 命令')
+  if (!cliSrc.includes('RunWatch'))
+    fail('pad cli status 没走 RunWatch，状态会跟界面两套口径')
+}
+console.log('✓ 运行灯：三态判定 / 左栏呼吸 / cli status')
+
 console.log('✓ PAD 窗口接到 import / 收编 / 崩溃 / 分开升 / 拖 zip')
 console.log('✓ PAD 入口契约：clone/export/v4/任务/凭据/job 日志')
 console.log('✓ pad-window')
@@ -1907,4 +2146,144 @@ if (process.platform === 'win32' && existsSync(exe)) {
   } finally {
     try { rmSync(plugRoot, { recursive: true, force: true }) } catch { /* keep tmp on lock */ }
   }
+
+  // ---- 运行灯 D53 实跑：pad cli status 读的是盘上事实（runtime.json 的活 pid） ----
+  const statusRoot = packTmpDir('pad-status')
+  try {
+    const inst = 's1'
+    const home = join(statusRoot, 'instances', inst, 'home')
+    const workspace = join(statusRoot, 'instances', inst, 'workspace')
+    mkdirSync(home, { recursive: true })
+    mkdirSync(workspace, { recursive: true })
+    writeFileSync(join(statusRoot, 'instances', inst, 'instance.json'), JSON.stringify({
+      schema: 'pack-agent.launcher.instance/v2',
+      id: inst,
+      name: inst,
+      dsh: { version: '0.0.0' },
+      home,
+      workspace: { kind: 'owned', path: workspace },
+    }))
+    // 账本里的 pid 用 bun 自己的：这个进程一定活着，RunWatch 只认活 pid。
+    const runtimePath = join(statusRoot, 'runtime.json')
+    writeFileSync(runtimePath, JSON.stringify({
+      schema: 'pack-agent.launcher.runtime/v2',
+      entries: [{
+        instance: inst,
+        profile: 'web',
+        version: '0.0.0',
+        pid: process.pid,
+        startedAt: new Date().toISOString(),
+      }],
+    }))
+    const statusJson = join(statusRoot, 'status.json')
+    const runCli = (args: string[]) => {
+      const r = spawnSync(exe, args, {
+        env: { ...process.env, PACK_LAUNCHER_ROOT: statusRoot },
+        encoding: 'utf8',
+        timeout: 30_000,
+      })
+      const logFile = join(statusRoot, 'pad-cli.log')
+      const text = [r.stdout, r.stderr, existsSync(logFile) ? readFileSync(logFile, 'utf8') : ''].join('\n')
+      return { r, text }
+    }
+    const readRows = (text: string) => {
+      if (!existsSync(statusJson)) fail(`pad cli status --json 没写出 ${statusJson}\n${text}`)
+      let rows: unknown
+      try { rows = JSON.parse(readFileSync(statusJson, 'utf8')) } catch {
+        fail(`pad cli status --json 写出的不是 JSON\n${text}`)
+      }
+      if (!Array.isArray(rows)) fail(`pad cli status --json 应是 JSON 数组\n${JSON.stringify(rows)}`)
+      return rows as Array<{ Id?: string; Name?: string; Phase?: string; Detail?: string }>
+    }
+
+    // 1) 账本里 pid 活着 → Running（"在跑"这一行右边要亮绿灯）。
+    const first = runCli(['cli', 'status', '--json', '--out', statusJson])
+    if (first.r.status !== 0) fail(`pad cli status --json 退出 ${first.r.status}\n${first.text}`)
+    const rows = readRows(first.text)
+    const live = rows.find((e) => e && String(e.Id) === inst)
+    if (!live) fail(`pad cli status --json 没列实例 ${inst}\n${JSON.stringify(rows)}`)
+    if (live.Name !== inst) fail(`pad cli status --json 的 Name 不对：${JSON.stringify(live)}`)
+    if (typeof live.Detail !== 'string') fail(`pad cli status --json 的 Detail 不是字符串：${JSON.stringify(live)}`)
+    if (live.Phase !== 'Running')
+      fail(`runtime.json 里 pid ${process.pid} 活着，Phase 应是 Running，实际 ${JSON.stringify(live)}`)
+
+    // 2) 账本清空 → Stopped（灯不能把上一拍亮着的状态留到下一拍）。
+    writeFileSync(runtimePath, JSON.stringify({
+      schema: 'pack-agent.launcher.runtime/v2',
+      entries: [],
+    }))
+    const second = runCli(['cli', 'status', '--json', '--out', statusJson])
+    if (second.r.status !== 0) fail(`pad cli status --json（账本清空）退出 ${second.r.status}\n${second.text}`)
+    const dead = readRows(second.text).find((e) => e && String(e.Id) === inst)
+    if (!dead) fail(`账本清空后 pad cli status --json 没列实例 ${inst}\n${second.text}`)
+    if (dead.Phase !== 'Stopped')
+      fail(`账本清空后 Phase 应是 Stopped，实际 ${JSON.stringify(dead)}`)
+
+    // 3) 纯文本每行 <Name>  <Phase>  <Detail>：WinExe 的 stdout 不可靠，同时收 pad-cli.log。
+    //    先删旧日志，否则前两次 --json 的输出留在 log 里，测不出纯文本这一行。
+    try { rmSync(join(statusRoot, 'pad-cli.log'), { force: true }) } catch { /* no log yet */ }
+    const plain = runCli(['cli', 'status'])
+    if (plain.r.status !== 0) fail(`pad cli status 退出 ${plain.r.status}\n${plain.text}`)
+    // 一行 = <Name> <Phase> <Detail>；前面可能带缩进，Phase 用 Stopped（账本已清空）。
+    if (!/^\s*s1\s+\S+/m.test(plain.text))
+      fail(`pad cli status 纯文本没有 s1 这一行（或行里没有 Phase）\n${plain.text}`)
+    if (!/^\s*s1\s+Stopped\b/m.test(plain.text))
+      fail(`pad cli status 纯文本里 s1 的 Phase 不是 Stopped\n${plain.text}`)
+    console.log('✓ pad cli status 读账本：Running / Stopped / 纯文本一行')
+  } finally {
+    try { rmSync(statusRoot, { recursive: true, force: true }) } catch { /* keep tmp on lock */ }
+  }
+}
+
+{
+  // 主页重排（D60）：先"谁在跑"，再"有哪些项目"；载体计数退出默认版面；点行能进项目页。
+  const wb = read('Views/WorkbenchView.xaml.cs')
+  if (!wb.includes('LegacyDefault') || !wb.includes('IsLegacyDefault'))
+    fail('缺旧默认版面识别：用户的面板永远不会迁到新默认')
+  if (!wb.includes('DefaultCards'))
+    fail('缺主页默认版面（D60）')
+  const dflt = wb.split('DefaultCards =')[1]?.split('];')[0] ?? ''
+  if (!dflt.includes('("running", "list", 2)') || !dflt.includes('("projects", "rows", 2)'))
+    fail('新默认版面不是「在跑(列表) + 项目(行)」')
+  if (dflt.includes('"inventory"'))
+    fail('载体计数还在默认版面里占位置')
+  if (!wb.includes('RunningListCard') || !wb.includes('ProjectsCard'))
+    fail('缺在跑列表卡 / 项目列表卡')
+  if (!wb.includes('HomeProject') || !wb.includes('Dialogs.Summary'))
+    fail('主页没有一份"实例 + 状态 + 对话摘要"的数据源')
+  if (!wb.includes('ShowScope(p.Inst)'))
+    fail('项目行点了不进项目页')
+  if (!wb.includes('现在没有项目在跑'))
+    fail('在跑卡没有空态，0 个项目时只剩一个数字')
+  if (!wb.includes('ShortHome(home)') )
+    fail('上下文卡没写是哪份 home 的')
+  if (!wb.includes('_homeProjects.Count} 个项目') || !wb.includes('_homeLive} 个在跑'))
+    fail('主页页头没有"几个项目 / 几个在跑"')
+  const dialogs = read('Core/Dialogs.cs')
+  if (!dialogs.includes('public static (int Count, DateTimeOffset? Newest) Summary'))
+    fail('Dialogs.Summary 丢了（主页每行用量会变成解析 185 份 JSON）')
+  if (!dialogs.includes('EnumerateFiles') || (dialogs.split('Summary(string home)')[1]?.split('static bool Parse')[0] ?? '').includes('JsonDocument'))
+    fail('Summary 不该解析 session JSON：只数目录 + 读 mtime')
+  if (!wb.includes('ActivityMiniCard') || !wb.includes('MiniBars'))
+    fail('单列近 7 天卡没画出来')
+}
+{
+  // 主页第一眼要回答"在跑啥 / 是谁的数字"（D61）。
+  const wb = read('Views/WorkbenchView.xaml.cs')
+  if (!wb.includes('IReadOnlyList<DialogRow> Recent'))
+    fail('HomeProject 没带在跑的对话，第一屏只能说"有 N 个在跑"')
+  if (!wb.includes('Dialogs.Read(inst.Home, 4)'))
+    fail('主页没有读在跑项目的对话')
+  if (!wb.includes('HomeDialogLine'))
+    fail('在跑卡下列不出对话（不知道在跑啥）')
+  if (!wb.includes('条对话在执行'))
+    fail('在跑卡头没写有几条对话在执行')
+  if (!wb.includes('HomeOwner'))
+    fail('上下文/工具调用卡没有"是谁的"归属')
+  if (!wb.includes('{label} · {owner.Inst.Name}'))
+    fail('主页卡片标题没带归属项目名')
+  if (!wb.includes('次调用 · 近 7 天'))
+    fail('工具调用没写口径（谁的/哪段时间）')
+  if (wb.includes('最近对话 {first.Dialogs} 条'))
+    fail('在跑卡还留着旧的"最近对话"占位行')
 }

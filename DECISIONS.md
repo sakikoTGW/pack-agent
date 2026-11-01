@@ -681,3 +681,301 @@ ExportPortable、压 zip、删临时实例；PA001 失败则给中文提示（�
 4. 不再由我起 powershell 跑 pnpm：PAD 内的 Proc 用 CreateNoWindow，所有安装都在窗口内完成并显示进度。
 验证：pad-window/pad-pack 绿；build 0/0；PAD 单次重启（pid 62272）。
 判据：**安装不是黑盒——要能看到阶段、进度、速度；失败要能看见是哪条规则拦的，而不是一句小写英文。**
+
+## D53 · 2026-10-31 · 项目行的"在跑"灯：读四路事实，行自己呼吸
+用户（附管理页截图）："你要让 PAD 能读取如图哪个在启动，在运行，右边出现绿灯。并让这一栏呼吸闪烁。"
+根因：灯早就有（`Views/RunLamp.xaml`，绿色呼吸灯），但判定只读 `Nodes.Ledger.Load(home)`
+（`<home>/.pad/nodes.json`）——只有 `pad cli node open` 写它；桌面壳的 home 从不写，PAD 自己启动
+也只写 `runtime.json`。本机唯一在跑的 `本机 DSH` 因此永远是灰的：灯装了，没人喂。
+修法：`Core/RunWatch.cs` 一处判三态（Stopped / Starting / Running），四路证据全进 tooltip（`Detail`）：
+PAD 账本（活 pid）、节点账本、home 锁（`LaunchPolicy.LiveHomeOwner`）、进程现场 `DSH_HOME`（PEB）；
+外加 `LaunchFloat` 的"启动中"登记（45s 宽限，窗口关掉即清——盘上只有历史失败日志，
+用它推"启动中"会误报，不做）。路径归一化 = `GetFullPath → TrimEnd('\','/') → 忽略大小写`
+（实例里 `e:\`、进程里 `E:\`，`GetFullPath` 不纠正盘符大小写），**不解析 junction**。
+进程现场必须排除 PAD 自己：PAD GUI/CLI 也带 `DSH_HOME`（继承宿主 harness，或从实例终端被拉起），
+实测 PAD GUI 的 `DSH_HOME=E:\DSH-Home`；`RunWatch.IsPadItself` 同时用在 `ProbeHomes` 和
+`Discover.BuildHomes` 的 procHomes，界面/CLI 一个口径。
+界面：灯挪到行最右端（用户点名"右边"），在跑的行底色用 `Fx.Breathe` 呼吸（启动中 1.1s / 在跑 2.4s，
+关动画给静止中点值）；状态变了**只改灯和呼吸、不重建列表**（重建会跳指针位置、丢 FLIP，D35）。
+项目卡（「123 / 0 / 未启动」）同一份事实：字改 `启动中 / 在跑 / 未启动` + 同一盏灯。
+可测出口：`pad cli status [--json] [--out]`，Phase = Stopped / Starting / Running，和界面同一个 Scan。
+验证：build 0/0；pad-window 绿（新增契约断言 + 实跑：temp root 账本塞活 pid → Running，清空 → Stopped），
+pad-depth / pad-pack 绿；真根 `cli status` 只有 `本机 DSH` Running（Detail="home 锁 · 进程现场"）；
+两次自渲染错开 1.2s，只有「本机 DSH」行带 9642 像素在变，同行列其余行 0、右侧卡片区 0；
+PAD 单次重启（pid 66340，直接落在管理页）。独立只读核查（26.8KB）见 `.tmp/runwatch-truth.md`。
+边界：Starting 只在 PAD 进程内（CLI 看不到）；app surface 的壳 home 是 `<home>\.pad\desktop\harness`，
+只有账本能兜，账本判据不能删；深证据（进程现场）在管理页加载时刷新。
+证据：`EVIDENCE/D53-run-lamp/`。
+判据：**"在跑"不能只有一条证据来源；灯亮不亮是事实问题，亮在哪一行是归属问题——
+两者都得用盘上和进程里的事实回答，而不是只信启动器自己记的那本账。**
+
+## D54 · 2026-10-31 · 管理页：主页看本机，选中项目就换右栏
+用户（管理页截图，右侧一直是同一张「本机」仪表）："现在有个问题就是，我切到哪个地方，这里右边显示的
+都是一样的画面。我的意思是，只有主页（对，管理有主页）显示这个窗口。我切到123或pack-test就显示有关
+那个的相关信息，而不是做成一个固定的画面。"
+根因：右栏 `WorkbenchView` 的卡片全读本机级数据（`Discover.Run` 的 homes / 会话分布 / 工具调用）；
+左栏是舞台 `ProjectRail`，`AttachRail` 只 Fill、**不订阅 `Picked`**——点项目只改了侧栏自己的
+`_selected` 并重画自己，右栏和数据源都不动。于是"切项目"只发生在左栏。
+修法（不新开 tab，换右栏）：
+1. 侧栏第一行固定「主页 / 本机概览」（`ProjectRail.HomeRow`）：选中判据 `_selected == ""`，点它发 `HomePicked`；
+2. 管理页订阅 `Picked` / `HomePicked`：`ShowScope(inst)` / `ShowHome()`，同一处写 `AppState.SelectedInstance`，
+   实例与组合包 / 版本设置 跟着同一份选中；
+3. 页头两态：主页 =「本机」+ 卡片编排（+ 卡片 / 编辑）；项目 = 项目名 + `版本 · 在跑/未启动 · 工作区`
+   + 主页返回 / 版本设置 / 启动·停止；卡片编排只属于主页；
+4. 项目页 = 同一套柔光卡（280 / 576 / 864 三段宽，一行 888 装满），只统计这份实例：
+   运行（账本活进程/profile/端口/pid/时长/agent 文案）、DSH 内核、组合包（按 profile 数）、
+   会话（该 home 的 session 数 + 近 7 天柱）、上下文（`Inspect.Measure(home)`）、
+   工具调用（`Usage.Measure(home)`）、整合包（该 workspace 的 `pack list`，走 CLI，不可用照实说）、
+   项目（工作区 / home / 来源 / 备注 + 打开按钮）；
+5. 切换瞬间 `PaintTransition`：回主页用上一次的主页数据立刻画，进项目先给「读取中」——
+   扫描没完成时不留上一个 scope 的卡（标题换了卡片不换，是在撒谎）；
+6. `--shot-page manage-project`：没有指针也能进项目页，截图可复现。
+验证：`dotnet build` 0 warning / 0 error（临时输出目录，不压正在跑的 PAD）；
+pad-window 新增本条源码断言，pad-window / pad-depth / pad-pack 绿；
+真实 PAD 窗口 UIA 点 `123` / `pack-Test` / 侧栏「主页」三态截图见 `EVIDENCE/D54-manage-projects/`；
+与并行会话的 D53 合流后项目页照常（侧栏「本机 DSH」行亮绿灯，`project-merged.png`）。
+编号：D52 没有落成条目（并行会话的 `AppState` / `Cli` 注释里引用过它），本条让位取 D54，避免撞号。
+判据：**选中的是谁，右栏就得说谁的事；标题换了、卡片不换，是在撒谎。**
+
+## D55 · 2026-10-31 · 项目页看得到对话：哪几条在执行，以及"在跑的 home 没进 PAD"
+用户（`本机 DSH` 项目页截图）："这一页，根本看不到目前有哪些对话在运行。。。。或者不明显"
+现场两件事：
+1. 项目页只有一个「会话 16」+ 柱状图，没有对话列表：谁在跑、跑到哪一条，全靠猜。
+   「运行」卡还只看 PAD 账本（`Running`/`Nodes.Ledger`），和左栏绿灯（`AppState.StatusOf`，D52/D53）
+   不是一份事实——左边绿、右边写"未启动"，同一页自相矛盾。
+2. 用户正在用 DSH（本会话的 home 是 `E:\DSH-Home`）**根本不是 PAD 实例**：PAD 的「本机 DSH」
+   指向旧的 `%APPDATA%\dsh-desktop\harness`。所以不管页面怎么画"这份实例的对话"，都看不到正在跑的那些。
+修法：
+1. 新增 `Core/Dialogs.cs`：只读 `<home>/storages/session_projcache/sessions/*.json`，取出
+   标题 / cwd / preset / 模型 / 最后消息时间 / 上下文水位 / 回合数 / `sessionStats.openStep` /
+   `pendingCalls` / 子 agent 标签。**"在执行"= DSH 自己记着 openStep 没收尾**（有管理口时以
+   `session.list` 的 `running` 为准）——PAD 不另做判定（D18）。
+2. 项目页第二行放「对话」宽卡：在执行数 + `共 N 条 · 最近 …` + 4 行（灯 / 标题 / 工作区 · 最后消息），
+   脚注写清依据：管理口已连 = `session.list`；没连 = `openStep`，并给出"这个 profile 大概没装 apiproxy"的补法。
+   会话卡收窄成 mini 柱（近 7 天落盘）。
+3. 「运行」卡改用 `AppState.StatusOf`：`在跑 / 启动中 / 未启动` + 证据（`home 锁 · 进程现场`），
+   PAD 自己起的那条再列 profile / 端口 / pid / 时长 / agent 文案。
+4. 页头加横幅：`Discover.Run` 扫出**在跑但不属于任何 PAD 实例的 home**（本次是 `E:\DSH-Home`），
+   写 `N 条对话 · M 个在执行 · 最后写入 X` + 正在执行的对话标题，右侧「收编」——
+   走 `MainWindow.AdoptHomePath`（`Launcher.AdoptHome`，只读收编，确认后切到新项目页）。
+   不收编也能看见"那边在跑什么"；收编后整份对话列表进项目页。
+5. 整份清单 60s 内复用（切项目不重复全量扫盘）；横幅与对话卡都先画首帧、后台补数据。
+验证：`dotnet build` 0 warning / 0 error；pad-window 新增 D55 断言，pad-window / pad-depth / pad-pack 绿；
+真实 PAD 窗口（UIA + TOPMOST 点击）：主页横幅 `E:\DSH-Home 19 条对话 · 2 个在执行 · 最后写入 9 秒前`
++ `在执行：打开PAD · 打开PAD (2)`；项目页对话卡列出 16 条旧 home 的对话与最后消息时间；
+截图见 `EVIDENCE/D55-dialogs/`。
+边界：不在横幅里列全部对话（要列就收编，见 4）——未收编的 home 只给摘要与执行中标题；
+openStep 是"DSH 还没收尾"的事实，不是 PAD 的结论；管理口没连时界面必须把那句话写出来。
+判据：**"有哪些对话在跑"必须能在界面上回答；回答不了时要说明是缺管理口、还是那份 home 根本不在 PAD 里。**
+
+## D56 · 2026-10-31 · 自动对账：本机 DSH 的 home 换了，PAD 自己跟过去（D55 横幅删除）
+用户（指着 D55 的横幅）："这个东西就是这么智能，这种东西不能手动"
+现象链（全部有现场证据）：
+1. `instances/dsh/instance.json` 是 2026-10-22 收编时冻住的指针：`home=%APPDATA%\dsh-desktop\harness`、
+   `version=0.1.0-rc.7`、`adopted=true`；后来本机换到新的 DeepSeek Harness app（`E:\DSH-App`，
+   `DSH_HOME=E:\DSH-Home`），没有任何逻辑回头改这份实例；
+2. `pad.json` 其实早就对了：`launch.dshHome=E:\DSH-Home`——设置和实例各指一处，从不碰面；
+3. `Launcher.HomeAlreadyAdopted` 写错：`Instances().Any(i => i.Adopted || SamePath(i.Home, home))`
+   ——"存在任意一份 adopted 实例"就算"这个 home 已收编"，于是收编提示永远不弹、正确 home 永远进不来；
+4. 旧 DSH Desktop 还开着（`DSH_HOME` 指向旧 home），「本机 DSH」的绿灯是真的，症状被盖住；
+5. D55 的横幅只是把错位摆出来让人点「收编」——还是手动。
+修法（用户什么都不用做）：
+1. `HomeAlreadyAdopted` 只比 home 本身：`Instances().Any(i => LaunchPolicy.SamePath(i.Home, home))`；
+2. 新增 `Launcher.ReconcileMachineHome(out from, out to, Inventory? inventory)`：
+   目标 home 依次取 `pad.json#launch.dshHome` → 进程现场 `DSH_HOME`（`RunWatch.ProbeHomes`）→ 回落配置，
+   只认 `DshSniff.LooksLikeHome`；已有实例指向它就不动；**只有恰好一份 adopted 实例**时才改
+   （多份就是猜）；改指时把钉的内核对齐到这份 home 实际在跑的壳（`Discover` 的 `Shell.KernelVersion`），
+   但只在 PAD 版本库真装着该发行号时才改；重算 `adoptedFingerprint`、`SaveInstance` 落盘；
+3. 启动 `MainWindow.AutoReconcileHome()`：后台 `Discover.Run` + 对账 → `Reload()` + toast
+   `本机 DSH 已跟随到 …`；**先对账，手动收编只做兜底**；
+4. 删除 D55 的横幅与「收编」按钮（`OtherHomesBar` / `RefreshOtherHomesAsync` / `AdoptOther_Click`）。
+实测（同一次重启，无人工干预）：`instance.json`
+`before home=%APPDATA%\dsh-desktop\harness · 0.1.0-rc.7` →
+`after home=E:\DSH-Home · 0.2.1-rc.2 · fingerprint 重算`；
+界面页头 `本机 DSH 0.2.1-rc.2 · 在跑 · dsh/workspace`，运行卡 `在跑 / 证据 进程现场`，
+组合包 `desktop 14 个`，对话卡 `1 条对话在执行 / 共 185 条 · 最近 20 秒前`（`打开PAD` 亮灯，
+即本文这次会话），横幅消失。截图 `EVIDENCE/D56-auto-reconcile/`。
+验证：build 0 warning / 0 error；pad-window 新增 D56 断言（`HomeAlreadyAdopted` 只比 home、
+`ReconcileMachineHome` 读 `ProbeHomes`/`Launch.DshHome`、恰好一份 adopted、`SaveInstance`、
+`KernelVersion` 对齐、启动先 `AutoReconcileHome`、横幅不得回来）；pad-window / pad-depth / pad-pack 绿。
+边界：只动"机器级那份 adopted 实例"（恰好一份时），用户自建实例永远不动；内核钉只在本机版本库有该发行号时对齐；
+旧 home 不再被当作实例，旧 DSH Desktop 若还开着只是普通进程。D55 的「对话」卡保留，D55 的横幅按本条删除。
+判据：**本机在用什么 DSH，PAD 就该指向什么；这种对齐是启动器的默认行为，不是让用户去点的按钮。**
+
+## D57 · 2026-10-31 · 项目页重排：运行卡给 pid / 端口 / 已跑 / 内存，细节降到「环境」
+用户（截图：运行卡只有"证据 进程现场"+"不是 PAD 起的…所以没有端口 / pid"）：
+"这里也要有。为啥没有…显示的都是无效信息。首先没有用，其次不是一个人最想知道、最需要知道的。
+其次，读起来还很困难"
+根因：运行卡只读 PAD 账本 + 节点账本；「本机 DSH」是外部启动的 DeepSeek Harness app
+（`DSH_HOME=E:\DSH-Home`），两本账都没有它 → 卡片把"我没查"写成了"没有端口 / pid"。
+而事实一直在：进程现场能按 `DSH_HOME` 认领进程，系统 TCP 表知道监听端口。
+参照同类（vibe-kanban 把 dev server URL 摆出来一键打开；neeko/kild 状态点+计数；claude-squad /
+OpenHands 列会话状态）——共同顺序是"在不在跑 → 跑在哪、怎么打开 → 正在干什么 → 细节"。
+修法：
+1. `Core/RunFacts.cs`：按 `DSH_HOME` 认领进程（排除 PAD 自己），主进程优先
+   `dsh-desktop-host`/`bin.js`/`--expose-internals`，取进程名/pid/内存/启动时间→已跑；
+   profile 取 `DSH_PROFILE`/`--profile`/命令行 `profiles\<name>`；PAD 起的再叠账本 URL；
+2. `Core/Ports.cs`：`GetExtendedTcpTable` P/Invoke 读系统 TCP 表，pid → 监听端口（IPv4），
+   不 shell out 解析 netstat（输出随系统语言变）；
+3. `Core/ShellActivate.cs`：枚举顶层窗口（Electron 主窗口不一定挂在主进程上），
+   `AttachThreadInput` 绕前台锁 → 实测「切到窗口」把 `DeepSeek Harness`（pid 62528）前置；
+4. 项目页从九张平铺卡收成四张：**运行（整行）** = 状态 + 进程/pid/端口/配置/已跑/内存 +
+   切到窗口 / 打开界面 / 打开工作区 / 日志；**对话（2 列）**；**项目（1 列）**；
+   **环境（整行）** = 内核/组合包/整合包/会话/上下文/工具调用 + 一行小字；
+5. 删掉"不是 PAD 起的…所以没有端口 / pid"这种自我声明，证据降级进 tooltip。
+实测（最终构建，真实窗口 `EVIDENCE/D57-project-page/project-page.png`）：
+运行 `在跑 · 外部启动 · 进程现场`，`进程 DeepSeek Harness` / `pid 68084` /
+`端口 127.0.0.1:54024` / `配置 desktop` / `已跑 1 小时 4 分` / `内存 319 MB`；
+对话 `1 条对话在执行 / 共 185 条 · 最近 11 秒前`；环境 `0.2.1-rc.2 / 14 / — / 185 / 8% / 3271`。
+验证：build 0 warning / 0 error；pad-window 新增 D57 断言（RunFacts 取端口/内存/已跑/配置、
+Ports 用 GetExtendedTcpTable、ShellActivate 存在、运行卡占整行、旧句不得回来、有「切到窗口」）；
+pad-window / pad-depth / pad-pack 绿。
+边界：端口只列 IPv4；外部启动的壳只给事实与切窗口，不停止/不托管（D6/D18）；
+运行现场是加载时快照，已跑时长绘制时按启动时间实时算。D54/D55 的卡片清单按本条重排。
+判据：**运行卡先回答"在哪、怎么打开"；"不是 PAD 起的"不能当成"不知道"的理由。**
+
+## D58 · 2026-10-31 · 图标 / logo / 交互反馈 / 动效：把事实画成形状
+用户："多来点图标和logo，交互反馈，动效。去学学开源的logo，图标库"
+学到的（2026-10-31 查许可）：Lucide（ISC）、Tabler Icons（MIT）——24 网格、一图标一概念、
+圆头笔画；Simple Icons（CC0）——品牌 logo 用真实标记，不手绘近似；
+Material Symbols（Apache-2.0）——14–24px 都成立的最小轮廓。
+用法：取共同表达，按本仓 iconfont 的 1024 单位填充轮廓**重画**（不逐条复制）；品牌 logo 读运行中 exe 的真实图标。
+改了什么：
+1. `Theme/Icons.xaml` 新增 9 个轮廓：`I.Cpu/I.Plug/I.Clock/I.Chat/I.Layers/I.Activity/I.Memory/I.External/I.Home`；
+   用在运行卡六格统计、对话行、项目事实行、四张卡标题、hero / 打开按钮、主页七张卡标题（`CardIcon`）。
+2. 真实 logo：`Core/AppIcon.cs` 用 `SHGetFileInfo` 取 HICON → `CreateBitmapSourceFromHIcon` → PNG
+   （缓存在 `<root>/library/icons/exe/`，不引 System.Drawing）；页头 `ScopeLogoHost` 与运行卡
+   `LogoFor` 显示运行中外壳的图标，取不到退回 `InstMark`（整合包图 → 载体图 → 鲸鱼）。
+3. 交互反馈：统计值点一下复制（`Clipboard.SetText` + toast `已复制 pid：68084`），悬停 AccentWash + 手型；
+   四张卡悬停轻抬 2px（`Fx.Move`）；对话行悬停底纹；页头运行灯与卡内 lamp 呼吸。
+4. 动效：运行现场首次到达 → logo `Fx.PulseIn(pop)` + 统计 `Fx.Fade`；**只播一次**
+   （`_heroAnimated`，切项目重置），2s 状态轮询不重播；`Fx.Animated=false` 时退化为静止值。
+实测：最终构建真实窗口（`project-icons.png` / `home-icons.png`）：页头真实 app 图标 + 绿灯；
+运行卡鲸鱼 logo + 六格带图标统计；对话行灯+图标；按钮带图标；主页卡片标题带图标；
+点 pid → 剪贴板 `68084`（实测）；`library/icons/exe/8e35c0d9ab4b.png`（3984 B）证明图标缓存。
+验证：build 0 warning / 0 error；pad-window 新增 D58 断言（九键、AppIcon `SHGetFileInfo`+缓存、
+点击复制、卡片 hover、真实 logo + InstMark 兜底、进场只播一次、主页卡片图标、页头 logo/lamp）；
+pad-window / pad-depth / pad-pack 绿。
+边界：图标形状本仓重画、不复制开源库路径；品牌 logo 来自本机 exe（不随包分发）；
+运行卡 logo 是"正在跑的那个 exe"，没在跑退回实例芯片；动效一次性，关动画保持可读静止态。
+判据：**图标承担概念、logo 承担身份、反馈承担可操作性；动效只做一次，不跟状态轮询重播。**
+
+## D59 · 2026-10-31 · 线性图标统一、卡片 hover 层级、项目自定义 logo
+用户（在 D58 的选项里选 2/3/4）："2，3，4"
+1. **线性图标统一（2）**：新增 `Views/LineIco.cs`（Stroke 1.9、圆头圆角、只描边不填充，颜色跟随
+   `Foreground`，按钮 hover/press 时图标同步变色）+ `Theme/LineIcons.xaml`（25 个图标，路径数据取自
+   Lucide v1.66.0，ISC，文件头署名；`rect/circle/line/polyline` 转等价 path；`App.xaml` 合并）。
+   项目页统计/卡片标题/对话行/事实行/所有按钮、页头按钮（主页/+/编辑/版本设置/实例与组合包/关系/
+   去启动·停止）、主页七张卡标题全部换成 `L.*`；`配置`/`版本设置` 用 sliders（齿轮 13px 会糊）。
+   顶部 tab 的 iconfont 不动——那是全局 chrome。
+2. **卡片 hover 层级（3）**：`HoverLift(Border)` 每张卡独立持有一份 `DropShadowEffect`
+   （blur 26 / depth 6 / 0.10）和一份 1px `LineBorder` 描边刷（透明）；
+   悬停 = 抬 2px（150ms）+ 阴影 0.10→0.22（160ms）+ 描边 0→1（160ms），离开 190ms 反向；
+   `Fx.Animated=false` 直接给静止终点值。项目页四张卡与主页所有卡都接上。
+   独立实例是必须的：动画不能作用在共享的冻结资源上。
+3. **项目自定义 logo（4）**：页头 logo（tooltip "点击换这个项目的 logo"）或项目卡「换 logo」→
+   `OpenFileDialog` → 拷到 `instances/<id>/logo.<ext>`（先清旧 `logo.*`）→
+   `Launcher.SetDisplay(id, logo)`（与实例设置「自定义 logo」同一份 `display.logo`）→
+   `Reload` → 重画 → toast「已换 logo」。logo 优先级：`display.logo` → 运行中外壳 exe 真实图标 →
+   `InstMark`（整合包图 → 载体图 → 鲸鱼）。只改 display，不动 home/workspace/profile。
+验证：build 0 warning / 0 error；pad-window 新增 D59 断言（LineIcons 署名与键、描边模板、LineIco 与
+附加属性、App 合并、SetupHeaderIcons/BtnContent、HoverLift 的 Effect/LineBorder、PickLogo +
+OpenFileDialog、display.logo 优先级、换 logo 入口）；pad-window / pad-depth / pad-pack 绿。
+真实窗口：`project-line.png` / `home-line.png` / `project-hover.png`（指针停在运行卡上的 hover 态）。
+边界：线性图标只换内容区；选图对话框无法自动化点选，logo 上传 UI 由源码断言 + 手工路径保证，
+底层拷贝/SetDisplay/优先级都在断言里；hover 只动 TranslateTransform / Effect / BorderBrush 透明度，不重排。
+判据：**同一页只能有一套笔触；hover 要改"层级"而不是改内容；logo 是项目自己的身份，入口必须在项目上。**
+
+## D60 · 2026-10-31 · 管理主页重排：先"谁在跑"，再"有哪些项目"
+用户看到主页："这页还得优化下"
+旧主页按用户的三条标准（别放无效信息 / 先放最想知道的 / 要读得懂）逐张不合格：
+"在运行"只有环 + 数字 2（不说是谁）、"本机 DSH 11"是载体计数、"上下文 8%"不写哪份 home、
+"项目卡"绑的是上次选中实例且只给一个项目、"工具调用/近7天"历史累计排太后。
+新默认版面（3 行 × 3 列，全部占满）：
+1. **在跑（2 列）**：N 个项目在跑 + 每行 logo/名称/版本/灯 + `profile · 端口 · 已跑`；
+   底部「进入项目」「切到窗口」，再一行 `共 N 条对话 · 最近 X`；空态"现在没有项目在跑" + 去启动。
+2. **上下文（1 列）**：底部标 `ShortHome(home)`，不再让人猜。
+3. **项目（2 列）**：全部实例行，在跑的置顶、其余按最近对话时间；**点一行 = ShowScope(该实例)**；
+   226 高放 4 行，总数写在页头不重复。
+4. **便签（1 列）**：空态改"空便签 · 点「编辑」写一句"。
+5. **近 7 天（1 列）**：大数字 + 七根小柱；**工具调用（2 列）**保留。
+6. **页头**：主页显示 `N 个项目 · M 个在跑`；**载体计数（本机 DSH）退出默认版面**（仍可在「+ 卡片」加回）。
+数据：`HomeProject(Inst, Status, Facts, Dialogs, LastDialog)` 一次装在内存喂"在跑/项目"两张卡；
+`Dialogs.Summary(home)` 只数目录 + 读 mtime，**不解析** session JSON（185 份 1MB 缓存不能压首屏）。
+迁移：pad.json 的 cards 若完全等于旧 7 张默认（D28 顺序/视图/列数全一致）→ 自动换新默认；用户改过就不动。
+验证：build 0 warning / 0 error；pad-window 新增 D60 断言（LegacyDefault/IsLegacyDefault/DefaultCards、
+RunningListCard/ProjectsCard/ProjectLine/ShowScope(p.Inst)、空态、上下文标 home、页头 meta、Summary 不解析 JSON）；
+三套测试绿。真实窗口：点项目卡第一行 → 出现「主页」+ 运行/对话/项目/环境卡片 = 进入项目页（EVIDENCE/D60-home）。
+截图用 `PrintWindow(PW_RENDERFULLCONTENT)`：窗口被微信/QQ 挡住时 CopyFromScreen 会截到别人。
+边界：项目卡只放 4 行，其余在左栏；对话摘要来自 mtime+文件数，不是管理口；迁移只认"完全等于旧默认"。
+判据：**主页第一屏必须回答"谁在跑、有哪些项目、点哪进得去"；历史统计排在后面；计数不进默认版面。**
+
+## D61 · 2026-10-31 · 第一眼看见"在跑啥"，每张卡写清"是谁的"
+用户："主要是第一眼得看件是啥意思在跑啥。上下文就不知道是谁上下文。。。工具调用也是"
+原则：**主页的数字必须带主体，在跑卡必须带内容。**
+1. **在跑卡**：卡头 `N 个项目在跑 · M 条对话在执行`；项目行下列对话行：
+   `● 在跑  打开PAD  ……  pack-agent · 8 秒前`（灯 + "在跑/最近" + 标题 + 工作区 + 时间），
+   最多 2 行（跨项目共用预算）。数据：`HomeProject` 增 `IReadOnlyList<DialogRow> Recent`，
+   在跑项目加载时 `Dialogs.Read(home, 4)`（只读 4 份，失败只留状态词）；没有可列对话才补
+   `最近 N 条对话 · 最新 X`。
+2. **上下文卡**：标题 `上下文 · 本机 DSH`（`HomeOwner()`：正在跑的 home 属于哪个实例）；
+   卡内仍留 `DSH-Home` 路径小字，tooltip 给完整 home。
+3. **工具调用卡**：标题 `工具调用 · 本机 DSH`；数字后写口径 `3271 次调用 · 近 7 天`。
+   近 7 天卡标题同样带主体 `近 7 天 · 本机 DSH`。
+验证：build 0 warning / 0 error；pad-window 新增 D61 断言（Recent、Dialogs.Read(inst.Home, 4)、
+HomeDialogLine、条对话在执行、HomeOwner、标题带 owner、次调用 · 近 7 天、旧"最近对话 N 条"占位行已删）；
+三套测试绿。真实窗口：在跑卡 `1 个项目在跑 · 1 条对话在执行` → `本机 DSH … 2小时34分` →
+`● 在跑 打开PAD  pack-agent · 8 秒前`；上下文/工具调用/近7天标题都带 `本机 DSH`（EVIDENCE/D61-home-attribution）。
+边界：在跑对话来自投影缓存（openStep/pendingCalls），不是管理口 session.list；只读 4 份缓存；
+多 home 同时跑时卡只标一个主体（其余在项目列表里）。
+判据：**在跑卡要回答"在跑什么"，统计卡要回答"是谁的数字、哪段时间"；没主体的数字等于噪声。**
+
+## D62 · 2026-11-01 · 项目 = 绑定层，运行体还是实例
+用户："我要开两个项目……把相关的 dsh agent 绑定在下面，启动 dsh 右边的工作区就只会有这个项目的东西"；
+"这只是一表现形式的问题……理论上应该和按实例表示处于并列关系"。
+模型：Workspace(目录) 1—n Instance(一份 DSH_HOME + 一个 workspace) 1—n Agent(会话)；
+**项目 = 绑定层**（workspaces + agents + 期望的 dsh/profile/window），`project.instance` 指向运行体；两条表示并列、互不改写。
+落地：`projects/<id>/project.json`（schema `pack-agent.launcher.project/v1`，可被项目内 `.pad/project.json` 覆盖）；
+隔离靠"每项目一份 home + 预置 `<home>/storages/workspace.json`"（DSH 全量投影该文件），PAD 只读 DSH、只写这份注册表：
+合并保留已有 uuid/`sessionIds`/title、写前 `.bak`、原子写、不变量校验失败报 PA124 且不动旧文件；
+`pad cli project add|list|show|remove|seed|adopt`；`adopt` 按目录叶子名分组（跳过 home/workspace/harness 等容器名）。
+边界：DSH 界面一行不改；官方桌面壳不能多开/换 home；`workspace.json` schema 错 DSH 直接拒绝启动（fail-loud）。
+判据：**项目是"绑哪些目录和 agent"，实例是"谁在跑"；隔离只能用 DSH 自己的 home 机制，不写 DSH 代码。**
+
+## D63 · 2026-11-01 · agent preset 绑定写 profile patch 层
+preset 是 DSH 自带行（`preset-standard/ptc/minimal/cordis`），生效键 `agent-preset-registry.config.default`。
+PAD 不猜：跑 pin 住发行号的 `--dump-config` 解析 preset id/order 与当前 default；读不到或 id 不存在 → PA125。
+写入 DSH 文档里的用户覆盖文件 `<home>/profiles/<profile>/cordis.patch.yml`：带 `# >>> pad project preset (managed) >>>`
+标记块，写前剥旧块（幂等）、清初始化占位 `[]`、保留 DSH 自己写的行；`--clear` 只删块，必要时补回 `[]`。
+验证：真实 0.2.1-rc.2 dump-config 里 default 从 standard 变成 minimal；EVIDENCE/D63-agent-preset。
+边界：用户在 DSH 设置里手改默认，下次 seed/run 会被项目绑定覆盖（项目优先）；多 preset = 校验全部 + 第一个作默认。
+判据：**绑定要落在发行号自己认的配置层，并让发行号自己验证；不复制 preset 内容、不猜测可用性。**
+
+## D64 · 2026-11-01 · web 启动 detach + 多 preset 增删换
+问题：`LaunchWeb` 用管道读子进程输出，web 进程和调用方共用 stdout，CLI 一直占着终端到窗口关闭。
+修法：`start /b` 给子进程自己的控制台句柄、输出直接落实例日志；`LaunchResult` 带 `LogPath`，只轮询本次启动那个文件
+（旧实现按 mtime 找日志会读到死进程的旧 token → HTTP 401）；读日志用 `FileShare.ReadWrite`。
+多 preset：`preset add|use|remove|clear`；`agents[0]` 是默认，add 只挂选项、use 才换默认；remove 离线可用。
+验证：CLI 20.3 秒退出、node 继续监听 3080（EVIDENCE/D64-detach-presets）；`pad-project.test.ts` 新增多 preset 顺序断言。
+边界：管道捕获（`| tee`）时 shell 仍会等子进程——Windows 句柄继承边界，不是 PAD 在等。
+判据：**启动器退出与窗口存活解耦；配置探测失败要报 PA125，不许静默回退到旧默认。**
+
+## D65 · 2026-11-01 · 项目页：启动/停止、preset chips、工作区
+`WorkbenchView` 加项目轴视图：`ShowProject`/`ProjectHeader`（项目名 + 工作区/preset/实例事实 + 运行灯 + 启动/停止）、
+启动卡（pid/端口/已跑/工作区数/默认 preset；打开界面=账本里的带 token URL）、preset 卡（chip=设默认，添加=挂选项）、
+工作区卡（点开目录）、对话/环境卡（复用现有卡，scope=项目实例）。
+逻辑全部复用 `ProjectRunner`/`AgentPresets`/`Projects`，视图不复制一套；`--shot-page manage-project` 优先截项目页。
+验证：build 0/0；`pad-project.test.ts` 加"项目页接线"源码契约；实拍 EVIDENCE/D65-project-page。
+边界：页头/卡片只表示绑定层事实；运行现场仍来自 RunFacts（进程、TCP 表、账本）。
+判据：**项目页先回答"在不在跑、怎么起停"，再回答"绑了什么"；事实必须能追到一个命令/文件。**
+
+## D66 · 2026-11-01 · 侧栏项目视角 + 两条表示 + 编辑菜单
+侧栏 `ProjectRail.FillProjects`：在跑/已停分组、项目行（名称 + `N 工作区 · M preset · profile` + 运行灯）+ 顶部按名字搜索；
+主页/项目页喂项目视角，实例页喂实例视角（`FillRail`），行点击 `ProjectPicked(id)` → `ShowProjectById`。
+两条表示互相能跳：项目页「实例视角」→ 实例页；实例页「项目视角」→ 项目页（实例卡加「项目」事实行）。
+编辑菜单（项目页「编辑」）：重命名（只改 name，id/绑定不动）、合并到…（工作区并集去重 + preset 并集，删源项目，实例不动）、
+取消分组（只删 project.json，实例/目录/会话不动）。
+验收：旧 PAD 停 → 构建 bin/Debug → 新 PAD 起来（pid 67308，EVIDENCE/D66-project-rail/pad-live.png）；
+`--shot manage-project` 实拍：侧栏 `1 个项目 · 1 个在跑` + 在跑分组 + ev-project 行，右栏项目页（project-page-rail.png）。
+四套测试绿。边界：主页首屏仍是异步扫描，`--shot manage` 默认延迟可能截在空态，不作为证据；侧栏搜索只过滤不重建数据。
+判据：**"项目"和"实例"是同一堆东西的两种说法，必须能互相跳到；删/改绑定不许动运行体和目录。**

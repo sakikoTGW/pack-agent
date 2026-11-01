@@ -1,0 +1,8 @@
+--- 03:22:52 pad cli project run ev-project --json --out E:\pack-agent\EVIDENCE\D63-agent-preset\run-detach2.json
+[project-run] 03:22:52 instance=ev-project
+[project-run] 03:22:52 phase=Stopped
+agent preset minimal → web
+[project-run] 03:22:53 launch profile=web web=True
+[project-run] 03:22:53 launched pid=70280
+[project-run] 03:23:11 url=http://127.0.0.1:3080/?token=j7NrUk7exbO2otEkxGYFQTduT84sAy2JdvhtYi7Tp4Y
+wrote E:\pack-agent\EVIDENCE\D63-agent-preset\run-detach2.json

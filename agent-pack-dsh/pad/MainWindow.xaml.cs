@@ -48,13 +48,13 @@ public partial class MainWindow : Window
             ApplyWindowPrefs();
             if (AppState.Current.Settings.Other.LoadWarning is { Length: > 0 } warn)
                 Toast(warn, bad: true);
-            if (App.ShotPath is null) OfferAdoptIfNeeded();
+            if (App.ShotPath is null) AutoReconcileHome();
             if (App.ShotPath is null) PickupSidecarPacks();
             if (App.ShotPage != "launch" || App.ShotPath is not null)
             {
                 var tab = App.ShotPage switch
                 {
-                    "manage" or "manage-edit" or "manage-open" => TabManage,
+                    "manage" or "manage-edit" or "manage-open" or "manage-project" => TabManage,
                     // 注意：`X or _ when G` 的 when 是整个 arm 的守卫，`relations` 本身不含
                     // "relations-" 会被守卫否决——所以这里用显式布尔，不玩模式组合。
                     _ when App.ShotPage.StartsWith("relations") => TabManage,
@@ -70,6 +70,9 @@ public partial class MainWindow : Window
                         $"set {tab.Name} manage={TabManage.IsChecked} launch={TabLaunch.IsChecked}\n");
                 if (App.ShotPage is "versions" or "versions-open")
                     ShowInner("versions", "版本选择");
+                // 管理页的项目页也要能截图：不靠指针点侧栏，直接进第一份实例。
+                if (App.ShotPage == "manage-project" && Page("manage") is WorkbenchView shotWb)
+                    shotWb.OpenProjectForShot();
                 if (App.ShotPage == "makepack") ShowInner("makepack", "导出整合包", "versions");
                 if (App.ShotPage == "bundles") ShowInner("bundles", "实例与组合包", "manage");
                 if (App.ShotPage == "relations" || App.ShotPage.StartsWith("relations-")) ShowRelations();
@@ -1468,6 +1471,44 @@ public partial class MainWindow : Window
         {
             Toast(PadError.Describe(ex), bad: true);
         }
+    }
+
+    /// <summary>
+    /// 启动对账（D56）：本机在用的 home 变了，就把「本机 DSH」跟着改指过去——不弹窗、不让用户点。
+    /// 只有确实能确定时才动（<see cref="Launcher.ReconcileMachineHome"/> 的判据）；
+    /// 事后仍然没有可用 home 才落回手动收编提示（那是兜底，不是常态）。
+    /// </summary>
+    void AutoReconcileHome()
+    {
+        var state = AppState.Current;
+        Task.Run(() =>
+        {
+            string? movedTo = null;
+            try
+            {
+                // 扫一遍机器（进程现场 + 壳的 asar），对账时顺手把钉的内核也对齐到在跑的那个壳。
+                Inventory? inventory = null;
+                try { inventory = Discover.Run(state.Launcher, [], CancellationToken.None); }
+                catch { /* 扫不出来就只按 pad.json + 进程 DSH_HOME 改指 */ }
+                if (state.Launcher.ReconcileMachineHome(out _, out var hit, inventory) is not null)
+                    movedTo = hit;
+            }
+            catch (Exception ex)
+            {
+                Dispatcher.BeginInvoke(new Action(() => App.ReportPage(ex)));
+                return;
+            }
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (movedTo is not null)
+                {
+                    state.Reload();
+                    Toast($"本机 DSH 已跟随到 {movedTo}");
+                }
+                OfferAdoptIfNeeded();
+            }));
+        });
     }
 
     public void OfferAdoptIfNeeded()

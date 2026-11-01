@@ -1625,8 +1625,73 @@ public sealed class Launcher
         return path;
     }
 
+    /// <summary>
+    /// 这个 home 已经有实例了吗——只比 home 本身（D56）。
+    /// 旧写法是 `i.Adopted || SamePath(...)`：只要有**任意一份**收编实例就算"这个 home 已收编"，
+    /// 于是换 home 之后收编提示永远不弹，PAD 一直指着旧 home。
+    /// </summary>
     public bool HomeAlreadyAdopted(string home) =>
-        Instances().Any(i => i.Adopted || LaunchPolicy.SamePath(i.Home, home));
+        Instances().Any(i => LaunchPolicy.SamePath(i.Home, home));
+
+    /// <summary>
+    /// 本机在用的 DSH home 变了，就把唯一那份 adopted 实例**自动**改指过去（D56）。
+    ///
+    /// 判据只有两个来源：<c>pad.json#launch.dshHome</c>（用户配置）和进程现场的
+    /// <c>DSH_HOME</c>（真正在跑的那份）。不弹窗、不让用户点——启动器自己记住。
+    /// 只在"恰好一份 adopted 实例"时动；没有或多份都不猜（宁可不动，交给手动流程）。
+    /// </summary>
+    public Instance? ReconcileMachineHome(out string? from, out string? to, Inventory? inventory = null)
+    {
+        from = null;
+        to = null;
+
+        string configured;
+        try { configured = LaunchPolicy.DefaultDshHome(Settings().Launch.DshHome); }
+        catch { configured = ""; }
+
+        var candidates = new List<string>();
+        if (!string.IsNullOrWhiteSpace(configured)) candidates.Add(configured);
+        try { candidates.AddRange(RunWatch.ProbeHomes()); } catch { /* 进程现场读不到就只看配置 */ }
+        if (!string.IsNullOrWhiteSpace(configured)) candidates.Add(configured);
+
+        var target = candidates.FirstOrDefault(DshSniff.LooksLikeHome);
+        if (target is null) return null;
+
+        List<Instance> insts;
+        try { insts = Instances(); } catch { return null; }
+        if (insts.Any(i => LaunchPolicy.SamePath(i.Home, target))) return null;
+
+        var adopted = insts.Where(i => i.Adopted).ToList();
+        if (adopted.Count != 1) return null;
+
+        var inst = adopted[0];
+        from = inst.Home;
+        to = Path.GetFullPath(target);
+
+        // 顺手把钉的内核对齐到这份 home 实际在跑的那个壳——但只在 PAD 版本库里真的有这个
+        // 发行号时才改（否则会造出一个装不上的版本；宁可先不改，边界写清楚）。
+        if (inventory is not null)
+        {
+            var targetPath = to;
+            var kernel = inventory.Shells
+                .FirstOrDefault(sh => !string.IsNullOrWhiteSpace(sh.KernelVersion)
+                                      && !string.IsNullOrWhiteSpace(sh.Home)
+                                      && LaunchPolicy.SamePath(sh.Home!, targetPath))
+                ?.KernelVersion?.Trim();
+            if (!string.IsNullOrEmpty(kernel)
+                && !string.Equals(kernel, inst.Dsh.Version, StringComparison.OrdinalIgnoreCase)
+                && Releases().Any(r => string.Equals(r.Version, kernel, StringComparison.OrdinalIgnoreCase)
+                                       && File.Exists(DshBin(r.Version))))
+            {
+                inst.Dsh.Version = kernel!;
+            }
+        }
+
+        inst.Home = to;
+        try { inst.AdoptedFingerprint = Fingerprint.Of(inst).Code; } catch { /* 指纹算不出来不影响改指 */ }
+        SaveInstance(inst);
+        return inst;
+    }
 
     /// <summary>
     /// Adopt needs a pinned release so later launches have a CLI entry.

@@ -1,0 +1,7 @@
+﻿--- 20:56:25 pad cli status
+status  5 个项目
+  123                    Stopped   
+  pack-Test              Stopped   
+  pad-op-clone           Stopped   
+  pad-op-tmp             Stopped   
+  本机 DSH                 Running   home 锁 · 进程现场

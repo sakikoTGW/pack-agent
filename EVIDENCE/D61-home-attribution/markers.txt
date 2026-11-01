@@ -1,0 +1,4 @@
+﻿running card: head 'N 个项目在跑 · M 条对话在执行' + dialog lines ('在跑  打开PAD  pack-agent · 8 秒前')
+data: HomeProject.Recent = Dialogs.Read(inst.Home, 4) for live projects only
+attribution: 上下文/工具调用/近7天 titles carry ' · 本机 DSH' via HomeOwner()
+tools: '3271 次调用 · 近 7 天'

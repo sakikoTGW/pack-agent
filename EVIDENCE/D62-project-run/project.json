@@ -1,0 +1,22 @@
+{
+  "schema": "pack-agent.launcher.project/v1",
+  "id": "ev-project",
+  "name": "ev-project",
+  "workspaces": [
+    "E:\\tmp\\pack-agent\\proj-evidence\\ws-frontend",
+    "E:\\tmp\\pack-agent\\proj-evidence\\ws-backend"
+  ],
+  "agents": [],
+  "dsh": {
+    "version": "0.2.1-rc.2",
+    "profile": "web"
+  },
+  "window": {
+    "kind": "web",
+    "shellExe": null
+  },
+  "instance": "ev-project",
+  "lastRun": "2026-10-31T17:04:37.7749543+00:00",
+  "created": "2026-10-31T16:45:47.1236006+00:00",
+  "updated": "2026-10-31T17:04:37.7765905+00:00"
+}

@@ -1,0 +1,5 @@
+﻿icons: Theme/LineIcons.xaml (25 keys, Lucide v1.66.0 ISC, stroke 1.9 round caps) + Views/LineIco.cs
+usage: project cards/stats/dialogs/facts/buttons + header buttons + home card titles
+hover: HoverLift -> translate -2px + DropShadowEffect 0.10->0.22 + 1px LineBorder 0->1 (150-190ms)
+logo: header logo click or 换 logo -> copy instances/<id>/logo.<ext> -> SetDisplay(display.logo) -> reload
+priority: display.logo -> running exe real icon -> InstMark chip

@@ -560,6 +560,34 @@ public static class Fx
     }
 
     /// <summary>
+    /// 呼吸：透明度低点 ↔ 高点，无限循环。给「这一行在跑」的行底色用——
+    /// 行尾的灯在闪，行本身也一起呼吸，一屏扫过去才知道是哪一行。
+    /// 关掉动画时给静止的中点值（gentler, not nothing）。
+    /// </summary>
+    public static void Breathe(FrameworkElement element, double low = 0.16, double high = 0.42, int ms = 2400)
+    {
+        if (!Animated)
+        {
+            element.BeginAnimation(UIElement.OpacityProperty, null);
+            element.Opacity = (low + high) / 2;
+            return;
+        }
+        element.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(low, high, Ms(ms))
+        {
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever,
+            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+        });
+    }
+
+    /// <summary>停掉呼吸并归零：这一行不在跑了，底色不能留。</summary>
+    public static void Calm(FrameworkElement element)
+    {
+        element.BeginAnimation(UIElement.OpacityProperty, null);
+        element.Opacity = 0;
+    }
+
+    /// <summary>
     /// 舞台元素的宽度：收起/展开走动画，旁边的内容跟着连续重排——
     /// 「元素在舞台上重新组成」靠的就是这种连续性，而不是跳变。
     /// 只在人手动收放侧栏时用；换页时宽度必须瞬间到位（见 MainWindow.ShowRail）。

@@ -1,0 +1,8 @@
+﻿MARK 0.2.1-rc.2 · 在跑 · dsh/workspace
+MARK 在跑
+MARK 证据
+MARK 对话 · 1 在执行
+MARK 共 185 条 · 最近 20 秒前
+MARK 管理口没连上：跑起来了但没有写出管理口。这个 profile 大概没装 apiproxy —— 到版本选择里给它补上。
+MARK E:\DSH-Home
+MARK 收编的 DSH home

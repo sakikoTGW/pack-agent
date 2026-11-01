@@ -36,6 +36,9 @@ public partial class LaunchFloat : Window
             _profile = profile,
         };
         _live = w;
+        // 点下去这一行立刻是"启动中"：不等账本、不等端点，灯先亮（D52）。
+        RunWatch.MarkStarting(profile.Instance.Id);
+        AppState.Current.RefreshStatus();
         w.Show();
         w.Pin();
         owner.LocationChanged += w.OnHostMoved;
@@ -195,6 +198,12 @@ public partial class LaunchFloat : Window
     {
         _cts.Cancel();
         if (_live == this) _live = null;
+        // 启动流程结束（成功或失败）：清掉"启动中"，状态回到账本 / 进程现场的事实（D52）。
+        if (_profile is not null)
+        {
+            RunWatch.ClearStarting(_profile.Instance.Id);
+            AppState.Current.RefreshStatus();
+        }
         if (_host is not null)
         {
             _host.LocationChanged -= OnHostMoved;

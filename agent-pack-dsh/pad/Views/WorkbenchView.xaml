@@ -39,21 +39,42 @@
     </Style>
   </UserControl.Resources>
 
-  <!-- 管理首页：可收起的项目侧栏 + 可自排的卡片区。 -->
+  <!-- 管理页：可收起的项目侧栏 + 右栏。主页 = 本机概览卡片；选中项目 = 那份项目自己的页（D54）。 -->
   <Grid>
     <!-- ============ 卡片区（项目侧栏在舞台层：MainWindow 持有，换页不换侧栏） ============ -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
+    <ScrollViewer x:Name="CardScroll" VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled">
       <StackPanel Margin="30,20,26,28">
         <DockPanel LastChildFill="False" Margin="2,0,0,18">
-          <TextBlock DockPanel.Dock="Left" Text="本机" Style="{StaticResource WbSection}"
-                     VerticalAlignment="Center" />
+          <!-- 项目页：实例 logo + 运行灯在标题左边（D58）；点 logo 换图（D59）；主页隐藏。 -->
+          <ContentControl x:Name="ScopeLogoHost" DockPanel.Dock="Left" Width="28" Height="28"
+                          Margin="0,0,10,0" VerticalAlignment="Center" Visibility="Collapsed"
+                          MouseLeftButtonUp="ScopeLogo_Click" />
+          <v:RunLamp x:Name="ScopeLamp" DockPanel.Dock="Left" Width="11" Height="11"
+                     Margin="10,0,0,0" VerticalAlignment="Center" Visibility="Collapsed" />
+          <TextBlock x:Name="PageTitle" DockPanel.Dock="Left" Text="本机"
+                     Style="{StaticResource WbSection}" VerticalAlignment="Center"
+                     TextTrimming="CharacterEllipsis" MaxWidth="420" />
+          <TextBlock x:Name="ScopeMeta" DockPanel.Dock="Left" Style="{StaticResource WbMuted}"
+                     Margin="12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"
+                     TextTrimming="CharacterEllipsis" MaxWidth="340" />
+          <Button x:Name="BackHomeBtn" DockPanel.Dock="Left" Content="主页"
+                  Style="{StaticResource BtnGhost}" Height="32" Padding="12,0"
+                  Click="BackHome_Click" Margin="14,0,0,0" Visibility="Collapsed"
+                  ToolTip="回到本机概览" v:Ico.Of="{StaticResource I.Back}" />
           <Button x:Name="AddBtn" DockPanel.Dock="Right" Content="+ 卡片"
                   Style="{StaticResource BtnPrimary}" Height="32" Padding="16,0"
                   Click="Add_Click" />
           <Button x:Name="EditBtn" DockPanel.Dock="Right" Content="编辑"
                   Style="{StaticResource BtnSm}" Height="32" Padding="14,0"
                   Click="Edit_Click" Margin="0,0,10,0" />
+          <Button x:Name="RunBtn" DockPanel.Dock="Right" Content="去启动"
+                  Style="{StaticResource BtnPrimary}" Height="32" Padding="16,0"
+                  Click="Run_Click" Margin="0,0,10,0" Visibility="Collapsed"
+                  v:Ico.Of="{StaticResource I.Play}" />
+          <Button x:Name="VersionsBtn" DockPanel.Dock="Right" Content="版本设置"
+                  Style="{StaticResource BtnSm}" Height="32" Padding="14,0"
+                  Click="Versions_Click" Margin="0,0,10,0" Visibility="Collapsed" />
           <Button x:Name="BundlesBtn" DockPanel.Dock="Right" Content="实例与组合包"
                   Style="{StaticResource BtnGhost}" Height="32" Padding="14,0"
                   Click="OpenBundles_Click" Margin="0,0,10,0" />

@@ -41,6 +41,11 @@ public static class Cli
     static void Out(object value) =>
         Say(value is string s ? s : JsonSerializer.Serialize(value, Pretty));
 
+    /// <summary>Shared emitters for command faces implemented in their own files (Cli is one
+    /// binary; the log and the console must stay the same channel).</summary>
+    internal static void Print(string line) => Say(line);
+    internal static string PrettyJson(object value) => JsonSerializer.Serialize(value, Pretty);
+
     public static async Task<int> Run(string[] args)
     {
         EnsureConsole();
@@ -480,6 +485,43 @@ public static class Cli
                             Say($"          cmd={text}");
                         }
                     }
+                    return 0;
+                }
+
+                // 项目状态：左栏那盏灯与项目卡的事实来源，UI 和脚本走同一个判定（D52）。
+                // `pad cli status [--json] [--out <path>]`：Phase = Stopped | Starting | Running。
+                case "status":
+                {
+                    var insts = launcher.Instances();
+                    var ledger = launcher.Runtime().Entries;
+                    // 命令行一次跑完：进程现场（PEB）当场扫一次，双击脚本/TUI 起的实例也算数。
+                    RunWatch.NoteHomes(RunWatch.ProbeHomes(CancellationToken.None));
+                    var map = RunWatch.Scan(launcher, insts, ledger);
+                    var rows = insts.Select(i =>
+                    {
+                        var run = map.TryGetValue(i.Id, out var known)
+                            ? known
+                            : new ProjectRun(i.Id, RunPhase.Stopped, "");
+                        return new { i.Id, i.Name, Phase = run.Phase.ToString(), run.Detail };
+                    }).ToList();
+
+                    var flags = new[] { cmd }.Concat(rest).Where(a => a.Length > 0).ToArray();
+                    if (flags.Contains("--json"))
+                    {
+                        var outPath = FlagValue(flags, "--out");
+                        if (outPath is not null)
+                        {
+                            var full = System.IO.Path.GetFullPath(outPath);
+                            System.IO.File.WriteAllText(full, JsonSerializer.Serialize(rows, Pretty));
+                            Say($"wrote {full}");
+                        }
+                        else Out(rows);
+                        return 0;
+                    }
+
+                    Say($"status  {rows.Count} 个项目");
+                    foreach (var row in rows)
+                        Say($"  {row.Name,-22} {row.Phase,-9} {row.Detail}");
                     return 0;
                 }
 
@@ -1056,6 +1098,15 @@ public static class Cli
                     return 0;
                 }
 
+                case "project":
+                    return await ProjectCli.Run(launcher, cmd, rest);
+
+                case "task":
+                    return await HeadlessTask.Run(launcher, cmd, rest);
+
+                case "queue":
+                    return await TaskQueue.Run(launcher, cmd, rest);
+
                 default:
                     Console.WriteLine("""
                         pad cli import <pack.zip>
@@ -1075,6 +1126,10 @@ public static class Cli
                                          | allow <instance> <pack-id> | deny <instance> <pack-id> | scan
                                          list 支持 --json / --out <path> / --roots <a;b> / --deep <dir>
                         pad cli credentials list | has [instance] | get <name> | set <name> <file.yaml> | remove <name>
+                        pad cli task run <instance> --input <file> --out <file> [--timeout <seconds>]
+                        pad cli queue submit <instance> --input <file> --out <receipt.json>
+                        pad cli queue submit-mesh --url <peer> --input <file> --out <receipt.json>
+                        pad cli queue list --out <file> | status|cancel|retry <id> --out <file> | worker [--once]
                         pad cli portable-export <dest> [instanceId]
                         pad cli stop <instance> <profile>
                         pad cli ps

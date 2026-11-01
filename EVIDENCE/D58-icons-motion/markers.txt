@@ -1,0 +1,4 @@
+﻿icons: I.Cpu I.Plug I.Clock I.Chat I.Layers I.Activity I.Memory I.External I.Home (+ I.Home for paths)
+research: Lucide ISC / Tabler MIT / Simple Icons CC0 / Material Symbols Apache-2.0 (shapes redrawn in-house)
+interaction: stat click copy + toast '已复制 pid：68084' (clipboard verified), hover washes, card lift -2px
+motion: logo PulseIn + stats fade once (_heroAnimated), RunLamp breathing, reduced when Fx.Animated false

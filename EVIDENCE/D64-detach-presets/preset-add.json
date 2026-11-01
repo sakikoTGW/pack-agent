@@ -1,0 +1,12 @@
+{
+  "project": "labproj",
+  "verb": "add",
+  "agents": [
+    "minimal",
+    "ptc"
+  ],
+  "preset": "minimal",
+  "profile": "web",
+  "patch": "E:\\tmp\\preset-lab\\instances\\labproj\\home\\profiles\\web\\cordis.patch.yml",
+  "verified": true
+}

@@ -1,0 +1,7 @@
+{
+  "project": "ev-project",
+  "preset": "minimal",
+  "profile": "web",
+  "patch": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\instances\\ev-project\\home\\profiles\\web\\cordis.patch.yml",
+  "verified": true
+}

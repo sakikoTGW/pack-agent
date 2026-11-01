@@ -1328,6 +1328,9 @@ public static class Discover
         var procHomes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var proc in scan.Procs)
         {
+            // PAD 自己（GUI / CLI）也会带 DSH_HOME（继承宿主 harness，或从某实例终端被拉起）。
+            // 启动器不是 DSH 载体：不排除它，"在跑"的 home 会多出来（D53）。
+            if (RunWatch.IsPadItself(proc.Exe)) continue;
             var procHome = NormalizePath(proc.DshHome);
             if (procHome is not null) procHomes.Add(procHome);
         }

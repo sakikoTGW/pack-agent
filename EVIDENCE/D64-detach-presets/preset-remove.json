@@ -1,0 +1,11 @@
+{
+  "project": "labproj",
+  "verb": "remove",
+  "agents": [
+    "minimal"
+  ],
+  "preset": "minimal",
+  "profile": "web",
+  "patch": "E:\\tmp\\preset-lab\\instances\\labproj\\home\\profiles\\web\\cordis.patch.yml",
+  "verified": false
+}

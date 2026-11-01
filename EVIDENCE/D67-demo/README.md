@@ -5,16 +5,18 @@
 
 ## 交付
 
+- **`real-demo.gif` / `real-demo.mp4`**：**真实录屏帧**（14 帧、约 20 秒）——用 UI Automation
+  在真 PAD 窗口上点「管理 / 侧栏项目 / 对话行 / 实例视角 / 主页」，同时用 PrintWindow 逐帧抓同一个窗口；
+  没有画任何仿制界面。
 - **`demo.html`**：可交互演示页（打开方式：双击 / `start EVIDENCE\D67-demo\demo.html`）
-  - 顶部 6 帧 GIF（真实操作链路，可重播）
+  - 顶部真实录屏（real-demo.gif / mp4）
+  - 精剪 6 帧 GIF（真实操作链路，可重播）
   - 逐帧查看器（点缩略图 / ← → 切换）
   - 「直接打开对话」三步说明 + 实拍
   - 更多实拍（D62/D63/D65/D66）
   - 和原型的关系：链接 `prototype.html`（设计定版 v4 原件，从 `.tmp/pad-project-mockup.html` 拷入，路径稳定不再依赖 .tmp）
-- **`demo-live.html`（=` .tmp/pad-project-demo.html`）**：按已实现界面重做的**可点演示**，
-  不用先看 PAD 也能体验链路：切页、preset chip、启动/停止、
-  「点对话行 / 打开对话」会 `window.open` 正在跑的 DSH URL + 复制 session id + Toast；
-  底部嵌真实窗口截图的灯箱。已在默认浏览器打开过。
+- ~~`demo-live.html`（按实现重画的仿制页）~~：**已撤回**——仿制页和真界面必然有差异，
+  演示只保留真窗口帧/录屏；要看真界面请直接开 PAD（当前 pid 65800）。
 - **`demo.gif`**：6 帧、1000px 宽、带中文说明条（PIL 合成，386 KB）
 - **`frames/`**：6 张真实窗口截图（PrintWindow，1843×1314）
 - **`extra/`**：D62/D63/D65/D66 关键实拍

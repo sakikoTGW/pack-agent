@@ -44,7 +44,7 @@ for (const need of ['storage', 'workspace.json', 'initialized', 'workspaceIds', 
 if (!registrySrc.includes('LeafTitle')) fail('WorkspaceRegistry.cs 没有标题规则（home/workspace 取上级）')
 
 const cliSrc = readFileSync(cliCs, 'utf8')
-for (const cmd of ['case "list"', 'case "show"', 'case "add"', 'case "remove"', 'case "seed"', 'case "run"', 'case "adopt"'])
+for (const cmd of ['case "list"', 'case "show"', 'case "add"', 'case "remove"', 'case "seed"', 'case "run"'])
   if (!cliSrc.includes(cmd)) fail(`pad cli project 缺 ${cmd}`)
 
 const runnerCs = join(pad, 'Core/ProjectRunner.cs')
@@ -65,7 +65,7 @@ for (const need of ['ShowProject', 'StartProjectAsync', 'ProjectPresetCard', 'Pr
   'PaintProjectCards', 'ProjectRunner.RunAsync', 'AgentPresets.Apply'])
   if (!wbSrc.includes(need)) fail(`WorkbenchView 缺项目轴接线：${need}`)
 
-console.log('✓ 项目轴源码契约（schema / 覆盖 / 校验 / seed / run / preset / adopt / 项目页）')
+console.log('✓ 项目轴源码契约（schema / 覆盖 / 校验 / seed / run / preset / 项目页）')
 
 // ---- 2) 真跑 CLI ------------------------------------------------------
 
@@ -172,33 +172,7 @@ try {
   if (r.status === 0) fail('绑定不存在目录居然成功了')
   if (readFileSync(registryFile, 'utf8') !== before) fail('失败的 add 改动了 registry')
 
-  // 2.6 adopt：把一份带「同名叶子目录」的 home 收成候选项目（--write 落盘）
-  const adoptHome = join(root, 'adopt-home')
-  const sharedA = join(root, 'adopt', 'one', 'shared')
-  const sharedB = join(root, 'adopt', 'two', 'shared')
-  for (const d of [sharedA, sharedB]) mkdirSync(d, { recursive: true })
-  mkdirSync(join(adoptHome, 'storages'), { recursive: true })
-  const adoptRegistry = {
-    unit: { name: 'workspace', version: 2 },
-    global: { initialized: true, workspaceIds: ['a', 'b'], archivedSessionIds: [], pinnedSessionIds: [] },
-    tables: {
-      workspaces: {
-        a: { path: sharedA, title: 'shared', sessionIds: [], createdAt: '2026-10-31T00:00:00Z', updatedAt: '2026-10-31T00:00:00Z' },
-        b: { path: sharedB, title: 'shared', sessionIds: [], createdAt: '2026-10-31T00:00:00Z', updatedAt: '2026-10-31T00:00:00Z' },
-      },
-    },
-  }
-  writeFileSync(join(adoptHome, 'storages', 'workspace.json'), JSON.stringify(adoptRegistry, null, 2))
-  out = outPath('adopt.json')
-  r = runCli(['cli', 'project', 'adopt', '--home', adoptHome, '--write', '--json', '--out', out])
-  if (r.status !== 0) fail(`project adopt 失败：${r.text}`)
-  const adopt = readJson<{ groups: Array<{ id: string; workspaces: string[] }>; created: string[] }>(out)
-  const sharedGroup = adopt.groups.find((g) => g.id === 'shared')
-  if (!sharedGroup || sharedGroup.workspaces.length !== 2)
-    fail(`adopt 没有把两个同名叶子归成一组：${JSON.stringify(adopt.groups)}`)
-  if (!adopt.created.includes('shared')) fail('adopt --write 没有落盘 shared')
-
-  // 2.7 remove
+  // 2.6 remove
   r = runCli(['cli', 'project', 'remove', 'alpha'])
   if (r.status !== 0) fail(`project remove 失败：${r.text}`)
   if (existsSync(join(root, 'projects', 'alpha'))) fail('remove 之后 projects/alpha 还在')
@@ -302,18 +276,21 @@ try {
   if (patchText.includes('pad project preset (managed)')) fail('清空后管理块还在')
   if (!patchText.includes('id: llm-pi-ai')) fail('清空把用户行删了')
 
-  console.log('✓ 项目轴实跑（add/list/seed×2 保留 sessionIds/坏路径不写/adopt/remove/run 拒绝 shell/preset 合并与 PA125/多 preset 增删换）')
+  console.log('✓ 项目轴实跑（add/list/seed×2 保留 sessionIds/坏路径不写/remove/run 拒绝 shell/preset 合并与 PA125/多 preset 增删换）')
   cleanup()
 } catch (error) {
   cleanup()
   fail(String(error))
 }
-// v4 页面（D69）：现在流 / 实例清单 / 自动收编 / 项目页状态条。
+// v4 页面（D69）：现在流 / 实例清单 / 项目页状态条。
 const v4Src = readFileSync(join(pad, 'Views/WorkbenchV4.cs'), 'utf8')
-for (const need of ['PaintNowCards', 'NowSection', 'PaintInstanceCards', 'PaintAdoptCards',
+for (const need of ['PaintNowCards', 'NowSection', 'PaintInstanceCards',
   'ProjectStatusStrip', 'ProjectTeamCard', 'ProjectTasksCard', 'ProjectCapsCard', 'ProjectRecentCard'])
   if (!v4Src.includes(need)) fail(`WorkbenchV4 缺 v4 页面/卡片：${need}`)
+if (v4Src.includes('_adoptMode') || v4Src.includes('ProjectAdopt'))
+  fail('自动收编已砍掉，WorkbenchV4 不该再有 adopt 代码')
 const railSrc = readFileSync(join(pad, 'Views/ProjectRail.xaml.cs'), 'utf8')
-for (const need of ['FillInstancesV4', 'ShowHub', 'SegmentChanged', 'AdoptClicked'])
+for (const need of ['FillInstancesV4', 'ShowHub', 'SegmentChanged', 'ImportClicked'])
   if (!railSrc.includes(need)) fail(`ProjectRail 缺 v4 分段/实例清单：${need}`)
-console.log('✓ v4 页面契约（现在/实例/自动收编/项目页卡片/侧栏分段）')
+if (railSrc.includes('AdoptClicked')) fail('自动收编已砍掉，ProjectRail 不该再有收编入口')
+console.log('✓ v4 页面契约（现在/实例/项目页卡片/侧栏分段）')

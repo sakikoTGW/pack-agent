@@ -7,7 +7,7 @@ namespace Pad.Core;
 
 /// <summary>
 /// <c>pad cli project …</c> — the project axis' command face. Same code the window will call:
-/// list / show / add / remove / seed (write the DSH workspace registry for a project) / adopt
+/// list / show / add / remove / seed (write the DSH workspace registry for a project)
 /// (turn an existing DSH home into candidate projects, read-only until <c>--write</c>).
 /// </summary>
 public static class ProjectCli
@@ -247,43 +247,8 @@ public static class ProjectCli
                 return 0;
             }
 
-            case "adopt":
-            {
-                var home = Flag(rest, "--home");
-                if (string.IsNullOrWhiteSpace(home)) home = launcher.Settings().Launch.DshHome;
-                if (string.IsNullOrWhiteSpace(home))
-                    return Usage("pad cli project adopt --home <dsh-home> [--write]");
-                home = Projects.NormPath(home);
-                var doc = WorkspaceRegistry.Read(home)
-                          ?? throw new PadError("PA123", "that DSH home has no workspace registry", WorkspaceRegistry.PathFor(home),
-                              "storages/workspace.json is missing", ["确认这是一个 DSH home（有 storages/ 或 profiles/）"]);
-                var groups = ProjectAdopt.Scan(doc);
-                var write = rest.Contains("--write", StringComparer.Ordinal);
-                var created = new List<string>();
-                var skipped = new List<string>();
-                if (write)
-                {
-                    foreach (var proj in ProjectAdopt.Materialize(groups, null, null))
-                    {
-                        if (store.ReadIndex(proj.Id) is not null) { skipped.Add(proj.Id); continue; }
-                        store.Save(proj);
-                        created.Add(proj.Id);
-                    }
-                }
-                Emit(launcher, new
-                {
-                    home,
-                    workspaces = doc.Tables.Workspaces.Count,
-                    groups = groups.Select(g => new { id = g.Id, name = g.Name, workspaces = g.Workspaces }),
-                    written = write,
-                    created,
-                    skipped,
-                }, rest);
-                return 0;
-            }
-
             default:
-                return Usage("pad cli project list | show <id> | add <name> --workspace <dir> | remove <id> | seed <id> [--home <dir>] | run <id> [profile] | presets <id> | preset <id> <preset-id|--clear> | adopt --home <dir> [--write]");
+                return Usage("pad cli project list | show <id> | add <name> --workspace <dir> | remove <id> | seed <id> [--home <dir>] | run <id> [profile] | presets <id> | preset <id> <preset-id|--clear>");
         }
     }
 

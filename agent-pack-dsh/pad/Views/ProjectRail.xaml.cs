@@ -40,9 +40,8 @@ public partial class ProjectRail : UserControl
     List<ProjectRowData> _projectRows = [];
     bool _projectMode;
 
-    /// <summary>D69（对齐原型 v4）：项目 / 实例 两条表示 + 底部收编入口。</summary>
+    /// <summary>D69（对齐原型 v4）：项目 / 实例 两条表示。</summary>
     public event Action<bool>? SegmentChanged;
-    public event Action? AdoptClicked;
     public event Action? ImportClicked;
     bool _segInst;
 
@@ -76,7 +75,6 @@ public partial class ProjectRail : UserControl
         SegmentChanged?.Invoke(true);
     }
 
-    void Adopt_Click(object sender, RoutedEventArgs e) => AdoptClicked?.Invoke();
     void Import_Click(object sender, RoutedEventArgs e) => ImportClicked?.Invoke();
     string _filter = "";
 

@@ -43,13 +43,9 @@
       </StackPanel>
     </DockPanel>
 
-    <!-- 底部：自动收编 / 导入整合包（对齐原型 v4） -->
+    <!-- 底部：导入整合包（对齐原型 v4） -->
     <Border x:Name="FootPanel" DockPanel.Dock="Bottom" Visibility="Collapsed" Margin="12,0,12,12">
       <StackPanel>
-        <Button x:Name="AdoptBtn" Content="自动收编已开启" Height="30" Margin="0,0,0,6"
-                HorizontalContentAlignment="Left" Padding="10,0"
-                Style="{StaticResource BtnSm}" Click="Adopt_Click"
-                ToolTip="把本机 DSH home 的工作区自动归组成项目" />
         <Button x:Name="ImportBtn" Content="导入整合包" Height="30"
                 HorizontalContentAlignment="Left" Padding="10,0"
                 Style="{StaticResource BtnSm}" Click="Import_Click"

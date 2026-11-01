@@ -275,11 +275,7 @@ public partial class WorkbenchView : UserControl
                 if (_scope is null) _selected = "";
             }
 
-            if (_adoptMode)
-            {
-                await LoadAdoptAsync(gen);
-            }
-            else if (_instMode && _scope is null)
+            if (_instMode && _scope is null)
             {
                 // 实例清单只用 insts 本身，没有额外扫描。
             }
@@ -739,7 +735,6 @@ public partial class WorkbenchView : UserControl
     {
         var proj = _project!;
         var inst = _scope;
-        HubAdoptBtn.Visibility = Visibility.Collapsed;
         var phase = inst is null ? new ProjectRun(proj.Id, RunPhase.Stopped, "") : _state.StatusOf(inst.Id);
         var run = inst is null ? null : _state.Running.FirstOrDefault(r => r.Entry.Instance == inst.Id);
 
@@ -1281,16 +1276,6 @@ public partial class WorkbenchView : UserControl
     void PaintTransition()
     {
         CardHost.Children.Clear();
-        if (_adoptMode)
-        {
-            CardHost.Children.Add(ScopeCard("读取中", 1, new TextBlock
-            {
-                Text = "正在扫本机 DSH home 里的工作区…",
-                Style = (Style)Application.Current.Resources["Muted"],
-                TextWrapping = TextWrapping.Wrap,
-            }, "L.Clock"));
-            return;
-        }
         if (_instMode && _scope is null)
         {
             CardHost.Children.Add(ScopeCard("读取中", 1, new TextBlock
@@ -1485,7 +1470,6 @@ public partial class WorkbenchView : UserControl
             _rail.Picked -= ShowScope;
             _rail.ProjectPicked -= ShowProjectById;
             _rail.SegmentChanged -= SegmentChanged;
-            _rail.AdoptClicked -= RailAdopt;
             _rail.ImportClicked -= RailImport;
         }
         _rail = rail;
@@ -1493,7 +1477,6 @@ public partial class WorkbenchView : UserControl
         _rail.Picked += ShowScope;
         _rail.ProjectPicked += ShowProjectById;
         _rail.SegmentChanged += SegmentChanged;
-        _rail.AdoptClicked += RailAdopt;
         _rail.ImportClicked += RailImport;
         if (_lastInsts is not null) FillRail(_lastInsts);
     }
@@ -1513,7 +1496,7 @@ public partial class WorkbenchView : UserControl
             _rail.FillProjects(ProjectRailRows(), _project.Id);
             return;
         }
-        if (_adoptMode || InNowPage)
+        if (InNowPage)
         {
             _rail.FillProjects(ProjectRailRows(), "");
             return;
@@ -1619,11 +1602,6 @@ public partial class WorkbenchView : UserControl
     void PaintCards(IReadOnlyList<Instance> insts)
     {
         CardHost.Children.Clear();
-        if (_adoptMode)
-        {
-            PaintAdoptCards();
-            return;
-        }
         if (_instMode && _scope is null)
         {
             PaintInstanceCards(insts);
@@ -1648,12 +1626,10 @@ public partial class WorkbenchView : UserControl
     /// </summary>
     void PaintHeader()
     {
-        if (_adoptMode) { PaintAdoptHeader(); return; }
         if (_instMode && _scope is null) { PaintInstancesHeader(); return; }
         if (InNowPage) { BackHomeBtn.Content = "主页"; PaintNowHeader(); return; }
 
         var scoped = _scope is not null;
-        HubAdoptBtn.Visibility = Visibility.Collapsed;
         if (_project is not null)
         {
             BackHomeBtn.Content = "主页";

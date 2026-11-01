@@ -1051,3 +1051,16 @@ GIF 用 Python Pillow 合成；脚本不进仓库。
 边界：hover 只有最近一轮 assistant 输出（投影缓存没有完整 user 消息）；"在跑"取决于 openStep 投影写盘时机；
 演示图的 2/3/3 与项目名是示例数据，PAD 显示本机真实会话。
 判据：**现在页的数据必须来自真实 DSH home，不能只扫 PAD 实例；悬停预览只用盘上可复核的数据，不编造对话。**
+
+## D73 · 2026-11-01 · 砍掉项目自动收编；现在页只读 PAD 项目
+用户确认：「砍掉自动收编，现在页只看 PAD 项目」。**这一条覆盖 D72 的数据源判断**——D72 让现在页
+扫全局 DSH home 是错的：隔离由实例/home 提供，项目有自己的 home 才有"窗口里只有这个项目的东西"；
+自动收编只是把全局目录写成标签，不改 home、不迁会话，打开全局 DSH 照样看见全部，所以是迁移场景，不是主链路。
+改动：
+- 删 `Core/ProjectAdopt.cs`、`pad cli project adopt`、现在页右上「自动收编」、侧栏底部入口、整个收编页；
+  `ProjectRail.AdoptClicked`、WorkbenchView 的 adopt 分支全删；测试去掉 adopt 用例并加反向断言。
+- 现在页 = `projects → ResolveProjectInstance → NowProbe.Read(inst.Home)`，且只留 cwd 落在该项目
+  `Workspaces` 里的会话；不扫 `launch.dshHome`，不再有「未归类」伪项目。
+- 项目没会话时现在页为空 = 正确状态（这个项目还没跑过 DSH），不是 bug。
+验证：build 0/0；`pad-project` 绿；实拍 EVIDENCE/D73-cut-adopt/01-now.png。
+判据：**隔离在 home，不在标签；现在页只回答"PAD 项目里的 agent 现在是什么状态"，不冒充全局 DSH 视图。**

@@ -10,10 +10,9 @@ using Pad.Core;
 namespace Pad.Views;
 
 /// <summary>
-/// D69：按原型 v4 补的三页——
-///   现在（等你输入 / 在跑 / 刚完成，按 agent 排）
+/// D69：按原型 v4 补的两页——
+///   现在（等你输入 / 在跑 / 刚完成，按 agent 排；只读 PAD 项目实例的会话）
 ///   实例（运行体清单，和项目并列）
-///   自动收编（本机 DSH home → 候选项目，一键收编）
 /// 项目页的 v4 卡片（智能体团队 / 任务 / 能力 / 最近会话 / 配置与覆盖）也在这一份。
 /// </summary>
 public partial class WorkbenchView
@@ -21,7 +20,6 @@ public partial class WorkbenchView
     // ---- 状态 ----------------------------------------------------------
 
     bool _instMode;
-    bool _adoptMode;
 
     sealed record NowItem(
         string ProjectId, string ProjectName, string Title, string Detail,
@@ -29,18 +27,13 @@ public partial class WorkbenchView
         string Draft, string? Tool, int Turns, string Cwd, string Home);
 
     List<NowItem> _nowItems = [];
-    List<AdoptGroup> _adoptGroups = [];
-    string _adoptHome = "";
-    string _adoptNote = "";
     List<JobRecord> _hubJobs = [];
-    int _adoptWorkspaces;
-    int _adoptProjectCount;
 
     const string StateWait = "等你输入";
     const string StateRun = "在跑";
     const string StateDone = "刚完成";
 
-    bool InNowPage => _project is null && _scope is null && !_instMode && !_adoptMode;
+    bool InNowPage => _project is null && _scope is null && !_instMode;
 
     // ---- 切换 ----------------------------------------------------------
 
@@ -50,7 +43,6 @@ public partial class WorkbenchView
         _scope = null;
         _scopeRun = null;
         _instMode = false;
-        _adoptMode = false;
         _selected = "";
         _open = null;
         PaintHeader();
@@ -66,7 +58,6 @@ public partial class WorkbenchView
         _scope = null;
         _scopeRun = null;
         _instMode = true;
-        _adoptMode = false;
         _selected = "";
         PaintHeader();
         PaintTransition();
@@ -75,27 +66,8 @@ public partial class WorkbenchView
         Load();
     }
 
-    void ShowAdopt()
-    {
-        _project = null;
-        _scope = null;
-        _scopeRun = null;
-        _instMode = false;
-        _adoptMode = true;
-        _selected = "";
-        PaintHeader();
-        PaintTransition();
-        if (_lastInsts is not null) FillRail(_lastInsts);
-        CardScroll?.ScrollToTop();
-        Load();
-    }
-
-    void Adopt_Click(object sender, RoutedEventArgs e) => ShowAdopt();
-    void HubAdopt_Click(object sender, RoutedEventArgs e) => ShowAdopt();
     void BackToNow_Click(object sender, RoutedEventArgs e) => ShowHubNow();
 
-    /// <summary>侧栏底部入口（无参 Action 版本）。</summary>
-    void RailAdopt() => ShowAdopt();
     void RailImport() => _host.ShowInner("bundles", "实例与组合包", "manage");
 
     void SegmentChanged(bool instances)
@@ -114,31 +86,13 @@ public partial class WorkbenchView
         var launcher = _state.Launcher;
         var settings = _state.Settings;
         var projects = new Projects(launcher).List();
-        var dshHome = settings.Launch.DshHome;
-
-        // 自动收编口径（顶部那颗按钮上要写：N 工作区 → M 项目）。
-        var adopt = await Task.Run(() =>
-        {
-            if (string.IsNullOrWhiteSpace(dshHome)) return (0, 0, new List<AdoptGroup>());
-            try
-            {
-                var doc = WorkspaceRegistry.Read(dshHome);
-                var groups = ProjectAdopt.Scan(doc);
-                return (groups.Sum(g => g.Workspaces.Count), groups.Count, groups);
-            }
-            catch { return (0, 0, new List<AdoptGroup>()); }
-        });
-        if (gen != _loadGen) return;
-        _adoptWorkspaces = adopt.Item1;
-        _adoptProjectCount = adopt.Item2;
-        if (_adoptGroups.Count == 0) _adoptGroups = adopt.Item3;
 
         var rows = await Task.Run(() =>
         {
             var list = new List<NowItem>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            void Add(NowSession s, string home, Project? bound)
+            void Add(NowSession s, string home, Project bound)
             {
                 if (!seen.Add(s.Id)) return;
                 var hot = s.LastAt is { } at && (DateTimeOffset.Now - at).TotalSeconds < 120;
@@ -152,22 +106,24 @@ public partial class WorkbenchView
                         ? ShortDraft(s.Draft)
                         : s.Open ? "正在改文件 / 跑测试" : "已收尾";
                 list.Add(new NowItem(
-                    bound?.Id ?? "", bound?.Name ?? (string.IsNullOrWhiteSpace(leaf) ? "未归类" : leaf), s.Title,
+                    bound.Id, bound.Name, s.Title,
                     $"{leaf} · {s.Preset} · {what}", state, s.LastAt,
                     s.Id, s.Preset, s.Draft, s.Tool, s.Turns, s.Cwd, home));
             }
 
-            // 真实 DSH home：这才是"现在"的主数据源（PAD 自建实例只是项目运行体）。
-            if (!string.IsNullOrWhiteSpace(dshHome))
-                foreach (var s in NowProbe.Read(dshHome, 80))
-                    Add(s, dshHome, projects.FirstOrDefault(p => p.Workspaces.Any(w =>
-                        !string.IsNullOrWhiteSpace(s.Cwd)
-                        && s.Cwd.StartsWith(w, StringComparison.OrdinalIgnoreCase))));
+            // 现在页只读 PAD 项目实例的会话：项目 = 一个实例/home，隔离由 home 提供。
             foreach (var p in projects)
             {
                 var inst = ResolveProjectInstance(p);
                 if (inst is null) continue;
-                foreach (var s in NowProbe.Read(inst.Home, 40)) Add(s, inst.Home, p);
+                foreach (var s in NowProbe.Read(inst.Home, 40))
+                {
+                    // 只留落在项目工作区里的会话；实例 home 里别处的会话不算这个项目。
+                    var mine = p.Workspaces.Any(w =>
+                        !string.IsNullOrWhiteSpace(s.Cwd)
+                        && s.Cwd.StartsWith(w, StringComparison.OrdinalIgnoreCase));
+                    if (mine) Add(s, inst.Home, p);
+                }
             }
             return list;
         });
@@ -178,64 +134,6 @@ public partial class WorkbenchView
         IReadOnlyList<JobRecord> jobs = [];
         try { jobs = launcher.ListJobs(); } catch { }
         _hubJobs = [.. jobs.Where(j => j.Status is "queued" or "running").Take(20)];
-    }
-
-    async Task LoadAdoptAsync(int gen)
-    {
-        var launcher = _state.Launcher;
-        var settings = _state.Settings;
-        var home = settings.Launch.DshHome;
-        if (string.IsNullOrWhiteSpace(home))
-        {
-            _adoptHome = "";
-            _adoptNote = "pad.json 里没配 launch.dshHome：在设置页填本机 DSH home 才能自动收编。";
-            _adoptGroups = [];
-            if (gen == _loadGen) { PaintHeader(); PaintCards(_lastInsts ?? []); }
-            return;
-        }
-        var scan = await Task.Run(() =>
-        {
-            try
-            {
-                var doc = WorkspaceRegistry.Read(home);
-                return ProjectAdopt.Scan(doc);
-            }
-            catch { return []; }
-        });
-        if (gen != _loadGen) return;
-        _adoptHome = home;
-        _adoptGroups = scan;
-        _adoptNote = scan.Count == 0
-            ? $"{Projects.NormPath(home)} 里没有可收编的工作区"
-            : $"{scan.Sum(g => g.Workspaces.Count)} 个工作区 → {scan.Count} 个项目 · 只读 DSH，归组只存本地";
-        PaintHeader();
-        PaintCards(_lastInsts ?? []);
-    }
-
-    void AdoptAll()
-    {
-        if (_adoptGroups.Count == 0) return;
-        try
-        {
-            var store = new Projects(_state.Launcher);
-            var created = 0;
-            var skipped = 0;
-            foreach (var proj in ProjectAdopt.Materialize(_adoptGroups, null, null))
-            {
-                if (store.ReadIndex(proj.Id) is not null) { skipped++; continue; }
-                store.Save(proj);
-                created++;
-            }
-            _projects = store.List();
-            _host.Toast(created > 0 ? $"已收编 {created} 个项目" + (skipped > 0 ? $"，跳过 {skipped} 个已存在" : "")
-                : "这些项目都已经收编过了");
-            _adoptMode = false;
-            ShowHubNow();
-        }
-        catch (Exception ex)
-        {
-            _host.Toast(PadError.Describe(ex), bad: true);
-        }
     }
 
     void ShowProjectFromNow(NowItem item)
@@ -251,7 +149,6 @@ public partial class WorkbenchView
     {
         var live = _nowItems.Count(i => i.State == StateRun);
         var wait = _nowItems.Count(i => i.State == StateWait);
-        var done = _nowItems.Count(i => i.State == StateDone);
         PageTitle.Text = "现在";
         ScopeMeta.Visibility = Visibility.Visible;
         ScopeMeta.Text = $"{_projects.Count} 个项目 · {live} 个 agent 在跑 · {wait} 等你输入";
@@ -263,12 +160,6 @@ public partial class WorkbenchView
         BackHomeBtn.Visibility = Visibility.Collapsed;
         RunBtn.Visibility = Visibility.Collapsed;
         VersionsBtn.Visibility = Visibility.Collapsed;
-        HubAdoptBtn.Visibility = Visibility.Visible;
-        HubAdoptBtn.Content = _adoptWorkspaces > 0
-            ? $"自动收编：{_adoptWorkspaces} 工作区 → {_adoptProjectCount} 项目"
-            : "自动收编";
-        HubAdoptBtn.ToolTip = "把本机 DSH home 的工作区自动归组成项目（只读 DSH）";
-        _ = done;
     }
 
     void PaintNowCards()
@@ -482,7 +373,7 @@ public partial class WorkbenchView
         row.MouseLeftButtonUp += (_, _) =>
         {
             if (!string.IsNullOrWhiteSpace(item.ProjectId)) { ShowProjectFromNow(item); return; }
-            _host.Toast("这条会话还没归到项目：点右上「自动收编」先归组");
+            _host.Toast("这条会话不在项目工作区里");
         };
         return row;
     }
@@ -617,7 +508,6 @@ public partial class WorkbenchView
         BackHomeBtn.Visibility = Visibility.Collapsed;
         RunBtn.Visibility = Visibility.Collapsed;
         VersionsBtn.Visibility = Visibility.Collapsed;
-        HubAdoptBtn.Visibility = Visibility.Collapsed;
     }
 
     void PaintInstanceCards(IReadOnlyList<Instance> insts)
@@ -683,7 +573,7 @@ public partial class WorkbenchView
 
         var axes = new StackPanel();
         axes.Children.Add(AxisLine("现在", "按 agent 状态排队：谁在等我、谁在跑、谁刚完成"));
-        axes.Children.Add(AxisLine("项目", "自动收编出来的分组标签，回答「这是哪个活」"));
+        axes.Children.Add(AxisLine("项目", "一个项目 = 一个实例/home + 属于它的工作区"));
         axes.Children.Add(AxisLine("实例", "运行体：一份 home + 一个工作区目录"));
         CardHost.Children.Add(FullCard("两条轴的分工", axes, "L.Layers"));
     }
@@ -697,124 +587,6 @@ public partial class WorkbenchView
         });
         row.Children.Add(new TextBlock { Text = text, FontSize = 10.5, Foreground = Muted });
         return row;
-    }
-
-    // ---- 自动收编页（D69）--------------------------------------------
-
-    void PaintAdoptHeader()
-    {
-        PageTitle.Text = "自动收编";
-        ScopeMeta.Visibility = Visibility.Visible;
-        ScopeMeta.Text = _adoptNote;
-        ScopeLogoHost.Visibility = Visibility.Collapsed;
-        ScopeLamp.Visibility = Visibility.Collapsed;
-        AddBtn.Visibility = Visibility.Collapsed;
-        EditBtn.Visibility = Visibility.Collapsed;
-        BackHomeBtn.Visibility = Visibility.Visible;
-        BackHomeBtn.Content = "回现在";
-        RunBtn.Visibility = Visibility.Collapsed;
-        VersionsBtn.Visibility = Visibility.Collapsed;
-        HubAdoptBtn.Visibility = Visibility.Collapsed;
-    }
-
-    void PaintAdoptCards()
-    {
-        var stack = new StackPanel();
-        if (_adoptGroups.Count == 0)
-        {
-            stack.Children.Add(new TextBlock
-            {
-                Text = string.IsNullOrWhiteSpace(_adoptHome)
-                    ? "还没有可收编的 home（先在本机 DSH 里打开几个工作区）。"
-                    : $"没有扫到可收编的工作区。\n{_adoptHome}",
-                FontSize = 11, Foreground = Muted, TextWrapping = TextWrapping.Wrap,
-            });
-        }
-        else
-        {
-            var head = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-            head.Children.Add(new TextBlock
-            {
-                Text = $"{_adoptGroups.Sum(g => g.Workspaces.Count)} 个工作区 → {_adoptGroups.Count} 个项目",
-                FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = Primary,
-            });
-            head.Children.Add(new TextBlock
-            {
-                Text = "不确认也能用", FontSize = 9.5, Foreground = Muted,
-                Margin = new Thickness(8, 2, 0, 0), VerticalAlignment = VerticalAlignment.Center,
-            });
-            stack.Children.Add(head);
-
-            foreach (var g in _adoptGroups)
-            {
-                var row = new Grid { Margin = new Thickness(0, 3, 0, 3) };
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                var chip = new Border
-                {
-                    Width = 24, Height = 24, CornerRadius = new CornerRadius(7),
-                    Background = (Brush)Application.Current.Resources["AccentWash"],
-                    Margin = new Thickness(0, 0, 10, 0),
-                    Child = new TextBlock
-                    {
-                        Text = string.IsNullOrEmpty(g.Name) ? "?" : g.Name[..1],
-                        FontSize = 11, Foreground = AccentBrush,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center,
-                    },
-                };
-                row.Children.Add(chip);
-                var body = new StackPanel();
-                body.Children.Add(new TextBlock { Text = g.Name, FontSize = 12, Foreground = Primary });
-                body.Children.Add(new TextBlock
-                {
-                    Text = string.Join(" · ", g.Workspaces.Take(2).Select(w =>
-                        Path.GetFileName(w.TrimEnd('\\', '/')))),
-                    FontSize = 9.5, Foreground = Muted,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                });
-                Grid.SetColumn(body, 1);
-                row.Children.Add(body);
-                var count = new TextBlock
-                {
-                    Text = $"{g.Workspaces.Count} 工作区", FontSize = 10, Foreground = Muted,
-                    VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 8, 0),
-                };
-                Grid.SetColumn(count, 2);
-                row.Children.Add(count);
-                var badge = new TextBlock
-                {
-                    Text = "自动", FontSize = 9.5,
-                    Foreground = (Brush)Application.Current.Resources["Accent"],
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                Grid.SetColumn(badge, 3);
-                row.Children.Add(badge);
-                stack.Children.Add(row);
-            }
-
-            var apply = new Button
-            {
-                Content = BtnContent("全部收编", "L.Check"),
-                Style = (Style)Application.Current.Resources["BtnPrimary"],
-                Height = 30,
-                Padding = new Thickness(14, 0, 14, 0),
-                Margin = new Thickness(0, 12, 0, 0),
-                HorizontalAlignment = HorizontalAlignment.Left,
-            };
-            apply.Click += (_, _) => AdoptAll();
-            stack.Children.Add(apply);
-        }
-        CardHost.Children.Add(FullCard("自动收编", stack, "L.Magic"));
-
-        var rules = new StackPanel();
-        rules.Children.Add(AxisLine("分组依据", "目录名 + 近 30 天会话所在目录；同名项目自动合并"));
-        rules.Children.Add(AxisLine("只读 DSH", "只读 workspace.json 与会话 cwd，不改 DSH 的任何数据"));
-        rules.Children.Add(AxisLine("本地保存", "分组存在 PAD 的 projects.json；删项目 = 取消分组，会话不删"));
-        rules.Children.Add(AxisLine("人工可改", "改名 / 合并 / 拆开 / 绑 agent，都是可逆的一次性动作"));
-        CardHost.Children.Add(FullCard("规则", rules, "L.File"));
     }
 
     // ---- 项目页 v4 卡片（D69）-----------------------------------------

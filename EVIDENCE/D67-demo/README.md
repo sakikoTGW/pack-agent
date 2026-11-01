@@ -11,6 +11,10 @@
   - 「直接打开对话」三步说明 + 实拍
   - 更多实拍（D62/D63/D65/D66）
   - 和原型的关系：链接 `prototype.html`（设计定版 v4 原件，从 `.tmp/pad-project-mockup.html` 拷入，路径稳定不再依赖 .tmp）
+- **`demo-live.html`（=` .tmp/pad-project-demo.html`）**：按已实现界面重做的**可点演示**，
+  不用先看 PAD 也能体验链路：切页、preset chip、启动/停止、
+  「点对话行 / 打开对话」会 `window.open` 正在跑的 DSH URL + 复制 session id + Toast；
+  底部嵌真实窗口截图的灯箱。已在默认浏览器打开过。
 - **`demo.gif`**：6 帧、1000px 宽、带中文说明条（PIL 合成，386 KB）
 - **`frames/`**：6 张真实窗口截图（PrintWindow，1843×1314）
 - **`extra/`**：D62/D63/D65/D66 关键实拍

@@ -988,6 +988,10 @@ demo.gif（PIL 合成，真实窗口帧）、prototype.html（设计定稿原件
 否则读实例日志里最近一次 dsh web: …token… 用 Reveal 打开，同时把会话 id 复制到剪贴板；
 没在跑就给"先启动"提示。实测 DSH web **没有 URL 深链**（?session= 被 SPA 丢弃，页面回新会话），
 所以完整链路 = 切窗口 + 贴 id，不做假按钮。
+**可点演示**（因为静态截图说服不了）：`.tmp/pad-project-demo.html`（= EVIDENCE/D67-demo/demo-live.html）
+按真界面重做一个可点的版本——切页、preset chip、启动/停止、"点对话行/打开对话"会真的
+`window.open` 正在跑的 DSH URL + 复制 session id + Toast；底部带真实窗口截图灯箱。
+用户只在浏览器里就能体验完整链路，不需要先看懂 PAD 源码或 .tmp 里的原型。
 截图/交互：PrintWindow(PW_RENDERFULLCONTENT) + UI Automation 真点按钮（管理/主页/侧栏项目/打开对话/实例视角），
 GIF 用 Python Pillow 合成；脚本不进仓库。
 验证：build 0/0；pad-project + pad-window 绿；新 PAD pid 65800 跑的就是截图版本。

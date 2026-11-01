@@ -1,0 +1,26 @@
+﻿=== 托盘提示卡（最终交互）实测（隔离 root）===
+
+元素：
+  title=⚠ 注意喵： ✔ 按钮「好的」✔ 按钮「我只是手滑了.....」✔ 复选框「不再提醒」✔ 链接「点我跳转 → 设置 · 其他 · 关闭行为」✔
+
+行为：
+  点「我只是手滑了.....」 → 卡片关闭，窗口保留（visible=True），不写 pad.json
+  点「点我跳转」         → 卡片关闭，切到 设置 tab →「其他」层，能看到「点关闭按钮时 / 关闭行为」；
+                           窗口保留（链接采用 Hyperlink.Invoke 实测）
+  点「好的」             → 窗口收托盘（visible=False），进程留在托盘
+  勾「不再提醒」+ 「好的」→ 收托盘；pad.json ui.trayHintDismissed=true
+  之后点 X               → 直接收托盘，不再弹卡片
+
+设置页（设置 → 其他 → 关闭行为）：
+  组合框「点关闭按钮时」：最小化到托盘 / 退出 PAD       → 写入 ui.closeToTray
+  开关「退出 PAD 时停止所有正在运行的实例」            → 写入 other.stopInstancesOnExit
+  UI 自动化实测：改成「退出 PAD」+ 打开开关 → pad.json: closeToTray=False / stopInstancesOnExit=True
+
+退出行为（用假 runtime.json 里一个真实存活 pid 验证）：
+  stopInstancesOnExit=false → WM_CLOSE 后 PAD 退出、dummy 进程仍活、runtime.json 保留条目
+  stopInstancesOnExit=true  → WM_CLOSE 后 PAD 退出、dummy 进程被杀、runtime.json entries=[]
+  （X 直接退出 / Alt+F4 / 托盘退出 / 手滑路径都覆盖：X 与 Alt+F4 走 OnClosing 分支，托盘退出走 ExitGracefully）
+
+证据图：
+  03-tray-hint-card.png        —— 提示卡实际渲染
+  04-settings-close-behavior.png —— 设置·其他 的「关闭行为」区块

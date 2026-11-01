@@ -180,6 +180,10 @@
                     <TextBlock x:Name="MsgBody" FontSize="15" LineHeight="22"
                                Foreground="{StaticResource TextBody}" TextWrapping="Wrap"
                                Margin="7,0,7,12" Visibility="Collapsed" />
+                    <TextBlock x:Name="MsgLink" Margin="7,0,7,12" Visibility="Collapsed">
+                      <Hyperlink x:Name="MsgLinkButton" Foreground="{StaticResource AccentText}"
+                                 Click="MsgLink_Click" />
+                    </TextBlock>
                     <Border x:Name="MsgPreviewBox" Width="72" Height="72" Margin="7,0,7,12"
                             HorizontalAlignment="Left" CornerRadius="8" ClipToBounds="True"
                             Background="{StaticResource BgSubtle}" BorderBrush="{StaticResource LineBorder}"

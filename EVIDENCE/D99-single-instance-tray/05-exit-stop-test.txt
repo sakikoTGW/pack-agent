@@ -1,0 +1,5 @@
+﻿case=exit-keep stopOnExit=False -> PAD alive=False (期望 False) dummy alive=True (期望 True)
+  runtime.json: { "entries": [ { "version": "0.2.1-rc.2", "instance": "dummy", "profile": "web", "startedAt": "2026-11-02T03:06:43.9804873+08:00", "port": 0, "pid": 53932 } ], "schema": "pack-agent.launcher.runtime/v2" }
+case=exit-stop stopOnExit=True -> PAD alive=False (期望 False) dummy alive=False (期望 False)
+  runtime.json: { "schema": "pack-agent.launcher.runtime/v2", "entries": [] }
+

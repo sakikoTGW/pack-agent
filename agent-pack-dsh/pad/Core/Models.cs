@@ -677,6 +677,8 @@ public sealed class OtherPrefs
 {
     [JsonPropertyName("openLogOnError")] public bool OpenLogOnError { get; set; }
     [JsonPropertyName("confirmStop")] public bool ConfirmStop { get; set; } = true;
+    /// <summary>退出 PAD 进程时把所有正在运行的实例一起停掉（默认保留实例继续跑）。</summary>
+    [JsonPropertyName("stopInstancesOnExit")] public bool StopInstancesOnExit { get; set; }
     [JsonPropertyName("refreshSec")] public int RefreshSec { get; set; } = 2;
     [JsonPropertyName("registriesRel")] public string RegistriesRel { get; set; } = "library/registries";
     [JsonPropertyName("backupCorrupt")] public bool BackupCorrupt { get; set; } = true;

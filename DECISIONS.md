@@ -1210,3 +1210,11 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
   git commit/push/tag → gh release create --latest（exe/latest.json/SHA256SUMS）→ gh api 校验 latest tag。
 - `--dry-run` 只打印计划；`--version` 指定版本；`--repo` 换仓库。
 - 以后用户只说"bump 版本"，执行这一条即可。
+
+## D99 补 2 · 关闭行为设置 + 托盘提示卡（⚠ 注意喵）
+- 提示卡最终版：标题「⚠ 注意喵：」；正文说明只收托盘；「点我跳转」链接到 设置·其他·关闭行为；
+  复选框「不再提醒」；按钮「好的」= 收托盘、「我只是手滑了.....」= 窗口留着。
+- 设置·其他 新增「关闭行为」：点 X 时 最小化到托盘/退出 PAD（ui.closeToTray）；
+  「退出 PAD 时停止所有正在运行的实例」（other.stopInstancesOnExit，默认关）。
+- 退出路径统一走 ExitGracefully：X/Alt+F4（OnClosing）、托盘退出；勾了停实例先 Runner.Stop 再退。
+- 验证：EVIDENCE/D99（05 退出停实例、06 设置落盘、07 卡片交互、03/04 截图）。

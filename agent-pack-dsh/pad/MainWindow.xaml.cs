@@ -79,6 +79,7 @@ public partial class MainWindow : Window
                 if (App.ShotPage is "instance" or "instance-settings" or "instance-plugins" or "instance-bundles"
                     or "plugin-detail")
                     ShowInner("instance", "版本设置");
+                if (App.ShotPage == "tray-hint") ShowTrayHintPreview();
                 if (App.ShotPage == "market" && Page("download") is DownloadView market)
                     market.OpenShelf("plugin");
                 if (App.ShotPage == "dl-tasks" && Page("download") is DownloadView dlTasks)
@@ -1216,13 +1217,24 @@ public partial class MainWindow : Window
         string? okText = null, string? cancelText = null) =>
         ShowMsg(title, body, input: false, seed: "", warn, previewPath, okText, cancelText) is not null;
 
-    /// <summary>带「不再提醒」复选框的单按钮卡片（托盘提示用）。</summary>
-    public bool AskHint(string title, string body, string checkText, out bool checkedDismiss, string okText = "好的")
+    public enum HintChoice { Ok, Cancel, Settings }
+
+    /// <summary>托盘提示卡：好的 / 手滑了 / 点我跳转（设置）三态，带「不再提醒」复选框。</summary>
+    public HintChoice AskTrayHint(string title, string body, string linkText, string checkText,
+        out bool checkedDismiss)
     {
-        var accepted = ShowMsg(title, body, input: false, seed: "", warn: false, previewPath: null,
-            okText: okText, cancelText: null, checkText: checkText, singleButton: true) is not null;
+        _msgChoice = 0;
+        ShowMsg(title, body, input: false, seed: "", warn: false, previewPath: null,
+            okText: "好的", cancelText: "我只是手滑了.....", checkText: checkText,
+            linkText: linkText,
+            linkHandler: () => { EndMsg(true); _msgChoice = 3; });
         checkedDismiss = _msgCheckResult;
-        return accepted;
+        return _msgChoice switch
+        {
+            1 => HintChoice.Ok,
+            3 => HintChoice.Settings,
+            _ => HintChoice.Cancel,
+        };
     }
 
     /// <summary>PCL MyMsgInput: in-window card with a text box.</summary>
@@ -1230,7 +1242,8 @@ public partial class MainWindow : Window
         ShowMsg(title, body ?? "", input: true, seed, warn);
 
     string? ShowMsg(string title, string body, bool input, string seed, bool warn, string? previewPath = null,
-        string? okText = null, string? cancelText = null, string? checkText = null, bool singleButton = false)
+        string? okText = null, string? cancelText = null, string? checkText = null, bool singleButton = false,
+        string? linkText = null, Action? linkHandler = null)
     {
         if (_msgFrame is not null) return null;
         MsgTitle.Text = title;
@@ -1252,6 +1265,10 @@ public partial class MainWindow : Window
         MsgCheck.IsChecked = false;
         MsgCheck.Visibility = checkText is null ? Visibility.Collapsed : Visibility.Visible;
         MsgCancel.Visibility = singleButton ? Visibility.Collapsed : Visibility.Visible;
+        _msgLinkHandler = linkHandler;
+        MsgLinkButton.Inlines.Clear();
+        if (!string.IsNullOrWhiteSpace(linkText)) MsgLinkButton.Inlines.Add(new Run(linkText));
+        MsgLink.Visibility = string.IsNullOrWhiteSpace(linkText) ? Visibility.Collapsed : Visibility.Visible;
         MsgOk.Style = (Style)FindResource(warn ? "BtnDanger" : "BtnPrimary");
         MsgOk.IsDefault = !warn;
         MsgCancel.IsDefault = warn;
@@ -1286,6 +1303,9 @@ public partial class MainWindow : Window
         MsgCancel.Visibility = Visibility.Visible;
         MsgCheck.Visibility = Visibility.Collapsed;
         MsgCheck.IsChecked = false;
+        MsgLink.Visibility = Visibility.Collapsed;
+        MsgLinkButton.Inlines.Clear();
+        _msgLinkHandler = null;
         MsgCard.Opacity = 1;
         MsgCard.RenderTransform = null;
         if (!_msgAccepted) return null;
@@ -1300,11 +1320,23 @@ public partial class MainWindow : Window
     {
         if (_msgFrame is null) return;
         _msgAccepted = accepted;
+        _msgChoice = accepted ? 1 : 2;
         _msgCheckResult = MsgCheck.IsChecked == true;
         _msgFrame.Continue = false;
     }
 
+    void MsgLink_Click(object sender, RoutedEventArgs e)
+    {
+        if (_msgFrame is null) return;
+        var handler = _msgLinkHandler;
+        EndMsg(true);
+        _msgChoice = 3;
+        handler?.Invoke();
+    }
+
     bool _msgCheckResult;
+    int _msgChoice;
+    Action? _msgLinkHandler;
 
     /// <summary>readme.md overlay on the main window. Headings render; no second HWND.</summary>
     public void ShowMd(string title, string markdown)
@@ -1635,6 +1667,11 @@ public partial class MainWindow : Window
             return;
         }
         AppState.Current.SaveSelection();
+        if (!App.Exiting && AppState.Current.Settings.Other.StopInstancesOnExit)
+        {
+            App.ExitGracefully(this);
+            return;
+        }
         Close();
     }
 
@@ -1646,6 +1683,14 @@ public partial class MainWindow : Window
             HideToTray();
             return;
         }
+        // 关闭即退出（包括 Alt+F4 / 系统关闭）时，按设置先把实例停掉再真正退出。
+        if (App.ShotPath is null && !App.Exiting && !App.CloseToTray
+            && AppState.Current.Settings.Other.StopInstancesOnExit)
+        {
+            e.Cancel = true;
+            App.ExitGracefully(this);
+            return;
+        }
         base.OnClosing(e);
     }
 
@@ -1655,18 +1700,55 @@ public partial class MainWindow : Window
         var ui = AppState.Current.Settings.Ui;
         if (!ui.TrayHintDismissed && App.ShotPath is null && IsVisible)
         {
-            // 第一次点 X：说清楚"只是收进托盘、实例不停"，并给一个不再提醒的选择。
-            AskHint("PAD 已收进托盘",
-                "点 X 只是把窗口收进托盘，PAD 和正在跑的实例都没停。\n\n" +
-                "双击托盘图标恢复窗口，右键托盘图标可以退出。",
+            // 第一次点 X：说明只是收进托盘，并给「跳设置 / 手滑了 / 好的 + 不再提醒」。
+            var choice = AskTrayHint("⚠ 注意喵：",
+                "退出仅会把窗口收进托盘，PAD 最小化进托盘！\n\n" +
+                "想改成「关闭即退出 PAD」或者「退出时停掉所有实例」，去设置里改：",
+                "点我跳转 → 设置 · 其他 · 关闭行为",
                 "不再提醒", out var dismissed);
             if (dismissed)
             {
                 ui.TrayHintDismissed = true;
                 try { AppState.Current.SaveSettings(); } catch { /* ignore */ }
             }
+            if (choice == HintChoice.Settings) { OpenSettingsCloseBehavior(); return; }
+            if (choice == HintChoice.Cancel) return; // 手滑了：窗口留着
         }
         Hide();
+    }
+
+    /// <summary>只把托盘提示卡摆出来（不进入 DispatcherFrame），给 --shot 截图用。</summary>
+    public void ShowTrayHintPreview()
+    {
+        MsgTitle.Text = "⚠ 注意喵：";
+        MsgTitle.Foreground = (Brush)FindResource("AccentText");
+        MsgLine.Fill = (Brush)FindResource("Accent");
+        MsgDim.Background = new SolidColorBrush(Color.FromArgb(0x99, 0x00, 0x00, 0x00));
+        MsgBody.Text = "退出仅会把窗口收进托盘，PAD 最小化进托盘！\n\n" +
+                       "想改成「关闭即退出 PAD」或者「退出时停掉所有实例」，去设置里改：";
+        MsgBody.Visibility = Visibility.Visible;
+        MsgPreviewBox.Visibility = Visibility.Collapsed;
+        MsgInput.Visibility = Visibility.Collapsed;
+        MsgOk.Content = "好的";
+        MsgOk.Style = (Style)FindResource("BtnPrimary");
+        MsgOk.Visibility = Visibility.Visible;
+        MsgCancel.Content = "我只是手滑了.....";
+        MsgCancel.Visibility = Visibility.Visible;
+        MsgCheck.Content = "不再提醒";
+        MsgCheck.IsChecked = false;
+        MsgCheck.Visibility = Visibility.Visible;
+        MsgLinkButton.Inlines.Clear();
+        MsgLinkButton.Inlines.Add(new Run("点我跳转 → 设置 · 其他 · 关闭行为"));
+        MsgLink.Visibility = Visibility.Visible;
+        MsgLayer.Visibility = Visibility.Visible;
+        MsgCard.Opacity = 1;
+    }
+
+    /// <summary>托盘提示里「点我跳转」：打开 设置 · 其他 · 关闭行为。</summary>
+    public void OpenSettingsCloseBehavior()
+    {
+        TabSettings.IsChecked = true;
+        if (Page("settings") is SettingsView sv) sv.OpenCloseBehavior();
     }
 
     /// <summary>从托盘/第二个实例恢复窗口。</summary>

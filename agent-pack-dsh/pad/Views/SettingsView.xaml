@@ -981,6 +981,31 @@
             </StackPanel>
           </Border>
 
+          <Border x:Name="CloseBehaviorSlab" Style="{StaticResource Slab}">
+            <StackPanel>
+              <ContentControl Style="{StaticResource SlabHead}" Content="关闭行为"
+                              v:Ico.Of="{StaticResource I.Close}" />
+              <Grid Height="28" Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="点关闭按钮时" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" x:Name="CloseXBox" Width="170" Height="28"
+                          SelectionChanged="Other_Sel">
+                  <ComboBoxItem Tag="tray" Content="最小化到托盘" />
+                  <ComboBoxItem Tag="quit" Content="退出 PAD" />
+                </ComboBox>
+              </Grid>
+              <CheckBox x:Name="StopInstancesOnExit" Style="{StaticResource Switch}"
+                        Content="退出 PAD 时停止所有正在运行的实例"
+                        Click="Other_Save" Checked="Other_Save" Unchecked="Other_Save"
+                        Margin="0,0,0,10" />
+              <TextBlock Style="{StaticResource Muted}"
+                         Text="默认：关闭窗口只收托盘，实例继续跑。勾上后退出 PAD 会把运行时账本里的实例一起停掉。" />
+            </StackPanel>
+          </Border>
+
           <Border Style="{StaticResource Slab}">
             <StackPanel>
               <ContentControl Style="{StaticResource SlabHead}" Content="习惯"

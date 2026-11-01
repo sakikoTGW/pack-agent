@@ -44,6 +44,16 @@ public partial class SettingsView : UserControl, IRefreshable
         if (id == "api") ShowApiList();
     }
 
+    /// <summary>托盘提示跳转：切到「其他」并滚到「关闭行为」。</summary>
+    public void OpenCloseBehavior()
+    {
+        OpenLayer("other");
+        Dispatcher.BeginInvoke(() =>
+        {
+            try { CloseBehaviorSlab.BringIntoView(); } catch { /* 布局未完成就算了 */ }
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
     public void OnShown() => Paint();
 
     void Paint()
@@ -152,6 +162,8 @@ public partial class SettingsView : UserControl, IRefreshable
         RootsBox.SelectedItem = _state.Launcher.Root;
         SettingsLine.Text = _state.Launcher.SettingsPath;
         ConfirmStop.IsChecked = s.Other.ConfirmStop;
+        PickCombo(CloseXBox, s.Ui.CloseToTray ? "tray" : "quit");
+        StopInstancesOnExit.IsChecked = s.Other.StopInstancesOnExit;
         OpenLogOnError.IsChecked = s.Other.OpenLogOnError;
         BackupCorrupt.IsChecked = s.Other.BackupCorrupt;
         RefreshSecBox.Text = s.Other.RefreshSec.ToString();
@@ -1067,6 +1079,8 @@ public partial class SettingsView : UserControl, IRefreshable
         if (_loading) return;
         var s = _state.Settings;
         s.Other.ConfirmStop = ConfirmStop.IsChecked == true;
+        s.Ui.CloseToTray = (ComboTag(CloseXBox) ?? "tray") == "tray";
+        s.Other.StopInstancesOnExit = StopInstancesOnExit.IsChecked == true;
         s.Other.OpenLogOnError = OpenLogOnError.IsChecked == true;
         s.Other.BackupCorrupt = BackupCorrupt.IsChecked == true;
         if (int.TryParse(RefreshSecBox.Text.Trim(), out var rs)) s.Other.RefreshSec = rs;
@@ -1078,6 +1092,7 @@ public partial class SettingsView : UserControl, IRefreshable
         s.Other.UpdateFeed = (UpdateFeedBox.Text ?? "").Trim();
         s.Other.UpdateAutoDownload = UpdateAutoBox.IsChecked == true;
         Commit(s);
+        try { App.TrayIcon?.SyncCloseToTray(s.Ui.CloseToTray); } catch { /* ignore */ }
         Paint();
     }
 

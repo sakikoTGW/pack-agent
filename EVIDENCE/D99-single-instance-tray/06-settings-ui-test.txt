@@ -1,0 +1,8 @@
+﻿label=True
+combos=3
+  item=最小化到托盘
+  item=退出 PAD
+selected 退出 PAD
+switch=True
+toggled -> On
+pad.json: closeToTray=False stopInstancesOnExit=True

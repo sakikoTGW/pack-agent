@@ -132,11 +132,41 @@ public partial class App : Application
             });
     }
 
-    static void ExitFromTray()
+    static void ExitFromTray() => ExitGracefully(null);
+
+    /// <summary>
+    /// 真正退出 PAD：按设置决定是否先停掉所有正在跑的实例（默认保留）。
+    /// window 为空表示从托盘退出（直接 Shutdown）；否则关掉这个窗口走正常退出。
+    /// </summary>
+    public static async void ExitGracefully(Window? window)
     {
+        if (Exiting) return;
         Exiting = true;
         try { Core.AppState.Current.SaveSelection(); } catch { /* ignore */ }
-        Current.Shutdown(0);
+        try
+        {
+            if (Core.AppState.Current.Settings.Other.StopInstancesOnExit)
+                await Task.Run(StopAllRunningInstances);
+        }
+        catch { /* 停实例失败也照常退出 */ }
+        if (window is not null) window.Close();
+        else Current.Shutdown(0);
+    }
+
+    static void StopAllRunningInstances()
+    {
+        try
+        {
+            var launcher = Core.AppState.Current.Launcher;
+            var entries = launcher.Runtime().Entries.ToList();
+            var runner = new Core.Runner(launcher);
+            foreach (var e in entries)
+            {
+                if (e.Pid <= 0 || !Core.Proc.Alive(e.Pid)) continue;
+                try { runner.Stop(e.Instance, e.Profile); } catch { /* 单个失败不影响其它 */ }
+            }
+        }
+        catch { /* runtime.json 坏了也不挡退出 */ }
     }
 
     protected override void OnExit(ExitEventArgs e)

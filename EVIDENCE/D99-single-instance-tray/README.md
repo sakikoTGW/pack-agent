@@ -53,3 +53,14 @@
 - 勾上不再提醒并点好的 → 写 `ui.trayHintDismissed=true`，以后点 X 直接收托盘不再弹。
 - 去掉托盘气泡（避免重复打扰）；`--shot` 截图模式不弹卡。
 - 验证：`02-tray-hint-test.txt`（不勾=不落盘；勾选=落盘且后续不再弹；键盘 Enter / UIA SetFocus 均可关闭）。
+
+## 补 2：关闭行为设置 + 提示卡最终版
+
+- 提示卡（03 图）：标题「⚠ 注意喵：」；正文说明只收托盘；**点我跳转**链接打开 设置 → 其他 → 关闭行为；
+  复选框「不再提醒」；按钮「好的」「我只是手滑了.....」。
+  - 好的 = 收托盘；手滑了 = 窗口留着；链接 = 窗口留着并跳到设置；不再提醒只影响后续是否弹卡。
+- 设置 → 其他 → **关闭行为**（04 图）：
+  - 「点关闭按钮时」：最小化到托盘（默认）/ 退出 PAD → `ui.closeToTray`
+  - 「退出 PAD 时停止所有正在运行的实例」→ `other.stopInstancesOnExit`（默认关）
+- 退出路径全部接线：X / Alt+F4 走 OnClosing，托盘「退出 PAD」走 ExitGracefully；勾了停实例就先停再退。
+- 验证：`05-exit-stop-test.txt`（保留=实例活；停=实例被杀且 runtime.json 清空）、`06-settings-ui-test.txt`（UI 改设置落盘）、`07-hint-behavior.txt`。

@@ -69,7 +69,8 @@
     "build:dsh": "bun run agent-pack-dsh/scripts/build-plugin.ts",
     "stage:dsh": "bun run agent-pack-dsh/scripts/stage-npm.ts",
     "prepublishOnly": "bun run agent-pack-dsh/scripts/build-plugin.ts",
-    "kit": "bun run scripts/make-kit.ts"
+    "kit": "bun run scripts/make-kit.ts",
+    "single": "bun run scripts/make-single-exe.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "*",

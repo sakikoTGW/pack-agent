@@ -1149,3 +1149,10 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 - p2-p3 两条旧壳断言改成当前事实：WebView2 允许但必须有 ProjectDshView（D77）；市场结果改为 104 高卡片（D91/D92）。p2-p3 全绿。
 - 新增 `scripts/make-kit.ts`（`bun run kit`）：生成带 pack-runtime 的一键 kit（安装.bat/使用说明.txt/示例包），去掉 .pack-agent-repo，打 zip 到 dist/。
 - 实测 zip 106.1MB（解压 251MB），解压后 PAD CLI 可启动。
+
+## D91 · 2026-11-02 · 学 PCL：单文件 exe 分发
+- 调研：PCL 无安装器，单文件绿色 exe（~6MB，依赖系统 .NET Framework 4.8），数据跟着 exe；更新走仓库 `最新正式版.zip` + `patches/*.patch` 替换自身。
+- PAD 照做：单文件 exe 末尾追加 pack-runtime.zip + 40B footer（magic/offset/length/sha256 前 8B），首次用整合包时自解压到 exe 旁 `.pack-runtime/`；hash 变则重解（避免同长度更新复用旧运行时）。
+- 产物：`dist/single/pack-agent-for DSH.exe` 178.9MB（host 126.7 + payload 52.1），目标机零依赖。
+- 验证：空目录单 exe 可 list / create / project（EVIDENCE/D91-pcl-single-exe）。
+- 下一步：PCL 式自动更新通道（latest.json + 增量补丁 + 替换自身）。

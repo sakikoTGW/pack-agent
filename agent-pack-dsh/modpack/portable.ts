@@ -296,7 +296,7 @@ export function stagePackRuntime(dir: string, repo = REPO_FROM_HERE): string {
 
   writeFileSync(
     join(runtime, 'package.json'),
-    JSON.stringify({ name: '@sakikotgw/pack-agent-dsh', version: '0.0.0', private: true }, null, 2) + '\\n',
+    JSON.stringify({ name: '@sakikotgw/pack-agent-dsh', version: '0.0.0', private: true }, null, 2) + '\n',
   )
   const registry = join(repo, 'agent-pack-dsh', 'modpack', 'registry.yaml')
   if (existsSync(registry)) {
@@ -308,7 +308,7 @@ export function stagePackRuntime(dir: string, repo = REPO_FROM_HERE): string {
     mkdirSync(join(runtime, 'skills', 'agent-pack'), { recursive: true })
     copyFileSync(skill, join(runtime, 'skills', 'agent-pack', 'SKILL.md'))
   }
-  writeFileSync(join(runtime, 'runtime.json'), JSON.stringify({ schema: 'pack-agent.pack-runtime/v1' }, null, 2) + '\\n')
+  writeFileSync(join(runtime, 'runtime.json'), JSON.stringify({ schema: 'pack-agent.pack-runtime/v1' }, null, 2) + '\n')
   return runtime
 }
 

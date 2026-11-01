@@ -352,15 +352,25 @@ public sealed class Packs
         return AppContext.BaseDirectory;
     }
 
+    static bool LooksLikeRuntime(string? dir) =>
+        !string.IsNullOrWhiteSpace(dir)
+        && File.Exists(Path.Combine(dir, "packagent.bundle.js"))
+        && File.Exists(Path.Combine(dir, "bun.exe"))
+        && File.Exists(Path.Combine(dir, "pack-index.exe"));
+
     string? RuntimeDir()
     {
         try
         {
-            var dir = Path.Combine(ExeDir(), "pack-runtime");
-            if (File.Exists(Path.Combine(dir, "packagent.bundle.js"))
-                && File.Exists(Path.Combine(dir, "bun.exe"))
-                && File.Exists(Path.Combine(dir, "pack-index.exe")))
-                return dir;
+            var exeDir = ExeDir();
+            // 安装器/发布目录旁边装好的运行时；其次是单文件 exe 自带的（首次用时解压到 .pack-runtime）。
+            foreach (var name in new[] { "pack-runtime", ".pack-runtime" })
+            {
+                var dir = Path.Combine(exeDir, name);
+                if (LooksLikeRuntime(dir)) return dir;
+            }
+            var extracted = SelfBundle.EnsureRuntime();
+            if (LooksLikeRuntime(extracted)) return extracted;
         }
         catch { }
         return null;

@@ -1598,11 +1598,50 @@ public partial class MainWindow : Window
 
     void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
-    void Close_Click(object sender, RoutedEventArgs e)
+    void Close_Click(object sender, RoutedEventArgs e) => RequestClose();
+
+    /// <summary>点关闭/Alt+F4：可缩托盘；真正退出走托盘菜单或 App.Quit。</summary>
+    public void RequestClose()
     {
+        if (App.ShotPath is null && !App.Exiting && App.CloseToTray)
+        {
+            HideToTray();
+            return;
+        }
         AppState.Current.SaveSelection();
         Close();
     }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        if (App.ShotPath is null && !App.Exiting && App.CloseToTray && IsVisible)
+        {
+            e.Cancel = true;
+            HideToTray();
+            return;
+        }
+        base.OnClosing(e);
+    }
+
+    public void HideToTray()
+    {
+        try { AppState.Current.SaveSelection(); } catch { /* ignore */ }
+        Hide();
+        App.TrayIcon?.NotifyHiddenOnce();
+    }
+
+    /// <summary>从托盘/第二个实例恢复窗口。</summary>
+    public void RestoreFromTray()
+    {
+        Show();
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+        Activate();
+        // 托盘点击/二次启动属于用户主动要求置前，短暂 Topmost 稳妥地把它带到前面。
+        Topmost = true;
+        Topmost = false;
+    }
+
+    public void SyncTrayState() => App.TrayIcon?.SyncCloseToTray(App.CloseToTray);
 }
 
 /// <summary>A page that wants a chance to reload when it becomes visible.</summary>

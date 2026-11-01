@@ -540,6 +540,9 @@
                         Click="Ui_Save" Margin="0,0,0,12" />
               <CheckBox x:Name="LogoBox" Style="{StaticResource Switch}" Content="顶栏显示 logo"
                         Click="Ui_Save" Margin="0,0,0,12" />
+              <CheckBox x:Name="TrayCloseBox" Style="{StaticResource Switch}"
+                        Content="关闭窗口时缩到托盘（后台继续跑，托盘菜单可退出）"
+                        Click="Ui_Save" Margin="0,0,0,12" />
               <Grid Height="28" Margin="0,0,0,9">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="120" />

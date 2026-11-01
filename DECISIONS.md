@@ -1175,3 +1175,11 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 - CLI：`pad cli pad-update check|fetch|pending|apply --dry`。
 - 设置页“升级”：更新源/自动下载/下载按钮；启动后 Toast 提示（可关通道）。
 - 验证：EVIDENCE/D93-pad-update；pad-pack/pad-window/p2-p3 绿；单文件 exe 重建。
+
+## D99 · 2026-11-02 · 单实例锁 + 托盘化
+- 同一个 launcher root 只允许一个窗口实例：命名 Mutex（按 root 哈希）+ pad.lock 诊断文件 + 命名管道；
+  第二个实例发 "show" 让已开窗口（含托盘状态）恢复后自己退出。CLI 不参与锁，自动化照旧。
+- 托盘：Win32 Shell_NotifyIcon（不引 WinForms）；菜单 打开/关闭窗口时缩托盘（勾选）/退出；双击打开；首次缩托盘气泡一次。
+- 关窗默认缩托盘（ui.closeToTray=true，设置→个性化可关）；--shot 截图模式不受影响。
+- 验证（EVIDENCE/D99-single-instance-tray）：单实例/托盘恢复/不同 root/CLI 并存/closeToTray=false 真退 全部实测通过；pad-window/pad-pack/p2-p3 绿。
+- 边界：只锁窗口实例；CLI 写同 root 仍是并行（自动化需要），需要严格时可加排队。

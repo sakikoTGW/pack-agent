@@ -513,6 +513,8 @@ public sealed class UiPrefs
     [JsonPropertyName("wallpaperBlur")] public int WallpaperBlur { get; set; }
     /// <summary>壁纸目录；非空则每次启动随机抽一张。</summary>
     [JsonPropertyName("wallpaperDir")] public string WallpaperDir { get; set; } = "";
+    /// <summary>关窗时缩到托盘而不是退出（托盘菜单可改）。</summary>
+    [JsonPropertyName("closeToTray")] public bool CloseToTray { get; set; } = true;
     /// <summary>可藏的页：manage / download。启动和设置禁止全藏。</summary>
     [JsonPropertyName("hiddenTabs")] public List<string> HiddenTabs { get; set; } = [];
     /// <summary>藏启动页「版本选择 / 版本设置」入口。F12 临时解除到本次进程。</summary>

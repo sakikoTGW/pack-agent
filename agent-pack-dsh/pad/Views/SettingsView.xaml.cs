@@ -109,6 +109,7 @@ public partial class SettingsView : UserControl, IRefreshable
         }).IsChecked = true;
         CustomAccentBox.Text = s.Ui.CustomAccent;
         AnimateBox.IsChecked = s.Ui.Animate;
+        TrayCloseBox.IsChecked = s.Ui.CloseToTray;
         BrandBox.IsChecked = s.Ui.ShowBrand;
         LogoBox.IsChecked = s.Ui.ShowLogo;
         BrandTextBox.Text = s.Ui.BrandText;
@@ -864,6 +865,7 @@ public partial class SettingsView : UserControl, IRefreshable
         if (_loading) return;
         var s = _state.Settings;
         s.Ui.Animate = AnimateBox.IsChecked == true;
+        s.Ui.CloseToTray = TrayCloseBox.IsChecked == true;
         s.Ui.ShowBrand = BrandBox.IsChecked == true;
         s.Ui.ShowLogo = LogoBox.IsChecked == true;
         s.Ui.BrandText = BrandTextBox.Text.Trim();

@@ -22,6 +22,40 @@ public partial class App : Application
     /// <summary>Which page to render for <c>--shot</c>; defaults to the launch page.</summary>
     public static string ShotPage { get; private set; } = "launch";
 
+    /// <summary>true = 正在真正退出（关闭窗口不进托盘）。</summary>
+    public static bool Exiting { get; private set; }
+
+    /// <summary>托盘图标（窗口隐藏后靠它恢复/退出）。</summary>
+    public static Tray? TrayIcon { get; private set; }
+
+    static SingleInstance? _instance;
+
+    /// <summary>关窗是否缩到托盘（设置里可改）。</summary>
+    public static bool CloseToTray
+    {
+        get
+        {
+            try { return Core.AppState.Current.Settings.Ui.CloseToTray; }
+            catch { return true; }
+        }
+        set
+        {
+            try
+            {
+                Core.AppState.Current.Settings.Ui.CloseToTray = value;
+                Core.AppState.Current.SaveSettings();
+                TrayIcon?.SyncCloseToTray(value);
+            }
+            catch { /* 设置写不进去也不影响当前会话 */ }
+        }
+    }
+
+    public static void Quit(int code = 0)
+    {
+        Exiting = true;
+        Current.Shutdown(code);
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -53,6 +87,19 @@ public partial class App : Application
                 NativeAlert.Error(DialogFor(ex));
         };
 
+        // 同一个 .pack-launcher 只开一个窗口实例：第二个进程让老窗口显形后自己退出。
+        var root = Core.AppState.Current.Launcher.Root;
+        if (ShotPath is null)
+        {
+            _instance = SingleInstance.TryAcquire(root);
+            if (_instance is null)
+            {
+                SingleInstance.SignalExisting(root);
+                Shutdown(0);
+                return;
+            }
+        }
+
         // 上次下载好的 PAD 更新：这次启动把新 exe 换上去再重启（用户自己选过才走到这里）。
         if (ShotPath is null && Core.PadUpdate.TryApplyPending(Core.AppState.Current.Launcher, out _))
         {
@@ -66,6 +113,16 @@ public partial class App : Application
         Core.AppState.Current.ApplyUiBoot();
         var window = new MainWindow();
         window.Show();
+        if (ShotPath is null)
+        {
+            _instance!.Listen(() => Dispatcher.BeginInvoke(() => window.RestoreFromTray()));
+            TrayIcon = new Tray(window,
+                () => window.RestoreFromTray(),
+                ExitFromTray,
+                () => CloseToTray,
+                on => CloseToTray = on);
+            window.SyncTrayState();
+        }
         if (ShotPath is null) window.ProbePadUpdate();
         if (ShotPath is null)
             UiWatchdog.Attach(Dispatcher, CrashLog, () =>
@@ -73,6 +130,22 @@ public partial class App : Application
                 try { return Core.AppState.Current.Settings.Other.OpenLogOnError; }
                 catch { return false; }
             });
+    }
+
+    static void ExitFromTray()
+    {
+        Exiting = true;
+        try { Core.AppState.Current.SaveSelection(); } catch { /* ignore */ }
+        Current.Shutdown(0);
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        TrayIcon?.Dispose();
+        TrayIcon = null;
+        _instance?.Dispose();
+        _instance = null;
+        base.OnExit(e);
     }
 
     void OnDispatcherError(object sender, DispatcherUnhandledExceptionEventArgs e)
@@ -83,7 +156,7 @@ public partial class App : Application
         {
             try { File.WriteAllText(ShotPath + ".txt", e.Exception.ToString()); }
             catch { /* shot already failed */ }
-            Shutdown(1);
+            Quit(1);
             return;
         }
         MessageBox.Show(DialogFor(e.Exception), "PAD 出错了", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -104,7 +177,7 @@ public partial class App : Application
         {
             try { File.WriteAllText(ShotPath + ".txt", ex.ToString()); }
             catch { /* shot already failed */ }
-            Current.Shutdown(1);
+            Quit(1);
             return;
         }
         MessageBox.Show(DialogFor(ex), "PAD 出错了", MessageBoxButton.OK, MessageBoxImage.Error);

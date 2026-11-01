@@ -1,0 +1,5 @@
+﻿--- 22:48:28 pad cli pack list e2e（在导出包目录里跑，不设 PACK_LAUNCHER_ROOT）
+找不到 pack-agent 源码: 把仓库路径写进 PACK_AGENT_REPO，或在启动器根目录放 .pack-agent-repo。
+
+结论：便携导出包能还原实例（实例/工作区/投影目录都重映射正确），
+但 pack 的 list/project/allow 全部走 TS 侧（bun + 仓库），便携包里没有仓库 → 整合包管理断链。

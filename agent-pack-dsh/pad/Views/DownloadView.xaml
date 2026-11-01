@@ -372,9 +372,9 @@
                       <ColumnDefinition Width="Auto" />
                       <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ContentControl Grid.Column="0" Style="{StaticResource MonogramTile}"
-                                    Content="{Binding Monogram}" VerticalAlignment="Center"
-                                    Margin="7,0,0,0" />
+                    <v:PluginMark Grid.Column="0" Width="44" Height="44" Size="44"
+                                  IconPath="{Binding IconPath}" Spec="{Binding Name}"
+                                  VerticalAlignment="Center" Margin="7,0,0,0" />
                     <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
                       <TextBlock Text="{Binding Title}" FontSize="{StaticResource FsTitle}"
                                  FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"

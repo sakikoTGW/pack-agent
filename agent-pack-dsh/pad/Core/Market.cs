@@ -4,8 +4,10 @@ using System.Text.Json;
 namespace Pad.Core;
 
 /// <summary>One package as the npm registry reports it.</summary>
-public sealed class MarketRow
+public sealed class MarketRow : System.ComponentModel.INotifyPropertyChanged
 {
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
     public string Name { get; set; } = "";
     public string Version { get; set; } = "";
     public string Description { get; set; } = "";
@@ -16,6 +18,22 @@ public sealed class MarketRow
 
     /// <summary>npm's own popularity score, 0..1. Shown as-is; PAD does not re-rank.</summary>
     public double Popularity { get; set; }
+
+    /// <summary>npm 元数据里的仓库地址（插件图标的来源）。</summary>
+    public string Repository { get; set; } = "";
+
+    string _iconPath = "";
+    /// <summary>插件自己的图标：从仓库 logo / 作者头像取到后异步填入。</summary>
+    public string IconPath
+    {
+        get => _iconPath;
+        set
+        {
+            if (_iconPath == value) return;
+            _iconPath = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IconPath)));
+        }
+    }
 
     /// <summary>True when the package declares itself a DSH profile layer.</summary>
     public bool IsBundle { get; set; }
@@ -162,6 +180,7 @@ public sealed class Market
                 if (pkg.TryGetProperty("publisher", out var pub)) row.Publisher = Str(pub, "username");
                 if (pkg.TryGetProperty("links", out var links))
                 {
+                    row.Repository = Str(links, "repository");
                     row.Homepage = Str(links, "homepage");
                     if (row.Homepage.Length == 0) row.Homepage = Str(links, "repository");
                     if (row.Homepage.Length == 0) row.Homepage = Str(links, "npm");

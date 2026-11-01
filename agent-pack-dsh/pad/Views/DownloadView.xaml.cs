@@ -603,6 +603,7 @@ public partial class DownloadView : UserControl, IRefreshable
     {
         _from = page.From;
         ResultList.ItemsSource = page.Rows;
+        _ = LoadMarketIcons(page.Rows);
         ResultCard.Visibility = page.Rows.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
         EmptyText.Text = SearchBox.Text.Trim().Length == 0
@@ -623,6 +624,24 @@ public partial class DownloadView : UserControl, IRefreshable
     /// package declares <c>dsh.bundle</c>, so the result can say whether it became a
     /// profile layer or a plain dependency rather than leaving the user to guess.
     /// </summary>
+    /// <summary>货架行逐个补“插件自己的图标”：官方 DSH 包用内置品牌图标，其余按 npm 元数据里的仓库取 logo。</summary>
+    async Task LoadMarketIcons(IReadOnlyList<MarketRow> rows)
+    {
+        foreach (var row in rows)
+        {
+            try
+            {
+                var icon = BundleIcon.IsOfficial(row.Name)
+                    ? BundleIcon.Resolve(_state.Launcher.Root, "", row.Name)
+                    : null;
+                icon ??= await BundleIcon.EnsureFromRepo(_state.Launcher.Root, row.Name,
+                    row.Repository.Length > 0 ? row.Repository : row.Homepage, CancellationToken.None);
+                if (icon is not null) row.IconPath = icon;
+            }
+            catch { /* 网络/仓库不可达就用占位字形 */ }
+        }
+    }
+
     async Task InstallFrom(MarketRow row, string version, FrameworkElement? busy)
     {
         if (TargetInstance.SelectedItem is not Instance inst)

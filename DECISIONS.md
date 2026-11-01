@@ -1098,3 +1098,14 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 整合包独立一行（带「装整合包…」并注明不是插件）；设置/下载/版本设置等文案同步。
 验证：build 0/0；pad-window / pad-pack / pad-project / pad-depth / pad-headless 全绿；实拍 EVIDENCE/D81-plugin-naming。
 判据：**插件是实例的成分，整合包是可移植的产物，运行态只属于实例；三者不能共用一个词。**
+
+## D82 · 2026-11-01 · 插件真图标（每个插件用它自己的图标）
+用户：「他们真的有插件自己的图标」。之前插件行是空白/字母/胶囊占位，不像插件市场。
+- 官方 `@deepseek-ai/*`：仓库不公开、包里无 logo；用 DSH 桌面端自带的官方图标
+  `E:\DSH-App\resources\icon.png` 作为内置资产 `Assets/brand/dsh.png`，
+  `BundleIcon.Resolve` 播种到该插件图标缓存 → 列表显示真图标。
+- 已装插件（dsh-tui）：沿用包内 logo / jsDelivr 抓取（原有机制）。
+- 插件市场（下载页）：`MarketRow` 增加 Repository/IconPath（INPC），异步抓 npm 元数据仓库的
+  `docs/assets/logo.*`，取不到退 GitHub 作者头像；`PluginMark` 支持 28/44 尺寸。
+验证：build 0/0；pad-window / pad-pack / pad-project 绿；实拍 EVIDENCE/D82-plugin-icons。
+判据：**插件市场的最小体面是每个插件有它自己的图标；取不到真实图标才允许字形兜底，且官方插件必须用官方图标。**

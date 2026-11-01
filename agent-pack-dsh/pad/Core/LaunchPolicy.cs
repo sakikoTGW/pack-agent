@@ -551,6 +551,9 @@ public static class LaunchPolicy
                 urls.Add($"https://cdn.jsdelivr.net/gh/{repo}@{tag}/{file}");
                 urls.Add($"https://raw.githubusercontent.com/{repo}/{tag}/{file}");
             }
+        // 仓库里没有 logo 的插件，至少给一张真实的仓库/作者头像，而不是空白。
+        var owner = repo.Split('/')[0];
+        urls.Add($"https://github.com/{owner}.png?size=96");
         return urls;
     }
 

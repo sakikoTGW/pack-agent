@@ -162,16 +162,15 @@
                       </Grid.ColumnDefinitions>
                       <StackPanel Grid.Column="0" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
-                          <Image Width="28" Height="28" Margin="0,0,8,0"
-                                 Stretch="Uniform"
-                                 Source="{Binding IconPath, Converter={StaticResource PathBmp}}"
-                                 Visibility="{Binding HasIcon, Converter={StaticResource B2V}}" />
-                          <ContentControl Style="{StaticResource Quant}" Margin="0,0,8,0"
-                                          Content="{Binding Kind}"
-                                          Visibility="{Binding HasIcon, Converter={StaticResource B2VNot}}" />
-                          <TextBlock Style="{StaticResource Mono}"
+                          <v:PluginMark Width="28" Height="28" Margin="0,0,10,0"
+                                        IconPath="{Binding IconPath}"
+                                        Spec="{Binding Spec}" Kind="{Binding Kind}" />
+                          <TextBlock Style="{StaticResource Mono}" VerticalAlignment="Center"
                                      Foreground="{StaticResource TextPrimary}"
                                      Text="{Binding Spec}" ToolTip="{Binding Spec}" />
+                          <TextBlock Style="{StaticResource Muted}" VerticalAlignment="Center"
+                                     FontSize="{StaticResource FsMicro}" Margin="10,0,0,0"
+                                     Text="{Binding Kind}" />
                         </StackPanel>
                         <TextBlock Style="{StaticResource Muted}" Margin="14,6,0,0"
                                    FontSize="{StaticResource FsMicro}"

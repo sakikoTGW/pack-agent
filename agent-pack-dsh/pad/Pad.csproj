@@ -19,6 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\brand\*" />
     <Resource Include="Assets\pad-logo.png" />
     <Resource Include="Assets\pad.ico" />
     <Resource Include="Assets\api\*.png" />

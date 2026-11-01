@@ -50,7 +50,62 @@ public static class BundleIcon
             var p = Path.Combine(cache, name);
             if (File.Exists(p)) return p;
         }
+        // 官方 deepseek-ai 包没有可下载的 logo（仓库不公开），但 DSH 本体自带品牌图标：
+        // 直接用官方 app 的 icon.png 做这些插件的图标——每个插件都有真图标，不是字母占位。
+        if (IsOfficial(spec)) return SeedOfficial(launcherRoot, spec);
         return null;
+    }
+
+    public static bool IsOfficial(string spec) =>
+        spec.StartsWith("@deepseek-ai/", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>把 PAD 里内置的 DSH 官方图标写进这个插件的图标缓存（pack URI → icon.png）。</summary>
+    public static string? SeedOfficial(string launcherRoot, string spec)
+    {
+        try
+        {
+            var cache = CacheDir(launcherRoot, spec);
+            Directory.CreateDirectory(cache);
+            var dest = Path.Combine(cache, "icon.png");
+            if (File.Exists(dest)) return dest;
+            var uri = new Uri("pack://application:,,,/Assets/brand/dsh.png");
+            using var s = Application.GetResourceStream(uri)?.Stream;
+            if (s is null) return null;
+            using var ms = new MemoryStream();
+            s.CopyTo(ms);
+            File.WriteAllBytes(dest, ms.ToArray());
+            Notify();
+            return dest;
+        }
+        catch { return null; }
+    }
+
+    /// <summary>没有本地 package.json 时，按 GitHub 仓库（npm 元数据里的 repository）取插件自己的图标。</summary>
+    public static async Task<string?> EnsureFromRepo(string launcherRoot, string spec, string? repo,
+        CancellationToken ct)
+    {
+        if (Resolve(launcherRoot, "", spec) is { } have) return have;
+        var cache = CacheDir(launcherRoot, spec);
+        Directory.CreateDirectory(cache);
+        foreach (var url in LaunchPolicy.BundleIconUrls(repo, null))
+        {
+            ct.ThrowIfCancellationRequested();
+            var dest = Path.Combine(cache,
+                url.Contains(".svg", StringComparison.OrdinalIgnoreCase) ? "logo.svg" : "icon.png");
+            try
+            {
+                using var res = await Http.GetAsync(url, ct);
+                if (!res.IsSuccessStatusCode) continue;
+                var bytes = await res.Content.ReadAsByteArrayAsync(ct);
+                if (bytes.Length < 40 || bytes.Length > 400_000) continue;
+                await File.WriteAllBytesAsync(dest, bytes, ct);
+                Notify();
+                return dest;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch { /* next url */ }
+        }
+        return IsOfficial(spec) ? SeedOfficial(launcherRoot, spec) : null;
     }
 
     public static string? First(string launcherRoot, IEnumerable<DshProfile> profiles)

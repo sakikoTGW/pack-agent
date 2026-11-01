@@ -1024,6 +1024,41 @@ public partial class InstanceView : UserControl, IRefreshable
         catch { /* registry unreachable; 可更新 stays empty */ }
     }
 
+    const int PluginPageSize = 54;
+    int _pluginPage;
+
+    void InstMore_Click(object sender, RoutedEventArgs e)
+    {
+        var show = InstMore.Visibility != Visibility.Visible;
+        InstMore.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        InstMoreAngle.Angle = show ? 180 : 0;
+    }
+
+    void PluginMore_Click(object sender, RoutedEventArgs e)
+    {
+        var show = PluginActions.Visibility != Visibility.Visible;
+        PluginActions.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        PluginMoreAngle.Angle = show ? 180 : 0;
+    }
+
+    void PluginPrev_Click(object sender, RoutedEventArgs e)
+    {
+        if (_pluginPage <= 0) return;
+        _pluginPage--;
+        PaintPlugins();
+    }
+
+    void PluginNext_Click(object sender, RoutedEventArgs e)
+    {
+        var pick = SelectedPluginProfile();
+        var inProfile = _pluginRows.Where(r => pick is null || r.Profile == pick).ToList();
+        var total = PluginQuery.Apply(inProfile, PluginSearch?.Text ?? "", CurrentPluginFilter()).Count();
+        var pages = Math.Max(1, (total + PluginPageSize - 1) / PluginPageSize);
+        if (_pluginPage >= pages - 1) return;
+        _pluginPage++;
+        PaintPlugins();
+    }
+
     void PaintPlugins()
     {
         var pick = SelectedPluginProfile();
@@ -1034,7 +1069,15 @@ public partial class InstanceView : UserControl, IRefreshable
         FilterFav.Content = $"收藏 ({inProfile.Count(r => r.Favorite)})";
 
         var shown = PluginQuery.Apply(inProfile, PluginSearch?.Text ?? "", CurrentPluginFilter()).ToList();
-        PluginList.ItemsSource = shown;
+        var pages = Math.Max(1, (shown.Count + PluginPageSize - 1) / PluginPageSize);
+        if (_pluginPage >= pages) _pluginPage = pages - 1;
+        if (_pluginPage < 0) _pluginPage = 0;
+        var slice = shown.Skip(_pluginPage * PluginPageSize).Take(PluginPageSize).ToList();
+        PluginList.ItemsSource = slice;
+        PluginPager.Visibility = pages > 1 ? Visibility.Visible : Visibility.Collapsed;
+        PluginPageText.Text = $"{_pluginPage + 1} / {pages}";
+        PluginPrevBtn.IsEnabled = _pluginPage > 0;
+        PluginNextBtn.IsEnabled = _pluginPage < pages - 1;
 
         var empty = shown.Count == 0;
         PluginEmptyBox.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
@@ -1067,18 +1110,21 @@ public partial class InstanceView : UserControl, IRefreshable
     void PluginSearch_Changed(object sender, TextChangedEventArgs e)
     {
         if (PluginList is null) return;
+        _pluginPage = 0;
         PaintPlugins();
     }
 
     void PluginFilter_Changed(object sender, RoutedEventArgs e)
     {
         if (PluginList is null) return;
+        _pluginPage = 0;
         PaintPlugins();
     }
 
     void PluginProfile_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (_pluginLoading || PluginList is null) return;
+        _pluginPage = 0;
         PaintPlugins();
     }
 

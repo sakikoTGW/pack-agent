@@ -687,7 +687,8 @@ public sealed class OtherPrefs
     /// <summary>PAD 自身更新：release | off（用户可以选择关掉检查）。</summary>
     [JsonPropertyName("updateChannel")] public string UpdateChannel { get; set; } = "release";
     /// <summary>latest.json 的地址（http/https 或本地路径）；空 = 不检查。</summary>
-    [JsonPropertyName("updateFeed")] public string UpdateFeed { get; set; } = "";
+    [JsonPropertyName("updateFeed")] public string UpdateFeed { get; set; } =
+        "https://github.com/sakikoTGW/pack-agent/releases/latest/download/latest.json";
     /// <summary>发现新版时自动下载到本地（默认关；仍然重启才替换，用户可选）。</summary>
     [JsonPropertyName("updateAutoDownload")] public bool UpdateAutoDownload { get; set; }
     /// <summary>Local random id, generated once at first boot. Never uploaded.</summary>

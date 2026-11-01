@@ -50,17 +50,14 @@ public static class BundleIcon
             var p = Path.Combine(cache, name);
             if (File.Exists(p)) return p;
         }
-        // 官方 deepseek-ai 包没有可下载的 logo（仓库不公开），但 DSH 本体自带品牌图标：
-        // 直接用官方 app 的 icon.png 做这些插件的图标——每个插件都有真图标，不是字母占位。
-        if (IsOfficial(spec)) return SeedOfficial(launcherRoot, spec);
         return null;
     }
 
-    public static bool IsOfficial(string spec) =>
-        spec.StartsWith("@deepseek-ai/", StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>把 PAD 里内置的 DSH 官方图标写进这个插件的图标缓存（pack URI → icon.png）。</summary>
-    public static string? SeedOfficial(string launcherRoot, string spec)
+    /// <summary>
+    /// 由 DSH 发行号自带、但包里没有 logo 的插件（base / web-app 之类），用 DSH 自己的品牌图标兜底。
+    /// 判断靠“包是从发行号的 pnpm 仓库解析到的”，不靠包名前缀。
+    /// </summary>
+    public static string? SeedDshBrand(string launcherRoot, string spec)
     {
         try
         {
@@ -105,7 +102,7 @@ public static class BundleIcon
             catch (OperationCanceledException) { throw; }
             catch { /* next url */ }
         }
-        return IsOfficial(spec) ? SeedOfficial(launcherRoot, spec) : null;
+        return null;
     }
 
     public static string? First(string launcherRoot, IEnumerable<DshProfile> profiles)

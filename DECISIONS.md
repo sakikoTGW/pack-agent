@@ -1109,3 +1109,14 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
   `docs/assets/logo.*`，取不到退 GitHub 作者头像；`PluginMark` 支持 28/44 尺寸。
 验证：build 0/0；pad-window / pad-pack / pad-project 绿；实拍 EVIDENCE/D82-plugin-icons。
 判据：**插件市场的最小体面是每个插件有它自己的图标；取不到真实图标才允许字形兜底，且官方插件必须用官方图标。**
+
+## D83 · 2026-11-01 · 实例插件扫描：去硬编码，按数据解析
+用户：「不要硬编码。为什么其他的实例不行呢」。
+- 移除管理页硬编码过滤 `IsProfileLayer`（曾把第三方插件全藏掉，本机 DSH 只剩 2 个）。
+- 包目录解析通用化：profile/node_modules → 发行号 .pnpm 仓库 → 老版 @deepseek-ai/dsh/node_modules → 发行号 node_modules；
+  解析结果带 `Provided` 标记，版本/描述/图标都由它驱动，不再按 `@deepseek-ai/` 前缀判断。
+- 图标：包内 → 缓存 → 发行号自带但无 logo 用 DSH 品牌图标；第三方走仓库 logo/头像（网络）。
+- 各实例显示差异是数据差异（123/ev-project 只有 base；pack-Test 无 profile；pad-op-* 有自己的插件），不是扫描失败。
+- 仍显示「未装到磁盘」的 `@deepseek-ai/dsh-experimental-*` 只在 DSH 桌面端 app.asar 里，下一步从桌面端解析。
+验证：build 0/0；实拍 EVIDENCE/D83-instance-plugins。
+判据：**扫描按“包在哪里”解析，不按“包叫什么”；数据没有的东西就如实显示没有。**

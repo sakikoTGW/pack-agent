@@ -2115,6 +2115,13 @@ public sealed class Launcher
             {
                 var dir = LaunchPolicy.BundlePackageDir(p.Dir, spec);
                 var pkg = Path.Combine(dir, "package.json");
+                var provided = false;
+                if (!File.Exists(pkg))
+                {
+                    // 发行号自带的插件不在 profile/node_modules 里，而在版本的 pnpm 仓库里。
+                    var fromRelease = PnpmStorePackage(inst.Dsh.Version, spec);
+                    if (fromRelease is not null) { dir = fromRelease; pkg = Path.Combine(dir, "package.json"); provided = true; }
+                }
                 var meta = PluginList.ReadMeta(pkg);
                 rows.Add(new BundleRow
                 {
@@ -2125,12 +2132,61 @@ public sealed class Launcher
                     Description = meta.Description,
                     Keywords = meta.Keywords,
                     PackageDir = dir,
+                    Provided = provided,
                     Latest = PluginList.ReadCachedLatest(Root, spec) ?? "",
-                    IconPath = BundleIcon.Resolve(Root, dir, spec) ?? "",
+                    IconPath = BundleIcon.Resolve(Root, dir, spec)
+                        ?? (provided ? BundleIcon.SeedDshBrand(Root, spec) : "")
+                        ?? "",
                 });
             }
         }
         return rows;
+    }
+
+    /// <summary>
+    /// 发行号自带的插件在 versions/&lt;ver&gt;/.pnpm/&lt;scope&gt;+&lt;name&gt;@*/node_modules/&lt;spec&gt;。
+    /// 按 pnpm 虚拟仓库的通则找，不写死包名。
+    /// </summary>
+    string? PnpmStorePackage(string? version, string spec)
+    {
+        if (string.IsNullOrWhiteSpace(version)) return null;
+        var nm = Path.Combine(Root, "versions", version, "node_modules");
+        var bare = LaunchPolicy.BundleBareName(spec);
+        var rel = bare.Replace('/', Path.DirectorySeparatorChar);
+
+        // 新布局：node_modules/.pnpm/<scope>+<name>@*/node_modules/<spec>
+        var store = Path.Combine(nm, ".pnpm");
+        if (Directory.Exists(store))
+        {
+            var pattern = bare.Replace("/", "+") + "@*";
+            try
+            {
+                foreach (var d in Directory.EnumerateDirectories(store, pattern)
+                             .OrderByDescending(x => x, StringComparer.OrdinalIgnoreCase))
+                {
+                    var p = Path.Combine(d, "node_modules", rel);
+                    if (File.Exists(Path.Combine(p, "package.json"))) return p;
+                }
+            }
+            catch { }
+        }
+
+        // 老布局：发行号 CLI 包的嵌套 node_modules（0.1.x 及更早）
+        foreach (var owner in SafeDirs(nm))
+        {
+            var cli = Path.Combine(nm, owner, "dsh", "node_modules", rel);
+            if (File.Exists(Path.Combine(cli, "package.json"))) return cli;
+        }
+
+        // 直接放在发行号 node_modules 里的情况
+        var direct = Path.Combine(nm, rel);
+        return File.Exists(Path.Combine(direct, "package.json")) ? direct : null;
+    }
+
+    static IEnumerable<string> SafeDirs(string dir)
+    {
+        try { return Directory.EnumerateDirectories(dir).Select(Path.GetFileName)!; }
+        catch { return []; }
     }
 
     public async Task EnsureBundleIcons(Instance inst, CancellationToken ct)

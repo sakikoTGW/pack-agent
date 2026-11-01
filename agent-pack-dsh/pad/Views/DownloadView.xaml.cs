@@ -631,10 +631,7 @@ public partial class DownloadView : UserControl, IRefreshable
         {
             try
             {
-                var icon = BundleIcon.IsOfficial(row.Name)
-                    ? BundleIcon.Resolve(_state.Launcher.Root, "", row.Name)
-                    : null;
-                icon ??= await BundleIcon.EnsureFromRepo(_state.Launcher.Root, row.Name,
+                var icon = await BundleIcon.EnsureFromRepo(_state.Launcher.Root, row.Name,
                     row.Repository.Length > 0 ? row.Repository : row.Homepage, CancellationToken.None);
                 if (icon is not null) row.IconPath = icon;
             }

@@ -229,7 +229,6 @@ public partial class ManageView : UserControl, IRefreshable
         var pick = BundleProfile.SelectedItem as string;
         var rows = _state.Launcher.ListBundles(inst)
             .Where(r => pick is null || r.Profile == pick)
-            .Where(r => LaunchPolicy.IsProfileLayer(r.Spec))
             .ToList();
         foreach (var r in rows)
         {

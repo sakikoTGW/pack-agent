@@ -276,8 +276,12 @@ public sealed class BundleRow
     public string PackageDir { get; init; } = "";
     public string Latest { get; set; } = "";
     public string IconPath { get; set; } = "";
+    /// <summary>true = 由 DSH 发行号自带（解析到 versions/&lt;ver&gt;/.pnpm），不是装在 profile 里的第三方插件。</summary>
+    public bool Provided { get; init; }
 
-    public string VersionText => string.IsNullOrEmpty(Version) ? "未装到磁盘" : Version;
+    public string VersionText => !string.IsNullOrEmpty(Version)
+        ? Version
+        : Provided ? "由 DSH 提供" : "未装到磁盘";
     public bool HasIcon => !string.IsNullOrEmpty(IconPath);
 }
 

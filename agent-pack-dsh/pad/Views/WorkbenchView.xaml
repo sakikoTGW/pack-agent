@@ -65,6 +65,11 @@
           <Button x:Name="AddBtn" DockPanel.Dock="Right" Content="+ 卡片"
                   Style="{StaticResource BtnPrimary}" Height="32" Padding="16,0"
                   Click="Add_Click" />
+          <!-- 现在页右上：自动收编入口（原型 v4） -->
+          <Button x:Name="HubAdoptBtn" DockPanel.Dock="Right" Content="自动收编"
+                  Style="{StaticResource BtnSm}" Height="32" Padding="14,0"
+                  Margin="0,0,10,0" Click="HubAdopt_Click" Visibility="Collapsed"
+                  ToolTip="把本机 DSH home 的工作区自动归组成项目" />
           <Button x:Name="EditBtn" DockPanel.Dock="Right" Content="编辑"
                   Style="{StaticResource BtnSm}" Height="32" Padding="14,0"
                   Click="Edit_Click" Margin="0,0,10,0" />

@@ -988,7 +988,23 @@ public sealed class Launcher
         var path = JobLogPath(jobId);
         var dir = Path.GetDirectoryName(path);
         if (dir is not null) Directory.CreateDirectory(dir);
-        File.AppendAllText(path, line.TrimEnd() + Environment.NewLine);
+        // 进度回调可能来自多个线程/子进程；同一 job 日志偶发文件占用，重试而不是崩。
+        for (var attempt = 0; attempt < 6; attempt++)
+        {
+            try
+            {
+                File.AppendAllText(path, line.TrimEnd() + Environment.NewLine);
+                return;
+            }
+            catch (IOException)
+            {
+                Thread.Sleep(15);
+            }
+            catch
+            {
+                return;
+            }
+        }
     }
 
     public string ReadJobLog(string jobId)
@@ -1439,6 +1455,13 @@ public sealed class Launcher
                 Directory.CreateDirectory(Path.Combine(runtime, "agent-pack-dsh", "modpack"));
                 File.Copy(registry, Path.Combine(runtime, "agent-pack-dsh", "modpack", "registry.yaml"), overwrite: true);
             }
+            var registries = Path.Combine(repo, "agent-pack-dsh", "modpack", "registries");
+            if (Directory.Exists(registries))
+            {
+                CopyTreeLink(registries, Path.Combine(runtime, "registries"), CancellationToken.None);
+                CopyTreeLink(registries, Path.Combine(runtime, "agent-pack-dsh", "modpack", "registries"),
+                    CancellationToken.None);
+            }
             var skill = Path.Combine(repo, "skills", "agent-pack", "SKILL.md");
             if (File.Exists(skill))
             {
@@ -1592,8 +1615,11 @@ public sealed class Launcher
 
         var patchPath = Path.Combine(inst.Home, "launcher.patch.yml");
         var patchArg = File.Exists(patchPath) ? $" --patch \"{patchPath}\"" : "";
+        // DSH 0.2.1 起 --dump-config 也要求 --profile（没 profile 的老实例就不传）。
+        var prof = inst.LastProfile ?? Profiles(inst).FirstOrDefault()?.Name;
+        var profArg = string.IsNullOrWhiteSpace(prof) ? "" : $" --profile \"{prof}\"";
         log?.Report("node bin.js --dump-config");
-        var res = await Proc.Run("node", $"\"{bin}\" --dump-config{patchArg}",
+        var res = await Proc.Run("node", $"\"{bin}\" --dump-config{patchArg}{profArg}",
             inst.Workspace.Path, log, ct, new Dictionary<string, string> { ["DSH_HOME"] = inst.Home });
         if (res.ExitCode != 0)
             throw new PadError("PA030", "dsh --dump-config failed", $"instance `{id}`", res.Tail,

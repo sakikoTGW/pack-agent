@@ -509,7 +509,9 @@ export function pluginAdd(root: LauncherRoot, id: string, spec: string): DshProc
 }
 
 export function dumpConfig(root: LauncherRoot, id: string): string {
-  const r = runDsh(root, id, ['--dump-config'])
+  const inst = getInstance(root, id)
+  // DSH 0.2.1 起 --dump-config 也要求 --profile。
+  const r = runDsh(root, id, ['--dump-config', '--profile', inst.profile.name])
   return `${r.stdout}${r.stderr}`
 }
 

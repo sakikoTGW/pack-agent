@@ -276,7 +276,10 @@ function addPlugins(ctx: ImportCtx): void {
     const spec = String(plug.spec || plug.name || '').trim()
     if (!spec) continue
     const required = plug.required !== false
-    const r = pluginAdd(ctx.root, inst.id, spec)
+    // 包里自带的插件（没上架 npm）：从解出来的 plugins/<safe>/ 目录装，pnpm add file:…
+    const local = String((plug as { local?: string }).local || '').trim()
+    const target = local ? `file:${resolve(ctx.packRoot, local)}` : spec
+    const r = pluginAdd(ctx.root, inst.id, target)
     if (r.status === 0) continue
     if (!required) {
       process.stderr.write(`optional plugin skipped: ${spec}\n`)
@@ -284,7 +287,7 @@ function addPlugins(ctx: ImportCtx): void {
     }
     throw pa(
       'PA014',
-      `import failed: required dsh plugin add failed for ${spec}`,
+      `import failed: required dsh plugin add failed for ${spec}${local ? ` (local: ${local})` : ''}`,
       `instance \`${inst.id}\` / dsh.plugins`,
       {
         context: [(r.stderr || r.stdout).slice(0, 400)],

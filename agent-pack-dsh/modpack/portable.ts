@@ -303,6 +303,13 @@ export function stagePackRuntime(dir: string, repo = REPO_FROM_HERE): string {
     mkdirSync(join(runtime, 'agent-pack-dsh', 'modpack'), { recursive: true })
     copyFileSync(registry, join(runtime, 'agent-pack-dsh', 'modpack', 'registry.yaml'))
   }
+  const registries = join(repo, 'agent-pack-dsh', 'modpack', 'registries')
+  if (existsSync(registries)) {
+    // bundle 里 import.meta.dirname 是 runtime 根（bun build 把模块打平）；
+    // package-root 写法又可能去找 agent-pack-dsh/modpack/registries，所以两处都放。
+    copyDirRecursive(registries, join(runtime, 'registries'))
+    copyDirRecursive(registries, join(runtime, 'agent-pack-dsh', 'modpack', 'registries'))
+  }
   const skill = join(repo, 'skills', 'agent-pack', 'SKILL.md')
   if (existsSync(skill)) {
     mkdirSync(join(runtime, 'skills', 'agent-pack'), { recursive: true })
@@ -310,6 +317,16 @@ export function stagePackRuntime(dir: string, repo = REPO_FROM_HERE): string {
   }
   writeFileSync(join(runtime, 'runtime.json'), JSON.stringify({ schema: 'pack-agent.pack-runtime/v1' }, null, 2) + '\n')
   return runtime
+}
+
+function copyDirRecursive(from: string, to: string): void {
+  mkdirSync(to, { recursive: true })
+  for (const ent of readdirSync(from, { withFileTypes: true })) {
+    const src = join(from, ent.name)
+    const dst = join(to, ent.name)
+    if (ent.isDirectory()) copyDirRecursive(src, dst)
+    else copyFileSync(src, dst)
+  }
 }
 
 function findBunExe(): string {

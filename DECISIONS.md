@@ -1156,3 +1156,14 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 - 产物：`dist/single/pack-agent-for DSH.exe` 178.9MB（host 126.7 + payload 52.1），目标机零依赖。
 - 验证：空目录单 exe 可 list / create / project（EVIDENCE/D91-pcl-single-exe）。
 - 下一步：PCL 式自动更新通道（latest.json + 增量补丁 + 替换自身）。
+
+## D92 · 2026-11-02 · 演示「单文件 exe + 整合包」流程并修 4 个真问题
+- 演示：空目录放 `pack-agent-for DSH.exe` + `e2e-pack-0.1.0.pack.zip` → import（=拖包安装）→ 实例 ready →
+  插件/整合包可见 → allow/deny 启停；`--shot` 自渲染截图（不抢前台）。
+- 修：
+  1) 便携 runtime 少带 registries（import PA009）→ 两处路径都带 registries；
+  2) DSH 0.2.1 `--dump-config` 要求 `--profile` → TS/C# 都补；
+  3) 包内本地插件按包名装（npm 找不到）→ `pnpm add file:<packRoot>/plugins/...`；
+  4) 失败时 job 日志并发写崩溃 → AppendJobLog 重试。
+- 验证：import exit 0、实例 ready、包 Enabled true/false 切换正常；pad-pack/pad-window/p2-p3 绿。
+- 证据：EVIDENCE/D92-demo-flow（3 张自渲染截图 + 流程）。

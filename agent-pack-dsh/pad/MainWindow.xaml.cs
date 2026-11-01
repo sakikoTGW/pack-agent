@@ -79,7 +79,7 @@ public partial class MainWindow : Window
                 if (App.ShotPage is "instance" or "instance-settings" or "instance-plugins" or "instance-bundles"
                     or "plugin-detail")
                     ShowInner("instance", "版本设置");
-                if (App.ShotPage == "market" && Page("download") is DownloadView market)
+                if (App.ShotPage is "market" or "market-detail" && Page("download") is DownloadView market)
                     market.OpenShelf("plugin");
                 if (App.ShotPage == "dl-tasks" && Page("download") is DownloadView dlTasks)
                     dlTasks.OpenShelf("dltasks");

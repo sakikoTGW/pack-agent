@@ -13,15 +13,17 @@ namespace Pad.Views;
 public partial class PluginDetailWindow : Window
 {
     readonly PluginRow _row;
+    readonly Action? _install;
 
     public event Action<PluginRow>? UpdateRequested;
     public event Action<PluginRow>? RemoveRequested;
     public event Action<PluginRow>? OpenDirRequested;
 
-    public PluginDetailWindow(PluginRow row)
+    public PluginDetailWindow(PluginRow row, Action? install = null)
     {
         InitializeComponent();
         _row = row;
+        _install = install;
 
         DetailIcon.IconPath = row.IconPath;
         DetailIcon.Spec = row.Spec;
@@ -49,8 +51,16 @@ public partial class PluginDetailWindow : Window
         var repo = LaunchPolicy.GithubRepo(row.Repository);
         DetailMeta.Text = repo ?? (row.Trial ? "试验（仅本次运行）" : "—");
 
-        UpdateBtn.Visibility = row.ShowUpdateButton ? Visibility.Visible : Visibility.Collapsed;
-        UpdateBtn.Content = row.Version.Length == 0 ? "安装" : "更新";
+        if (_install is not null)
+        {
+            UpdateBtn.Visibility = Visibility.Visible;
+            UpdateBtn.Content = "安装";
+        }
+        else
+        {
+            UpdateBtn.Visibility = row.ShowUpdateButton ? Visibility.Visible : Visibility.Collapsed;
+            UpdateBtn.Content = row.Version.Length == 0 ? "安装" : "更新";
+        }
         FavBtn.Content = row.Favorite ? "★ 已收藏" : "☆ 收藏";
     }
 
@@ -83,6 +93,12 @@ public partial class PluginDetailWindow : Window
 
     void Update_Click(object sender, RoutedEventArgs e)
     {
+        if (_install is { } install)
+        {
+            Close();
+            install();
+            return;
+        }
         UpdateRequested?.Invoke(_row);
         Close();
     }

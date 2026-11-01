@@ -16,6 +16,7 @@ public partial class DownloadView : UserControl, IRefreshable
     readonly AppState _state = AppState.Current;
     bool _pickingTarget;
     MarketRow? _detail;
+    MarketPage? _lastPage;
     PluginCatalog? _catalog;
     string _detailHome = "";
     string _chip = "全部";
@@ -595,6 +596,7 @@ public partial class DownloadView : UserControl, IRefreshable
             var page = await Market.Search(Shelf().Query, SearchBox.Text, _from, live.Token);
             if (live.IsCancellationRequested) return;
             Paint(page);
+            if (App.ShotPage == "market-detail" && page.Rows.Count > 0) QueueStoreDetailShot(page.Rows[0]);
         }
         catch (OperationCanceledException)
         {
@@ -616,6 +618,76 @@ public partial class DownloadView : UserControl, IRefreshable
         }
     }
 
+    bool _storeShotQueued;
+    void QueueStoreDetailShot(MarketRow row)
+    {
+        if (_storeShotQueued || App.ShotPath is not { Length: > 0 } shot) return;
+        _storeShotQueued = true;
+        var dir = System.IO.Path.GetDirectoryName(shot) ?? "";
+        var path = System.IO.Path.Combine(dir, System.IO.Path.GetFileNameWithoutExtension(shot) + "-store-detail.png");
+        var inst = TargetInstance.SelectedItem as Instance;
+        var plugin = new PluginRow
+        {
+            Profile = inst?.Name ?? "",
+            Spec = row.Name,
+            Version = row.Version,
+            Description = row.DescriptionText,
+            Repository = row.Repository,
+            Keywords = row.Keywords,
+            IconPath = row.IconPath,
+            Latest = "",
+        };
+        var win = new PluginDetailWindow(plugin, () => { })
+        {
+            ShowInTaskbar = false,
+            Left = -20000,
+            Top = -20000,
+        };
+        win.Loaded += (_, _) =>
+        {
+            win.Dispatcher.BeginInvoke(async () =>
+            {
+                try
+                {
+                    await Task.WhenAny(win.ShotsLoaded, Task.Delay(TimeSpan.FromSeconds(8)));
+                    win.RenderTo(path);
+                }
+                finally { win.Close(); }
+            }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        };
+        win.Show();
+    }
+
+    List<MarketRow> ApplyStoreControls(List<MarketRow> rows)
+    {
+        IEnumerable<MarketRow> q = rows;
+        if (InstalledOnly.IsChecked == true && TargetInstance.SelectedItem is Instance inst)
+        {
+            var have = _state.Launcher.ListBundles(inst)
+                .Select(b => b.Spec)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            q = q.Where(r => have.Contains(r.Name));
+        }
+        var sort = (SortBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "hot";
+        q = sort switch
+        {
+            "date" => q.OrderByDescending(r => DateTimeOffset.TryParse(r.Date, out var t) ? t : DateTimeOffset.MinValue),
+            "name" => q.OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase),
+            _ => q.OrderByDescending(r => r.Popularity),
+        };
+        return q.ToList();
+    }
+
+    void Sort_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_lastPage is not null) Paint(_lastPage);
+    }
+
+    void StoreFilter_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_lastPage is not null) Paint(_lastPage);
+    }
+
     void MarketFav_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: MarketRow row }) return;
@@ -627,8 +699,10 @@ public partial class DownloadView : UserControl, IRefreshable
     void Paint(MarketPage page)
     {
         _from = page.From;
-        foreach (var r in page.Rows) r.Favorite = Favorites.IsFavorite(_state.Launcher.Root, r.Name);
-        ResultList.ItemsSource = page.Rows;
+        _lastPage = page;
+        var shown = ApplyStoreControls(page.Rows);
+        foreach (var r in shown) r.Favorite = Favorites.IsFavorite(_state.Launcher.Root, r.Name);
+        ResultList.ItemsSource = shown;
         _ = LoadMarketIcons(page.Rows);
         ResultCard.Visibility = page.Rows.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
@@ -713,7 +787,25 @@ public partial class DownloadView : UserControl, IRefreshable
 
     void Row_OpenDetail(object sender, MouseButtonEventArgs e)
     {
-        if (sender is FrameworkElement { Tag: MarketRow row }) _ = OpenDetail(row);
+        if (sender is not FrameworkElement { Tag: MarketRow row }) return;
+        var inst = TargetInstance.SelectedItem as Instance;
+        var plugin = new PluginRow
+        {
+            Profile = inst?.Name ?? "",
+            Spec = row.Name,
+            Version = row.Version,
+            Description = row.DescriptionText,
+            Repository = row.Repository,
+            Keywords = row.Keywords,
+            IconPath = row.IconPath,
+            Latest = "",
+        };
+        // 商店详情也用 App Store 式窗口；安装走现有 InstallFrom（默认装最新版本）
+        var win = new PluginDetailWindow(plugin, () => _ = InstallFrom(row, row.Version, null))
+        {
+            Owner = _win,
+        };
+        win.ShowDialog();
     }
 
     void ShowMarketList()

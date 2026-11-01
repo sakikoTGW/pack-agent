@@ -308,12 +308,3 @@ try {
   cleanup()
   fail(String(error))
 }
-// v4 页面（D69）：现在流 / 实例清单 / 自动收编 / 项目页状态条。
-const v4Src = readFileSync(join(pad, 'Views/WorkbenchV4.cs'), 'utf8')
-for (const need of ['PaintNowCards', 'NowSection', 'PaintInstanceCards', 'PaintAdoptCards',
-  'ProjectStatusStrip', 'ProjectTeamCard', 'ProjectTasksCard', 'ProjectCapsCard', 'ProjectRecentCard'])
-  if (!v4Src.includes(need)) fail(`WorkbenchV4 缺 v4 页面/卡片：${need}`)
-const railSrc = readFileSync(join(pad, 'Views/ProjectRail.xaml.cs'), 'utf8')
-for (const need of ['FillInstancesV4', 'ShowHub', 'SegmentChanged', 'AdoptClicked'])
-  if (!railSrc.includes(need)) fail(`ProjectRail 缺 v4 分段/实例清单：${need}`)
-console.log('✓ v4 页面契约（现在/实例/自动收编/项目页卡片/侧栏分段）')

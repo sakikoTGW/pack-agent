@@ -12,12 +12,27 @@
         <TextBlock Text="项目" FontSize="11" Foreground="{StaticResource TextMuted}" />
         <TextBlock x:Name="Summary" Margin="0,4,0,0" FontSize="10"
                    Foreground="{StaticResource TextMuted}" />
-        <!-- 项目视角才出现：按名字过滤（D66）。 -->
-        <TextBox x:Name="SearchBox" Visibility="Collapsed" Height="24" Margin="0,6,0,0"
-                 Padding="6,0" FontSize="11" VerticalContentAlignment="Center"
-                 Background="{StaticResource BgCard}" Foreground="{StaticResource TextPrimary}"
-                 BorderBrush="{StaticResource LineBorder}" BorderThickness="1"
-                 TextChanged="Search_Changed" ToolTip="按名字过滤项目" />
+        <!-- 项目视角才出现：按名字过滤（D66）；占位文案和演示稿一致（D68）。 -->
+        <Grid Margin="0,6,0,0">
+          <TextBox x:Name="SearchBox" Visibility="Collapsed" Height="24"
+                   Padding="6,0" FontSize="11" VerticalContentAlignment="Center"
+                   Background="{StaticResource BgCard}" Foreground="{StaticResource TextPrimary}"
+                   BorderBrush="{StaticResource LineBorder}" BorderThickness="1"
+                   TextChanged="Search_Changed" ToolTip="按名字过滤项目" />
+          <TextBlock x:Name="SearchHint" Text="搜索项目（按名字过滤）" Visibility="Collapsed"
+                     IsHitTestVisible="False" Margin="8,0,0,0" VerticalAlignment="Center"
+                     FontSize="11" Foreground="{StaticResource TextMuted}">
+            <TextBlock.Style>
+              <Style TargetType="TextBlock">
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding Text.Length, ElementName=SearchBox}" Value="0">
+                    <Setter Property="Visibility" Value="Visible" />
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </TextBlock.Style>
+          </TextBlock>
+        </Grid>
       </StackPanel>
     </DockPanel>
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

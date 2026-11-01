@@ -754,14 +754,76 @@ public partial class WorkbenchView : UserControl
     void PaintProjectCards()
     {
         var proj = _project!;
-        CardHost.Children.Add(ScopeCard("启动", 3, ProjectRunCard(proj), "L.Play"));
-        CardHost.Children.Add(ScopeCard("agent preset", 1, ProjectPresetCard(proj), "L.Layers"));
-        CardHost.Children.Add(ScopeCard("工作区", 1, ProjectWorkspacesCard(proj), "L.Folder"));
-        if (_scope is not null)
+        // 排版对齐 D67 演示稿：启动占整行，preset/工作区/对话 一排，环境收尾（卡片高度跟内容走）。
+        CardHost.Children.Add(ProjectCard("启动", 3, ProjectRunCard(proj), "L.Play"));
+        CardHost.Children.Add(ProjectCard("agent preset", 1, ProjectPresetCard(proj), "L.Layers"));
+        CardHost.Children.Add(ProjectCard("工作区", 1, ProjectWorkspacesCard(proj), "L.Folder"));
+        CardHost.Children.Add(ProjectCard("对话", 1, ProjectDialogCard(), "L.Chat"));
+        CardHost.Children.Add(ProjectCard("环境", 1, ProjectEnvCard(), "L.Layers"));
+    }
+
+    /// <summary>项目页的卡：和 ScopeCard 同一套语言，但高度由内容决定（不硬撑 226）。</summary>
+    UIElement ProjectCard(string title, int cols, UIElement body, string iconKey)
+    {
+        var width = cols >= 3 ? 864 : cols >= 2 ? 576 : 280;
+        var stack = new StackPanel();
+        var head = new StackPanel
         {
-            CardHost.Children.Add(ScopeCard("对话", 1, ProjectDialogCard(), "L.Chat"));
-            CardHost.Children.Add(ScopeCard("环境", 3, EnvCard(_scope), "L.Layers"));
-        }
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 0, 0, 14),
+        };
+        head.Children.Add(Icon(iconKey, 14, Muted));
+        head.Children.Add(new TextBlock
+        {
+            Text = title,
+            Style = (Style)Resources["WbLabel"],
+            Foreground = (Brush)Application.Current.Resources["TextMuted"],
+            Margin = new Thickness(7, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        });
+        stack.Children.Add(head);
+        stack.Children.Add(body);
+
+        var card = new Border
+        {
+            Width = width,
+            MinHeight = 120,
+            Margin = new Thickness(0, 0, 16, 16),
+            Child = stack,
+        };
+        card.Style = (Style)Resources["WbCard"];
+        Fx.SetEnter(card, "card");
+        HoverLift(card);
+        return card;
+    }
+
+    /// <summary>演示稿里那种小按钮（横向排一行）。</summary>
+    Button MiniButton(string label, string iconKey, RoutedEventHandler click, bool primary = false)
+    {
+        var btn = new Button
+        {
+            Content = BtnContent(label, iconKey),
+            Height = 30,
+            Padding = new Thickness(12, 0, 12, 0),
+            Margin = new Thickness(0, 0, 8, 0),
+            Style = (Style)Application.Current.Resources[primary ? "BtnPrimary" : "BtnSm"],
+        };
+        btn.Click += click;
+        return btn;
+    }
+
+    /// <summary>环境（项目页收尾卡）：2×2，和演示稿一致，不再铺满一行。</summary>
+    UIElement ProjectEnvCard()
+    {
+        var stack = new StackPanel();
+        var grid = new UniformGrid { Columns = 2, Rows = 2 };
+        grid.Children.Add(Stat("内核", _scope?.Dsh.Version ?? _project?.Dsh.Version ?? "—", "L.Cpu", mono: true));
+        grid.Children.Add(Stat("组合包", _scopeBundles.Count == 0 ? "—" : _scopeBundles.Count.ToString(), "L.Package"));
+        grid.Children.Add(Stat("会话", (_scopeInspect?.Sessions ?? 0).ToString(), "L.Chat"));
+        grid.Children.Add(Stat("整合包", PacksStat(), "L.Layers"));
+        stack.Children.Add(grid);
+        return stack;
     }
 
     /// <summary>启动卡：项目在不在跑、怎么启动/停止/打开；实例只是运行体。</summary>
@@ -773,8 +835,8 @@ public partial class WorkbenchView : UserControl
         var facts = _scopeFacts;
 
         var root = new Grid();
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         var left = new StackPanel();
         var head = new StackPanel { Orientation = Orientation.Horizontal };
@@ -816,29 +878,32 @@ public partial class WorkbenchView : UserControl
         stats.Children.Add(Stat("工作区", proj.Workspaces.Count.ToString(), "L.Folder", copyable: false));
         stats.Children.Add(Stat("默认 preset", proj.Agents.Count > 0 ? proj.Agents[0] : "—", "L.Layers", mono: true));
         left.Children.Add(stats);
-        Grid.SetColumn(left, 0);
         root.Children.Add(left);
 
-        var actions = new StackPanel { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(18, 2, 0, 0) };
-        actions.Children.Add(HeroButton(run is not null ? "停止" : "启动",
-            run is not null ? "L.Stop" : "L.Play",
-            (_, _) =>
-            {
-                if (_project is null) return;
-                if (run is not null) StopProject(_project);
-                else _ = StartProjectAsync(_project);
-            }));
-        if (!string.IsNullOrWhiteSpace(facts?.PadUrl))
-            actions.Children.Add(HeroButton("打开界面", "L.External", (_, _) => Reveal.Url(facts!.PadUrl!)));
-        else if (facts?.HasWindow == true)
-            actions.Children.Add(HeroButton("切到窗口", "L.Window", ActivateShell_Click));
+        // 演示稿：动作在统计下面横排一行，不在右侧竖排。
+        var actions = new WrapPanel { Margin = new Thickness(0, 16, 0, 0) };
         if (run is not null)
-            actions.Children.Add(HeroButton("打开对话", "L.Chat", (_, _) => OpenConversation(_scopeDialogs.FirstOrDefault())));
+        {
+            actions.Children.Add(MiniButton("打开对话", "L.Chat",
+                (_, _) => OpenConversation(_scopeDialogs.FirstOrDefault()), primary: true));
+            var webUrl = facts?.PadUrl ?? LatestWebUrl(inst);
+            if (!string.IsNullOrWhiteSpace(webUrl))
+                actions.Children.Add(MiniButton("打开界面", "L.External", (_, _) => Reveal.Url(webUrl)));
+            else if (facts?.HasWindow == true)
+                actions.Children.Add(MiniButton("切到窗口", "L.Window", ActivateShell_Click));
+        }
+        else
+        {
+            actions.Children.Add(MiniButton("启动", "L.Play", (_, _) =>
+            {
+                if (_project is not null) _ = StartProjectAsync(_project);
+            }, primary: true));
+        }
         if (proj.Workspaces.Count > 0)
-            actions.Children.Add(HeroButton("打开工作区", "L.Folder", (_, _) => Reveal.Path(proj.Workspaces[0])));
+            actions.Children.Add(MiniButton("打开工作区", "L.Folder", (_, _) => Reveal.Path(proj.Workspaces[0])));
         if (inst is not null)
-            actions.Children.Add(HeroButton("实例视角", "L.Layers", (_, _) => ShowScope(inst)));
-        Grid.SetColumn(actions, 1);
+            actions.Children.Add(MiniButton("实例视角", "L.Layers", (_, _) => ShowScope(inst)));
+        Grid.SetRow(actions, 1);
         root.Children.Add(actions);
         return root;
     }

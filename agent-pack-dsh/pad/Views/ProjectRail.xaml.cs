@@ -82,6 +82,7 @@ public partial class ProjectRail : UserControl
     {
         _projectMode = false;
         SearchBox.Visibility = Visibility.Collapsed;
+        SearchHint.Visibility = Visibility.Collapsed;
         Summary.Text = "展开/收起在侧栏完成";
         _live.Clear();
         var items = new List<(string, FrameworkElement)>();
@@ -200,6 +201,7 @@ public partial class ProjectRail : UserControl
     {
         _projectMode = false;
         SearchBox.Visibility = Visibility.Collapsed;
+        SearchHint.Visibility = Visibility.Collapsed;
         _selected = selected ?? _selected;
         Summary.Text = $"{insts.Count} 个实例";
         _live.Clear();
@@ -238,6 +240,7 @@ public partial class ProjectRail : UserControl
         _projectRows = [.. rows];
         _selected = selected ?? _selected;
         SearchBox.Visibility = Visibility.Visible;
+        SearchHint.Visibility = Visibility.Visible;
         Summary.Text = $"{rows.Count} 个项目 · {rows.Count(r => r.Live)} 个在跑";
         _live.Clear();
 

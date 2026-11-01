@@ -338,7 +338,7 @@ public partial class DownloadView : UserControl, IRefreshable
         if (_shelf == tag) return;
         _shelf = tag;
         var shelf = Shelf();
-        ShelfTitle.Content = $"搜索{shelf.Label}";
+        ShelfTitle.Text = $"{shelf.Label} · {shelf.Query}";
         ShelfTitle.ToolTip = shelf.Query;
         SearchBox.Clear();
         _from = 0;
@@ -616,9 +616,18 @@ public partial class DownloadView : UserControl, IRefreshable
         }
     }
 
+    void MarketFav_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: MarketRow row }) return;
+        var on = Favorites.Toggle(_state.Launcher.Root, row.Name);
+        row.Favorite = on;
+        _win.Toast(on ? $"已收藏 {row.Title}" : $"取消收藏 {row.Title}");
+    }
+
     void Paint(MarketPage page)
     {
         _from = page.From;
+        foreach (var r in page.Rows) r.Favorite = Favorites.IsFavorite(_state.Launcher.Root, r.Name);
         ResultList.ItemsSource = page.Rows;
         _ = LoadMarketIcons(page.Rows);
         ResultCard.Visibility = page.Rows.Count == 0 ? Visibility.Collapsed : Visibility.Visible;

@@ -22,6 +22,19 @@ public sealed class MarketRow : System.ComponentModel.INotifyPropertyChanged
     /// <summary>npm 元数据里的仓库地址（插件图标的来源）。</summary>
     public string Repository { get; set; } = "";
 
+    bool _favorite;
+    /// <summary>本地收藏（与插件页共用 Favorites 存储）。</summary>
+    public bool Favorite
+    {
+        get => _favorite;
+        set
+        {
+            if (_favorite == value) return;
+            _favorite = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Favorite)));
+        }
+    }
+
     string _iconPath = "";
     /// <summary>插件自己的图标：从仓库 logo / 作者头像取到后异步填入。</summary>
     public string IconPath

@@ -298,8 +298,10 @@
         <StackPanel>
           <Border Style="{StaticResource Slab}">
             <StackPanel>
-              <ContentControl x:Name="ShelfTitle" Style="{StaticResource SlabHead}"
-                              v:Ico.Of="{StaticResource I.Search}" />
+              <TextBlock Text="插件商店" FontSize="28" FontWeight="SemiBold"
+                         Foreground="{StaticResource TextPrimary}" />
+              <TextBlock x:Name="ShelfTitle" Style="{StaticResource Muted}"
+                         FontSize="{StaticResource FsSmall}" Margin="0,6,0,2" />
               <StackPanel Margin="0,0,0,2">
                 <TextBlock Text="名称" Style="{StaticResource Label}" Margin="0,0,0,6" />
                 <TextBox x:Name="SearchBox" Height="34" Tag="搜索名称 / 描述（回车搜索）"
@@ -372,21 +374,26 @@
           </Border>
 
           <Border x:Name="ResultCard" Style="{StaticResource Slab}" Padding="14,12,14,6"
-                  Visibility="Collapsed">
+                  Background="{StaticResource BgPage}" Visibility="Collapsed">
             <StackPanel>
             <Grid Margin="2,0,2,6">
               <TextBlock x:Name="ResultCount" Style="{StaticResource Muted}"
                          FontSize="{StaticResource FsSmall}" />
-              <TextBlock Text="点击一行查看详情并安装" HorizontalAlignment="Right"
+              <TextBlock Text="点卡片看详情并安装" HorizontalAlignment="Right"
                          Style="{StaticResource Muted}" FontSize="{StaticResource FsMicro}" />
             </Grid>
             <ItemsControl x:Name="ResultList">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel HorizontalAlignment="Left" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Border local:Fx.Enter="row" MinHeight="104" Padding="10,10,10,10" Cursor="Hand"
-                          BorderBrush="{StaticResource LineDivider}" BorderThickness="0,0,0,1"
-                          Background="Transparent" Tag="{Binding}"
-                          MouseLeftButtonUp="Row_OpenDetail">
+                  <Border local:Fx.Enter="row" Width="214" MinHeight="150" Padding="13,12,13,10"
+                          Margin="0,0,12,12" CornerRadius="16" Cursor="Hand"
+                          Background="{StaticResource BgCard}"
+                          Tag="{Binding}" MouseLeftButtonUp="Row_OpenDetail">
                     <Border.Style>
                       <Style TargetType="Border">
                         <Setter Property="Background" Value="Transparent" />
@@ -398,29 +405,46 @@
                       </Style>
                     </Border.Style>
                     <Grid>
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                      </Grid.ColumnDefinitions>
-                      <v:PluginMark Grid.Column="0" Width="48" Height="48" Size="48"
-                                    IconPath="{Binding IconPath}" Spec="{Binding Name}"
-                                    VerticalAlignment="Top" Margin="2,2,14,0" />
-                      <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
-                        <StackPanel Orientation="Horizontal">
-                          <TextBlock Text="{Binding Title}" FontSize="{StaticResource FsTitle}"
+                      <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                      </Grid.RowDefinitions>
+                      <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="Auto" />
+                          <ColumnDefinition Width="*" />
+                          <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <v:PluginMark Grid.Column="0" Width="44" Height="44" Size="44"
+                                      IconPath="{Binding IconPath}" Spec="{Binding Name}"
+                                      VerticalAlignment="Top" Margin="0,0,10,0" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Title}" FontSize="{StaticResource FsBody}"
                                      FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
-                                     TextTrimming="CharacterEllipsis" MaxWidth="430" />
+                                     TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis" />
                           <TextBlock Text="{Binding Publisher}" Style="{StaticResource Mono}"
                                      FontSize="{StaticResource FsMicro}"
-                                     Foreground="{StaticResource TextMuted}"
-                                     Margin="10,2,0,0" VerticalAlignment="Center" />
+                                     Foreground="{StaticResource TextMuted}" Margin="0,3,0,0" />
                         </StackPanel>
-                        <TextBlock Text="{Binding DescriptionText}" FontSize="{StaticResource FsSmall}"
-                                   Foreground="{StaticResource TextSecondary}" Margin="0,5,0,0"
-                                   TextWrapping="Wrap" MaxHeight="36" TextTrimming="CharacterEllipsis"
-                                   ToolTip="{Binding DescriptionText}" />
-                        <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                        <Button Grid.Column="2" Style="{StaticResource IcoBtn}" Click="MarketFav_Click"
+                                Tag="{Binding}" ToolTip="收藏（本地歌单）" VerticalAlignment="Top">
+                          <Grid>
+                            <v:Ico Glyph="{StaticResource I.Star}" Height="13"
+                                   Foreground="{StaticResource TextMuted}"
+                                   Visibility="{Binding Favorite, Converter={StaticResource B2VNot}}" />
+                            <v:Ico Glyph="{StaticResource I.Star}" Height="13"
+                                   Foreground="{StaticResource Accent}"
+                                   Visibility="{Binding Favorite, Converter={StaticResource B2V}}" />
+                          </Grid>
+                        </Button>
+                      </Grid>
+                      <TextBlock Grid.Row="1" Text="{Binding DescriptionText}"
+                                 FontSize="{StaticResource FsSmall}"
+                                 Foreground="{StaticResource TextSecondary}" Margin="0,10,0,0"
+                                 TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis"
+                                 ToolTip="{Binding DescriptionText}" />
+                      <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
                           <ContentControl Style="{StaticResource QuantMono}"
                                           v:Ico.Of="{StaticResource I.Gear}"
                                           Content="{Binding VersionText}" />
@@ -431,10 +455,6 @@
                                           Content="{Binding TagText}"
                                           Visibility="{Binding HasTag, Converter={StaticResource B2V}}" />
                         </StackPanel>
-                      </StackPanel>
-                      <TextBlock Grid.Column="2" Text="›" FontSize="20"
-                                 Foreground="{StaticResource TextMuted}"
-                                 VerticalAlignment="Center" Margin="6,0,2,0" />
                     </Grid>
                   </Border>
                 </DataTemplate>

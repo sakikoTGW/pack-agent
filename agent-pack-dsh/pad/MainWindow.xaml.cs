@@ -410,7 +410,8 @@ public partial class MainWindow : Window
         : _pages[name] = name switch
         {
             "launch" => new LaunchView(this),
-            "manage" => new WorkbenchView(this),
+            // 项目轴先隐藏（不做项目了）：管理页回到启动器本体「实例与组合包」。
+            "manage" => new ManageView(this),
             "bundles" => new ManageView(this),
             "relations" => new RelationsWebView(),
             "tasks" => new TaskView(this),
@@ -614,10 +615,7 @@ public partial class MainWindow : Window
     {
         switch (page)
         {
-            case WorkbenchView wb:
-                wb.AttachRail(StageRailList);
-                ShowRail(animate);
-                break;
+            // 项目侧栏随项目轴一起隐藏；管理页现在是启动器本体，不再挂项目栏。
             case RelationsWebView rw:
                 rw.AttachRail(StageRailList);
                 rw.GoBack = () => Show("manage");

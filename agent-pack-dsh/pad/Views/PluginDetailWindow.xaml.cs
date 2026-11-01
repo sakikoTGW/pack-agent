@@ -43,10 +43,11 @@ public partial class PluginDetailWindow : Window
             ShotsLoaded = LoadRepoShotsAsync();
         }
 
-        var meta = new List<string> { $"--profile {row.Profile}" };
-        if (row.Latest.Length > 0) meta.Add($"npm latest {row.Latest}");
-        if (row.Trial) meta.Add("试验：仅本次运行，还没固化");
-        DetailMeta.Text = string.Join(" · ", meta);
+        InfoVersion.Text = row.VersionText;
+        InfoLatest.Text = row.Latest.Length > 0 ? row.Latest : "—";
+        InfoProfile.Text = row.Profile.Length > 0 ? row.Profile : "—";
+        var repo = LaunchPolicy.GithubRepo(row.Repository);
+        DetailMeta.Text = repo ?? (row.Trial ? "试验（仅本次运行）" : "—");
 
         UpdateBtn.Visibility = row.ShowUpdateButton ? Visibility.Visible : Visibility.Collapsed;
         UpdateBtn.Content = row.Version.Length == 0 ? "安装" : "更新";

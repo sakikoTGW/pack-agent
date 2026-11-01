@@ -3,94 +3,107 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:v="clr-namespace:Pad.Views"
         xmlns:local="clr-namespace:Pad.Views"
-        Title="插件详情" Width="760" Height="680"
+        Title="插件详情" Width="800" Height="760"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         ShowInTaskbar="False" Background="{StaticResource BgPage}">
-  <!-- 插件详情 = 软件商店式页面：大图标居中 → 名字/版本/徽标 → 动作 → 预览图 → 简介。 -->
+  <!-- 插件详情：App Store 式版面（头图卡 + 大截图横滑 + 描述 + 信息卡）。 -->
   <Window.Resources>
     <local:PathToBmp x:Key="PathBmp" />
   </Window.Resources>
 
   <Grid>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                  Padding="0,0,6,0">
-      <StackPanel Margin="40,22,40,30" HorizontalAlignment="Center" MaxWidth="660">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="34,24,34,34" HorizontalAlignment="Center" MaxWidth="640">
 
-        <DockPanel LastChildFill="False" Margin="0,0,0,4">
-          <TextBlock DockPanel.Dock="Left" Text="PLUGIN" Style="{StaticResource Label}"
-                     VerticalAlignment="Center" />
+        <DockPanel LastChildFill="False" Margin="0,0,0,14">
+          <TextBlock DockPanel.Dock="Left" Text="插件" Style="{StaticResource Muted}"
+                     FontSize="{StaticResource FsSmall}" VerticalAlignment="Center" />
           <Button DockPanel.Dock="Right" Content="关闭" Style="{StaticResource BtnGhost}"
-                  Height="30" Padding="12,0" Click="Close_Click" />
+                  Height="30" Padding="14,0" Click="Close_Click" />
         </DockPanel>
 
-        <!-- 商店头图区：图标居中、名字居中 -->
-        <v:PluginMark x:Name="DetailIcon" Width="96" Height="96" Size="96"
-                      HorizontalAlignment="Center" Margin="0,10,0,0" />
-        <TextBlock x:Name="DetailName" FontSize="26" FontWeight="SemiBold"
-                   Foreground="{StaticResource TextPrimary}" TextAlignment="Center"
-                   TextWrapping="Wrap" Margin="0,16,0,0" />
-        <TextBlock x:Name="DetailSpec" Style="{StaticResource Mono}" FontSize="{StaticResource FsSmall}"
-                   Foreground="{StaticResource TextMuted}" TextAlignment="Center"
-                   Margin="0,6,0,0" TextTrimming="CharacterEllipsis" />
-
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
-          <TextBlock x:Name="DetailVersion" Style="{StaticResource Mono}"
-                     FontSize="{StaticResource FsSmall}" Foreground="{StaticResource TextSecondary}"
-                     VerticalAlignment="Center" />
-          <Border x:Name="DetailUpdateBadge" Margin="10,0,0,0" CornerRadius="6" Padding="8,3,9,3"
-                  Background="{StaticResource Accent}" Visibility="Collapsed">
-            <StackPanel Orientation="Horizontal">
-              <v:Ico Glyph="{StaticResource I.Refresh}" Height="10"
-                     Foreground="{StaticResource TextOnAccent}" />
-              <TextBlock x:Name="DetailUpdateText" Margin="4,0,0,0"
-                         FontSize="{StaticResource FsMicro}" FontWeight="SemiBold"
-                         Foreground="{StaticResource TextOnAccent}" />
+        <!-- 头图卡：App Store 顶部（图标 / 名字 / 版本 / 获取按钮） -->
+        <Border Background="{StaticResource BgCard}" CornerRadius="20" Padding="24,24,22,22">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <v:PluginMark x:Name="DetailIcon" Width="112" Height="112" Size="112"
+                          VerticalAlignment="Top" />
+            <StackPanel Grid.Column="1" Margin="20,2,12,0" VerticalAlignment="Center">
+              <TextBlock x:Name="DetailName" FontSize="26" FontWeight="SemiBold"
+                         Foreground="{StaticResource TextPrimary}" TextWrapping="Wrap" />
+              <TextBlock x:Name="DetailSpec" Style="{StaticResource Mono}"
+                         FontSize="{StaticResource FsSmall}" Foreground="{StaticResource TextMuted}"
+                         Margin="0,6,0,0" TextTrimming="CharacterEllipsis" />
+              <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                <TextBlock x:Name="DetailVersion" Style="{StaticResource Mono}"
+                           FontSize="{StaticResource FsSmall}"
+                           Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center" />
+                <Border x:Name="DetailUpdateBadge" Margin="10,0,0,0" CornerRadius="8"
+                        Padding="8,3,9,3" Background="{StaticResource Accent}" Visibility="Collapsed">
+                  <StackPanel Orientation="Horizontal">
+                    <v:Ico Glyph="{StaticResource I.Refresh}" Height="10"
+                           Foreground="{StaticResource TextOnAccent}" />
+                    <TextBlock x:Name="DetailUpdateText" Margin="4,0,0,0"
+                               FontSize="{StaticResource FsMicro}" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextOnAccent}" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
             </StackPanel>
-          </Border>
+            <Button Grid.Column="2" x:Name="UpdateBtn" Style="{StaticResource BtnPrimary}"
+                    Content="更新" Height="38" Padding="24,0" FontSize="15" FontWeight="SemiBold"
+                    VerticalAlignment="Center" Click="Update_Click" />
+          </Grid>
+        </Border>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="2,14,0,0">
+          <Button x:Name="DirBtn" Style="{StaticResource Btn}" Content="打开目录" Height="32"
+                  Padding="16,0" Click="Dir_Click" />
+          <Button x:Name="RemoveBtn" Style="{StaticResource BtnDanger}" Content="卸载" Height="32"
+                  Padding="16,0" Margin="10,0,0,0" Click="Remove_Click" />
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,18,0,0">
-          <Button x:Name="UpdateBtn" Style="{StaticResource BtnPrimary}" Content="更新"
-                  Height="38" Padding="26,0" Click="Update_Click" />
-          <Button x:Name="DirBtn" Style="{StaticResource Btn}" Content="打开目录"
-                  Height="38" Padding="20,0" Margin="10,0,0,0" Click="Dir_Click" />
-          <Button x:Name="RemoveBtn" Style="{StaticResource BtnDanger}" Content="卸载"
-                  Height="38" Padding="20,0" Margin="10,0,0,0" Click="Remove_Click" />
-        </StackPanel>
-
-        <Border Height="1" Background="{StaticResource LineDivider}" Margin="0,26,0,0" />
-
-        <!-- 预览图：插件自带 screenshot/preview 图时像商店一样摆在中间 -->
-        <ItemsControl x:Name="DetailShots" Margin="0,22,0,0" Visibility="Collapsed">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <WrapPanel HorizontalAlignment="Center" />
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <!-- 一样大：统一 200x126 的铺满小图 -->
-              <Border Width="200" Height="126" CornerRadius="10" Margin="0,0,10,10"
-                      ClipToBounds="True" Background="{StaticResource BgSidebar}">
-                <Image Source="{Binding Converter={StaticResource PathBmp}}"
-                       Stretch="UniformToFill" />
-              </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
+        <!-- 预览：大截图横滑，所有图一样大（App Store 的截图带） -->
+        <TextBlock Text="预览" FontSize="20" FontWeight="SemiBold"
+                   Foreground="{StaticResource TextPrimary}" Margin="2,28,0,12" />
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                      Padding="0,0,0,10">
+          <ItemsControl x:Name="DetailShots" Visibility="Collapsed">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Width="350" Height="218" CornerRadius="14" Margin="0,0,12,0"
+                        ClipToBounds="True" Background="{StaticResource BgSidebar}">
+                  <Image Source="{Binding Converter={StaticResource PathBmp}}"
+                         Stretch="UniformToFill" />
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
         <TextBlock x:Name="DetailShotHint" Text="正在从仓库加载图片…" Visibility="Collapsed"
-                   HorizontalAlignment="Center" Margin="0,22,0,0"
+                   HorizontalAlignment="Left" Margin="2,0,0,10"
                    FontSize="{StaticResource FsSmall}" Foreground="{StaticResource TextMuted}" />
 
+        <!-- 描述 -->
+        <TextBlock Text="描述" FontSize="20" FontWeight="SemiBold"
+                   Foreground="{StaticResource TextPrimary}" Margin="2,24,0,10" />
         <TextBlock x:Name="DetailDesc" FontSize="{StaticResource FsBody}" LineHeight="25"
                    TextWrapping="Wrap" Foreground="{StaticResource TextSecondary}"
-                   TextAlignment="Left" Margin="0,22,0,0" />
+                   TextAlignment="Left" Margin="2,0,2,0" />
 
-        <ItemsControl x:Name="DetailTags" Margin="0,18,0,0" HorizontalAlignment="Center">
+        <ItemsControl x:Name="DetailTags" Margin="2,16,0,0" HorizontalAlignment="Left">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
-              <WrapPanel HorizontalAlignment="Center" />
+              <WrapPanel HorizontalAlignment="Left" />
             </ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
@@ -100,8 +113,44 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <TextBlock x:Name="DetailMeta" Style="{StaticResource Muted}" Margin="0,10,0,0"
-                   FontSize="{StaticResource FsMicro}" TextWrapping="Wrap" TextAlignment="Center" />
+        <!-- 信息卡 -->
+        <TextBlock Text="信息" FontSize="20" FontWeight="SemiBold"
+                   Foreground="{StaticResource TextPrimary}" Margin="2,22,0,10" />
+        <Border Background="{StaticResource BgCard}" CornerRadius="16" Padding="18,6,18,6">
+          <StackPanel>
+            <Grid Height="38">
+              <TextBlock Text="版本" Style="{StaticResource Muted}" FontSize="{StaticResource FsSmall}"
+                         VerticalAlignment="Center" />
+              <TextBlock x:Name="InfoVersion" Style="{StaticResource Mono}"
+                         FontSize="{StaticResource FsSmall}" Foreground="{StaticResource TextPrimary}"
+                         HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+            <Border Height="1" Background="{StaticResource LineDivider}" />
+            <Grid Height="38">
+              <TextBlock Text="最新版本" Style="{StaticResource Muted}" FontSize="{StaticResource FsSmall}"
+                         VerticalAlignment="Center" />
+              <TextBlock x:Name="InfoLatest" Style="{StaticResource Mono}"
+                         FontSize="{StaticResource FsSmall}" Foreground="{StaticResource TextPrimary}"
+                         HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+            <Border Height="1" Background="{StaticResource LineDivider}" />
+            <Grid Height="38">
+              <TextBlock Text="作用域" Style="{StaticResource Muted}" FontSize="{StaticResource FsSmall}"
+                         VerticalAlignment="Center" />
+              <TextBlock x:Name="InfoProfile" Style="{StaticResource Mono}"
+                         FontSize="{StaticResource FsSmall}" Foreground="{StaticResource TextPrimary}"
+                         HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+            <Border Height="1" Background="{StaticResource LineDivider}" />
+            <Grid Height="38">
+              <TextBlock Text="来源" Style="{StaticResource Muted}" FontSize="{StaticResource FsSmall}"
+                         VerticalAlignment="Center" />
+              <TextBlock x:Name="DetailMeta" FontSize="{StaticResource FsMicro}"
+                         Foreground="{StaticResource TextSecondary}" TextAlignment="Right"
+                         VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="360" />
+            </Grid>
+          </StackPanel>
+        </Border>
       </StackPanel>
     </ScrollViewer>
   </Grid>

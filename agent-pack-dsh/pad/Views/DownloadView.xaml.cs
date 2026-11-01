@@ -597,6 +597,11 @@ public partial class DownloadView : UserControl, IRefreshable
             var page = await Market.Search(Shelf().Query, SearchBox.Text, _from, live.Token);
             if (live.IsCancellationRequested) return;
             Paint(page);
+            if (App.ShotPage == "market-more")
+            {
+                StoreMore.Visibility = Visibility.Visible;
+                StoreMoreBtn.Content = "收起 ▴";
+            }
             if (App.ShotPage == "market-detail" && page.Rows.Count > 0) QueueStoreDetailShot(page.Rows[0]);
         }
         catch (OperationCanceledException)
@@ -719,6 +724,13 @@ public partial class DownloadView : UserControl, IRefreshable
             _ => q.OrderByDescending(r => r.Popularity),
         };
         return q.ToList();
+    }
+
+    void StoreMore_Click(object sender, RoutedEventArgs e)
+    {
+        var show = StoreMore.Visibility != Visibility.Visible;
+        StoreMore.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        StoreMoreBtn.Content = show ? "收起 ▴" : "筛选 ▾";
     }
 
     void Sort_Changed(object sender, SelectionChangedEventArgs e)

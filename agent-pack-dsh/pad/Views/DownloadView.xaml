@@ -298,66 +298,77 @@
         <StackPanel>
           <Border Style="{StaticResource Slab}">
             <StackPanel>
-              <TextBlock Text="插件商店" FontSize="28" FontWeight="SemiBold"
-                         Foreground="{StaticResource TextPrimary}" />
-              <TextBlock x:Name="ShelfTitle" Style="{StaticResource Muted}"
-                         FontSize="{StaticResource FsSmall}" Margin="0,6,0,2" />
-              <StackPanel Margin="0,0,0,2">
-                <TextBlock Text="名称" Style="{StaticResource Label}" Margin="0,0,0,6" />
-                <TextBox x:Name="SearchBox" Height="34" Tag="搜索名称 / 描述（回车搜索）"
-                         KeyDown="Search_Key" />
-              </StackPanel>
-              <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                <StackPanel Margin="0,0,28,0">
-                  <TextBlock Text="版本" Style="{StaticResource Label}" Margin="0,0,0,6" />
-                  <ComboBox x:Name="TargetRelease" Width="160" Height="32" IsEditable="False"
-                            ToolTip="这份实例钉的 DSH 发行号" />
+              <!-- 商店头：默认只留标题 + 搜索 + 筛选开关；版本/装到/排序/分类折叠 -->
+              <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left" Text="插件商店" FontSize="28"
+                           FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" />
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                  <TextBlock x:Name="SearchSummary" Style="{StaticResource Muted}"
+                             VerticalAlignment="Center" FontSize="{StaticResource FsSmall}"
+                             Margin="0,0,12,0" />
+                  <Button x:Name="StoreMoreBtn" Style="{StaticResource BtnGhost}" Content="筛选 ▾"
+                          Height="30" Padding="12,0" Click="StoreMore_Click" />
                 </StackPanel>
-                <StackPanel>
-                  <TextBlock Text="装到" Style="{StaticResource Label}" Margin="0,0,0,6" />
-                  <ComboBox x:Name="TargetInstance" Width="240" Height="32"
-                            ItemsSource="{Binding Instances}"
-                            SelectionChanged="TargetInstance_Changed">
-                    <ComboBox.ItemTemplate>
-                      <DataTemplate>
-                        <TextBlock Text="{Binding Name}" />
-                      </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                  </ComboBox>
-                </StackPanel>
-              </StackPanel>
-              <Grid Margin="0,16,0,0">
-                <StackPanel Orientation="Horizontal">
-                  <Button x:Name="SearchBtn" Style="{StaticResource BtnWidePrimary}" Content="搜索"
-                          Margin="0,0,12,0" Click="Search_Click"
-                          v:Ico.Of="{StaticResource I.Search}" />
-                  <Button x:Name="ClearBtn" Style="{StaticResource BtnWide}" Content="重置条件"
-                          Click="Clear_Click" ToolTip="重置条件"
-                          v:Ico.Of="{StaticResource I.Globe}" />
-                  <ContentControl x:Name="MarketBusy" Style="{StaticResource Spinner}"
-                                  Margin="16,0,0,0" VerticalAlignment="Center"
-                                  Visibility="Collapsed" />
-                  <TextBlock x:Name="MarketStatus" Style="{StaticResource Muted}" Margin="10,0,0,0"
-                             VerticalAlignment="Center" Visibility="Collapsed" />
-                </StackPanel>
-                <TextBlock x:Name="SearchSummary" Style="{StaticResource Muted}"
-                           HorizontalAlignment="Right" VerticalAlignment="Center"
-                           FontSize="{StaticResource FsSmall}" />
+              </DockPanel>
+              <TextBlock x:Name="ShelfTitle" Visibility="Collapsed" />
+              <Grid Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="SearchBox" Height="34" Width="Auto"
+                         Tag="搜索名称 / 描述（回车搜索）" KeyDown="Search_Key" />
+                <Button Grid.Column="1" x:Name="SearchBtn" Style="{StaticResource BtnPrimary}"
+                        Content="搜索" Height="34" Padding="22,0" Margin="10,0,0,0"
+                        Click="Search_Click" v:Ico.Of="{StaticResource I.Search}" />
               </Grid>
-              <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                <TextBlock Text="排序" Style="{StaticResource Label}" VerticalAlignment="Center"
-                           Margin="0,0,8,0" />
-                <ComboBox x:Name="SortBox" Width="120" Height="30" SelectionChanged="Sort_Changed">
-                  <ComboBoxItem Tag="hot" Content="热度" IsSelected="True" />
-                  <ComboBoxItem Tag="date" Content="最近更新" />
-                  <ComboBoxItem Tag="name" Content="名称" />
-                </ComboBox>
-                <TextBlock Text="分类" Style="{StaticResource Label}" VerticalAlignment="Center"
-                           Margin="18,0,8,0" />
-                <ComboBox x:Name="TagBox" Width="140" Height="30" SelectionChanged="Tag_Changed" />
-                <CheckBox x:Name="InstalledOnly" Content="只看已安装" Margin="18,0,0,0"
-                          VerticalAlignment="Center" Checked="StoreFilter_Changed"
-                          Unchecked="StoreFilter_Changed" />
+              <StackPanel x:Name="StoreMore" Visibility="Collapsed" Margin="0,2,0,0">
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                  <StackPanel Margin="0,0,28,0">
+                    <TextBlock Text="版本" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                    <ComboBox x:Name="TargetRelease" Width="160" Height="32" IsEditable="False"
+                              ToolTip="这份实例钉的 DSH 发行号" />
+                  </StackPanel>
+                  <StackPanel>
+                    <TextBlock Text="装到" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                    <ComboBox x:Name="TargetInstance" Width="240" Height="32"
+                              ItemsSource="{Binding Instances}"
+                              SelectionChanged="TargetInstance_Changed">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </StackPanel>
+                </StackPanel>
+                <Grid Margin="0,12,0,0">
+                  <StackPanel Orientation="Horizontal">
+                    <Button x:Name="ClearBtn" Style="{StaticResource BtnWide}" Content="重置条件"
+                            Click="Clear_Click" ToolTip="重置条件"
+                            v:Ico.Of="{StaticResource I.Globe}" />
+                    <ContentControl x:Name="MarketBusy" Style="{StaticResource Spinner}"
+                                    Margin="16,0,0,0" VerticalAlignment="Center"
+                                    Visibility="Collapsed" />
+                    <TextBlock x:Name="MarketStatus" Style="{StaticResource Muted}" Margin="10,0,0,0"
+                               VerticalAlignment="Center" Visibility="Collapsed" />
+                  </StackPanel>
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                  <TextBlock Text="排序" Style="{StaticResource Label}" VerticalAlignment="Center"
+                             Margin="0,0,8,0" />
+                  <ComboBox x:Name="SortBox" Width="120" Height="30" SelectionChanged="Sort_Changed">
+                    <ComboBoxItem Tag="hot" Content="热度" IsSelected="True" />
+                    <ComboBoxItem Tag="date" Content="最近更新" />
+                    <ComboBoxItem Tag="name" Content="名称" />
+                  </ComboBox>
+                  <TextBlock Text="分类" Style="{StaticResource Label}" VerticalAlignment="Center"
+                             Margin="18,0,8,0" />
+                  <ComboBox x:Name="TagBox" Width="140" Height="30" SelectionChanged="Tag_Changed" />
+                  <CheckBox x:Name="InstalledOnly" Content="只看已安装" Margin="18,0,0,0"
+                            VerticalAlignment="Center" Checked="StoreFilter_Changed"
+                            Unchecked="StoreFilter_Changed" />
+                </StackPanel>
               </StackPanel>
             </StackPanel>
           </Border>
@@ -394,8 +405,7 @@
             <Grid Margin="2,0,2,6">
               <TextBlock x:Name="ResultCount" Style="{StaticResource Muted}"
                          FontSize="{StaticResource FsSmall}" />
-              <TextBlock Text="点卡片看详情并安装" HorizontalAlignment="Right"
-                         Style="{StaticResource Muted}" FontSize="{StaticResource FsMicro}" />
+
             </Grid>
             <ItemsControl x:Name="ResultList">
               <ItemsControl.ItemsPanel>

@@ -384,8 +384,9 @@ public partial class ManageView : UserControl, IRefreshable
         var inst = _state.SelectedInstance;
         var profile = SelectedBundleProfile();
         if (inst is null || string.IsNullOrEmpty(profile)) return;
+        // 全部更新 = 这个 profile 里所有“装在 profile 里”的插件；发行号自带的（Provided）不跟着 npm 更新。
         var rows = _state.Launcher.ListBundles(inst)
-            .Where(r => r.Profile == profile && LaunchPolicy.IsProfileLayer(r.Spec))
+            .Where(r => r.Profile == profile && !r.Provided)
             .ToList();
         if (rows.Count == 0)
         {

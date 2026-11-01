@@ -43,7 +43,7 @@ public partial class InstanceView : UserControl, IRefreshable
             NavSettings.IsChecked = true;
             return;
         }
-        if (App.ShotPage is "instance-plugins" or "instance-bundles")
+        if (App.ShotPage is "instance-plugins" or "instance-bundles" or "plugin-detail")
         {
             NavPlugins.IsChecked = true;
             return;
@@ -942,7 +942,41 @@ public partial class InstanceView : UserControl, IRefreshable
         }
         _pluginRows = rows;
         PaintPlugins();
+        if (App.ShotPage == "plugin-detail") QueueDetailShot();
         _ = FetchPluginExtras(inst);
+    }
+
+    bool _detailShotQueued;
+
+    /// <summary>
+    /// 测试钩子：`--shot-page plugin-detail` 时把插件详情窗口也离屏渲染一张。
+    /// 窗口放在屏幕外、不开任务栏、不抢前台；渲染完自己关掉。
+    /// </summary>
+    void QueueDetailShot()
+    {
+        if (_detailShotQueued || App.ShotPath is not { Length: > 0 } shot) return;
+        var row = _pluginRows.FirstOrDefault(r => r.Description.Length > 0) ?? _pluginRows.FirstOrDefault();
+        if (row is null) return;
+        _detailShotQueued = true;
+        var dir = Path.GetDirectoryName(shot) ?? "";
+        var path = Path.Combine(dir, Path.GetFileNameWithoutExtension(shot) + "-plugin-detail.png");
+        var win = new PluginDetailWindow(row)
+        {
+            Owner = Window.GetWindow(this),
+            ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Left = -20000,
+            Top = -20000,
+        };
+        win.Loaded += (_, _) =>
+        {
+            win.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try { win.RenderTo(path); }
+                finally { win.Close(); }
+            }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        };
+        win.Show();
     }
 
     async Task FetchPluginExtras(Instance inst)

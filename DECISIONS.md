@@ -1144,3 +1144,8 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 - 发布目录可用 `pad cli pack-runtime stage <dest>` 一键装配。
 - 结果：导出机不再需要仓库/bun/索引；便携包运行时版本与安装器一致。
 验证：EVIDENCE/D89-installer-runtime（stage 命令、无仓库导出、kit 自带 runtime）。
+
+## D90 · 2026-11-02 · 发布形态：p2-p3 旧断言修正 + 一键 kit zip
+- p2-p3 两条旧壳断言改成当前事实：WebView2 允许但必须有 ProjectDshView（D77）；市场结果改为 104 高卡片（D91/D92）。p2-p3 全绿。
+- 新增 `scripts/make-kit.ts`（`bun run kit`）：生成带 pack-runtime 的一键 kit（安装.bat/使用说明.txt/示例包），去掉 .pack-agent-repo，打 zip 到 dist/。
+- 实测 zip 106.1MB（解压 251MB），解压后 PAD CLI 可启动。

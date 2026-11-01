@@ -79,3 +79,6 @@ agent-pack-dsh/.agent-pack/
 # PAD split: local build artifacts / temp verification data
 .tmp/
 agent-pack-dsh/packmaker/bin/
+
+# 发布产物（kit zip）
+dist/

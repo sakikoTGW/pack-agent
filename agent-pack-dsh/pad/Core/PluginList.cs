@@ -84,6 +84,35 @@ public sealed class PluginRow : Observable
         }
     }
 
+    IReadOnlyList<string>? _shots;
+
+    /// <summary>插件自带的预览图（screenshot/preview/banner…），最多 3 张；没有就是空。</summary>
+    public IReadOnlyList<string> PreviewImages => _shots ??= FindShots(PackageDir);
+
+    static readonly string[] ShotHints = ["screenshot", "preview", "banner", "cover", "showcase"];
+    static readonly string[] ShotExts = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
+
+    static IReadOnlyList<string> FindShots(string dir)
+    {
+        if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir)) return [];
+        var hits = new List<string>();
+        try
+        {
+            foreach (var f in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+            {
+                if (hits.Count >= 3) break;
+                var name = Path.GetFileName(f).ToLowerInvariant();
+                if (name.StartsWith("icon") || name.StartsWith("logo") || name.Contains("favicon")) continue;
+                if (!ShotExts.Contains(Path.GetExtension(name))) continue;
+                if (!ShotHints.Any(h => name.Contains(h))) continue;
+                try { if (new FileInfo(f).Length > 4_000_000) continue; } catch { continue; }
+                hits.Add(f);
+            }
+        }
+        catch { /* 读不到就当没有 */ }
+        return hits;
+    }
+
     static readonly string[] NoiseTags =
     [
         "dsh", "dsh-plugin", "dsh-plugins", "plugin", "plugins", "cordis",

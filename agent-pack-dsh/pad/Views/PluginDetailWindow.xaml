@@ -2,77 +2,102 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:v="clr-namespace:Pad.Views"
-        Title="插件详情" Width="700" Height="600"
+        xmlns:local="clr-namespace:Pad.Views"
+        Title="插件详情" Width="760" Height="680"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         ShowInTaskbar="False" Background="{StaticResource BgPage}">
-  <!-- 插件详情 = 一个自己的窗口，按插件市场的版面渲染（图标/名字/版本/简介/动作）。 -->
-  <Border Padding="26,22,26,20" Background="{StaticResource BgCard}"
-          BorderBrush="{StaticResource LineBorder}" BorderThickness="0">
-    <Grid>
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto" />
-        <RowDefinition Height="*" />
-        <RowDefinition Height="Auto" />
-      </Grid.RowDefinitions>
+  <!-- 插件详情 = 软件商店式页面：大图标居中 → 名字/版本/徽标 → 动作 → 预览图 → 简介。 -->
+  <Window.Resources>
+    <local:PathToBmp x:Key="PathBmp" />
+  </Window.Resources>
 
-      <StackPanel Grid.Row="0" Orientation="Horizontal">
-        <v:PluginMark x:Name="DetailIcon" Width="56" Height="56" Size="56" />
-        <StackPanel Margin="16,1,0,0" VerticalAlignment="Center">
-          <TextBlock x:Name="DetailName" FontSize="{StaticResource FsTitle}" FontWeight="SemiBold"
-                     Foreground="{StaticResource TextPrimary}" TextTrimming="CharacterEllipsis"
-                     MaxWidth="560" />
-          <TextBlock x:Name="DetailSpec" Style="{StaticResource Mono}" FontSize="{StaticResource FsMicro}"
-                     Foreground="{StaticResource TextMuted}" Margin="0,4,0,0"
-                     TextTrimming="CharacterEllipsis" />
-          <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-            <TextBlock x:Name="DetailVersion" Style="{StaticResource Mono}"
-                       FontSize="{StaticResource FsSmall}" Foreground="{StaticResource TextSecondary}"
-                       VerticalAlignment="Center" />
-            <Border x:Name="DetailUpdateBadge" Margin="10,0,0,0" CornerRadius="6" Padding="7,3,8,3"
-                    Background="{StaticResource Accent}" Visibility="Collapsed">
-              <StackPanel Orientation="Horizontal">
-                <v:Ico Glyph="{StaticResource I.Refresh}" Height="10"
-                       Foreground="{StaticResource TextOnAccent}" />
-                <TextBlock x:Name="DetailUpdateText" Margin="4,0,0,0"
-                           FontSize="{StaticResource FsMicro}" FontWeight="SemiBold"
-                           Foreground="{StaticResource TextOnAccent}" />
-              </StackPanel>
-            </Border>
-          </StackPanel>
+  <Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                  Padding="0,0,6,0">
+      <StackPanel Margin="40,22,40,30" HorizontalAlignment="Center" MaxWidth="660">
+
+        <DockPanel LastChildFill="False" Margin="0,0,0,4">
+          <TextBlock DockPanel.Dock="Left" Text="PLUGIN" Style="{StaticResource Label}"
+                     VerticalAlignment="Center" />
+          <Button DockPanel.Dock="Right" Content="关闭" Style="{StaticResource BtnGhost}"
+                  Height="30" Padding="12,0" Click="Close_Click" />
+        </DockPanel>
+
+        <!-- 商店头图区：图标居中、名字居中 -->
+        <v:PluginMark x:Name="DetailIcon" Width="96" Height="96" Size="96"
+                      HorizontalAlignment="Center" Margin="0,10,0,0" />
+        <TextBlock x:Name="DetailName" FontSize="26" FontWeight="SemiBold"
+                   Foreground="{StaticResource TextPrimary}" TextAlignment="Center"
+                   TextWrapping="Wrap" Margin="0,16,0,0" />
+        <TextBlock x:Name="DetailSpec" Style="{StaticResource Mono}" FontSize="{StaticResource FsSmall}"
+                   Foreground="{StaticResource TextMuted}" TextAlignment="Center"
+                   Margin="0,6,0,0" TextTrimming="CharacterEllipsis" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+          <TextBlock x:Name="DetailVersion" Style="{StaticResource Mono}"
+                     FontSize="{StaticResource FsSmall}" Foreground="{StaticResource TextSecondary}"
+                     VerticalAlignment="Center" />
+          <Border x:Name="DetailUpdateBadge" Margin="10,0,0,0" CornerRadius="6" Padding="8,3,9,3"
+                  Background="{StaticResource Accent}" Visibility="Collapsed">
+            <StackPanel Orientation="Horizontal">
+              <v:Ico Glyph="{StaticResource I.Refresh}" Height="10"
+                     Foreground="{StaticResource TextOnAccent}" />
+              <TextBlock x:Name="DetailUpdateText" Margin="4,0,0,0"
+                         FontSize="{StaticResource FsMicro}" FontWeight="SemiBold"
+                         Foreground="{StaticResource TextOnAccent}" />
+            </StackPanel>
+          </Border>
         </StackPanel>
-      </StackPanel>
 
-      <ScrollViewer Grid.Row="1" Margin="0,18,0,0" VerticalScrollBarVisibility="Auto">
-        <StackPanel>
-          <TextBlock x:Name="DetailDesc" FontSize="{StaticResource FsBody}" LineHeight="23"
-                     TextWrapping="Wrap" Foreground="{StaticResource TextSecondary}" />
-          <ItemsControl x:Name="DetailTags" Margin="0,16,0,0">
-            <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate>
-                <WrapPanel />
-              </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <ContentControl Style="{StaticResource Pill}" Content="{Binding}" Margin="0,0,6,6" />
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-          <TextBlock x:Name="DetailMeta" Style="{StaticResource Muted}" Margin="0,14,0,0"
-                     FontSize="{StaticResource FsMicro}" TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,18,0,0">
+          <Button x:Name="UpdateBtn" Style="{StaticResource BtnPrimary}" Content="更新"
+                  Height="38" Padding="26,0" Click="Update_Click" />
+          <Button x:Name="DirBtn" Style="{StaticResource Btn}" Content="打开目录"
+                  Height="38" Padding="20,0" Margin="10,0,0,0" Click="Dir_Click" />
+          <Button x:Name="RemoveBtn" Style="{StaticResource BtnDanger}" Content="卸载"
+                  Height="38" Padding="20,0" Margin="10,0,0,0" Click="Remove_Click" />
         </StackPanel>
-      </ScrollViewer>
 
-      <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-        <Button x:Name="UpdateBtn" Style="{StaticResource BtnPrimary}" Content="更新"
-                Height="34" Padding="18,0" Click="Update_Click" />
-        <Button x:Name="DirBtn" Style="{StaticResource Btn}" Content="打开目录"
-                Height="34" Padding="16,0" Margin="10,0,0,0" Click="Dir_Click" />
-        <Button x:Name="RemoveBtn" Style="{StaticResource BtnDanger}" Content="卸载"
-                Height="34" Padding="16,0" Margin="10,0,0,0" Click="Remove_Click" />
-        <Button Style="{StaticResource Btn}" Content="关闭" Height="34" Padding="16,0"
-                Margin="10,0,0,0" Click="Close_Click" />
+        <Border Height="1" Background="{StaticResource LineDivider}" Margin="0,26,0,0" />
+
+        <!-- 预览图：插件自带 screenshot/preview 图时像商店一样摆在中间 -->
+        <ItemsControl x:Name="DetailShots" Margin="0,22,0,0" Visibility="Collapsed">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel HorizontalAlignment="Center" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border CornerRadius="12" Margin="0,0,10,10" ClipToBounds="True"
+                      Background="{StaticResource BgSidebar}" MaxWidth="640">
+                <Image Source="{Binding Converter={StaticResource PathBmp}}"
+                       Stretch="Uniform" MaxHeight="320" MaxWidth="640" />
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBlock x:Name="DetailDesc" FontSize="{StaticResource FsBody}" LineHeight="25"
+                   TextWrapping="Wrap" Foreground="{StaticResource TextSecondary}"
+                   TextAlignment="Left" Margin="0,22,0,0" />
+
+        <ItemsControl x:Name="DetailTags" Margin="0,18,0,0" HorizontalAlignment="Center">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel HorizontalAlignment="Center" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <ContentControl Style="{StaticResource Pill}" Content="{Binding}" Margin="0,0,6,6" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBlock x:Name="DetailMeta" Style="{StaticResource Muted}" Margin="0,10,0,0"
+                   FontSize="{StaticResource FsMicro}" TextWrapping="Wrap" TextAlignment="Center" />
       </StackPanel>
-    </Grid>
-  </Border>
+    </ScrollViewer>
+  </Grid>
 </Window>

@@ -33,6 +33,8 @@ public partial class PluginDetailWindow : Window
         DetailUpdateText.Text = row.UpdateText;
         DetailDesc.Text = row.Description.Length > 0 ? row.Description : "包里没写简介。";
         DetailTags.ItemsSource = row.Tags;
+        DetailShots.ItemsSource = row.PreviewImages;
+        DetailShots.Visibility = row.PreviewImages.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         var meta = new List<string> { $"--profile {row.Profile}" };
         if (row.Latest.Length > 0) meta.Add($"npm latest {row.Latest}");

@@ -33,8 +33,15 @@ public partial class PluginDetailWindow : Window
         DetailUpdateText.Text = row.UpdateText;
         DetailDesc.Text = row.Description.Length > 0 ? row.Description : "包里没写简介。";
         DetailTags.ItemsSource = row.Tags;
-        DetailShots.ItemsSource = row.PreviewImages;
-        DetailShots.Visibility = row.PreviewImages.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (row.PreviewImages.Count > 0)
+        {
+            DetailShots.ItemsSource = row.PreviewImages;
+            DetailShots.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            ShotsLoaded = LoadRepoShotsAsync();
+        }
 
         var meta = new List<string> { $"--profile {row.Profile}" };
         if (row.Latest.Length > 0) meta.Add($"npm latest {row.Latest}");
@@ -46,6 +53,26 @@ public partial class PluginDetailWindow : Window
         DirBtn.Visibility = row.PackageDir.Length > 0 && Directory.Exists(row.PackageDir)
             ? Visibility.Visible : Visibility.Collapsed;
         RemoveBtn.Visibility = row.Trial ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    /// <summary>仓库预览图加载完成（没有仓库/没有图时也完成）；--shot-page plugin-detail 会等它再截图。</summary>
+    public Task ShotsLoaded { get; private set; } = Task.CompletedTask;
+
+    async Task LoadRepoShotsAsync()
+    {
+        try
+        {
+            DetailShotHint.Visibility = Visibility.Visible;
+            var root = AppState.Current.Launcher.Root;
+            var shots = await RepoShots.EnsureAsync(root, _row.Spec, _row.Repository);
+            if (shots.Count > 0)
+            {
+                DetailShots.ItemsSource = shots;
+                DetailShots.Visibility = Visibility.Visible;
+            }
+        }
+        catch { /* 没网/仓库没有图：不显示预览 */ }
+        finally { DetailShotHint.Visibility = Visibility.Collapsed; }
     }
 
     void Update_Click(object sender, RoutedEventArgs e)

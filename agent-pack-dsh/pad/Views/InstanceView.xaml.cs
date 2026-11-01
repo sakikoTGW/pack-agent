@@ -970,11 +970,16 @@ public partial class InstanceView : UserControl, IRefreshable
         };
         win.Loaded += (_, _) =>
         {
-            win.Dispatcher.BeginInvoke(new Action(() =>
+            win.Dispatcher.BeginInvoke(async () =>
             {
-                try { win.RenderTo(path); }
+                try
+                {
+                    // 等仓库图片下载完（最多 10 秒），否则截出来的空页面没法看
+                    await Task.WhenAny(win.ShotsLoaded, Task.Delay(TimeSpan.FromSeconds(10)));
+                    win.RenderTo(path);
+                }
                 finally { win.Close(); }
-            }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         };
         win.Show();
     }

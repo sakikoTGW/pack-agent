@@ -69,14 +69,19 @@
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <Border CornerRadius="12" Margin="0,0,10,10" ClipToBounds="True"
-                      Background="{StaticResource BgSidebar}" MaxWidth="640">
+              <!-- 一样大：统一 200x126 的铺满小图 -->
+              <Border Width="200" Height="126" CornerRadius="10" Margin="0,0,10,10"
+                      ClipToBounds="True" Background="{StaticResource BgSidebar}">
                 <Image Source="{Binding Converter={StaticResource PathBmp}}"
-                       Stretch="Uniform" MaxHeight="320" MaxWidth="640" />
+                       Stretch="UniformToFill" />
               </Border>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
+
+        <TextBlock x:Name="DetailShotHint" Text="正在从仓库加载图片…" Visibility="Collapsed"
+                   HorizontalAlignment="Center" Margin="0,22,0,0"
+                   FontSize="{StaticResource FsSmall}" Foreground="{StaticResource TextMuted}" />
 
         <TextBlock x:Name="DetailDesc" FontSize="{StaticResource FsBody}" LineHeight="25"
                    TextWrapping="Wrap" Foreground="{StaticResource TextSecondary}"

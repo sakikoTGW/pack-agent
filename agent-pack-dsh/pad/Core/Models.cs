@@ -273,6 +273,7 @@ public sealed class BundleRow
     public string Version { get; init; } = "";
     public string Description { get; init; } = "";
     public List<string> Keywords { get; init; } = [];
+    public string Repository { get; init; } = "";
     public string PackageDir { get; init; } = "";
     public string Latest { get; set; } = "";
     public string IconPath { get; set; } = "";

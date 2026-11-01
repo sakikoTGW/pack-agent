@@ -302,13 +302,14 @@
               <DockPanel LastChildFill="False">
                 <TextBlock DockPanel.Dock="Left" Text="插件商店" FontSize="28"
                            FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" />
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                  <TextBlock x:Name="SearchSummary" Style="{StaticResource Muted}"
-                             VerticalAlignment="Center" FontSize="{StaticResource FsSmall}"
-                             Margin="0,0,12,0" />
-                  <Button x:Name="StoreMoreBtn" Style="{StaticResource BtnGhost}" Content="筛选 ▾"
-                          Height="30" Padding="12,0" Click="StoreMore_Click" />
-                </StackPanel>
+                <Button DockPanel.Dock="Right" x:Name="StoreMoreBtn" Style="{StaticResource IcoBtn}"
+                        Click="StoreMore_Click" ToolTip="高级筛选" VerticalAlignment="Center">
+                  <v:Ico x:Name="StoreMoreIcon" Glyph="{StaticResource I.Chevron}" Height="12">
+                    <v:Ico.RenderTransform>
+                      <RotateTransform x:Name="StoreMoreAngle" Angle="0" CenterX="6" CenterY="6" />
+                    </v:Ico.RenderTransform>
+                  </v:Ico>
+                </Button>
               </DockPanel>
               <TextBlock x:Name="ShelfTitle" Visibility="Collapsed" />
               <Grid Margin="0,12,0,0">

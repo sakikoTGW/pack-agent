@@ -600,7 +600,7 @@ public partial class DownloadView : UserControl, IRefreshable
             if (App.ShotPage == "market-more")
             {
                 StoreMore.Visibility = Visibility.Visible;
-                StoreMoreBtn.Content = "收起 ▴";
+                StoreMoreAngle.Angle = 180;
             }
             if (App.ShotPage == "market-detail" && page.Rows.Count > 0) QueueStoreDetailShot(page.Rows[0]);
         }
@@ -730,7 +730,7 @@ public partial class DownloadView : UserControl, IRefreshable
     {
         var show = StoreMore.Visibility != Visibility.Visible;
         StoreMore.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-        StoreMoreBtn.Content = show ? "收起 ▴" : "筛选 ▾";
+        StoreMoreAngle.Angle = show ? 180 : 0;
     }
 
     void Sort_Changed(object sender, SelectionChangedEventArgs e)
@@ -768,7 +768,6 @@ public partial class DownloadView : UserControl, IRefreshable
         EmptyCard.Visibility = page.Rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         ResultCount.Text = $"{page.Total:N0} 个插件";
-        SearchSummary.Text = $"共 {page.Total:N0} 个 · 第 {page.PageIndex + 1}/{page.PageCount} 页";
         PageText.Text = $"{page.PageIndex + 1} / {page.PageCount}";
         FirstBtn.IsEnabled = page.HasPrev;
         PrevBtn.IsEnabled = page.HasPrev;

@@ -682,8 +682,12 @@ public sealed class OtherPrefs
     [JsonPropertyName("adoptDismissed")] public bool AdoptDismissed { get; set; }
     /// <summary>诊断多打一行 stderr；设置页显示 schema 与根路径。</summary>
     [JsonPropertyName("debug")] public bool Debug { get; set; }
-    /// <summary>PAD 自身更新：release | off。</summary>
+    /// <summary>PAD 自身更新：release | off（用户可以选择关掉检查）。</summary>
     [JsonPropertyName("updateChannel")] public string UpdateChannel { get; set; } = "release";
+    /// <summary>latest.json 的地址（http/https 或本地路径）；空 = 不检查。</summary>
+    [JsonPropertyName("updateFeed")] public string UpdateFeed { get; set; } = "";
+    /// <summary>发现新版时自动下载到本地（默认关；仍然重启才替换，用户可选）。</summary>
+    [JsonPropertyName("updateAutoDownload")] public bool UpdateAutoDownload { get; set; }
     /// <summary>Local random id, generated once at first boot. Never uploaded.</summary>
     [JsonPropertyName("identify")] public string Identify { get; set; } = "";
 
@@ -707,6 +711,7 @@ public sealed class OtherPrefs
         ShotDelayMs = Math.Clamp(ShotDelayMs, 500, 30000);
         ShotMarketDelayMs = Math.Clamp(ShotMarketDelayMs, 500, 60000);
         if (UpdateChannel is not ("release" or "off")) UpdateChannel = "release";
+        UpdateFeed = (UpdateFeed ?? "").Trim();
         Experiments = (Experiments ?? [])
             .Where(e => !string.IsNullOrWhiteSpace(e))
             .Select(e => e.Trim().ToLowerInvariant())

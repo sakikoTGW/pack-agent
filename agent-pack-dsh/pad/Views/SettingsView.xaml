@@ -1069,11 +1069,34 @@
                 <TextBlock Text="DSH 发行号" Style="{StaticResource Label}" />
                 <TextBlock Grid.Column="1" x:Name="DshUpdateLine" Style="{StaticResource Mono}" />
               </Grid>
+              <Grid Margin="0,0,0,9">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="更新源" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" x:Name="UpdateFeedBox" Height="28"
+                         LostFocus="Other_Save"
+                         ToolTip="latest.json 的 http(s) 地址或本地路径；留空 = 不检查 PAD 自身更新" />
+              </Grid>
+              <Grid Height="28" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="PAD 更新" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+                <CheckBox Grid.Column="1" x:Name="UpdateAutoBox" Style="{StaticResource Switch}"
+                          Content="发现新版时自动下载（仍然重启才替换）" Click="Other_Save" />
+              </Grid>
               <StackPanel Orientation="Horizontal">
                 <Button Style="{StaticResource Btn}" Content="检查升级" Click="CheckUpdate_Click"
                         v:Ico.Of="{StaticResource I.Refresh}" />
                 <Button Style="{StaticResource Btn}" Content="去下载页" Margin="8,0,0,0"
                         Click="GotoDownload_Click" v:Ico.Of="{StaticResource I.Download}" />
+                <Button Style="{StaticResource Btn}" Content="下载 PAD 更新" Margin="8,0,0,0"
+                        x:Name="PadDownloadBtn" IsEnabled="False" Click="DownloadPadUpdate_Click"
+                        ToolTip="下载并校验，重启 PAD 后自动替换；不想要就关掉更新通道"
+                        v:Ico.Of="{StaticResource I.Upload}" />
                 <Button Style="{StaticResource Btn}" Content="诊断" Margin="8,0,0,0"
                         Click="Doctor_Click" ToolTip="跑 launcher doctor"
                         v:Ico.Of="{StaticResource I.Search}" />

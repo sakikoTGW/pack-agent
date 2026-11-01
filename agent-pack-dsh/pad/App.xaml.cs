@@ -53,12 +53,20 @@ public partial class App : Application
                 NativeAlert.Error(DialogFor(ex));
         };
 
+        // 上次下载好的 PAD 更新：这次启动把新 exe 换上去再重启（用户自己选过才走到这里）。
+        if (ShotPath is null && Core.PadUpdate.TryApplyPending(Core.AppState.Current.Launcher, out _))
+        {
+            Shutdown(0);
+            return;
+        }
         // 上个 PAD 进程留下的假任务先清掉，再开窗口。
         try { Core.AppState.Current.Launcher.SweepStaleJobs(); } catch { /* 不影响启动 */ }
         // 整合包首次启动：先把折叠的 node_modules 解出来，再开主窗口。
         PortableBootstrap.RunIfNeeded();
         Core.AppState.Current.ApplyUiBoot();
-        new MainWindow().Show();
+        var window = new MainWindow();
+        window.Show();
+        if (ShotPath is null) window.ProbePadUpdate();
         if (ShotPath is null)
             UiWatchdog.Attach(Dispatcher, CrashLog, () =>
             {

@@ -555,6 +555,45 @@ public static class Cli
                     Out($"removed {rest[0]}");
                     return 0;
 
+                case "pad-update" when cmd == "check":
+                {
+                    var info = await PadUpdate.Check(launcher, CancellationToken.None);
+                    var current = PadUpdate.CurrentVersion();
+                    Out(new
+                    {
+                        current,
+                        enabled = PadUpdate.Enabled(launcher),
+                        feed = PadUpdate.Feed(launcher),
+                        newer = info is not null && PadUpdate.IsNewer(info.Version, current),
+                        latest = info,
+                    });
+                    return 0;
+                }
+
+                case "pad-update" when cmd == "fetch":
+                {
+                    var info = await PadUpdate.Check(launcher, CancellationToken.None);
+                    if (info is null) { Out(new { ok = false, reason = "no feed / no update / feed unreachable" }); return 1; }
+                    var current = PadUpdate.CurrentVersion();
+                    if (!PadUpdate.IsNewer(info.Version, current))
+                    { Out(new { ok = true, current, latest = info.Version, note = "already latest" }); return 0; }
+                    var path = await PadUpdate.Download(launcher, info, log, CancellationToken.None);
+                    Out(new { ok = true, version = info.Version, path, pending = PadUpdate.PendingFile(launcher) });
+                    return 0;
+                }
+
+                case "pad-update" when cmd == "pending":
+                    Out(new { pending = PadUpdate.Pending(launcher) });
+                    return 0;
+
+                case "pad-update" when cmd == "apply":
+                {
+                    var dry = cmd is not "apply" ? false : rest.Any(a => a == "--dry");
+                    var ok = PadUpdate.TryApplyPending(launcher, out var helper, dry || rest.Any(a => a == "--dry"));
+                    Out(new { ok, helper, dry = rest.Any(a => a == "--dry") });
+                    return ok ? 0 : 1;
+                }
+
                 case "portable-export":
                 {
                     if (cmd.Length == 0) return Usage("pad cli portable-export <dest> [instanceId]");

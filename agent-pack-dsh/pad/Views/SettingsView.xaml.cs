@@ -159,6 +159,8 @@ public partial class SettingsView : UserControl, IRefreshable
         ShotMarketDelayBox.Text = s.Other.ShotMarketDelayMs.ToString();
         DebugBox.IsChecked = s.Other.Debug;
         PickCombo(UpdateChannelBox, s.Other.UpdateChannel);
+        UpdateFeedBox.Text = s.Other.UpdateFeed;
+        UpdateAutoBox.IsChecked = s.Other.UpdateAutoDownload;
         IdentifyLine.Text = s.Other.Identify;
 
         var ver = Assembly.GetExecutingAssembly().GetName().Version;
@@ -1071,6 +1073,8 @@ public partial class SettingsView : UserControl, IRefreshable
         if (int.TryParse(ShotMarketDelayBox.Text.Trim(), out var sm)) s.Other.ShotMarketDelayMs = sm;
         s.Other.Debug = DebugBox.IsChecked == true;
         s.Other.UpdateChannel = ComboTag(UpdateChannelBox) ?? "release";
+        s.Other.UpdateFeed = (UpdateFeedBox.Text ?? "").Trim();
+        s.Other.UpdateAutoDownload = UpdateAutoBox.IsChecked == true;
         Commit(s);
         Paint();
     }
@@ -1185,9 +1189,20 @@ public partial class SettingsView : UserControl, IRefreshable
         {
             var snap = await Updates.Check(_state.Launcher, _state.Settings.Download.NpmRegistry,
                 CancellationToken.None);
-            PadUpdateLine.Text = snap.PackAgentKnown
+            _padUpdate = null;
+            if (PadUpdate.Enabled(_state.Launcher))
+            {
+                var info = await PadUpdate.Check(_state.Launcher, CancellationToken.None);
+                if (info is not null && PadUpdate.IsNewer(info.Version, PadUpdate.CurrentVersion()))
+                    _padUpdate = info;
+            }
+            PadDownloadBtn.IsEnabled = _padUpdate is not null;
+            var padTail = _padUpdate is not null
+                ? $" · PAD 可更新 {_padUpdate.Version}"
+                : PadUpdate.Enabled(_state.Launcher) ? " · PAD 已最新" : " · 未配置 PAD 更新源";
+            PadUpdateLine.Text = (snap.PackAgentKnown
                 ? $"PAD {snap.PadVersion} · pack-agent npm {snap.PackAgentLatest}"
-                : $"PAD {snap.PadVersion} · npm 没查到";
+                : $"PAD {snap.PadVersion} · npm 没查到") + padTail;
             DshUpdateLine.Text = snap.DshLatest.Length == 0
                 ? (snap.DshInstalled.Length == 0 ? "版本库是空的，npm 没查到" : $"已装 {snap.DshInstalled} · npm 没查到")
                 : snap.DshNewer
@@ -1198,6 +1213,26 @@ public partial class SettingsView : UserControl, IRefreshable
         {
             PadUpdateLine.Text = PadError.Describe(ex);
             DshUpdateLine.Text = "";
+        }
+    }
+
+    PadUpdateInfo? _padUpdate;
+
+    async void DownloadPadUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        if (_padUpdate is null) return;
+        PadDownloadBtn.IsEnabled = false;
+        PadUpdateLine.Text = $"下载 {_padUpdate.Version} …";
+        try
+        {
+            await PadUpdate.Download(_state.Launcher, _padUpdate, null, CancellationToken.None);
+            PadUpdateLine.Text = $"已下载 {_padUpdate.Version}，重启 PAD 生效";
+            if (Window.GetWindow(this) is MainWindow win)
+                win.Toast($"PAD {_padUpdate.Version} 已下载，重启后自动替换");
+        }
+        catch (Exception ex)
+        {
+            PadUpdateLine.Text = PadError.Describe(ex);
         }
     }
 

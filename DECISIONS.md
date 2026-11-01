@@ -1167,3 +1167,11 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
   4) 失败时 job 日志并发写崩溃 → AppendJobLog 重试。
 - 验证：import exit 0、实例 ready、包 Enabled true/false 切换正常；pad-pack/pad-window/p2-p3 绿。
 - 证据：EVIDENCE/D92-demo-flow（3 张自渲染截图 + 流程）。
+
+## D93 · 2026-11-02 · PAD 自动更新（用户自己选）
+- 原则：默认只检查+提示，不强制；更新通道可关、更新源可配、自动下载默认关、安装由用户点「下载 PAD 更新」。
+- 机制：latest.json（version/url/sha256/size）→ 下载校验到 library/updates/<ver> → pending.json →
+  下次启动 helper cmd 等进程退出后替换 exe 并重启；数据不动；CLI/--shot 不触发。
+- CLI：`pad cli pad-update check|fetch|pending|apply --dry`。
+- 设置页“升级”：更新源/自动下载/下载按钮；启动后 Toast 提示（可关通道）。
+- 验证：EVIDENCE/D93-pad-update；pad-pack/pad-window/p2-p3 绿；单文件 exe 重建。

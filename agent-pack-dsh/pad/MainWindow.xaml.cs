@@ -782,6 +782,31 @@ public partial class MainWindow : Window
     /// that opened somewhere else, or a subprocess that failed. Never for a change the
     /// user can already see.
     /// </summary>
+    /// <summary>
+    /// PCL 式更新检查：启动后后台查 latest.json，有新版就提示，用户自己决定下载；
+    /// 设置里勾了「自动下载」才会直接下载（仍然重启才替换）。
+    /// </summary>
+    public async void ProbePadUpdate()
+    {
+        var launcher = Core.AppState.Current.Launcher;
+        if (!Core.PadUpdate.Enabled(launcher)) return;
+        Core.PadUpdateInfo? info = null;
+        try { info = await Task.Run(() => Core.PadUpdate.Check(launcher, CancellationToken.None)); }
+        catch { return; }
+        if (info is null || !Core.PadUpdate.IsNewer(info.Version, Core.PadUpdate.CurrentVersion())) return;
+        if (Core.AppState.Current.Settings.Other.UpdateAutoDownload)
+        {
+            try
+            {
+                await Core.PadUpdate.Download(launcher, info, null, CancellationToken.None);
+                Toast($"PAD {info.Version} 已下载，重启后自动替换");
+                return;
+            }
+            catch { /* 落回手动提示 */ }
+        }
+        Toast($"PAD 有新版 {info.Version}：设置 → 升级 里可以下载");
+    }
+
     public void Toast(string text, bool bad = false)
     {
         if (bad)

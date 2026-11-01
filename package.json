@@ -71,7 +71,8 @@
     "prepublishOnly": "bun run agent-pack-dsh/scripts/build-plugin.ts",
     "kit": "bun run scripts/make-kit.ts",
     "single": "bun run scripts/make-single-exe.ts",
-    "release": "bun run scripts/build-release.ts"
+    "release": "bun run scripts/build-release.ts",
+    "release:github": "bun run scripts/release-github.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "*",

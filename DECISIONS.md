@@ -1203,3 +1203,10 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 - 实测：0.1.0 开发版线上 fetch（70s/179MB，校验通过）→ 启动应用 → exe 替换为 0.4.5（hash 匹配，pending 清）→ 新 exe 自报 0.4.5、newer=false。
 - `OtherPrefs.UpdateFeed` 默认已指向该 feed。
 - 证据：EVIDENCE/D95-github-release。
+
+## D96 · 2026-11-02 · 一句话发版流程
+- `scripts/release-github.ts`（`bun run release:github -- --bump patch --notes "…"`）：
+  bump package.json → build-release（dotnet publish -p:Version + 单文件 payload + latest.json 自检）→
+  git commit/push/tag → gh release create --latest（exe/latest.json/SHA256SUMS）→ gh api 校验 latest tag。
+- `--dry-run` 只打印计划；`--version` 指定版本；`--repo` 换仓库。
+- 以后用户只说"bump 版本"，执行这一条即可。

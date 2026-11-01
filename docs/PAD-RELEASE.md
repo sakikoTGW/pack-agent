@@ -82,3 +82,18 @@ feed URL 就对不上了。所以发布资产统一用 **`pack-agent-for-DSH.exe
 3. 替换后的 exe 自报 `current: 0.4.5, newer: false`。
 
 默认 `updateFeed` 已指向上面的 latest.json，0.4.5 之后的新用户开箱即自动检查。
+
+## 8. 一句话发版（推荐）
+
+```powershell
+# 自动 patch +1，构建、提交、push、建 GitHub Release、校验 latest 都做掉
+bun run release:github -- --bump patch --notes "这一版改了什么"
+
+# 指定版本 / 只预演
+bun run release:github -- --version 0.4.6 --notes-file notes.txt
+bun run release:github -- --bump patch --notes "…" --dry-run
+```
+
+脚本：`scripts/release-github.ts`；默认仓库 `sakikoTGW/pack-agent`（`--repo` 可换）。
+它内部依次执行：`build-release.ts`（发布包）→ `git commit/push`（版本号）→ `git tag/push` →
+`gh release create --latest`（exe + latest.json + SHA256SUMS）→ `gh api .../releases/latest` 校验 tag。

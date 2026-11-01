@@ -333,6 +333,62 @@ public sealed class Packs
         }
     }
 
+    /// <summary>
+    /// 便携包自带的 pack 运行时：exe 旁边 <c>pack-runtime/</c>（bun.exe + packagent.bundle.js + pack-index.exe）。
+    /// 有它就不需要仓库、不需要系统装 bun/cargo。
+    /// </summary>
+    /// <summary>
+    /// 单文件 exe 的 <see cref="AppContext.BaseDirectory"/> 指向自解压临时目录，
+    /// 不是 exe 所在目录；找旁边资源要用 <see cref="Environment.ProcessPath"/>。
+    /// </summary>
+    static string ExeDir()
+    {
+        var path = Environment.ProcessPath;
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(dir)) return dir;
+        }
+        return AppContext.BaseDirectory;
+    }
+
+    string? RuntimeDir()
+    {
+        try
+        {
+            var dir = Path.Combine(ExeDir(), "pack-runtime");
+            if (File.Exists(Path.Combine(dir, "packagent.bundle.js"))
+                && File.Exists(Path.Combine(dir, "bun.exe"))
+                && File.Exists(Path.Combine(dir, "pack-index.exe")))
+                return dir;
+        }
+        catch { }
+        return null;
+    }
+
+    Dictionary<string, string>? RuntimeEnv()
+    {
+        var dir = RuntimeDir();
+        return dir is null
+            ? null
+            : new Dictionary<string, string> { ["PACK_INDEX_BIN"] = Path.Combine(dir, "pack-index.exe") };
+    }
+
+    /// <summary>仓库模式（node + 包源码）或便携运行时模式（bun + 打包后的 bundle）。</summary>
+    (string Exe, string Line, string Cwd, Dictionary<string, string>? Env) Entry(string tail)
+    {
+        var runtime = RuntimeDir();
+        if (runtime is not null)
+            return (Path.Combine(runtime, "bun.exe"),
+                $"\"{Path.Combine(runtime, "packagent.bundle.js")}\" {tail}",
+                runtime, RuntimeEnv());
+        var repo = RepoRoot()
+            ?? throw new PadError("PA027", "the pack-agent repo was not found",
+                "PACK_AGENT_REPO", AppContext.BaseDirectory,
+                ["设置 PACK_AGENT_REPO", "或用带 pack-runtime 的便携包"]);
+        return ("node", $"\"{Path.Combine(repo, "bin", "packagent.js")}\" {tail}", repo, null);
+    }
+
     /// <summary>The node entry point every projection call shares: repo root, launcher
     /// root and the JSON flag, in the exact shape <c>packagent dsh launcher</c> expects.</summary>
     (string Repo, string Line) Command(string args)
@@ -347,9 +403,9 @@ public sealed class Packs
 
     async Task<string> Cli(string args, IProgress<string>? log, CancellationToken ct)
     {
-        await Bun.EnsureAsync(log, ct);
-        var (repo, line) = Command(args);
-        var res = await Proc.Run("node", line, repo, log, ct);
+        if (RuntimeDir() is null) await Bun.EnsureAsync(log, ct);
+        var (exe, line, cwd, env) = Entry($"dsh launcher --root \"{_launcher.Root}\" --json {args}");
+        var res = await Proc.Run(exe, line, cwd, log, ct, env);
         if (res.ExitCode != 0)
             throw new PadError("PA028", "the projection command failed",
                 $"packagent dsh launcher {args}", res.Tail, ["看上面的输出"]);
@@ -365,16 +421,13 @@ public sealed class Packs
     /// </summary>
     async Task<string> CliJson(string args, CancellationToken ct)
     {
-        await Bun.EnsureAsync(null, ct);
-        var (repo, line) = Command(args);
-        var node = Proc.Which("node")
-            ?? throw new PadError("PA011", "`node` was not found on PATH", "PATH", "node",
-                ["安装 node 并确认它在 PATH 里"]);
+        if (RuntimeDir() is null) await Bun.EnsureAsync(null, ct);
+        var (exe, line, cwd, entryEnv) = Entry($"dsh launcher --root \"{_launcher.Root}\" --json {args}");
         var psi = new ProcessStartInfo
         {
-            FileName = node,
+            FileName = exe,
             Arguments = line,
-            WorkingDirectory = repo,
+            WorkingDirectory = cwd,
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardOutput = true,
@@ -382,6 +435,8 @@ public sealed class Packs
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
         };
+        if (entryEnv is not null)
+            foreach (var (k, v) in entryEnv) psi.Environment[k] = v;
         Proc.PrependToolPath(psi);
         using var proc = new Process { StartInfo = psi };
         proc.Start();
@@ -411,14 +466,9 @@ public sealed class Packs
     /// i.e. the named allow-set commands that are not part of the <c>launcher</c> group.</summary>
     async Task<string> CliDsh(string args, string cwd, IProgress<string>? log, CancellationToken ct)
     {
-        await Bun.EnsureAsync(log, ct);
-        var repo = RepoRoot()
-            ?? throw new PadError("PA027", "the pack-agent repo was not found",
-                "PACK_AGENT_REPO", AppContext.BaseDirectory,
-                ["设置 PACK_AGENT_REPO", "或在启动器根目录放 .pack-agent-repo"]);
-        var entry = Path.Combine(repo, "bin", "packagent.js");
-        var line = $"\"{entry}\" dsh {args}";
-        var res = await Proc.Run("node", line, cwd, log, ct);
+        if (RuntimeDir() is null) await Bun.EnsureAsync(log, ct);
+        var (exe, line, _, env) = Entry($"dsh {args}");
+        var res = await Proc.Run(exe, line, cwd, log, ct, env);
         if (res.ExitCode != 0)
             throw new PadError("PA028", "the projection command failed",
                 $"packagent dsh {args}", res.Tail, ["看上面的输出"]);
@@ -465,7 +515,7 @@ public sealed class Packs
         {
             rows = await ListViaCli(inst, ct);
         }
-        catch (Exception) when (RepoRoot() is null)
+        catch (Exception) when (RepoRoot() is null && RuntimeDir() is null)
         {
             // 便携包没有 pack 运行时：直接读投影目录（目录 + catalog.json + 本地启用表）。
             rows = ListNative(inst);
@@ -656,7 +706,7 @@ public sealed class Packs
     public async Task<string> Allow(Instance inst, string packId, IProgress<string>? log, CancellationToken ct)
     {
         var id = await ResolvePackId(inst, packId, ct);
-        if (RepoRoot() is null)
+        if (RepoRoot() is null && RuntimeDir() is null)
         {
             SetNativeEnabled(inst, id, true);
             return id;
@@ -669,7 +719,7 @@ public sealed class Packs
     public async Task<string> Deny(Instance inst, string packId, IProgress<string>? log, CancellationToken ct)
     {
         var id = await ResolvePackId(inst, packId, ct);
-        if (RepoRoot() is null)
+        if (RepoRoot() is null && RuntimeDir() is null)
         {
             SetNativeEnabled(inst, id, false);
             return id;

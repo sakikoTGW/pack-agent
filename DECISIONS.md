@@ -1127,3 +1127,13 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 - 修收编实例的插件页：`Launchables` 为空时 profile 下拉回退 `Launcher.Profiles(inst)`（通用），本机 DSH 能列出 12 个插件。
 验证：build 0/0；pad-window / pad-pack 绿；实拍 EVIDENCE/D84-plugin-update-ui。
 判据：**插件行的信息顺序是 名字 → 版本/可更新 → 一句话简介；路径只在需要时给，不占正文。**
+
+## D88 · 2026-11-01 · 便携包自带 pack 运行时（整合包体系带得走）
+- 导出时把 `bun build src/cli.ts --target=bun` 的 bundle + bun.exe + 预编译 pack-index + 包根资源
+  装进 `<dest>/pack-runtime/`；PAD 检测到它就用它跑所有 pack 操作（list/project/allow/deny），
+  目标机器不需要仓库、不需要系统 bun/cargo。
+- 单文件 exe 用 `Environment.ProcessPath` 定位自身目录（`AppContext.BaseDirectory` 是自解压临时目录）。
+- 导出复制实例后用 `pack-index index` 重写 catalog.sqlite 里的绝对路径，保留 enabled。
+- 边界：便携包 +115MB；导出机需要仓库+bun+预编译索引；目标机仍需能执行 bun 子进程，
+  否则回落 D85 的原生 list/启停（仅 PAD 侧状态）。
+验证：EVIDENCE/D88-portable-runtime（导出包内 list/allow/deny/project 全通）。

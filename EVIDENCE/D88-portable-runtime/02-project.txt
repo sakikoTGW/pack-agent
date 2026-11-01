@@ -1,0 +1,14 @@
+﻿--- 23:34:36 pad cli pack project e2e5 E:\tmp\pack-e2e\root\library\packs\e2e-pack-0.1.0.pack.zip
+{
+  "dir": "E:\\tmp\\pack-e2e\\export5\\.pack-launcher\\instances\\e2e5\\workspace\\.agent-pack\\modpacks\\pack-agent-modpack-e2e-pack",
+  "id": "pack-agent-modpack-e2e-pack",
+  "npmName": "pack-agent-modpack-e2e-pack",
+  "installCommand": "packagent dsh allow pack-agent-modpack-e2e-pack"
+}
+{
+  "dir": "E:\\tmp\\pack-e2e\\export5\\.pack-launcher\\instances\\e2e5\\workspace\\.agent-pack\\modpacks\\pack-agent-modpack-e2e-pack",
+  "id": "pack-agent-modpack-e2e-pack",
+  "npmName": "pack-agent-modpack-e2e-pack",
+  "installCommand": "packagent dsh allow pack-agent-modpack-e2e-pack"
+}
+

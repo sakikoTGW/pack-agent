@@ -1294,6 +1294,8 @@ public sealed class Launcher
         Directory.CreateDirectory(destDir);
         CopyHostExe(destDir);
         Mark("host-exe");
+        TryStagePackRuntime(destDir);
+        Mark("pack-runtime");
         var repoMark = Path.Combine(destDir, ".pack-agent-repo");
         if (File.Exists(repoMark)) File.Delete(repoMark);
 
@@ -1314,6 +1316,7 @@ public sealed class Launcher
             Mark("version-copy");
             phase?.Invoke("复制实例…");
             CopyTreeLink(InstanceDir(inst.Id), destRoot.InstanceDir(inst.Id), ct);
+            ReindexPortableCatalog(destRoot.InstanceDir(inst.Id));
             Mark("instance-copy");
             var cred = Path.Combine(destRoot.InstanceDir(inst.Id), "home", ".credentials.yaml");
             if (File.Exists(cred)) File.Delete(cred);
@@ -1371,6 +1374,104 @@ public sealed class Launcher
     /// The play folder is the PAD exe plus <c>.pack-launcher</c>. Runtime
     /// dlls stay inside a single-file exe; they must not sit next to it.
     /// </summary>
+    /// <summary>
+    /// 便携包要"带得走"整合包体系：把 bun + 打包后的 packagent + 预编译 pack-index 放进
+    /// <c>&lt;dest&gt;/pack-runtime/</c>。目标机器不需要仓库、不需要 bun/cargo。
+    /// 导出机缺 bun/仓库/索引时静默跳过（便携包仍可原生看/启停已投影的包）。
+    /// </summary>
+    void TryStagePackRuntime(string destDir)
+    {
+        var runtime = Path.Combine(destDir, "pack-runtime");
+        try
+        {
+            var repo = FindPackRepo();
+            var bun = FindBunExe();
+            var index = FindPackIndexExe();
+            if (repo is null || bun is null || index is null) return;
+
+            Directory.CreateDirectory(runtime);
+            var bundle = Path.Combine(runtime, "packagent.bundle.js");
+            var res = Proc.Run(bun,
+                    $"build \"{Path.Combine(repo, "src", "cli.ts")}\" --target=bun --outfile \"{bundle}\"",
+                    repo, null, CancellationToken.None).GetAwaiter().GetResult();
+            if (res.ExitCode != 0 || !File.Exists(bundle))
+                throw new IOException("bun build failed: " + res.Tail);
+
+            File.Copy(bun, Path.Combine(runtime, "bun.exe"), overwrite: true);
+            File.Copy(index, Path.Combine(runtime, "pack-index.exe"), overwrite: true);
+
+            // pack-agent 的 package root：TS 会按 package.json 名字向上找；投影还要 registry.yaml 等资源。
+            File.WriteAllText(Path.Combine(runtime, "package.json"),
+                "{\n  \"name\": \"@sakikotgw/pack-agent-dsh\",\n  \"version\": \"0.0.0\",\n  \"private\": true\n}\n");
+            var registry = Path.Combine(repo, "agent-pack-dsh", "modpack", "registry.yaml");
+            if (File.Exists(registry))
+            {
+                Directory.CreateDirectory(Path.Combine(runtime, "agent-pack-dsh", "modpack"));
+                File.Copy(registry, Path.Combine(runtime, "agent-pack-dsh", "modpack", "registry.yaml"), overwrite: true);
+            }
+            var skill = Path.Combine(repo, "skills", "agent-pack", "SKILL.md");
+            if (File.Exists(skill))
+            {
+                Directory.CreateDirectory(Path.Combine(runtime, "skills", "agent-pack"));
+                File.Copy(skill, Path.Combine(runtime, "skills", "agent-pack", "SKILL.md"), overwrite: true);
+            }
+            File.WriteAllText(Path.Combine(runtime, "runtime.json"),
+                "{\n  \"schema\": \"pack-agent.pack-runtime/v1\"\n}\n");
+        }
+        catch
+        {
+            try { if (Directory.Exists(runtime)) Directory.Delete(runtime, recursive: true); } catch { }
+        }
+    }
+
+    static string? FindPackRepo()
+    {
+        var env = Environment.GetEnvironmentVariable("PACK_AGENT_REPO");
+        if (!string.IsNullOrWhiteSpace(env) && File.Exists(Path.Combine(env, "bin", "packagent.js")))
+            return Path.GetFullPath(env);
+        var walk = new DirectoryInfo(AppContext.BaseDirectory);
+        for (var i = 0; i < 10 && walk is not null; i++, walk = walk.Parent)
+        {
+            var candidate = Path.Combine(walk.FullName, "bin", "packagent.js");
+            if (File.Exists(candidate)) return walk.FullName;
+        }
+        return null;
+    }
+
+    static string? FindBunExe()
+    {
+        var env = Environment.GetEnvironmentVariable("PAD_BUN");
+        if (!string.IsNullOrWhiteSpace(env) && File.Exists(env)) return env;
+        var roam = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        foreach (var c in new[]
+                 {
+                     Path.Combine(roam, "npm", "node_modules", "bun", "bin", "bun.exe"),
+                     Path.Combine(local, "npm", "node_modules", "bun", "bin", "bun.exe"),
+                     Path.Combine(local, "Microsoft", "WinGet", "Packages", "Oven-sh.Bun_Microsoft.Winget.Source_8wekyb3d8bbwe", "bun-windows-x64", "bun.exe"),
+                 })
+            if (File.Exists(c)) return c;
+        var which = Proc.Which("bun.exe");
+        if (which is not null && File.Exists(which) && which.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            return which;
+        return null;
+    }
+
+    static string? FindPackIndexExe()
+    {
+        var env = Environment.GetEnvironmentVariable("PACK_INDEX_BIN");
+        if (!string.IsNullOrWhiteSpace(env) && File.Exists(env)) return env;
+        var tmp = Environment.GetEnvironmentVariable("AGENT_PACK_TMP") ?? @"E:\tmp\pack-agent";
+        foreach (var c in new[]
+                 {
+                     Path.Combine(tmp, "pack-index-target", "release", "pack-index.exe"),
+                     Path.Combine(Path.GetTempPath(), "pack-agent", "pack-index-target", "release", "pack-index.exe"),
+                     Path.Combine(AppContext.BaseDirectory, "pack-index.exe"),
+                 })
+            if (File.Exists(c)) return c;
+        return null;
+    }
+
     static void CopyHostExe(string destDir)
     {
         var name = HostExeName();
@@ -1386,6 +1487,27 @@ public sealed class Launcher
                 ["dotnet publish -p:PublishSingleFile=true", "set PACK_PAD_HOST_EXE to that exe"]);
         if (File.Exists(dest) && new FileInfo(dest).Length == new FileInfo(src).Length) return; // 续传跳过
         File.Copy(src, dest, overwrite: true);
+    }
+
+    /// <summary>
+    /// 便携导出换了根目录：catalog.sqlite 里记的是**源机绝对路径**，到别人电脑上就是坏路径。
+    /// 用 pack-index 对副本重新 index 一遍（保留 enabled allow 集）。
+    /// </summary>
+    void ReindexPortableCatalog(string destInstanceDir)
+    {
+        try
+        {
+            var ws = Path.Combine(destInstanceDir, "workspace", ".agent-pack");
+            var db = Path.Combine(ws, "catalog.sqlite");
+            var mods = Path.Combine(ws, "modpacks");
+            if (!File.Exists(db) || !Directory.Exists(mods)) return;
+            var bin = FindPackIndexExe();
+            if (bin is null) return;
+            Proc.Run(bin, $"index --root \"{mods}\" --db \"{db}\" --json",
+                    Path.GetDirectoryName(bin)!, null, CancellationToken.None)
+                .GetAwaiter().GetResult();
+        }
+        catch { /* 索引重写失败不阻断导出；运行时会按需重建 */ }
     }
 
     void StripPortableEphemeral(string? instanceId)

@@ -1,0 +1,21 @@
+﻿导出包目录（无仓库、无 PACK_AGENT_REPO、无系统 bun/cargo）里跑：
+  pack-agent-for DSH.exe cli pack list e2e3
+
+结果（节选）：
+  "Id": "pack-agent-modpack-e2e-pack", "Enabled": true,
+  "Dir": "E:\tmp\pack-e2e\export5\.pack-launcher\instances\e2e3\workspace\.agent-pack\modpacks\pack-agent-modpack-e2e-pack"
+
+  → Dir 指向导出后的新根（导出时用 pack-index 重新 index 过 DB，不是源机路径）。
+
+allow/deny（同目录、同样无仓库）：
+  pack allow e2e3 e2e-pack   → 输出行 Enabled: true  / StateText 已启用
+  pack deny  e2e3 e2e-pack   → 输出行 Enabled: false / StateText 已停用
+  （单独进程再 list 校验过 false）
+
+安装链（同目录）：
+  cli instance create e2e5 0.2.1-rc.2     → exit 0
+  cli pack project e2e5 <e2e-pack.zip>    → exit 0，
+    投影到 E:\tmp\pack-e2e\export5\.pack-launcher\instances\e2e5\workspace\.agent-pack\modpacks\pack-agent-modpack-e2e-pack
+
+边界：曾观察到 toggle 后立刻用另一个进程 list 偶发读到上一状态（疑似 SQLite WAL/读快照），
+随后完整输出与再次 list 均正确；若要绝对一致，列表前可稍等或由同一进程输出。

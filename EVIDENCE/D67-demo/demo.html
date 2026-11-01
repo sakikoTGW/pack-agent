@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>PAD · 项目轴演示（D67）</title>
+<style>
+  :root { --bg:#eef1f4; --card:#fff; --ink:#1c2a35; --muted:#6b7f8c; --accent:#1d5d78; --line:#dfe6ec; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:14px/1.6 "Segoe UI","Microsoft YaHei",sans-serif; }
+  header { background:#22313b; color:#fff; padding:26px 32px; }
+  header h1 { margin:0; font-size:24px; letter-spacing:.5px; }
+  header p { margin:6px 0 0; color:#c7d5de; font-size:13px; }
+  .wrap { max-width:1280px; margin:0 auto; padding:26px 32px 60px; }
+  section { background:var(--card); border-radius:18px; padding:22px 24px;
+            box-shadow:0 12px 28px rgba(32,48,63,.08); margin-bottom:22px; }
+  h2 { margin:0 0 6px; font-size:18px; }
+  .hint { color:var(--muted); font-size:12.5px; margin:0 0 16px; }
+  .gifbox img { width:100%; border-radius:12px; display:block; }
+  .gifbox { position:relative; }
+  .replay { position:absolute; right:12px; top:12px; border:0; border-radius:999px;
+            background:rgba(29,93,120,.92); color:#fff; padding:8px 14px; cursor:pointer; font-size:12px; }
+  .stage { display:grid; grid-template-columns:minmax(0,1fr) 210px; gap:18px; }
+  .big { width:100%; border-radius:12px; display:block; border:1px solid var(--line); }
+  .cap { margin-top:8px; color:var(--muted); font-size:12.5px; min-height:22px; }
+  .thumbs { display:flex; flex-direction:column; gap:8px; }
+  .thumbs button { display:flex; gap:8px; align-items:center; text-align:left; cursor:pointer;
+                   border:1px solid var(--line); border-radius:10px; background:#fbfcfd;
+                   padding:6px; font:12px/1.4 inherit; color:var(--ink); }
+  .thumbs button.sel { border-color:var(--accent); box-shadow:0 0 0 2px rgba(29,93,120,.15); }
+  .thumbs img { width:72px; height:51px; object-fit:cover; border-radius:6px; }
+  .steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+  .step { border:1px solid var(--line); border-radius:12px; padding:14px; background:#fbfcfd; }
+  .step b { color:var(--accent); }
+  .step img { width:100%; border-radius:8px; margin-top:8px; border:1px solid var(--line); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
+  .grid figure { margin:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fbfcfd; }
+  .grid img { width:100%; display:block; }
+  .grid figcaption { padding:8px 10px; color:var(--muted); font-size:12px; }
+  code { background:#e8eef3; padding:1px 5px; border-radius:5px; }
+  .pill { display:inline-block; background:#e6f1f5; color:var(--accent); border-radius:999px;
+          padding:2px 10px; font-size:12px; margin-right:6px; }
+  a { color:var(--accent); }
+  footer { color:var(--muted); font-size:12px; text-align:center; padding:10px 0 30px; }
+  @media (max-width:900px){ .stage{grid-template-columns:1fr} .steps{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<header>
+  <h1>PAD · 项目轴演示</h1>
+  <p>项目 = 绑定层（工作区 + agent preset），实例 = 运行体；侧栏按项目分组，点对话直接打开 DSH 窗口。
+     下面全部是真实窗口截图与录屏，不是原型。</p>
+</header>
+<div class="wrap">
+
+  <section>
+    <h2>先看动图（6 帧真实操作链路）</h2>
+    <p class="hint">启动页 → 管理主页 → 项目页 → 点「打开对话」→ DSH 真窗口 → 实例视角。可点右上角重播。</p>
+    <div class="gifbox">
+      <img id="gif" src="demo.gif" alt="PAD 项目轴演示动图" />
+      <button class="replay" onclick="replay()">重播</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>逐帧看（点缩略图切换）</h2>
+    <p class="hint">按 ← → 也能切换。每张都是 PrintWindow 抓的真实 PAD 窗口（1843×1314）。</p>
+    <div class="stage">
+      <div>
+        <img class="big" id="big" src="frames/02-project-page.png" alt="" />
+        <div class="cap" id="cap"></div>
+      </div>
+      <div class="thumbs" id="thumbs"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>「直接打开对话」怎么用</h2>
+    <p class="hint">项目页的对话卡每行都能点；右上「打开对话」按钮打开最近一条。动作有三步，必有反馈。</p>
+    <div class="steps">
+      <div class="step">
+        <b>1. 点一行对话</b><br />
+        侧栏项目 → 项目页 → 对话卡里点 <code>a36714d1</code> 这一行。
+        <img src="frames/02-project-page.png" alt="" />
+      </div>
+      <div class="step">
+        <b>2. PAD 切窗口 / 开窗口</b><br />
+        先找已开的 DSH 窗口（按标题认），没有就用实例日志里的带 token URL 打开；
+        同时把会话 id 放进剪贴板。
+        <img src="frames/03-after-open.png" alt="" />
+      </div>
+      <div class="step">
+        <b>3. DSH 里搜会话 id</b><br />
+        DSH web 没有 URL 深链（实测 query 被 SPA 丢弃），所以最后一步是粘贴 id 定位；
+        这就是"直接打开对话"在当前 DSH 能力下的完整链路。
+        <img src="frames/04-dsh-window.png" alt="" />
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>更多实拍</h2>
+    <p class="hint">项目窗口只显示项目工作区（D62）、preset 绑定（D63）、侧栏项目视角（D66）、重启后的真实 PAD。</p>
+    <div class="grid">
+      <figure><img src="extra/d62-project-window.png" alt="" /><figcaption>D62 · 项目窗口：侧栏只有 ws-frontend / ws-backend</figcaption></figure>
+      <figure><img src="extra/d63-preset-minimal.png" alt="" /><figcaption>D63 · preset 绑定后窗口（dump-config 验证 default=minimal）</figcaption></figure>
+      <figure><img src="extra/d65-project-page.png" alt="" /><figcaption>D65 · 项目页第一版（启动卡 / preset / 工作区）</figcaption></figure>
+      <figure><img src="extra/d66-rail.png" alt="" /><figcaption>D66 · 侧栏项目视角（在跑分组 + 搜索 + 项目页）</figcaption></figure>
+      <figure><img src="extra/d66-pad-live.png" alt="" /><figcaption>D66 · 新构建重启后的真实 PAD 窗口</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>和原型的关系</h2>
+    <p class="hint">下面这份是<b>设计定版原型 v4</b>（可交互，鼠标悬停/键盘都能玩）；本页是<b>已实现</b>的真实界面。
+       原型里的「现在流 / 任务 / 能力 / 自动收编页」还没有接进 PAD，属于下一批。</p>
+    <p>
+      <span class="pill">设计</span><a href="prototype.html" target="_blank">打开 prototype.html（原型 v4）</a>
+      &nbsp;·&nbsp;
+      <span class="pill">实现</span>本页截图 / demo.gif
+    </p>
+  </section>
+</div>
+<footer>PAD · D67 demo · 真实窗口截图 + 6 帧 GIF · 构建 0 warning / 0 error</footer>
+
+<script>
+  const FRAMES = [
+    ["frames/00-launch.png", "1. 启动页：ev-project · web 已就绪（点启动走项目轴）"],
+    ["frames/01-home.png", "2. 管理主页：项目卡（绑定层）+ 在跑卡 + 侧栏项目视角"],
+    ["frames/02-project-page.png", "3. 项目页：启动/停止、preset chips、工作区、对话可点"],
+    ["frames/03-after-open.png", "4. 点对话后：Toast「已切到 DSH 窗口，会话 id 已复制」"],
+    ["frames/04-dsh-window.png", "5. DSH 真窗口（项目自己的 home：只有两个工作区）"],
+    ["frames/05-instance-page.png", "6. 实例视角：同一件东西的运行层表示，可跳回项目"]
+  ];
+  const big = document.getElementById('big');
+  const cap = document.getElementById('cap');
+  const box = document.getElementById('thumbs');
+  let idx = 2;
+  function show(i) {
+    idx = (i + FRAMES.length) % FRAMES.length;
+    big.src = FRAMES[idx][0];
+    cap.textContent = FRAMES[idx][1];
+    [...box.children].forEach((b, k) => b.classList.toggle('sel', k === idx));
+  }
+  FRAMES.forEach((f, k) => {
+    const b = document.createElement('button');
+    b.innerHTML = '<img src="' + f[0] + '" alt=""><span>' + (k + 1) + '. ' +
+      f[1].replace(/^\d+\.\s*/, '').slice(0, 18) + '</span>';
+    b.onclick = () => show(k);
+    box.appendChild(b);
+  });
+  show(idx);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') show(idx - 1);
+    if (e.key === 'ArrowRight') show(idx + 1);
+  });
+  function replay() {
+    const g = document.getElementById('gif');
+    g.src = 'demo.gif?t=' + Date.now();
+  }
+</script>
+</body>
+</html>

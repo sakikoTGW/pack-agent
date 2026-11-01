@@ -979,3 +979,17 @@ PAD 不猜：跑 pin 住发行号的 `--dump-config` 解析 preset id/order 与�
 `--shot manage-project` 实拍：侧栏 `1 个项目 · 1 个在跑` + 在跑分组 + ev-project 行，右栏项目页（project-page-rail.png）。
 四套测试绿。边界：主页首屏仍是异步扫描，`--shot manage` 默认延迟可能截在空态，不作为证据；侧栏搜索只过滤不重建数据。
 判据：**"项目"和"实例"是同一堆东西的两种说法，必须能互相跳到；删/改绑定不许动运行体和目录。**
+
+## D67 · 2026-11-01 · 演示包 + 直接打开对话
+用户："图片不够多，也没有 GIF""没看见能直接打开对话的方法""你的演示呢"。
+演示：EVIDENCE/D67-demo/demo.html（可交互：6 帧 GIF + 逐帧查看器 + 打开对话三步 + 实拍 + 原型链接）、
+demo.gif（PIL 合成，真实窗口帧）、prototype.html（设计定稿原件的稳定副本）。
+**直接打开对话**：项目页对话卡每行可点（+「打开对话」按钮）→ 先按标题切已开的 DSH 窗口，
+否则读实例日志里最近一次 dsh web: …token… 用 Reveal 打开，同时把会话 id 复制到剪贴板；
+没在跑就给"先启动"提示。实测 DSH web **没有 URL 深链**（?session= 被 SPA 丢弃，页面回新会话），
+所以完整链路 = 切窗口 + 贴 id，不做假按钮。
+截图/交互：PrintWindow(PW_RENDERFULLCONTENT) + UI Automation 真点按钮（管理/主页/侧栏项目/打开对话/实例视角），
+GIF 用 Python Pillow 合成；脚本不进仓库。
+验证：build 0/0；pad-project + pad-window 绿；新 PAD pid 65800 跑的就是截图版本。
+边界：DSH 有深链/管理口后，最后一步可省；04 帧里 DSH 窗口同时开着原型 HTML（现场真实画面）。
+判据：**演示必须是真窗口真点击；"能打开"要有三步可见反馈，包括能力边界（没有深链就说清楚）。**

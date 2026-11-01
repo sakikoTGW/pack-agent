@@ -759,7 +759,7 @@ public partial class WorkbenchView : UserControl
         CardHost.Children.Add(ScopeCard("工作区", 1, ProjectWorkspacesCard(proj), "L.Folder"));
         if (_scope is not null)
         {
-            CardHost.Children.Add(ScopeCard("对话", 1, DialogCard(), "L.Chat"));
+            CardHost.Children.Add(ScopeCard("对话", 1, ProjectDialogCard(), "L.Chat"));
             CardHost.Children.Add(ScopeCard("环境", 3, EnvCard(_scope), "L.Layers"));
         }
     }
@@ -832,6 +832,8 @@ public partial class WorkbenchView : UserControl
             actions.Children.Add(HeroButton("打开界面", "L.External", (_, _) => Reveal.Url(facts!.PadUrl!)));
         else if (facts?.HasWindow == true)
             actions.Children.Add(HeroButton("切到窗口", "L.Window", ActivateShell_Click));
+        if (run is not null)
+            actions.Children.Add(HeroButton("打开对话", "L.Chat", (_, _) => OpenConversation(_scopeDialogs.FirstOrDefault())));
         if (proj.Workspaces.Count > 0)
             actions.Children.Add(HeroButton("打开工作区", "L.Folder", (_, _) => Reveal.Path(proj.Workspaces[0])));
         if (inst is not null)
@@ -933,6 +935,199 @@ public partial class WorkbenchView : UserControl
                 Margin = new Thickness(0, 2, 0, 0),
             });
         return stack;
+    }
+
+    /// <summary>
+    /// 对话卡（D67）：每行都能点——直接打开/切到 DSH 窗口。
+    /// DSH web 没有会话深链（URL 被 SPA 吃掉，见 D67 的实测），所以退化为
+    /// 「切窗口 + 复制会话 id」；不是假按钮，点了必有反应。
+    /// </summary>
+    UIElement ProjectDialogCard()
+    {
+        var stack = new StackPanel();
+        var live = LiveDialogCount();
+        var head = new StackPanel { Orientation = Orientation.Horizontal };
+        head.Children.Add(new TextBlock
+        {
+            Text = live.ToString(),
+            FontSize = 32,
+            FontWeight = FontWeights.Bold,
+            Foreground = (Brush)Application.Current.Resources[live > 0 ? "Accent" : "TextMuted"],
+        });
+        var headText = new StackPanel
+        {
+            Margin = new Thickness(10, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Bottom,
+        };
+        headText.Children.Add(new TextBlock
+        {
+            Text = live > 0 ? "条对话在执行" : "没有对话在执行",
+            FontSize = 11,
+            Foreground = (Brush)Application.Current.Resources[live > 0 ? "Accent" : "TextMuted"],
+        });
+        headText.Children.Add(new TextBlock
+        {
+            Text = _scopeDialogs.Count == 0
+                ? "这个 home 还没有对话"
+                : $"共 {_scopeDialogs.Count} 条 · 点一行直接打开",
+            FontSize = 9.5,
+            Foreground = Muted,
+            Margin = new Thickness(0, 1, 0, 0),
+        });
+        head.Children.Add(headText);
+        stack.Children.Add(head);
+
+        if (_scopeDialogs.Count == 0)
+        {
+            stack.Children.Add(new TextBlock
+            {
+                Text = "启动一次 DSH，这里会列出这个项目 home 的对话。",
+                FontSize = 10.5,
+                Foreground = Muted,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 12, 0, 0),
+            });
+            return stack;
+        }
+
+        foreach (var d in _scopeDialogs.Take(4))
+            stack.Children.Add(ProjectDialogLine(d));
+
+        var open = new Button
+        {
+            Content = BtnContent("打开 DSH 窗口", "L.External"),
+            Style = (Style)Application.Current.Resources["BtnSm"],
+            Height = 26,
+            Padding = new Thickness(8, 0, 8, 0),
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            ToolTip = "切到已经在跑的 DSH 窗口；没有就新开",
+        };
+        open.Click += (_, _) => OpenConversation(null);
+        stack.Children.Add(open);
+        return stack;
+    }
+
+    /// <summary>一条对话：灯 + 标题/工作区 + 时间；整行可点 = 打开对话。</summary>
+    UIElement ProjectDialogLine(DialogRow d)
+    {
+        var on = IsLive(d);
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var lamp = new RunLamp
+        {
+            Width = 10,
+            Height = 10,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 0),
+            Running = on,
+        };
+        grid.Children.Add(lamp);
+
+        var body = new StackPanel { Margin = new Thickness(0, 0, 6, 0) };
+        body.Children.Add(new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(d.Title) ? "（新会话）" : d.Title,
+            FontSize = 11.5,
+            Foreground = Primary,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        });
+        body.Children.Add(new TextBlock
+        {
+            Text = $"{d.Workspace} · {(d.LastActivity is { } at ? at.LocalDateTime.ToString("HH:mm") : "—")}",
+            FontSize = 9.5,
+            Foreground = on ? AccentBrush : Muted,
+            Margin = new Thickness(0, 1, 0, 0),
+        });
+        Grid.SetColumn(body, 1);
+        grid.Children.Add(body);
+
+        var openIcon = Icon("L.External", 11, Muted);
+        openIcon.Margin = new Thickness(0, 0, 2, 0);
+        Grid.SetColumn(openIcon, 2);
+        grid.Children.Add(openIcon);
+
+        var border = new Border
+        {
+            Child = grid,
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(6, 4, 6, 4),
+            Margin = new Thickness(0, 3, 0, 0),
+            Background = Brushes.Transparent,
+            Cursor = System.Windows.Input.Cursors.Hand,
+            ToolTip = $"点一下：切到 DSH 窗口，并复制会话 id\n{d.Id}",
+        };
+        border.MouseLeftButtonUp += (_, _) => OpenConversation(d);
+        border.MouseEnter += (_, _) => border.Background = (Brush)Application.Current.Resources["AccentWash"];
+        border.MouseLeave += (_, _) => border.Background = Brushes.Transparent;
+        return border;
+    }
+
+    /// <summary>
+    /// 打开对话：先找已经在跑的 DSH 窗口（标题认），没有就用实例日志里的带 token URL 新开；
+    /// 同时把会话 id 放进剪贴板，粘到 DSH 的搜索/命令面板就能定位（DSH 没有 URL 深链）。
+    /// </summary>
+    void OpenConversation(DialogRow? dialog)
+    {
+        var inst = _scope;
+        if (inst is null)
+        {
+            _host.Toast("这个项目还没有实例：先启动", bad: true);
+            return;
+        }
+        if (dialog is not null) CopySessionId(dialog.Id);
+
+        if (ShellActivate.TryFocusTitle("DeepSeek Harness", "DeepSeek"))
+        {
+            _host.Toast(dialog is null ? "已切到 DSH 窗口" : "已切到 DSH 窗口，会话 id 已复制");
+            return;
+        }
+        if (LatestWebUrl(inst) is { } url)
+        {
+            Reveal.Url(url);
+            _host.Toast(dialog is null
+                ? "已打开 DSH 窗口"
+                : "已打开 DSH 窗口，会话 id 已复制（在 DSH 里搜索即可）");
+            return;
+        }
+        if (_scopeFacts?.Pids is { Count: > 0 } pids && ShellActivate.Try(pids))
+        {
+            _host.Toast("已切到 DSH 窗口");
+            return;
+        }
+        _host.Toast("这个项目没在跑：先点启动", bad: true);
+    }
+
+    static void CopySessionId(string id)
+    {
+        try { Clipboard.SetText(id); }
+        catch { /* 剪贴板忙：动作本身仍完成 */ }
+    }
+
+    /// <summary>实例日志里最近一次 web 就绪 URL（带 token）；读不到返回 null。</summary>
+    string? LatestWebUrl(Instance inst)
+    {
+        try
+        {
+            var dir = _state.Launcher.LogsDir(inst.Id);
+            if (!System.IO.Directory.Exists(dir)) return null;
+            foreach (var file in System.IO.Directory.GetFiles(dir, "web-*.log")
+                         .OrderByDescending(System.IO.File.GetLastWriteTimeUtc))
+            {
+                string text;
+                using (var fs = new System.IO.FileStream(file, System.IO.FileMode.Open,
+                           System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
+                using (var reader = new System.IO.StreamReader(fs, System.Text.Encoding.UTF8))
+                    text = reader.ReadToEnd();
+                var url = LaunchPolicy.ParseWebUrl(text);
+                if (url is not null) return url;
+            }
+        }
+        catch { /* 日志读不到：走窗口切换兜底 */ }
+        return null;
     }
 
     /// <summary>主页的「项目」卡：项目轴的第一入口（点一行进项目页）。</summary>

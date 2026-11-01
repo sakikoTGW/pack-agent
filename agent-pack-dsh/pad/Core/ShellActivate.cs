@@ -91,4 +91,63 @@ public static class ShellActivate
 
         return true;
     }
+
+    /// <summary>
+    /// 按标题找可见顶层窗口并前置（D67）：DSH web 跑在浏览器里，pid 不属于实例进程，
+    /// 只能认标题（Edge app / 浏览器标签的 "DeepSeek Harness"）。
+    /// </summary>
+    public static bool TryFocusTitle(params string[] needles)
+    {
+        if (needles.Length == 0) return false;
+        var best = IntPtr.Zero;
+        long bestArea = -1;
+        EnumWindows((hWnd, _) =>
+        {
+            if (!IsWindowVisible(hWnd)) return true;
+            var len = GetWindowTextLength(hWnd);
+            if (len <= 0) return true;
+            var sb = new StringBuilder(len + 1);
+            GetWindowText(hWnd, sb, sb.Capacity);
+            var title = sb.ToString();
+            if (title.Length == 0) return true;
+            var hit = false;
+            foreach (var needle in needles)
+            {
+                if (needle.Length == 0) continue;
+                if (!title.Contains(needle, StringComparison.OrdinalIgnoreCase)) continue;
+                hit = true;
+                break;
+            }
+            if (!hit) return true;
+            GetWindowRect(hWnd, out var rect);
+            long area = Math.Max(0, rect.Right - rect.Left) * (long)Math.Max(0, rect.Bottom - rect.Top);
+            if (area <= bestArea) return true;
+            bestArea = area;
+            best = hWnd;
+            return true;
+        }, IntPtr.Zero);
+        return best != IntPtr.Zero && FocusWindow(best);
+    }
+
+    static bool FocusWindow(IntPtr target)
+    {
+        if (IsIconic(target)) ShowWindow(target, 9); // SW_RESTORE
+        ShowWindow(target, 5);                       // SW_SHOW
+        var foreground = GetForegroundWindow();
+        uint fgThread = 0;
+        if (foreground != IntPtr.Zero) fgThread = GetWindowThreadProcessId(foreground, out _);
+        var targetThread = GetWindowThreadProcessId(target, out _);
+        var attached = fgThread != 0 && fgThread != targetThread;
+        if (attached) AttachThreadInput(fgThread, targetThread, true);
+        try
+        {
+            BringWindowToTop(target);
+            SetForegroundWindow(target);
+        }
+        finally
+        {
+            if (attached) AttachThreadInput(fgThread, targetThread, false);
+        }
+        return true;
+    }
 }

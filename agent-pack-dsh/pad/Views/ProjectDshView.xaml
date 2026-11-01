@@ -1,0 +1,48 @@
+<UserControl x:Class="Pad.Views.ProjectDshView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Pad.Views"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+             Background="{StaticResource BgPage}">
+  <!-- 项目的 DSH 工作区：PAD 不改 DSH，只是把该项目的 localhost 页面嵌进来。
+       没启动时是一张引导卡；启动并拿到 URL 后整块换成 DSH 本体。 -->
+  <Grid>
+    <wv2:WebView2 x:Name="Web" Visibility="Collapsed" DefaultBackgroundColor="Transparent" />
+
+    <Grid x:Name="Splash">
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="560">
+        <TextBlock x:Name="SplashTitle" FontSize="22" FontWeight="Bold"
+                   Foreground="{StaticResource TextPrimary}" TextAlignment="Center"
+                   TextWrapping="Wrap" />
+        <TextBlock x:Name="SplashText" Margin="0,10,0,0" FontSize="12.5" LineHeight="22"
+                   Foreground="{StaticResource TextMuted}" TextAlignment="Center"
+                   TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,22,0,0">
+          <Button x:Name="StartBtn" Content="启动这个项目" Click="Start_Click"
+                  Style="{StaticResource BtnPrimary}" Height="36" Padding="20,0"
+                  v:Ico.Of="{StaticResource I.Play}" />
+          <Button x:Name="BrowserBtn" Content="在浏览器打开" Click="Browser_Click" Margin="10,0,0,0"
+                  Style="{StaticResource BtnSm}" Height="36" Padding="16,0"
+                  v:Ico.Of="{StaticResource I.External}" />
+          <Button x:Name="RetryBtn" Content="重试" Click="Retry_Click" Margin="10,0,0,0"
+                  Style="{StaticResource BtnSm}" Height="36" Padding="16,0" Visibility="Collapsed" />
+        </StackPanel>
+        <TextBlock x:Name="SplashHint" Margin="0,16,0,0" FontSize="10.5"
+                   Foreground="{StaticResource TextMuted}" TextAlignment="Center"
+                   TextWrapping="Wrap" />
+      </StackPanel>
+    </Grid>
+
+    <!-- 左上角极薄状态条：只在嵌入的页面里用，不遮挡 DSH 自己的顶栏 -->
+    <Border x:Name="Chip" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="12"
+            Background="{StaticResource BgCard}" CornerRadius="8" Padding="10,5"
+            BorderBrush="{StaticResource LineDivider}" BorderThickness="1" Visibility="Collapsed">
+      <StackPanel Orientation="Horizontal">
+        <TextBlock x:Name="ChipText" FontSize="10.5" Foreground="{StaticResource TextMuted}" />
+        <Button x:Name="ChipReload" Content="重开" Click="Reload_Click" Margin="10,0,0,0"
+                FontSize="10.5" Foreground="{StaticResource Accent}"
+                Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand" />
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>

@@ -1075,3 +1075,16 @@ GIF 用 Python Pillow 合成；脚本不进仓库。
 - 顶部项目页头保留（名字/状态/主页/关系/版本设置/停止/编辑）。
 验证：build 0/0；pad-project 绿；实拍 EVIDENCE/D74-project-now（01 全局现在 / 02 项目现在）。
 判据：**项目页和现在页共用同一套"状态编排"组件，区别只是 scope（全部项目 vs 单个项目）。**
+
+## D77 · 2026-11-01 · 打开项目 = 右边嵌入这个项目的 DSH（WebView2）
+用户：「按 Voyager 的思路——左边 PAD 管理，右边嵌 DSH」；第一版不做"点会话切过去"。
+Voyager 的教训：不重画 AI 的对话界面，只在外面加薄薄一层管理。
+- 新 `Views/ProjectDshView.xaml(.cs)`（WebView2）：项目在跑 → 导航该实例 localhost URL；
+  没启动 → 引导卡（启动/在浏览器打开/重试）；导航失败 → 同一张卡 + 重新启动；只放行 localhost，外链交系统浏览器。
+- `WorkbenchView`：项目模式隐藏卡片滚动区、显示 `DshHost`；`ShowProjectDsh()` 接
+  `StartProjectAsync` / `Reveal.Url`，URL 优先 `_scopeFacts.PadUrl`、兜底扫日志。
+- DSH 一行不改；PAD 不画项目仪表盘。
+验证：build 0/0；实拍 EVIDENCE/D77-embed（05 项目+嵌 DSH / 06 停止引导 / 12 启动后嵌回）。
+毛边（下版）：停止后应先显示"已停"而不是先报"打不开"；启动过程缺进度；
+WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
+判据：**PAD 的右边必须是真实工作区；管理层只做项目、状态、启停和切窗口。**

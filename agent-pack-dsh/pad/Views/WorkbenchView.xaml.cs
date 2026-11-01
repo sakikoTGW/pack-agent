@@ -1286,6 +1286,8 @@ public partial class WorkbenchView : UserControl
     void PaintTransition()
     {
         CardHost.Children.Clear();
+        DshHost.Visibility = Visibility.Collapsed;
+        CardScroll.Visibility = Visibility.Visible;
         if (_instMode && _scope is null)
         {
             CardHost.Children.Add(ScopeCard("读取中", 1, new TextBlock
@@ -1612,14 +1614,19 @@ public partial class WorkbenchView : UserControl
     void PaintCards(IReadOnlyList<Instance> insts)
     {
         CardHost.Children.Clear();
+        // 项目视图：右栏 = 这个项目的 DSH 本体，不再由 PAD 画项目仪表盘。
+        if (_project is not null)
+        {
+            CardScroll.Visibility = Visibility.Collapsed;
+            DshHost.Visibility = Visibility.Visible;
+            ShowProjectDsh();
+            return;
+        }
+        DshHost.Visibility = Visibility.Collapsed;
+        CardScroll.Visibility = Visibility.Visible;
         if (_instMode && _scope is null)
         {
             PaintInstanceCards(insts);
-            return;
-        }
-        if (_project is not null)
-        {
-            PaintProjectCards();
             return;
         }
         if (_scope is not null)
@@ -1628,6 +1635,24 @@ public partial class WorkbenchView : UserControl
             return;
         }
         PaintNowCards();
+    }
+
+    /// <summary>项目右栏 = 该项目的 DSH 页面：在跑且有 URL 就嵌，否则给启动引导。</summary>
+    void ShowProjectDsh()
+    {
+        var proj = _project!;
+        var inst = _scope;
+        var phase = inst is null
+            ? new ProjectRun(proj.Id, RunPhase.Stopped, "")
+            : _state.StatusOf(inst.Id);
+        var url = _scopeFacts?.PadUrl ?? (inst is null ? null : LatestWebUrl(inst));
+        DshHost.StartRequested = async () => await StartProjectAsync(proj);
+        DshHost.OpenInBrowser = () =>
+        {
+            if (url is not null) Reveal.Url(url);
+        };
+        if (phase.Live && !string.IsNullOrWhiteSpace(url)) DshHost.ShowUrl(proj.Name, url);
+        else DshHost.ShowStopped(proj.Name);
     }
 
     /// <summary>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>PAD 最小版草图</title>
+<style>
+  :root{
+    --ink:#2b3440; --line:#8b96a3; --soft:#e7eaee; --fill:#f7f8fa; --paper:#fff; --accent:#1d5d78;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:#eef0f3;color:var(--ink);
+    padding:22px 24px 28px;
+  }
+  h1{font-size:17px;font-weight:600;letter-spacing:.2px}
+  h1 small{font-weight:400;color:#6b7785;font-size:12px;margin-left:10px}
+  .grid{display:grid;grid-template-columns:1030px 500px;gap:18px;margin-top:16px}
+  .frame{
+    background:var(--paper);border:1.4px solid var(--line);border-radius:8px;overflow:hidden;
+    box-shadow:0 1px 0 rgba(0,0,0,.04);
+  }
+  .tag{
+    display:inline-block;font-size:11px;color:#5b6674;border:1px dashed var(--line);
+    padding:2px 7px;border-radius:5px;margin:0 0 8px;
+  }
+  .pad{padding:10px}
+  .winbar{
+    display:flex;align-items:center;gap:14px;background:#2f3a47;color:#dfe6ec;
+    padding:9px 14px;font-size:12px;border-radius:5px 5px 0 0;
+  }
+  .winbar b{font-size:13px;letter-spacing:.3px}
+  .winbar .tabs{margin-left:26px;display:flex;gap:18px;color:#aab6c2}
+  .winbar .tabs .on{color:#fff;border-bottom:2px solid #7fb3c9;padding-bottom:3px}
+  .body{display:flex;min-height:398px}
+  .side{width:228px;border-right:1px solid var(--soft);padding:12px 10px;background:#fbfcfd}
+  .side .rowtitle{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#5b6674;margin-bottom:8px}
+  .search{border:1px solid var(--soft);border-radius:6px;padding:6px 8px;font-size:11px;color:#98a2ae;background:#fff;margin-bottom:9px}
+  .prow{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:6px;font-size:12px;border:1px solid transparent}
+  .prow.sel{border-color:#bcd6e2;background:#eef5f8}
+  .dot{width:7px;height:7px;border-radius:50%;background:#22a06b;flex:0 0 auto}
+  .dot.off{background:#b9c2cc}
+  .prow .meta{margin-left:auto;font-size:10px;color:#8b96a3}
+  .divider{border-top:1px dashed var(--soft);margin:12px 0 9px}
+  .cap{font-size:10px;color:#8b96a3;margin:0 0 6px 2px;letter-spacing:.4px}
+  .recent{font-size:11.5px;color:#5b6674;padding:5px 8px;display:flex;gap:6px}
+  .recent span{color:#98a2ae}
+  .content{flex:1;padding:16px 18px}
+  .phead{display:flex;align-items:center;gap:10px}
+  .phead .name{font-size:16px;font-weight:600}
+  .badge{font-size:10px;color:#1d7a58;background:#e7f4ee;border:1px solid #c4e3d5;border-radius:9px;padding:2px 8px}
+  .phead .actions{margin-left:auto;display:flex;gap:8px}
+  .btn{border:1px solid var(--line);border-radius:6px;padding:5px 11px;font-size:11.5px;color:#3d4a58;background:#fff}
+  .btn.primary{background:#2f3a47;color:#fff;border-color:#2f3a47}
+  .box{border:1px dashed var(--line);border-radius:7px;padding:10px 12px;margin-top:12px;background:var(--fill)}
+  .box .label{font-size:10px;color:#6b7785;letter-spacing:.5px;margin-bottom:5px}
+  .box p{font-size:12px;line-height:1.7;color:#4a5562}
+  .box .edit{margin-left:auto;font-size:10.5px;color:#5b6674;text-decoration:none;float:right}
+  .sec{display:flex;align-items:center;gap:8px;margin:18px 0 8px}
+  .sec b{font-size:13px}
+  .sec .new{margin-left:auto;font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:#3d4a58}
+  .chatrow{display:flex;align-items:center;gap:10px;border:1px solid var(--soft);border-radius:7px;padding:9px 11px;margin-bottom:7px;background:#fff}
+  .chatrow .t{font-size:12px;font-weight:500}
+  .chatrow .m{font-size:10.5px;color:#8b96a3;margin-top:2px}
+  .chatrow .right{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:11px;color:#5b6674}
+  .st{font-size:10px;border-radius:8px;padding:2px 7px}
+  .st.run{color:#1d6f8c;background:#e8f2f6}
+  .st.wait{color:#8a5a12;background:#fbf1e2}
+  .st.done{color:#5c6b78;background:#eef1f4}
+  .foot{margin-top:14px;display:flex;gap:18px;font-size:10.5px;color:#6b7785;border-top:1px solid var(--soft);padding-top:10px}
+  .chip{border:1px solid #c9d5dd;border-radius:6px;padding:2px 8px;background:#fff;color:#3d4a58}
+  .stack{display:flex;flex-direction:column;gap:18px}
+  .dialog{padding:16px 18px}
+  .dialog h2{font-size:14px;font-weight:600;margin-bottom:12px}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:11px;color:#5b6674;margin-bottom:5px}
+  .field .input{border:1px solid #c5ced8;border-radius:6px;padding:8px 10px;font-size:11.5px;color:#98a2ae;background:#fff}
+  .field .input.area{height:62px;line-height:1.6}
+  .radio{display:flex;gap:16px;font-size:11.5px;color:#4a5562;align-items:center}
+  .radio i{display:inline-block;width:11px;height:11px;border:1.4px solid var(--line);border-radius:50%;margin-right:5px;vertical-align:-2px}
+  .radio i.on{border-color:var(--accent);box-shadow:inset 0 0 0 2.5px var(--accent)}
+  .dialog .footbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+  .note{font-size:10.5px;color:#6b7785;line-height:1.7;padding:12px 14px;background:#fbfcfd;border-top:1px dashed var(--soft)}
+  .zoom{display:flex;align-items:center;gap:10px;border:1.4px dashed var(--line);border-radius:8px;padding:12px;margin-bottom:14px;background:#fff}
+  .zoom .t{font-size:12.5px;font-weight:600}
+  .zoom .m{font-size:10.5px;color:#8b96a3;margin-top:3px}
+  .zoom .right{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:11px;color:#5b6674}
+  .ann{font-size:10.5px;color:#6b7785;line-height:1.8}
+  .ann b{color:#3d4a58}
+  .empty{border:1px dashed var(--line);border-radius:8px;padding:26px;text-align:center;background:var(--fill);margin-top:12px}
+  .empty .t{font-size:13px;font-weight:600;color:#4a5562}
+  .empty .m{font-size:11px;color:#8b96a3;margin-top:6px}
+  .empty .btn{margin-top:12px;display:inline-block}
+  .caption{font-size:10.5px;color:#8b96a3;margin-top:10px}
+</style>
+</head>
+<body>
+  <h1>PAD 最小版 · 草图<small>按项目管理 agent：项目 = 文件夹 + brief + agent（preset）；chat = DSH 会话</small></h1>
+  <div class="grid">
+    <!-- 主界面 -->
+    <section class="frame">
+      <div class="winbar"><b>PAD</b><span class="tabs"><span class="on">项目</span><span>设置</span></span><span style="margin-left:auto;color:#8f9aaa;font-size:10.5px">— □ ×</span></div>
+      <div class="body">
+        <aside class="side">
+          <div class="rowtitle"><b>项目</b><span style="color:#3d4a58">＋ 新建</span></div>
+          <div class="search">搜索项目 / 目录</div>
+          <div class="prow sel"><span class="dot"></span><span>ev-project</span><span class="meta">运行中</span></div>
+          <div class="prow"><span class="dot off"></span><span>另一个项目</span><span class="meta">已停</span></div>
+          <div class="divider"></div>
+          <div class="cap">最近会话</div>
+          <div class="recent">首页改版 <span>2 分钟前</span></div>
+          <div class="recent">接口联调 <span>昨天</span></div>
+        </aside>
+        <div class="content">
+          <div class="phead">
+            <span class="name">ev-project</span><span class="badge">● 运行中</span>
+            <div class="actions">
+              <span class="btn">停止</span>
+              <span class="btn primary">打开 DSH 窗口</span>
+            </div>
+          </div>
+          <div class="box">
+            <a class="edit">编辑</a>
+            <div class="label">这个项目在做什么（BRIEF，每次对话都会读）</div>
+            <p>官网首页改版：深色 hero、保留品牌色；动效克制。<br>相关目录：ws-frontend / ws-backend。不要动后端接口。</p>
+          </div>
+          <div class="sec"><b>会话</b><span style="font-size:10.5px;color:#8b96a3">3</span><span class="new">＋ 新对话</span></div>
+          <div class="chatrow"><div><div class="t">首页 hero 改版</div><div class="m">agent：minimal · 3 轮 · 刚刚</div></div>
+            <div class="right"><span class="st run">在跑</span><span>打开 →</span></div></div>
+          <div class="chatrow"><div><div class="t">接口联调排错</div><div class="m">agent：minimal · 11 轮 · 2 小时前</div></div>
+            <div class="right"><span class="st wait">等你输入</span><span>打开 →</span></div></div>
+          <div class="chatrow"><div><div class="t">埋点补齐</div><div class="m">agent：standard · 6 轮 · 昨天</div></div>
+            <div class="right"><span class="st done">已完成</span><span>打开 →</span></div></div>
+          <div class="foot">
+            <span>目录：E:\work\ev-project</span>
+            <span>绑定 agent：<span class="chip">minimal</span> <span class="chip">＋ 绑定</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="note">① 左栏只有项目 + 最近会话；② 右栏是这个项目：brief / 会话 / 启动停止 / 打开窗口；③ 不再有「现在、实例、自动收编、卡片堆」。</div>
+    </section>
+
+    <div class="stack">
+      <!-- 新建项目 -->
+      <section class="frame">
+        <div class="pad">
+          <span class="tag">草图 ② 新建项目对话框</span>
+          <div class="dialog">
+            <h2>新建项目</h2>
+            <div class="field"><label>名字</label><div class="input">官网首页改版</div></div>
+            <div class="field"><label>这个项目在做什么？（brief，agent 每次都会读）</label>
+              <div class="input area">目标 / 给谁看 / 要什么、不要什么…<br>例：深色 hero，保留品牌色，别动后端。</div></div>
+            <div class="field"><label>目录</label>
+              <div class="radio"><span><i class="on"></i>自动新建</span><span><i></i>选择已有目录…</span></div></div>
+            <div class="field"><label>绑定 agent（preset）</label><div class="input">standard ▾</div></div>
+            <div class="footbtns"><span class="btn">取消</span><span class="btn primary">创建</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 空状态 -->
+      <section class="frame">
+        <div class="pad">
+          <span class="tag">草图 ③ 项目还没有会话</span>
+          <div class="phead"><span class="name" style="font-size:13px">新项目</span><span class="badge" style="color:#6b7785;background:#eef1f4;border-color:#dbe2e8">● 已停</span>
+            <div class="actions"><span class="btn primary">启动</span></div></div>
+          <div class="empty">
+            <div class="t">这个项目还没有会话</div>
+            <div class="m">启动后这里会列出 agent 的会话和状态</div>
+            <span class="btn">启动 DSH 开第一次对话</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 会话行放大 + 说明 -->
+    <section class="frame">
+      <div class="pad">
+        <span class="tag">草图 ④ 会话行（放大）与状态</span>
+        <div class="zoom"><span class="dot"></span>
+          <div><div class="t">首页 hero 改版</div><div class="m">agent：minimal · 3 轮 · 刚刚</div></div>
+          <div class="right"><span class="st run">在跑</span><span class="st wait">等你输入</span><span class="st done">已完成</span><span>打开 →</span></div>
+        </div>
+        <div class="ann">
+          <b>状态：</b>在跑 = agent 正在干活；等你输入 = agent 停了在等你；已完成 = 这一轮结束了。<br>
+          <b>打开：</b>切到这条会话所在的 DSH 窗口（DSH 网页没有 URL 深链，只能聚焦窗口 + 复制会话 id）。<br>
+          <b>＋ 新对话：</b>在这个项目里开一条新会话（打开 DSH 窗口新建 chat）。
+        </div>
+      </div>
+    </section>
+
+    <!-- 侧栏放大 -->
+    <section class="frame">
+      <div class="pad">
+        <span class="tag">草图 ⑤ 左栏（放大）</span>
+        <div class="side" style="width:100%;border-right:0;border-radius:6px;border:1px dashed var(--line)">
+          <div class="rowtitle"><b>项目</b><span>＋ 新建</span></div>
+          <div class="search">搜索项目 / 目录</div>
+          <div class="prow sel"><span class="dot"></span><span>ev-project</span><span class="meta">运行中</span></div>
+          <div class="prow"><span class="dot off"></span><span>另一个项目</span><span class="meta">已停</span></div>
+          <div class="divider"></div>
+          <div class="cap">最近会话</div>
+          <div class="recent">首页改版 <span>2 分钟前</span></div>
+          <div class="recent">接口联调 <span>昨天</span></div>
+        </div>
+        <div class="ann" style="margin-top:10px">
+          项目行只显示 <b>名字 + 运行中/已停</b>；不加工作区数、端口、上次时间这些装饰。
+        </div>
+      </div>
+    </section>
+  </div>
+  <p class="caption">草图，不是应用截图；线框只表达信息层级与动作，视觉沿用你之前定的浅色/冷色那套。</p>
+</body>
+</html>

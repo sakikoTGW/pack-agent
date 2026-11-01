@@ -89,6 +89,9 @@
       </StackPanel>
     </ScrollViewer>
 
+    <!-- 项目视图 = 该项目的 DSH 本页：PAD 不重画对话，只把 localhost 嵌进来（D77） -->
+    <v:ProjectDshView x:Name="DshHost" Visibility="Collapsed" Margin="24,0,24,20" />
+
     <!-- 添加卡片 -->
     <Popup x:Name="AddPop" Placement="Bottom" PlacementTarget="{Binding ElementName=AddBtn}"
            StaysOpen="False" AllowsTransparency="True">

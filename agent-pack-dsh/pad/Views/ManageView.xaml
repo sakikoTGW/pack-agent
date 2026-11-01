@@ -141,17 +141,11 @@
               <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <v:Ico Glyph="{StaticResource I.Mod}" Height="11" Margin="0,1,6,0"
                        Foreground="{StaticResource TextMuted}" />
-                <TextBlock Text="整合包" Style="{StaticResource Label}" VerticalAlignment="Center" />
+                <TextBlock Text="插件" Style="{StaticResource Label}" VerticalAlignment="Center" />
               </StackPanel>
-              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <Button x:Name="BundleImportBtn" Style="{StaticResource Btn}" Content="装整合包…"
-                        Click="BundleImport_Click" Margin="0,0,8,0"
-                        ToolTip="选 .pack.zip / .pack.json / .pinst.zip，装进这个实例"
-                        v:Ico.Of="{StaticResource I.Pack}" />
-                <ComboBox x:Name="BundleProfile" Width="160" Height="28"
-                          VerticalAlignment="Center"
-                          SelectionChanged="BundleProfile_Changed" />
-              </StackPanel>
+              <ComboBox x:Name="BundleProfile" Width="160" Height="28"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        SelectionChanged="BundleProfile_Changed" />
             </Grid>
 
             <TextBlock x:Name="BundleEmpty" Style="{StaticResource Muted}" Margin="0,0,0,14"
@@ -205,7 +199,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
-              <TextBox Grid.Column="0" x:Name="BundleSpec" Tag="整合包（npm 包名 / 本地路径）"
+              <TextBox Grid.Column="0" x:Name="BundleSpec" Tag="插件（npm 包名 / 本地路径）"
                        FontFamily="{StaticResource FontMono}" FontSize="{StaticResource FsSmall}" />
               <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
                 <Button x:Name="BundleAddBtn" Style="{StaticResource Btn}" Content="添加"
@@ -220,6 +214,21 @@
             </Grid>
             <TextBox x:Name="BundleLog" Style="{StaticResource LogBox}" Height="0"
                      Visibility="Collapsed" Margin="0,0,0,22" />
+
+            <!-- 整合包是另一类东西：可移植的打包产物，装进实例后在实例页的「整合包」里启停。 -->
+            <Grid Margin="0,4,0,20" ToolTip="整合包不是插件：它是一份可移植打包产物（skills / rules / MCP…），装进来后到实例页启停">
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <v:Ico Glyph="{StaticResource I.Pack}" Height="11" Margin="0,1,6,0"
+                       Foreground="{StaticResource TextMuted}" />
+                <TextBlock Text="整合包" Style="{StaticResource Label}" VerticalAlignment="Center" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button x:Name="BundleImportBtn" Style="{StaticResource Btn}" Content="装整合包…"
+                        Click="BundleImport_Click"
+                        ToolTip="选 .pack.zip / .pack.json / .pinst.zip，装进这个实例"
+                        v:Ico.Of="{StaticResource I.Pack}" />
+              </StackPanel>
+            </Grid>
           </StackPanel>
 
           <StackPanel x:Name="TreeCard">

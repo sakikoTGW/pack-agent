@@ -65,9 +65,9 @@ public sealed class JobRecord
         "clone" => "克隆实例",
         "import" => "装整合包",
         "project" => "投影整合包",
-        "plugin-add" => "装整合包",
-        "plugin-remove" => "移除整合包",
-        "plugin-update" => "更新整合包",
+        "plugin-add" => "装插件",
+        "plugin-remove" => "移除插件",
+        "plugin-update" => "更新插件",
         "portable-export" => "打整合包",
         _ => Kind,
     };

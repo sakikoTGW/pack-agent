@@ -68,7 +68,7 @@ public partial class WorkbenchView
 
     void BackToNow_Click(object sender, RoutedEventArgs e) => ShowHubNow();
 
-    void RailImport() => _host.ShowInner("bundles", "实例与整合包", "manage");
+    void RailImport() => _host.ShowInner("bundles", "实例与插件", "manage");
 
     void SegmentChanged(bool instances)
     {
@@ -77,7 +77,7 @@ public partial class WorkbenchView
     }
 
     void ImportPack_Click(object sender, RoutedEventArgs e) =>
-        _host.ShowInner("bundles", "实例与整合包", "manage");
+        _host.ShowInner("bundles", "实例与插件", "manage");
 
     // ---- 首页：现在（D69）---------------------------------------------
 
@@ -810,7 +810,7 @@ public partial class WorkbenchView
         var bundles = _scopeBundles;
         stack.Children.Add(new TextBlock
         {
-            Text = bundles.Count == 0 ? "这个实例还没装整合包" : $"插件 {bundles.Count} · 整合包 {_scopePacks.Count}",
+            Text = bundles.Count == 0 ? "这个实例还没装插件" : $"插件 {bundles.Count} · 整合包 {_scopePacks.Count}",
             FontSize = 9.5, Foreground = Muted, Margin = new Thickness(0, 0, 0, 8),
         });
         var wrap = new WrapPanel();

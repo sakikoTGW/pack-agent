@@ -302,14 +302,14 @@ function bundleKind(spec: string): string {
   const s = spec.toLowerCase()
   if (s.includes('dsh-tui')) return 'TUI'
   if (s.includes('pad-gateway') || s.includes('host-apiproxy')) return '管理口'
-  return '组合包'
+  return '插件'
 }
 function bundlePackageDir(profileDir: string, spec: string): string {
   return profileDir + '\\node_modules\\' + spec.replaceAll('/', '\\')
 }
 if (bundleKind('@deepseek-harness-tui/dsh-tui') !== 'TUI') fail('TUI 组合包要标成 TUI，才能在管理页更新')
 if (bundleKind('@sakikotgw/pad-gateway') !== '管理口') fail('pad-gateway 不是普通组合包')
-if (bundleKind('@liustack/modlens') !== '组合包') fail('其余有 dsh.bundle 的是组合包')
+if (bundleKind('@liustack/modlens') !== '插件') fail('其余有 dsh.bundle 的是插件')
 if (bundlePackageDir('E:\\i\\home\\profiles\\dsh-tui', '@deepseek-harness-tui/dsh-tui') !==
     String.raw`E:\i\home\profiles\dsh-tui\node_modules\@deepseek-harness-tui\dsh-tui`)
   fail('组合包装在该 profile 的 node_modules 里')

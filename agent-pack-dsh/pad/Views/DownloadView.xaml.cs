@@ -120,7 +120,7 @@ public partial class DownloadView : UserControl, IRefreshable
         {
             (null, null) => "DSH 要 Node 22.19+ 或 24+，安装走 pnpm。两个都装上再回来。",
             (null, _) => "DSH 要 Node 22.19+ 或 24+。",
-            (_, null) => "DSH 官方用 pnpm 装整合包。",
+            (_, null) => "DSH 官方用 pnpm 装插件。",
             _ => "",
         };
         if (node is null && _state.Settings.Launch.RuntimeInstall)

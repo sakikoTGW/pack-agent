@@ -484,7 +484,7 @@ public static class LaunchPolicy
         var s = spec.ToLowerInvariant();
         if (s.Contains("dsh-tui")) return "TUI";
         if (s.Contains("pad-gateway") || s.Contains("host-apiproxy")) return "管理口";
-        return "整合包";
+        return "插件";
     }
 
     /// <summary>

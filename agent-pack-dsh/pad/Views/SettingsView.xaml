@@ -252,7 +252,7 @@
                   <ColumnDefinition Width="120" />
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="profile" Style="{StaticResource Label}" VerticalAlignment="Center" ToolTip="这个 --profile 决定叠哪些整合包；形态由它体现（web → 网页端）" />
+                <TextBlock Text="profile" Style="{StaticResource Label}" VerticalAlignment="Center" ToolTip="这个 --profile 决定叠哪些插件；形态由它体现（web → 网页端）" />
                 <TextBlock Grid.Column="1" x:Name="DshTuiLine" Style="{StaticResource Mono}"
                            TextWrapping="Wrap" />
               </Grid>

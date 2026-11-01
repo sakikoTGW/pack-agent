@@ -74,7 +74,7 @@ public partial class MainWindow : Window
                 if (App.ShotPage == "manage-project" && Page("manage") is WorkbenchView shotWb)
                     shotWb.OpenProjectForShot();
                 if (App.ShotPage == "makepack") ShowInner("makepack", "导出整合包", "versions");
-                if (App.ShotPage == "bundles") ShowInner("bundles", "实例与组合包", "manage");
+                if (App.ShotPage == "bundles") ShowInner("bundles", "实例与插件", "manage");
                 if (App.ShotPage == "relations" || App.ShotPage.StartsWith("relations-")) ShowRelations();
                 if (App.ShotPage is "instance" or "instance-settings" or "instance-plugins" or "instance-bundles")
                     ShowInner("instance", "版本设置");
@@ -410,7 +410,7 @@ public partial class MainWindow : Window
         : _pages[name] = name switch
         {
             "launch" => new LaunchView(this),
-            // 项目轴先隐藏（不做项目了）：管理页回到启动器本体「实例与组合包」。
+            // 项目轴先隐藏（不做项目了）：管理页回到启动器本体「实例与插件」。
             "manage" => new ManageView(this),
             "bundles" => new ManageView(this),
             "relations" => new RelationsWebView(),

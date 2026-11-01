@@ -84,7 +84,7 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
-              <TextBox x:Name="AddSpecBox" Height="28" Tag="再加一个整合包…" />
+              <TextBox x:Name="AddSpecBox" Height="28" Tag="再加一个插件…" />
               <Button Grid.Column="1" Style="{StaticResource Btn}" Content="添加" Margin="8,0,0,0"
                       Click="AddSpec_Click" v:Ico.Of="{StaticResource I.Plus}" />
               <Button Grid.Column="2" Style="{StaticResource Btn}" Content="本地插件…" Margin="8,0,0,0"

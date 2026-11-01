@@ -43,7 +43,7 @@
             <ContentControl Style="{StaticResource PictLg}" v:Ico.Of="{StaticResource I.Download}"
                             HorizontalAlignment="Left" Margin="0,0,0,12" />
             <TextBlock Text="没有下载内容" Style="{StaticResource SectionTitle}" />
-            <TextBlock Text="装发行号或装整合包会出现在这里" Style="{StaticResource Muted}"
+            <TextBlock Text="装发行号或装插件会出现在这里" Style="{StaticResource Muted}"
                        Margin="0,8,0,0" />
             <Button Style="{StaticResource BtnWidePrimary}" Content="去下载"
                     HorizontalAlignment="Stretch" Margin="0,12,0,0" Click="Download_Click"

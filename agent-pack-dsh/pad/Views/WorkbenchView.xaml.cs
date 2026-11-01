@@ -151,7 +151,7 @@ public partial class WorkbenchView : UserControl
         StyleHeaderButton(AddBtn, "+ 卡片", "L.Plus");
         StyleHeaderButton(EditBtn, "编辑", "L.Pencil");
         StyleHeaderButton(VersionsBtn, "版本设置", "L.Sliders");
-        StyleHeaderButton(BundlesBtn, "实例与整合包", "L.Package");
+        StyleHeaderButton(BundlesBtn, "实例与插件", "L.Package");
         StyleHeaderButton(RelationsBtn, "关系", "L.Share");
         SetRunButton(canStop: false);
     }
@@ -237,7 +237,7 @@ public partial class WorkbenchView : UserControl
     }
 
     void OpenBundles_Click(object sender, RoutedEventArgs e) =>
-        _host.ShowInner("bundles", "实例与整合包", "manage");
+        _host.ShowInner("bundles", "实例与插件", "manage");
 
     void OpenRelations_Click(object sender, RoutedEventArgs e) =>
         _host.ShowRelations();
@@ -842,7 +842,7 @@ public partial class WorkbenchView : UserControl
         var stack = new StackPanel();
         var grid = new UniformGrid { Columns = 2, Rows = 2 };
         grid.Children.Add(Stat("内核", _scope?.Dsh.Version ?? _project?.Dsh.Version ?? "—", "L.Cpu", mono: true));
-        grid.Children.Add(Stat("整合包", _scopeBundles.Count == 0 ? "—" : _scopeBundles.Count.ToString(), "L.Package"));
+        grid.Children.Add(Stat("插件", _scopeBundles.Count == 0 ? "—" : _scopeBundles.Count.ToString(), "L.Package"));
         grid.Children.Add(Stat("会话", (_scopeInspect?.Sessions ?? 0).ToString(), "L.Chat"));
         grid.Children.Add(Stat("整合包", PacksStat(), "L.Layers"));
         stack.Children.Add(grid);
@@ -1885,7 +1885,7 @@ public partial class WorkbenchView : UserControl
         var stack = new StackPanel();
         var grid = new UniformGrid { Columns = 3, Rows = 2 };
         grid.Children.Add(Stat("内核", inst.Dsh.Version.Length == 0 ? "—" : inst.Dsh.Version, "L.Cpu", mono: true));
-        grid.Children.Add(Stat("整合包", _scopeBundles.Count == 0 ? "—" : _scopeBundles.Count.ToString(), "L.Package"));
+        grid.Children.Add(Stat("插件", _scopeBundles.Count == 0 ? "—" : _scopeBundles.Count.ToString(), "L.Package"));
         grid.Children.Add(Stat("整合包", PacksStat(), "L.Layers"));
         grid.Children.Add(Stat("会话", (_scopeInspect?.Sessions ?? 0).ToString(), "L.Chat"));
         grid.Children.Add(Stat("上下文", ContextPercentText(), "L.Gauge"));

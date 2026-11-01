@@ -244,7 +244,7 @@ public partial class ManageView : UserControl, IRefreshable
         }
         else if (rows.Count == 0)
         {
-            BundleEmpty.Text = "这个 --profile 还没有整合包";
+            BundleEmpty.Text = "这个 --profile 还没有插件";
             BundleEmpty.Visibility = Visibility.Visible;
         }
         else
@@ -390,7 +390,7 @@ public partial class ManageView : UserControl, IRefreshable
             .ToList();
         if (rows.Count == 0)
         {
-            BundleSay("没有可更新的整合包。");
+            BundleSay("没有可更新的插件。");
             return;
         }
         BundleBusy(true);

@@ -84,16 +84,32 @@ public sealed class PluginRow : Observable
         }
     }
 
+    static readonly string[] NoiseTags =
+    [
+        "dsh", "dsh-plugin", "dsh-plugins", "plugin", "plugins", "cordis",
+        "deepseek", "deepseek-harness", "harness", "dsh-desktop", "dsh-client",
+        "ai", "llm", "agent", "dsh-agent", "extension", "extensions",
+    ];
+
+    static bool IsNoiseTag(string tag) =>
+        NoiseTags.Contains(tag, StringComparer.OrdinalIgnoreCase);
+
     public IReadOnlyList<string> Tags
     {
         get
         {
             var tags = new List<string>();
             if (Trial) tags.Add("试验");
-            // 「可更新」不再混在普通标签里：行内单独一枚醒目徽标 + 更新按钮。
+            // 只留最关键的几个分类；仓库/生态名（dsh、cordis、deepseek-harness…）是废话。
             foreach (var k in Keywords)
-                if (!tags.Exists(t => t.Equals(k, StringComparison.OrdinalIgnoreCase)))
-                    tags.Add(k);
+            {
+                if (tags.Count >= 3) break;
+                var key = (k ?? "").Trim();
+                if (key.Length == 0) continue;
+                if (IsNoiseTag(key)) continue;
+                if (!tags.Exists(t => t.Equals(key, StringComparison.OrdinalIgnoreCase)))
+                    tags.Add(key);
+            }
             return tags;
         }
     }

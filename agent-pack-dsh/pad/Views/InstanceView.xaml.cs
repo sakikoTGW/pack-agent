@@ -1088,16 +1088,15 @@ public partial class InstanceView : UserControl, IRefreshable
     void PluginInfo_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: PluginRow row }) return;
-        var md = $"# {row.Spec}\n\n"
-            + $"- 版本：{row.VersionText}\n"
-            + $"- `--profile`：{row.Profile}\n"
-            + (row.Latest.Length > 0 ? $"- npm latest：{row.Latest}\n" : "")
-            + (row.Keywords.Count > 0 ? $"- 标签：{string.Join("、", row.Keywords)}\n" : "")
-            + (row.PackageDir.Length > 0 ? $"- 目录：`{row.PackageDir}`\n" : "")
-            + (row.Trial ? "- 试验：仅本次运行，还没固化\n" : "")
-            + (row.Description.Length > 0 ? $"\n{row.Description}\n" : "\n包里没写描述。\n");
-        _win.ShowMd(row.Spec, md);
+        var win = new PluginDetailWindow(row) { Owner = Window.GetWindow(this) };
+        win.UpdateRequested += r => InvokePluginHandler(PluginUpdate_Click, r);
+        win.RemoveRequested += r => InvokePluginHandler(PluginRemove_Click, r);
+        win.OpenDirRequested += r => InvokePluginHandler(PluginRowDir_Click, r);
+        win.ShowDialog();
     }
+
+    void InvokePluginHandler(Action<object, RoutedEventArgs> handler, PluginRow row) =>
+        handler(new Border { Tag = row }, new RoutedEventArgs());
 
     PluginRow? PluginFrom(object sender)
     {

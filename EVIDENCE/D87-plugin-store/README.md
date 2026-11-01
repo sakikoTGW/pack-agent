@@ -28,3 +28,25 @@
 ## 验证
 - worktree build 0 warning / 0 error；`pad-window` ✓、`pad-pack` ✓
 - **未合并 / 未进正式 PAD**：按 PARALLEL.md，合并与最终统一编译需要你点头（一次）。
+# D87 补充：插件商店「没连上」的根因与修复
+
+用户反馈「现在应该不会跳没连上」——确实是个 bug，不是网络。
+
+## 根因
+`Market.Search` 里 `catch (Exception ex) { throw new PadError("PA033", "npm 搜索没连上", ..., ex.Message, ...) }`
+把**调用方主动取消**（翻页 / 重新搜索 / 离开页面 / 页面并发加载）也包成了「没连上」：
+`OperationCanceledException`（消息就是截图里的 `A task was canceled.`）被当成网络错误弹了横幅。
+CLI 真实网络验证：`pad cli market plugin dsh` → 共 11702 个，说明网络和解析都没问题。
+
+## 修复（分支 pad-lead-verify，commit 见 git log）
+- `Market.Search` / `Market.FetchPackument`：
+  - `ct` 已取消 → `throw;` 原样抛（界面 `catch (OperationCanceledException) return;` 静默，不弹横幅）；
+  - 超时（`linked.CancelAfter` 触发）→ 新的「npm 搜索超时」，文案「等了 N 秒还没响应。」；
+  - 其它异常才显示「npm 搜索没连上」。
+- 插件商店错误卡按超时/没连上分别给标题；超时时长与真实设置一致。
+
+## 验证（隔离环境后台自截）
+- `01-market.png`：正常搜索（stub registry 8 条）——列表/搜索表单/统计；
+- `03-market-timeout.png`：慢 stub（5s 响应 + 超时设 2s）→ 显示「npm 搜索超时 / 等了 3 秒还没响应。」+ 重试，不再冒充「没连上」；
+- `02-market-error.png`：指向死端口 → 仍如实显示「npm 搜索没连上」；
+- `pad cli market plugin dsh` 真实网络：11702 个结果（headless，无窗口）。

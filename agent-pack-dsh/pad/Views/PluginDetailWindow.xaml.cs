@@ -51,9 +51,7 @@ public partial class PluginDetailWindow : Window
 
         UpdateBtn.Visibility = row.ShowUpdateButton ? Visibility.Visible : Visibility.Collapsed;
         UpdateBtn.Content = row.Version.Length == 0 ? "安装" : "更新";
-        DirBtn.Visibility = row.PackageDir.Length > 0 && Directory.Exists(row.PackageDir)
-            ? Visibility.Visible : Visibility.Collapsed;
-        RemoveBtn.Visibility = row.Trial ? Visibility.Collapsed : Visibility.Visible;
+        FavBtn.Content = row.Favorite ? "★ 已收藏" : "☆ 收藏";
     }
 
     /// <summary>仓库预览图加载完成（没有仓库/没有图时也完成）；--shot-page plugin-detail 会等它再截图。</summary>
@@ -74,6 +72,13 @@ public partial class PluginDetailWindow : Window
         }
         catch { /* 没网/仓库没有图：不显示预览 */ }
         finally { DetailShotHint.Visibility = Visibility.Collapsed; }
+    }
+
+    void Fav_Click(object sender, RoutedEventArgs e)
+    {
+        var on = Favorites.Toggle(AppState.Current.Launcher.Root, _row.Spec);
+        _row.Favorite = on;
+        FavBtn.Content = on ? "★ 已收藏" : "☆ 收藏";
     }
 
     void Update_Click(object sender, RoutedEventArgs e)

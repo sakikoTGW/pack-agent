@@ -15,13 +15,6 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
       <StackPanel Margin="34,24,34,34" HorizontalAlignment="Center" MaxWidth="640">
 
-        <DockPanel LastChildFill="False" Margin="0,0,0,14">
-          <TextBlock DockPanel.Dock="Left" Text="插件" Style="{StaticResource Muted}"
-                     FontSize="{StaticResource FsSmall}" VerticalAlignment="Center" />
-          <Button DockPanel.Dock="Right" Content="关闭" Style="{StaticResource BtnGhost}"
-                  Height="30" Padding="14,0" Click="Close_Click" />
-        </DockPanel>
-
         <!-- 头图卡：App Store 顶部（图标 / 名字 / 版本 / 获取按钮） -->
         <Border Background="{StaticResource BgCard}" CornerRadius="20" Padding="24,24,22,22">
           <Grid>
@@ -54,18 +47,15 @@
                 </Border>
               </StackPanel>
             </StackPanel>
-            <Button Grid.Column="2" x:Name="UpdateBtn" Style="{StaticResource BtnPrimary}"
-                    Content="更新" Height="38" Padding="24,0" FontSize="15" FontWeight="SemiBold"
-                    VerticalAlignment="Center" Click="Update_Click" />
+            <StackPanel Grid.Column="2" VerticalAlignment="Center">
+              <Button x:Name="UpdateBtn" Style="{StaticResource BtnPrimary}"
+                      Content="更新" Height="38" Padding="24,0" FontSize="15" FontWeight="SemiBold"
+                      Click="Update_Click" />
+              <Button x:Name="FavBtn" Style="{StaticResource BtnGhost}" Content="☆ 收藏"
+                      Height="30" Margin="0,8,0,0" Click="Fav_Click" />
+            </StackPanel>
           </Grid>
         </Border>
-
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="2,14,0,0">
-          <Button x:Name="DirBtn" Style="{StaticResource Btn}" Content="打开目录" Height="32"
-                  Padding="16,0" Click="Dir_Click" />
-          <Button x:Name="RemoveBtn" Style="{StaticResource BtnDanger}" Content="卸载" Height="32"
-                  Padding="16,0" Margin="10,0,0,0" Click="Remove_Click" />
-        </StackPanel>
 
         <!-- 预览：大截图横滑，所有图一样大（App Store 的截图带） -->
         <TextBlock Text="预览" FontSize="20" FontWeight="SemiBold"

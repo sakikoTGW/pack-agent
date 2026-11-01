@@ -233,6 +233,9 @@
               <RadioButton x:Name="FilterTrial" Style="{StaticResource FilterTab}" Content="试验中"
                            GroupName="pluginFilter" Tag="trial"
                            Checked="PluginFilter_Changed" />
+              <RadioButton x:Name="FilterFav" Style="{StaticResource FilterTab}" Content="收藏"
+                           GroupName="pluginFilter" Tag="favorite"
+                           Checked="PluginFilter_Changed" />
             </StackPanel>
             <ComboBox x:Name="PluginProfile" Width="140" Height="28"
                       HorizontalAlignment="Right" VerticalAlignment="Center"
@@ -324,6 +327,17 @@
                       </StackPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                      <Button Style="{StaticResource IcoBtn}" Click="PluginFav_Click" Tag="{Binding}"
+                              ToolTip="收藏（本地歌单）">
+                        <Grid>
+                          <v:Ico Glyph="{StaticResource I.Star}" Height="13"
+                                 Foreground="{StaticResource TextMuted}"
+                                 Visibility="{Binding Favorite, Converter={StaticResource B2VNot}}" />
+                          <v:Ico Glyph="{StaticResource I.Star}" Height="13"
+                                 Foreground="{StaticResource Accent}"
+                                 Visibility="{Binding Favorite, Converter={StaticResource B2V}}" />
+                        </Grid>
+                      </Button>
                       <Button Style="{StaticResource IcoBtn}" Click="PluginInfo_Click" Tag="{Binding}"
                               ToolTip="详情">
                         <v:Ico Glyph="{StaticResource I.Info}" Height="12" />

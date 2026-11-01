@@ -885,7 +885,7 @@ public partial class InstanceView : UserControl, IRefreshable
 
     PluginQuery.Filter CurrentPluginFilter()
     {
-        var tag = new[] { FilterAll, FilterUpdatable, FilterTrial }
+        var tag = new[] { FilterAll, FilterUpdatable, FilterTrial, FilterFav }
             .FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
         return PluginQuery.Parse(tag);
     }
@@ -940,6 +940,8 @@ public partial class InstanceView : UserControl, IRefreshable
             if (r.IconPath.Length == 0) continue;
             if (Skin.LoadBitmap(r.IconPath) is null) r.IconPath = "";
         }
+        var favRoot = _state.Launcher.Root;
+        foreach (var r in rows) r.Favorite = Favorites.IsFavorite(favRoot, r.Spec);
         _pluginRows = rows;
         PaintPlugins();
         if (App.ShotPage == "plugin-detail") QueueDetailShot();
@@ -1029,6 +1031,7 @@ public partial class InstanceView : UserControl, IRefreshable
         FilterAll.Content = $"全部 ({inProfile.Count})";
         FilterUpdatable.Content = $"可更新 ({inProfile.Count(r => r.Updatable)})";
         FilterTrial.Content = $"试验中 ({inProfile.Count(r => r.Trial)})";
+        FilterFav.Content = $"收藏 ({inProfile.Count(r => r.Favorite)})";
 
         var shown = PluginQuery.Apply(inProfile, PluginSearch?.Text ?? "", CurrentPluginFilter()).ToList();
         PluginList.ItemsSource = shown;
@@ -1041,6 +1044,8 @@ public partial class InstanceView : UserControl, IRefreshable
             PluginEmpty.Text = "没有试验中的插件";
         else if (CurrentPluginFilter() == PluginQuery.Filter.Updatable)
             PluginEmpty.Text = "没有可更新的插件";
+        else if (CurrentPluginFilter() == PluginQuery.Filter.Favorite)
+            PluginEmpty.Text = "还没有收藏的插件：点行尾的星标收藏。";
         else if ((PluginSearch?.Text ?? "").Trim().Length > 0)
             PluginEmpty.Text = "没有匹配的插件";
         else
@@ -1122,6 +1127,17 @@ public partial class InstanceView : UserControl, IRefreshable
             spec = Path.GetDirectoryName(spec) ?? spec;
         PluginSpecBox.Text = spec;
         PluginAdd_Click(sender, e);
+    }
+
+    void PluginFav_Click(object sender, RoutedEventArgs e)
+    {
+        var row = PluginFrom(sender);
+        if (row is null) return;
+        var root = _state.Launcher.Root;
+        var on = Favorites.Toggle(root, row.Spec);
+        row.Favorite = on;
+        if (_win is not null) _win.Toast(on ? $"已收藏 {row.Title}" : $"取消收藏 {row.Title}", bad: !on ? false : false);
+        PaintPlugins();
     }
 
     void PluginInfo_Click(object sender, RoutedEventArgs e)

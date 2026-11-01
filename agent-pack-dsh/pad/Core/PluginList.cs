@@ -21,6 +21,14 @@ public sealed class PluginRow : Observable
     public List<string> Keywords { get; init; } = [];
     public string Repository { get; init; } = "";
     public string PackageDir { get; init; } = "";
+
+    bool _favorite;
+    /// <summary>本地收藏（歌单式），由 <see cref="Favorites"/> 持久化。</summary>
+    public bool Favorite
+    {
+        get => _favorite;
+        set { if (_favorite == value) return; _favorite = value; Raise(nameof(Favorite)); }
+    }
     public bool Trial { get; init; }
     public TrialRecord? TrialRec { get; init; }
 
@@ -151,7 +159,7 @@ public sealed class PluginRow : Observable
 /// </summary>
 public static class PluginList
 {
-    public enum Filter { All, Updatable, Trial }
+    public enum Filter { All, Updatable, Trial, Favorite }
 
     public static bool Matches(PluginRow row, string query)
     {
@@ -172,6 +180,7 @@ public static class PluginList
             if (!Matches(r, query)) continue;
             if (filter == Filter.Updatable && !r.Updatable) continue;
             if (filter == Filter.Trial && !r.Trial) continue;
+            if (filter == Filter.Favorite && !r.Favorite) continue;
             yield return r;
         }
     }
@@ -183,6 +192,7 @@ public static class PluginList
     {
         "updatable" => Filter.Updatable,
         "trial" => Filter.Trial,
+        "favorite" => Filter.Favorite,
         _ => Filter.All,
     };
 

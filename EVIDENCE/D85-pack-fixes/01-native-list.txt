@@ -1,0 +1,16 @@
+﻿--- 22:56:48 pad cli pack list e2e
+[
+  {
+    "Id": "pack-agent-modpack-e2e-pack",
+    "Name": "e2e-pack",
+    "Version": "0.1.0",
+    "Description": "\u7AEF\u5230\u7AEF\u9A8C\u6536\u6574\u5408\u5305",
+    "Dir": "E:\\tmp\\pack-e2e\\export2\\.pack-launcher\\instances\\e2e\\workspace\\.agent-pack\\modpacks\\pack-agent-modpack-e2e-pack",
+    "Enabled": false,
+    "Title": "e2e-pack",
+    "VersionText": "v0.1.0",
+    "StateText": "\u5DF2\u505C\u7528",
+    "DescriptionText": "\u7AEF\u5230\u7AEF\u9A8C\u6536\u6574\u5408\u5305"
+  }
+]
+

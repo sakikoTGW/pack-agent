@@ -1,0 +1,8 @@
+﻿--- 22:56:55 pad cli pack allow e2e nope
+error[PA012]: unknown pack id
+ --> nope
+  |
+  | 可用：pack-agent-modpack-e2e-pack
+  |
+  = help: pad cli pack list e2e
+

@@ -1,0 +1,8 @@
+﻿{
+    "id":  "e2e-pack-0.1.0",
+    "title":  "e2e-pack",
+    "version":  "0.1.0",
+    "installed":  [
+                      "e2e"
+                  ]
+}

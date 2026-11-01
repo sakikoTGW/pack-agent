@@ -150,10 +150,8 @@ public sealed class Packs
     /// <summary>Why projection is unavailable, or null when it is ready to use.</summary>
     public PackFailure? Unavailable()
     {
-        // Bun is not a hard prerequisite check anymore: <see cref="Bun.EnsureAsync"/> finds
-        // it in the usual install dirs or installs it once from npm before the first call.
-        if (RepoRoot() is null)
-            return new PackFailure("找不到 pack-agent 源码", "把仓库路径写进 PACK_AGENT_REPO，或在启动器根目录放 .pack-agent-repo。");
+        // 便携包没有仓库也能「看 / 启停」已投影的整合包（原生读投影目录）；
+        // 投影/导入才需要仓库，由对应方法自己抛出明确的错误。
         return null;
     }
 
@@ -462,6 +460,23 @@ public sealed class Packs
 
     public async Task<List<PackRow>> List(Instance inst, CancellationToken ct)
     {
+        List<PackRow> rows;
+        try
+        {
+            rows = await ListViaCli(inst, ct);
+        }
+        catch (Exception) when (RepoRoot() is null)
+        {
+            // 便携包没有 pack 运行时：直接读投影目录（目录 + catalog.json + 本地启用表）。
+            rows = ListNative(inst);
+        }
+        WriteNativeState(inst, rows);
+        rows.Sort((a, b) => string.CompareOrdinal(a.Title, b.Title));
+        return rows;
+    }
+
+    async Task<List<PackRow>> ListViaCli(Instance inst, CancellationToken ct)
+    {
         var rows = new List<PackRow>();
         var text = await Cli($"pack list {inst.Id}", null, ct);
         using var doc = LastJson(text);
@@ -488,8 +503,117 @@ public sealed class Packs
                 Enabled = el.TryGetProperty("enabled", out var en) && en.ValueKind == JsonValueKind.True,
             });
         }
-        rows.Sort((a, b) => string.CompareOrdinal(a.Title, b.Title));
         return rows;
+    }
+
+    // ---- 便携模式：不依赖仓库的原生整合包读写 --------------------------
+
+    string NativeStatePath(Instance inst) =>
+        Path.Combine(inst.Workspace.Path, ".agent-pack", "pad-packs.json");
+
+    HashSet<string> ReadNativeEnabled(Instance inst)
+    {
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var file = NativeStatePath(inst);
+            if (!File.Exists(file)) return set;
+            using var doc = JsonDocument.Parse(File.ReadAllText(file));
+            if (doc.RootElement.TryGetProperty("enabled", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                foreach (var el in arr.EnumerateArray())
+                    if (el.GetString() is { Length: > 0 } s) set.Add(s);
+        }
+        catch { }
+        return set;
+    }
+
+    void WriteNativeState(Instance inst, IEnumerable<PackRow> rows)
+    {
+        try
+        {
+            var file = NativeStatePath(inst);
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            var enabled = rows.Where(r => r.Enabled).Select(r => r.Id).ToArray();
+            var json = JsonSerializer.Serialize(
+                new { schema = "pack-agent.pad-packs/v1", enabled },
+                new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(file, json);
+        }
+        catch { }
+    }
+
+    /// <summary>读 <c>workspace/.agent-pack/modpacks/*</c>：catalog.json 或 preset.yml 里的名字/版本。</summary>
+    public List<PackRow> ListNative(Instance inst)
+    {
+        var rows = new List<PackRow>();
+        var root = Path.Combine(inst.Workspace.Path, ".agent-pack", "modpacks");
+        if (!Directory.Exists(root)) return rows;
+        var enabled = ReadNativeEnabled(inst);
+        foreach (var dir in Directory.GetDirectories(root))
+        {
+            var id = Path.GetFileName(dir);
+            var name = id;
+            var version = "";
+            var desc = "";
+            try
+            {
+                var cat = Path.Combine(dir, "catalog.json");
+                if (File.Exists(cat))
+                {
+                    using var doc = JsonDocument.Parse(File.ReadAllText(cat));
+                    var r = doc.RootElement;
+                    if (Str(r, "id") is { Length: > 0 } i) id = i;
+                    if (Str(r, "name") is { Length: > 0 } n) name = n;
+                    version = Str(r, "version");
+                    desc = Str(r, "description");
+                }
+                else
+                {
+                    var preset = Path.Combine(dir, "preset.yml");
+                    if (File.Exists(preset))
+                        foreach (var line in File.ReadAllLines(preset))
+                        {
+                            var s = line.Trim();
+                            if (s.StartsWith("name:", StringComparison.OrdinalIgnoreCase)) name = s[5..].Trim();
+                            else if (s.StartsWith("description:", StringComparison.OrdinalIgnoreCase)) desc = s[12..].Trim();
+                        }
+                }
+            }
+            catch { }
+            rows.Add(new PackRow
+            {
+                Id = id, Name = name, Version = version, Description = desc, Dir = dir,
+                Enabled = enabled.Contains(id),
+            });
+        }
+        return rows;
+    }
+
+    void SetNativeEnabled(Instance inst, string id, bool on)
+    {
+        var rows = ListNative(inst);
+        var hit = rows.FirstOrDefault(r => string.Equals(r.Id, id, StringComparison.OrdinalIgnoreCase))
+            ?? throw new PadError("PA012", "unknown pack id", id,
+                rows.Count == 0 ? "这个实例下还没有投影的整合包" : "可用：" + string.Join(" / ", rows.Select(r => r.Id)),
+                ["pad cli pack list " + inst.Id]);
+        hit.Enabled = on;
+        WriteNativeState(inst, rows);
+    }
+
+    /// <summary>允许目录 id / 名字 / name@version 三种写法；错误里列出可用的投影 id。</summary>
+    public async Task<string> ResolvePackId(Instance inst, string input, CancellationToken ct)
+    {
+        var want = (input ?? "").Trim();
+        var rows = await List(inst, ct);
+        PackRow? hit = rows.FirstOrDefault(r => string.Equals(r.Id, want, StringComparison.OrdinalIgnoreCase))
+            ?? rows.FirstOrDefault(r => string.Equals(r.Title, want, StringComparison.OrdinalIgnoreCase))
+            ?? rows.FirstOrDefault(r => string.Equals($"{r.Title}@{r.Version}", want, StringComparison.OrdinalIgnoreCase))
+            ?? rows.FirstOrDefault(r => string.Equals($"{r.Title}-{r.Version}", want, StringComparison.OrdinalIgnoreCase))
+            ?? rows.FirstOrDefault(r => r.Id.EndsWith("-" + want, StringComparison.OrdinalIgnoreCase));
+        if (hit is not null) return hit.Id;
+        throw new PadError("PA012", "unknown pack id", want,
+            rows.Count == 0 ? "这个实例下还没有投影的整合包" : "可用：" + string.Join(" / ", rows.Select(r => r.Id)),
+            ["pad cli pack list " + inst.Id]);
     }
 
     static string Str(JsonElement el, string name) =>
@@ -529,11 +653,31 @@ public sealed class Packs
         catch { _launcher.FinishJob(job.Id, "failed"); throw; }
     }
 
-    public Task Allow(Instance inst, string packId, IProgress<string>? log, CancellationToken ct) =>
-        Cli($"pack allow {inst.Id} {packId}", log, ct);
+    public async Task<string> Allow(Instance inst, string packId, IProgress<string>? log, CancellationToken ct)
+    {
+        var id = await ResolvePackId(inst, packId, ct);
+        if (RepoRoot() is null)
+        {
+            SetNativeEnabled(inst, id, true);
+            return id;
+        }
+        await Cli($"pack allow {inst.Id} {id}", log, ct);
+        await List(inst, ct);
+        return id;
+    }
 
-    public Task Deny(Instance inst, string packId, IProgress<string>? log, CancellationToken ct) =>
-        Cli($"pack deny {inst.Id} {packId}", log, ct);
+    public async Task<string> Deny(Instance inst, string packId, IProgress<string>? log, CancellationToken ct)
+    {
+        var id = await ResolvePackId(inst, packId, ct);
+        if (RepoRoot() is null)
+        {
+            SetNativeEnabled(inst, id, false);
+            return id;
+        }
+        await Cli($"pack deny {inst.Id} {id}", log, ct);
+        await List(inst, ct);
+        return id;
+    }
 
     /// <summary>Save the instance's live whitelist as a named allow-set preset.</summary>
     public Task SetSave(Instance inst, string name, IProgress<string>? log, CancellationToken ct) =>

@@ -563,9 +563,11 @@ function readInstalledIndex(rootPath: string): Map<string, string[]> {
     const file = join(instancesDir, name, 'instance.json')
     try {
       const record = parseJsonText<Record<string, unknown>>(readFileSync(file, 'utf8'))
+      const instanceId = strField(record, 'id') || name
+      // 投影进实例的包先记（这类实例的 instance.json 里没有 source.packId）。
+      noteProjected(index, instanceId, join(instancesDir, name))
       const packId = strField(objField(record, 'source'), 'packId')
       if (!packId) continue
-      const instanceId = strField(record, 'id') || name
       const key = packId.toLowerCase()
       const holders = index.get(key) ?? []
       if (!holders.includes(instanceId)) holders.push(instanceId)
@@ -576,6 +578,34 @@ function readInstalledIndex(rootPath: string): Map<string, string[]> {
   }
   for (const holders of index.values()) holders.sort()
   return index
+}
+
+/** 投影进实例的包（workspace/.agent-pack/modpacks 下每个目录的 catalog.json）也算 installed。 */
+function noteProjected(index: Map<string, string[]>, instanceId: string, instanceDir: string): void {
+  const modRoot = join(instanceDir, 'workspace', '.agent-pack', 'modpacks')
+  for (const dirName of listNames(modRoot)) {
+    try {
+      const cat = parseJsonText<Record<string, unknown>>(readFileSync(join(modRoot, dirName, 'catalog.json'), 'utf8'))
+      const nm = strField(cat, 'name')
+      const ver = strField(cat, 'version')
+      const keys = new Set<string>()
+      if (nm) {
+        keys.add(nm.toLowerCase())
+        if (ver) {
+          keys.add(`${nm}-${ver}`.toLowerCase())
+          keys.add(`${nm}@${ver}`.toLowerCase())
+        }
+      }
+      if (dirName) keys.add(dirName.toLowerCase())
+      for (const key of keys) {
+        const holders = index.get(key) ?? []
+        if (!holders.includes(instanceId)) holders.push(instanceId)
+        index.set(key, holders)
+      }
+    } catch {
+      /* 单个坏 catalog.json 跳过 */
+    }
+  }
 }
 
 function installedFor(index: Map<string, string[]>, packId: string): string[] {

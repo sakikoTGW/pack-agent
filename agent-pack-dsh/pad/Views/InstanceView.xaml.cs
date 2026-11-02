@@ -276,10 +276,31 @@ public partial class InstanceView : UserControl, IRefreshable
         catch (Exception ex) { _win.Toast(PadError.Describe(ex), bad: true); }
     }
 
-    void OpenSession_Click(object sender, RoutedEventArgs e)
+    async void OpenSession_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: SessionRow row }) return;
-        Reveal.Path(row.Path);
+        var inst = _state.SelectedInstance;
+        if (inst is null)
+        {
+            Reveal.Path(row.Path);
+            return;
+        }
+        try
+        {
+            var plan = await Pad.Core.Jump.JumpPlanner.ExecuteAsync(_state.Launcher, inst, row.Id, null, execute: true);
+            if (!plan.Executed)
+            {
+                Reveal.Path(row.Path);
+                _win.Toast(plan.Chosen is null ? "没有可用界面，已打开会话文件" : plan.Detail ?? "已打开会话文件");
+                return;
+            }
+            _win.Toast(plan.Degraded ? $"已聚焦窗口并复制会话 id（{plan.Pa}）" : "已打开会话");
+        }
+        catch (Exception ex)
+        {
+            Reveal.Path(row.Path);
+            _win.Toast(PadError.Describe(ex), bad: true);
+        }
     }
 
     // ---- agent-preset ----------------------------------------------------
@@ -1391,6 +1412,43 @@ public partial class InstanceView : UserControl, IRefreshable
     }
 
     void PackRefresh_Click(object sender, RoutedEventArgs e) => _ = LoadPacks();
+
+    /// <summary>
+    /// 反向兼容：把这个实例导出成 PackForge <c>.dspack</c>（profile 或 dshhome 自动判别），
+    /// 别的启动器（HDSL / PackForge GUI / official-desktop）也能装。sessions / 凭据 / 运行数据不进包。
+    /// </summary>
+    async void ExportPackforge_Click(object sender, RoutedEventArgs e)
+    {
+        var inst = _state.SelectedInstance;
+        if (inst is null) return;
+        var dlg = new SaveFileDialog
+        {
+            Title = "导出为 PackForge .dspack",
+            Filter = "PackForge 整合包 (*.dspack)|*.dspack|所有文件|*.*",
+            FileName = $"{inst.Id}-{inst.Dsh.Version}.dspack",
+        };
+        if (dlg.ShowDialog(_win) != true) return;
+        try
+        {
+            _win.Toast("正在导出 " + System.IO.Path.GetFileName(dlg.FileName));
+            var json = await _packs.PackforgeExportInstance(
+                inst.Home, dlg.FileName, null, inst.Id, null, inst.Dsh.Version, CancellationToken.None);
+            var path = dlg.FileName;
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("path", out var p) && p.GetString() is { Length: > 0 } got)
+                    path = got;
+            }
+            catch { /* 导出已成功，路径落回对话框选择 */ }
+            _win.Toast("导出好了：" + path);
+            try { Reveal.Path(System.IO.Path.GetDirectoryName(path) ?? ""); } catch { /* reveal 只是便利 */ }
+        }
+        catch (Exception ex)
+        {
+            _win.Toast(PadError.Describe(ex), bad: true);
+        }
+    }
 
     async void Import_Click(object sender, RoutedEventArgs e)
     {

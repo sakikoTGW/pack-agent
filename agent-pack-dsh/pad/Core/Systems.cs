@@ -95,7 +95,7 @@ public static class Systems
         }
         sb.AppendLine();
         sb.AppendLine("# 路径不写在这里。工作区 = layers/<layer>/modules/<module>/workspace 推导得出，");
-        sb.AppendLine("# 这样地图包安装时只需把 originPath 映射到推导路径，不用存绝对路径。");
+        sb.AppendLine("# 这样工作区快照安装时只需把 originPath 映射到推导路径，不用存绝对路径。");
         sb.AppendLine("modules:");
         if (modules.Count == 0)
         {

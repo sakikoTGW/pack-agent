@@ -589,15 +589,35 @@ public partial class ManageView : UserControl, IRefreshable
         }
     }
 
-    void OpenSession_Click(object sender, RoutedEventArgs e)
+    async void OpenSession_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: LiveSession s }) return;
         var inst = _state.SelectedInstance;
         if (inst is null) return;
 
-        var row = _state.Launcher.Sessions(inst)
-            .FirstOrDefault(r => string.Equals(r.Id, s.SessionId, StringComparison.OrdinalIgnoreCase));
-        Reveal.Path(row is not null ? row.Path : System.IO.Path.Combine(inst.Home, "sessions"));
+        try
+        {
+            var plan = await Pad.Core.Jump.JumpPlanner.ExecuteAsync(_state.Launcher, inst, s.SessionId, null, execute: true);
+            if (!plan.Executed)
+            {
+                // No usable surface right now: keep the old behavior (reveal the transcript).
+                var row = _state.Launcher.Sessions(inst)
+                    .FirstOrDefault(r => string.Equals(r.Id, s.SessionId, StringComparison.OrdinalIgnoreCase));
+                Reveal.Path(row is not null ? row.Path : System.IO.Path.Combine(inst.Home, "sessions"));
+                Hint(plan.Chosen is null
+                    ? "这份实例现在没有可用的界面，已打开会话文件。"
+                    : plan.Detail ?? "已打开会话文件。");
+                return;
+            }
+            Hint(plan.Detail ?? $"已打开 {s.SessionId}");
+        }
+        catch (Exception ex)
+        {
+            var row = _state.Launcher.Sessions(inst)
+                .FirstOrDefault(r => string.Equals(r.Id, s.SessionId, StringComparison.OrdinalIgnoreCase));
+            Reveal.Path(row is not null ? row.Path : System.IO.Path.Combine(inst.Home, "sessions"));
+            Hint(PadError.Describe(ex));
+        }
     }
 
     Instance? SelectedInst() => _state.SelectedInstance;

@@ -2524,6 +2524,27 @@ public sealed class Launcher
             var launcherAlive = Proc.Alive(entry.Pid);
             var harness = LiveHarnessPid(entry);
             var harnessAlive = harness > 0 && Proc.Alive(harness);
+            if (!launcherAlive && !harnessAlive)
+            {
+                // The launcher wrapper may exit after handing off, and 0.2.x does not
+                // keep an endpoint in the runtime entry. Recover the harness from the
+                // in-instance gateway advert, then from a process scan by bin/profile.
+                var advert = AdvertPid(entry.Instance);
+                if (advert > 0 && Proc.Alive(advert))
+                {
+                    harness = advert;
+                    harnessAlive = true;
+                }
+                else if (Instance(entry.Instance) is { } liveInst)
+                {
+                    var found = Proc.FindDshPid(entry.Profile, DshBin(liveInst.Dsh.Version));
+                    if (found > 0)
+                    {
+                        harness = found;
+                        harnessAlive = true;
+                    }
+                }
+            }
             if (!launcherAlive && harnessAlive && harness != entry.Pid)
             {
                 entry.Pid = harness;

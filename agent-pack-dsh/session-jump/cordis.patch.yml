@@ -1,0 +1,6 @@
+# pad-session-jump bundle patch: mounts the plugin row so the client-modules
+# scan discovers the `dsh.client` declaration. The host half registers no
+# services; all behavior is the browser bundle (lib/client.js).
+- insert:
+    - id: pad-session-jump
+      name: '@sakikotgw/pad-session-jump'

@@ -82,3 +82,9 @@ agent-pack-dsh/packmaker/bin/
 
 # 发布产物（kit zip）
 dist/
+
+# C# test project build artifacts
+agent-pack-dsh/pad.tests/bin/
+agent-pack-dsh/pad.tests/obj/
+agent-pack-dsh/pad.tests/pad-bin/
+

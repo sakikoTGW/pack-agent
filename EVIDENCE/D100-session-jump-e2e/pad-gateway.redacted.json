@@ -1,0 +1,10 @@
+{
+  "schema": "pack-agent.pad-gateway/v1",
+  "url": "http://127.0.0.1:59143/api",
+  "token": "<redacted>",
+  "pid": 56096,
+  "capabilities": {
+    "jump": true
+  },
+  "profile": "desktop"
+}

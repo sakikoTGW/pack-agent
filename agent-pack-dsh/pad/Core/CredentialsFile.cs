@@ -176,14 +176,33 @@ public static class CredentialsFile
     public static bool LiveConfigured(JsonElement value)
     {
         if (value.ValueKind != JsonValueKind.Object) return false;
-        if (!value.TryGetProperty("credentials", out var creds)
-            || creds.ValueKind != JsonValueKind.Object)
-            return false;
-        if (!creds.TryGetProperty(DeepseekRef, out var row)
+        // 0.1.x wraps the map in `credentials`; 0.2.x returns the ref map directly.
+        var root = value;
+        if (value.TryGetProperty("credentials", out var wrapped) && wrapped.ValueKind == JsonValueKind.Object)
+            root = wrapped;
+        if (!root.TryGetProperty(DeepseekRef, out var row)
             || row.ValueKind != JsonValueKind.Object)
             return false;
         return row.TryGetProperty("configured", out var c) && c.ValueKind == JsonValueKind.True;
     }
+
+    /// <summary>Whether this DSH reads `.credentials.yaml` literally (0.2.x) instead of
+    /// accepting PAD's <c>REF:</c> marker.</summary>
+    public static bool HarnessReadsRaw(string? dshVersion)
+    {
+        var parts = (dshVersion ?? "").Split('.');
+        return parts.Length >= 2
+               && int.TryParse(parts[0], out var major)
+               && int.TryParse(parts[1], out var minor)
+               && (major > 0 || minor >= 2);
+    }
+
+    /// <summary>Drop PAD's <c>"REF: "</c> marker from direct-key lines so 0.2.x sees the key alone.</summary>
+    public static string StripRefPrefixes(string yaml) =>
+        System.Text.RegularExpressions.Regex.Replace(
+            yaml,
+            "(?m)^(\\s*[A-Za-z_][A-Za-z0-9_]*:\\s*)\"REF: ([^\"]*)\"",
+            "$1\"$2\"");
 
     public static PadError MissingError(string location) =>
         new(Code, "DEEPSEEK_API_KEY is not configured", location,

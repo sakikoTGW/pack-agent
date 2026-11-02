@@ -81,8 +81,21 @@ public static class CredentialsGate
         if (!File.Exists(src)) return;
         if (!CredentialsFile.HasDeepseekKey(Read(src))) return;
         Directory.CreateDirectory(inst.Home);
-        File.Copy(src, dst, overwrite: true);
+
+        // PAD's library format marks direct keys as `"REF: <key>"`; 0.2.x feeds the
+        // file straight to the credentials provider, so the mark would become part of
+        // the key and every request would fail on an illegal header character.
+        var text = File.ReadAllText(src);
+        if (CredentialsFile.HarnessReadsRaw(inst.Dsh.Version))
+            text = CredentialsFile.StripRefPrefixes(text);
+        File.WriteAllText(dst, text, new System.Text.UTF8Encoding(false));
     }
+
+    /// <summary>0.2.x reads `.credentials.yaml` literally; 0.1.x tolerated the REF mark.</summary>
+    static bool UsesRawCredentialFiles(Instance inst) => CredentialsFile.HarnessReadsRaw(inst.Dsh.Version);
+
+    /// <summary>Kept for callers that used the old local helper.</summary>
+    static string StripRefPrefixes(string yaml) => CredentialsFile.StripRefPrefixes(yaml);
 
     /// <summary>
     /// Push one library file into every non-adopted instance that uses it.

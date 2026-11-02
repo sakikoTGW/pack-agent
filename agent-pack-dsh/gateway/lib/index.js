@@ -6,6 +6,7 @@ import { createServer } from "node:http";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { appendFileSync, chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { createJumpHttpHandler, createJumpStore } from "./jump.mjs";
 var name = "pack-agent-pad-gateway";
 var inject = ["apiProxy"];
 var GATEWAY_FILE = "pad-gateway.json";
@@ -104,21 +105,20 @@ function apply(ctx, config = {}) {
   }
   const token = randomBytes(32).toString("hex");
   const file = join(home, GATEWAY_FILE);
+  const jumpStore = createJumpStore({
+    ttlMs: Number(process.env.PAD_GATEWAY_JUMP_TTL_MS ?? 0) || undefined,
+    timeoutMs: Number(process.env.PAD_GATEWAY_JUMP_TIMEOUT_MS ?? 0) || undefined
+  });
+  const handleJump = createJumpHttpHandler({ store: jumpStore, token });
   let server;
+  let proxyHandler = null;
+  let proxyError = "apiproxy not ready";
   trace(`apply() in pid ${process.pid}`);
   const boot = async () => {
-    trace("importing @deepseek-ai/dsh-host-apiproxy");
-    const mod = await import("@deepseek-ai/dsh-host-apiproxy");
-    if (typeof mod.toFetchHandler !== "function") {
-      throw new Error("apiproxy has no toFetchHandler export");
-    }
-    if (!ctx.apiProxy)
-      throw new Error("ctx.apiProxy is missing despite inject");
-    const handler = mod.toFetchHandler(ctx.apiProxy);
-    trace("toFetchHandler ready");
     server = createServer((req, res) => {
       (async () => {
         try {
+          if (await handleJump(req, res)) return;
           if (!tokenOk(bearer(req), token)) {
             res.writeHead(401, { "content-type": "application/json" });
             res.end(JSON.stringify({ error: "unauthorized" }));
@@ -131,11 +131,17 @@ function apply(ctx, config = {}) {
               ok: true,
               pid: process.pid,
               profile: process.env.DSH_PROFILE ?? null,
-              schema: GATEWAY_SCHEMA
+              schema: GATEWAY_SCHEMA,
+              api: proxyHandler !== null
             }));
             return;
           }
-          await writeResponse(res, await handler.fetch(await toRequest(req)));
+          if (proxyHandler === null) {
+            res.writeHead(503, { "content-type": "application/json" });
+            res.end(JSON.stringify({ error: "apiproxy unavailable", detail: proxyError }));
+            return;
+          }
+          await writeResponse(res, await proxyHandler.fetch(await toRequest(req)));
         } catch (err) {
           if (!res.headersSent)
             res.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
@@ -155,6 +161,7 @@ function apply(ctx, config = {}) {
       url: `http://127.0.0.1:${addr.port}/api`,
       token,
       pid: process.pid,
+      capabilities: { jump: true },
       ...process.env.DSH_PROFILE ? { profile: process.env.DSH_PROFILE } : {}
     };
     writeFileSync(file, `${JSON.stringify(ad, null, 2)}
@@ -162,7 +169,25 @@ function apply(ctx, config = {}) {
     try {
       chmodSync(file, 384);
     } catch {}
-    trace(`listening on ${ad.url}`);
+    trace(`listening on ${ad.url} (jump channel ready)`);
+    // The jump channel is independent of apiproxy. Try to mount the official
+    // proxy as well; runtimes that bundle apiproxy inside dsh (e.g. 0.2.x have
+    // no matching npm package) stay up jump-only instead of failing the boot.
+    try {
+      trace("importing @deepseek-ai/dsh-host-apiproxy");
+      const mod = await import("@deepseek-ai/dsh-host-apiproxy");
+      if (typeof mod.toFetchHandler !== "function")
+        throw new Error("apiproxy has no toFetchHandler export");
+      if (!ctx.apiProxy)
+        throw new Error("ctx.apiProxy is missing despite inject");
+      proxyHandler = mod.toFetchHandler(ctx.apiProxy);
+      proxyError = "";
+      trace("toFetchHandler ready");
+    } catch (err) {
+      proxyError = err instanceof Error ? err.message : String(err);
+      trace(`apiproxy unavailable; jump-only mode: ${proxyError}`);
+      ctx.logger?.warn?.(`[pack-agent] pad gateway jump-only: ${proxyError}`);
+    }
   };
   boot().catch((err) => {
     const detail = err instanceof Error ? `${err.message}
@@ -171,6 +196,7 @@ ${err.stack ?? ""}` : String(err);
     ctx.logger?.warn?.(`[pack-agent] pad gateway failed: ${detail}`);
   });
   ctx.on?.("dispose", () => {
+    jumpStore.dispose();
     server?.close();
     try {
       if (existsSync(file)) {

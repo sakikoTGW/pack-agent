@@ -27,6 +27,24 @@ public static class LaunchPolicy
         return n.EndsWith(".pack.zip") || n.EndsWith(".pinst.zip") || n.EndsWith(".pack.json");
     }
 
+    /// <summary>PackForge <c>.dspack</c>: a different install engine (compat), never a native pack zip.</summary>
+    public static bool IsDspackDrop(string path)
+    {
+        var n = Path.GetFileName(path)?.ToLowerInvariant() ?? "";
+        return n.EndsWith(".dspack");
+    }
+
+    /// <summary>.dspack files in a window drop payload.</summary>
+    public static IReadOnlyList<string> DspackPaths(IDataObject data)
+    {
+        var list = new List<string>();
+        if (!data.GetDataPresent(DataFormats.FileDrop)) return list;
+        if (data.GetData(DataFormats.FileDrop) is not string[] files) return list;
+        foreach (var f in files)
+            if (IsDspackDrop(f) && File.Exists(f)) list.Add(f);
+        return list;
+    }
+
     /// <summary>PCL sidecar: zip next to the exe, not nested, not <c>.pack.json</c>.</summary>
     public static bool IsSidecarZip(string path)
     {
@@ -250,6 +268,23 @@ public static class LaunchPolicy
     {
         var line = "virtualStoreDir: " + virtualStoreDir;
         if (string.IsNullOrEmpty(yaml)) return line + "\n";
+
+        // pnpm 11 writes .modules.yaml as a JSON object with quoted keys. Appending a
+        // YAML line after the closing brace makes the file unparsable for every later
+        // `dsh plugin add` (ERR_PNPM error "document separator expected"). Patch inside.
+        if (yaml.TrimStart().StartsWith('{'))
+        {
+            var quoted = System.Text.Json.JsonSerializer.Serialize(virtualStoreDir);
+            if (Regex.IsMatch(yaml, "\"virtualStoreDir\"\\s*:"))
+                return Regex.Replace(yaml, "\"virtualStoreDir\"\\s*:\\s*\"[^\"]*\"",
+                    "\"virtualStoreDir\": " + quoted);
+            var close = yaml.LastIndexOf('}');
+            if (close < 0) return yaml;
+            var body = yaml[..close].TrimEnd();
+            var comma = body.EndsWith('{') || body.EndsWith(',') ? "" : ",";
+            return body + comma + "\n  \"virtualStoreDir\": " + quoted + "\n" + yaml[close..];
+        }
+
         var stripped = Regex.Replace(yaml, @"^virtualStoreDir: .*$(\r?\n)?", "", RegexOptions.Multiline);
         if (Regex.IsMatch(stripped, @"^virtualStoreDirMaxLength:", RegexOptions.Multiline))
             return Regex.Replace(stripped, @"^virtualStoreDirMaxLength:",

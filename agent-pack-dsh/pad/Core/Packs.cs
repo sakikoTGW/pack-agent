@@ -472,6 +472,99 @@ public sealed class Packs
         return text;
     }
 
+    /// <summary>Capture all stdout of a <c>packagent dsh …</c> tail (used by JSON-heavy
+    /// subcommands such as <c>packforge …</c> whose JSON envelope can be long).</summary>
+    async Task<string> RunCapture(string tail, CancellationToken ct)
+    {
+        if (RuntimeDir() is null) await Bun.EnsureAsync(null, ct);
+        var (exe, line, cwd, entryEnv) = Entry(tail);
+        var psi = new ProcessStartInfo
+        {
+            FileName = exe,
+            Arguments = line,
+            WorkingDirectory = cwd,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+        };
+        if (entryEnv is not null)
+            foreach (var (k, v) in entryEnv) psi.Environment[k] = v;
+        Proc.PrependToolPath(psi);
+        using var proc = new Process { StartInfo = psi };
+        proc.Start();
+        var stdout = proc.StandardOutput.ReadToEndAsync(ct);
+        var stderr = proc.StandardError.ReadToEndAsync(ct);
+        string text, errText;
+        try
+        {
+            await proc.WaitForExitAsync(ct);
+            text = await stdout;
+            errText = await stderr;
+        }
+        catch (OperationCanceledException)
+        {
+            try { proc.Kill(entireProcessTree: true); } catch { /* already gone */ }
+            throw;
+        }
+        if (proc.ExitCode != 0)
+            throw new PadError("PA028", "the packforge command failed",
+                $"packagent dsh {tail}",
+                string.IsNullOrWhiteSpace(errText) ? text.Trim() : errText.Trim(),
+                ["看上面的输出"]);
+        return text;
+    }
+
+    /// <summary>Run <c>packagent dsh packforge …</c> and return its stdout (JSON).</summary>
+    public async Task<string> PackforgeJson(string tail, CancellationToken ct) =>
+        await RunCapture($"dsh packforge {tail}", ct);
+
+    public async Task<string> PackforgeInspect(string file, CancellationToken ct) =>
+        await PackforgeJson($"inspect \"{file}\" --json", ct);
+
+    public async Task<string> PackforgeMarket(CancellationToken ct) =>
+        await PackforgeJson("market --json", ct);
+
+    /// <summary>把实例 home 反向导出为 PackForge `.dspack`（profile 或 dshhome 自动判别）。</summary>
+    public async Task<string> PackforgeExportInstance(string home, string outPath, string? profile, string? name, string? version, string? dshVersion, CancellationToken ct)
+    {
+        var sb = new StringBuilder();
+        sb.Append("export-instance \"").Append(home).Append("\" --out \"").Append(outPath).Append("\" --json");
+        if (!string.IsNullOrWhiteSpace(profile)) sb.Append(" --profile \"").Append(profile).Append('"');
+        if (!string.IsNullOrWhiteSpace(name)) sb.Append(" --name \"").Append(name).Append('"');
+        if (!string.IsNullOrWhiteSpace(version)) sb.Append(" --version \"").Append(version).Append('"');
+        if (!string.IsNullOrWhiteSpace(dshVersion)) sb.Append(" --dsh-version \"").Append(dshVersion).Append('"');
+        return await PackforgeJson(sb.ToString(), ct);
+    }
+
+    /// <summary>把实例的 workspace + sessions 导出成工作区快照 <c>.workspace.zip</c>（MODPACK-STATE.md）。</summary>
+    public async Task<string> PackforgeExportWorkspace(string home, string outPath, string? workspace, int? maxSessions, string? name, string? version, CancellationToken ct)
+    {
+        var sb = new StringBuilder();
+        sb.Append("export-workspace \"").Append(home).Append("\" --out \"").Append(outPath).Append("\" --json");
+        if (!string.IsNullOrWhiteSpace(workspace)) sb.Append(" --workspace \"").Append(workspace).Append('"');
+        if (maxSessions is > 0) sb.Append(" --max-sessions ").Append(maxSessions.Value);
+        if (!string.IsNullOrWhiteSpace(name)) sb.Append(" --name \"").Append(name).Append('"');
+        if (!string.IsNullOrWhiteSpace(version)) sb.Append(" --version \"").Append(version).Append('"');
+        return await PackforgeJson(sb.ToString(), ct);
+    }
+
+    public async Task<string> PackforgeRegistry(string? id, CancellationToken ct) =>
+        await PackforgeJson(string.IsNullOrWhiteSpace(id) ? "registry --json" : $"registry --json --id \"{id}\"", ct);
+
+    /// <summary>compat 安装（PackForge 语义）：overrides→profile、home/→home、写 bundles、可选依赖安装。</summary>
+    public async Task<string> PackforgeInstall(string file, string home, string? profile, bool apply, bool deps, CancellationToken ct)
+    {
+        var sb = new StringBuilder();
+        sb.Append("install \"").Append(file).Append("\" --home \"").Append(home).Append("\" --json");
+        if (!string.IsNullOrWhiteSpace(profile)) sb.Append(" --profile \"").Append(profile).Append('"');
+        if (apply) sb.Append(" --apply");
+        if (deps) sb.Append(" --deps");
+        return await PackforgeJson(sb.ToString(), ct);
+    }
+
     /// <summary>Run a <c>packagent dsh</c> subcommand that targets a workspace via --cwd,
     /// i.e. the named allow-set commands that are not part of the <c>launcher</c> group.</summary>
     async Task<string> CliDsh(string args, string cwd, IProgress<string>? log, CancellationToken ct)

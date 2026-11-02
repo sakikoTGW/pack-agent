@@ -36,6 +36,9 @@ public partial class MainWindow : Window
         InitializeComponent();
         AddHandler(Hyperlink.RequestNavigateEvent, new RequestNavigateEventHandler(OnMdLink));
         PreviewKeyDown += Window_PreviewKeyDown;
+        AllowDrop = true;
+        DragOver += Window_DragOver;
+        Drop += Window_Drop;
         StageRailList.CollapseClicked += () => ToggleRail();
         ApplyWindowPrefs();
         ApplyBrand();
@@ -1456,6 +1459,13 @@ public partial class MainWindow : Window
             e.Handled = true;
             return;
         }
+        // PackForge 包走 compat 引擎，和原生 .pack.zip 的投影路径分开。
+        if (LaunchPolicy.DspackPaths(e.Data).Count > 0)
+        {
+            e.Effects = DragDropEffects.Copy;
+            e.Handled = true;
+            return;
+        }
         var images = LaunchPolicy.ImagePaths(e.Data);
         if (images.Count > 0 && _page == "instance"
             && _pages.TryGetValue("instance", out var page) && page is InstanceView iv && iv.CanTakeLogoDrop)
@@ -1471,6 +1481,12 @@ public partial class MainWindow : Window
     void Window_Drop(object sender, DragEventArgs e)
     {
         e.Handled = true;
+        var dspacks = LaunchPolicy.DspackPaths(e.Data);
+        if (dspacks.Count > 0)
+        {
+            _ = TakeDspacks(dspacks);
+            return;
+        }
         var packs = LaunchPolicy.PackPaths(e.Data);
         if (packs.Count > 0)
         {
@@ -1481,6 +1497,48 @@ public partial class MainWindow : Window
         if (images.Count > 0 && _page == "instance"
             && _pages.TryGetValue("instance", out var page) && page is InstanceView iv)
             iv.OfferDroppedLogo(images[0]);
+    }
+
+    bool _dspackImporting;
+
+    /// <summary>
+    /// Drag-dropped PackForge <c>.dspack</c>: fresh isolated instance first, then the
+    /// pack-runtime compat engine lands overrides/home/bundles (and pinned deps).
+    /// </summary>
+    public async Task TakeDspacks(IReadOnlyList<string> paths)
+    {
+        if (_dspackImporting)
+        {
+            Toast("上一个整合包还在装，等它装完再拖", bad: true);
+            return;
+        }
+        _dspackImporting = true;
+        try
+        {
+            var state = AppState.Current;
+            var packs = new Packs(state.Launcher);
+            foreach (var path in paths)
+            {
+                try
+                {
+                    Toast("正在装 " + System.IO.Path.GetFileName(path));
+                    var result = await PacksForge.ImportAuto(state.Launcher, packs, path,
+                        deps: true, log: null, CancellationToken.None);
+                    state.Reload();
+                    _ = state.ReloadPackCatalog();
+                    ShowInner("instance", "版本设置");
+                    Toast($"装好了：{result.Name}（DSH {result.Release}）");
+                }
+                catch (Exception ex)
+                {
+                    Toast(PadError.Describe(ex), bad: true);
+                }
+            }
+        }
+        finally
+        {
+            _dspackImporting = false;
+        }
     }
 
     public async Task TakePacks(IReadOnlyList<string> paths)

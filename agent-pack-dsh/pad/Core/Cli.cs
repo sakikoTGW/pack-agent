@@ -63,6 +63,19 @@ public static class Cli
         {
             switch (group)
             {
+                case "version":
+                {
+                    // PackForge launcher registry 要求启动器能自报版本（认领 pad ID 时引用这个命令）。
+                    var payload = new
+                    {
+                        id = "pad",
+                        name = "PAD · pack-agent for DSH",
+                        version = PadUpdate.CurrentVersion(),
+                    };
+                    WriteOrOut(args.Skip(1).ToArray(), JsonSerializer.Serialize(payload, Pretty));
+                    return 0;
+                }
+
                 case "release" when cmd == "list":
                     Out(launcher.Releases());
                     return 0;
@@ -309,6 +322,98 @@ public static class Cli
                     else await trials.Discard(inst, rec, log, CancellationToken.None);
                     Out(trials.Load(inst).Trials);
                     return 0;
+                }
+
+                case "packforge":
+                {
+                    var packs = new Packs(launcher);
+                    var all = rest;
+                    var positional = Positionals(all, "--out", "--home", "--file", "--profile", "--name", "--release", "--id", "--version", "--dsh-version", "--workspace", "--max-sessions");
+                    var file = positional.FirstOrDefault();
+                    switch (cmd)
+                    {
+                        case "inspect":
+                            if (file is null) return Usage("pad cli packforge inspect <file.dspack> [--out out.json]");
+                            WriteOrOut(all, await packs.PackforgeInspect(System.IO.Path.GetFullPath(file), CancellationToken.None));
+                            return 0;
+
+                        case "market":
+                            WriteOrOut(all, await packs.PackforgeMarket(CancellationToken.None));
+                            return 0;
+
+                        case "registry":
+                            WriteOrOut(all, await packs.PackforgeRegistry(FlagValue(all, "--id"), CancellationToken.None));
+                            return 0;
+
+                        case "install":
+                        {
+                            var home = FlagValue(all, "--home");
+                            if (file is null || home is null)
+                                return Usage("pad cli packforge install <file.dspack> --home <dir> [--profile p] [--apply] [--deps] [--out out.json]");
+                            WriteOrOut(all, await packs.PackforgeInstall(
+                                System.IO.Path.GetFullPath(file), System.IO.Path.GetFullPath(home),
+                                FlagValue(all, "--profile"), all.Contains("--apply"), all.Contains("--deps"),
+                                CancellationToken.None));
+                            return 0;
+                        }
+
+                        case "import":
+                        {
+                            var name = FlagValue(all, "--name");
+                            if (file is null || name is null)
+                                return Usage("pad cli packforge import <file.dspack> --name <instance> [--release v] [--profile p] [--deps]");
+                            var result = await PacksForge.Import(launcher, packs,
+                                System.IO.Path.GetFullPath(file), name,
+                                FlagValue(all, "--release"), FlagValue(all, "--profile"),
+                                all.Contains("--deps"), log, CancellationToken.None);
+                            WriteOrOut(all, JsonSerializer.Serialize(result, Pretty));
+                            return 0;
+                        }
+
+                        case "import-auto":
+                        {
+                            if (file is null)
+                                return Usage("pad cli packforge import-auto <file.dspack> [--deps] [--out out.json]");
+                            var result = await PacksForge.ImportAuto(launcher, packs,
+                                System.IO.Path.GetFullPath(file), all.Contains("--deps"),
+                                log, CancellationToken.None);
+                            WriteOrOut(all, JsonSerializer.Serialize(result, Pretty));
+                            return 0;
+                        }
+
+                        case "export-instance":
+                        {
+                            var home = FlagValue(all, "--home") ?? positional.FirstOrDefault();
+                            var outFile = FlagValue(all, "--file");
+                            if (home is null || outFile is null)
+                                return Usage("pad cli packforge export-instance <instance-home> --file <file.dspack> [--profile p] [--name n] [--version v] [--dsh-version x] [--out json]");
+                            WriteOrOut(all, await packs.PackforgeExportInstance(
+                                System.IO.Path.GetFullPath(home), System.IO.Path.GetFullPath(outFile),
+                                FlagValue(all, "--profile"), FlagValue(all, "--name"),
+                                FlagValue(all, "--version"), FlagValue(all, "--dsh-version"),
+                                CancellationToken.None));
+                            return 0;
+                        }
+
+                        case "export-workspace":
+                        {
+                            var home = FlagValue(all, "--home") ?? positional.FirstOrDefault();
+                            var outFile = FlagValue(all, "--file");
+                            if (home is null || outFile is null)
+                                return Usage("pad cli packforge export-workspace <instance-home> --file <file.workspace.zip> [--workspace id[,id]] [--max-sessions N] [--name n] [--version v] [--out json]");
+                            var maxRaw = FlagValue(all, "--max-sessions");
+                            WriteOrOut(all, await packs.PackforgeExportWorkspace(
+                                System.IO.Path.GetFullPath(home), System.IO.Path.GetFullPath(outFile),
+                                FlagValue(all, "--workspace"),
+                                int.TryParse(maxRaw, out var maxN) ? maxN : null,
+                                FlagValue(all, "--name"), FlagValue(all, "--version"),
+                                CancellationToken.None));
+                            return 0;
+                        }
+
+                        default:
+                            return Usage("pad cli packforge inspect|market|registry|install|import|import-auto|export-instance|export-workspace …");
+                    }
                 }
 
                 // The projection axis stays in TS/Rust; PAD drives it and reports.
@@ -1154,6 +1259,13 @@ public static class Cli
                 case "queue":
                     return await TaskQueue.Run(launcher, cmd, rest);
 
+                // 会话跳转与 surface 注册表：规划/执行都在 Jump/SessionCli，CLI 只做分发。
+                case "session":
+                    return await Jump.SessionCli.Run(launcher, cmd, rest);
+
+                case "surface":
+                    return Jump.SessionCli.RunSurface(launcher, cmd, rest);
+
                 default:
                     Console.WriteLine("""
                         pad cli import <pack.zip>
@@ -1168,6 +1280,8 @@ public static class Cli
                         pad cli plugin   list <instance> [profile] | add|remove|update <instance> <profile> <spec>
                         pad cli market   plugin|tui|skill|host [text]
                         pad cli trial    list <instance> | add <instance> <profile> <spec>
+                        pad cli session  ref <session> [--json] | open <instance> <session> [--surface <s>] [--no-exec] [--json]
+                        pad cli surface  list [--json] | validate [--json]
                                          | commit <instance> <profile> <spec> | drop <instance> <profile> <spec>
                         pad cli pack     list | list <instance> | project <instance> <pack>
                                          | allow <instance> <pack-id> | deny <instance> <pack-id> | scan
@@ -1213,24 +1327,31 @@ public static class Cli
     }
 
     /// <summary>
-    /// Where the management side door comes from. Override with PAD_GATEWAY_SPEC to
-    /// point at a working copy instead of the published package.
+    /// Where the management side door comes from. 0.2.x only needs the jump carrier
+    /// (no apiproxy); older releases use the full gateway. PAD_GATEWAY_SPEC points at a
+    /// working copy instead of the published package.
     /// </summary>
-    public static string GatewaySpec =>
-        Environment.GetEnvironmentVariable("PAD_GATEWAY_SPEC") is { Length: > 0 } s
-            ? s
+    public static string GatewaySpecFor(string? release)
+    {
+        if (Environment.GetEnvironmentVariable("PAD_GATEWAY_SPEC") is { Length: > 0 } custom) return custom;
+        return release is not null && release.StartsWith("0.2.", StringComparison.Ordinal)
+            ? "@sakikotgw/pad-gateway-jump"
             : "@sakikotgw/pad-gateway";
+    }
+
+    public static string GatewaySpec => GatewaySpecFor(null);
 
     /// <summary>
     /// The bundle sets PAD installs, kept identical to what the window installs.
     /// The gateway package pulls apiproxy and the directory picker itself, so a
-    /// terminal profile needs exactly two adds.
+    /// terminal profile needs exactly two adds. A web profile also gets the session
+    /// jump consumer plugin, so PAD-opened pages can be steered from this launcher.
     /// </summary>
     public static string[] Recipe(string kind, string release) => kind switch
     {
-        "tui" => ["@deepseek-harness-tui/dsh-tui", GatewaySpec],
-        "web" => [$"@deepseek-ai/dsh-web-app@{release}"],
-        _ => [GatewaySpec],
+        "tui" => ["@deepseek-harness-tui/dsh-tui", GatewaySpecFor(release)],
+        "web" => [$"@deepseek-ai/dsh-web-app@{release}", "@sakikotgw/pad-session-jump"],
+        _ => [GatewaySpecFor(release)],
     };
 
     static Instance Need(Launcher l, string id) =>
@@ -1365,6 +1486,23 @@ public static class Cli
     {
         Console.Error.WriteLine("usage: " + line);
         return 2;
+    }
+
+    /// <summary>Write a JSON payload to <c>--out</c> when given, else print it.
+    /// WinExe stdout cannot be reliably redirected, so --out is the scriptable channel.</summary>
+    static void WriteOrOut(string[] all, string text)
+    {
+        var outPath = FlagValue(all, "--out");
+        if (outPath is null)
+        {
+            Say(text.TrimEnd());
+            return;
+        }
+        var full = System.IO.Path.GetFullPath(outPath);
+        var dir = System.IO.Path.GetDirectoryName(full);
+        if (!string.IsNullOrWhiteSpace(dir)) System.IO.Directory.CreateDirectory(dir);
+        System.IO.File.WriteAllText(full, text, new UTF8Encoding(false));
+        Say($"wrote {full}");
     }
 
     /// <summary>Value of <c>--name value</c> in a flat argument list, or null.</summary>

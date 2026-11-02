@@ -414,6 +414,9 @@
             <Button x:Name="ScanBtn" Style="{StaticResource Btn}" Content="扫启动器目录" Margin="8,0,0,0"
                     Click="Scan_Click" v:Ico.Of="{StaticResource I.Search}"
                     ToolTip="把丢在启动器根目录里的包捡进来" />
+            <Button x:Name="ExportForgeBtn" Style="{StaticResource Btn}" Content="导出 .dspack" Margin="8,0,0,0"
+                    Click="ExportPackforge_Click" v:Ico.Of="{StaticResource I.Download}"
+                    ToolTip="把这个实例导出成 PackForge .dspack，给别的启动器装（sessions/凭据不会进包）" />
             <Button x:Name="PackRefreshBtn" Style="{StaticResource Btn}" Content="刷新"
                     Margin="8,0,0,0" Click="PackRefresh_Click" v:Ico.Of="{StaticResource I.Refresh}" />
             <ContentControl x:Name="PackSpinner" Style="{StaticResource Spinner}" Margin="10,0,0,0"

@@ -1,6 +1,6 @@
 # STATE
 
-更新：2026-10-22
+更新：2026-11-02
 
 ## 现在在哪
 
@@ -74,6 +74,23 @@ close 先查账本、再杀进程树、最后删记录；找不到就报 PA081�
 换 home 只能换壳，而壳不可多开。→ **一个项目一个 DSH 只能用 `web` / `tui`**。证据 `EVIDENCE/D17-app/README-2.txt`。
 
 三种形态的最终定位：`web` / `tui` 能给项目隔离，`app` 不能（只管生命周期 + 明确拒绝）。
+
+## 2026-11-02：会话跳转 M1 完成
+
+- PAD 侧 `Core/Jump/`：`SessionRef`（uuid/session-id/缓存文件名统一）、`SurfaceRegistry`（L0 内置 / L1 `library/surfaces` / L2 `<home>/.pad/surfaces`，同 id 按 transport 合并、kind 冲突直接标错）、`JumpPlanner`（R0 gateway-event → R1 url-query → R2 launch-env/args → R3 focus-clipboard，PA130–PA139 可解释）、`FocusClipboard`。
+- CLI：`pad cli session ref|open`（`--explain` 人类可读候选/拒绝/降级；`--explain --json` 输出稳定 `pad.jump-plan/v1`）、`pad cli surface list|validate`（`--json`、合并 notes/错误）、`pad cli gateway <inst> sessions|tree|cancel <id>` 诊断入口。
+- 窗口：ManageView / InstanceView 的「打开」走 planner（实测提示 `posted to pad-gateway (seq 1)`）；0.2.x 管理页直读 web `/api`，PAD 用 home 凭据里的 `client-connection/browser-session` 密钥自签 `dsh-auth-*` cookie。
+- 0.2.x carrier：`@sakikotgw/pad-gateway-jump@0.1.1` 发布（jump + `webUrl` + `apiStyle:"dsh-0.2"`）；启动脚本对 0.2.x 写 raw key（`REF:` 前缀会被当成 key，已剥离），`LiveConfigured` 兼容 0.2 平铺结构。
+- 测试：新增 `agent-pack-dsh/pad.tests`（xUnit）**23 pass**（SessionRef、注册表分层合并/冲突、PA13x、cookie 签名、凭据 REF 剥离）。命令：`dotnet test agent-pack-dsh/pad.tests/Pad.Tests.csproj`。
+- 真机证据：`EVIDENCE/D101-jump-m1/`（gateway/URL/TUI 三通道、真 turn 取消、管理页点击、TUI 恢复截图、GUI 启动 raw key 链路）；设计稿 `agent-pack-dsh/docs/session-jump.md` §15。
+
+## 2026-11-02 下午：M2 收尾 + 官方桌面端 staging
+
+- 发布：`@sakikotgw/pad-session-jump@0.2.1`、`@sakikotgw/pad-gateway-jump@0.1.1`。
+- 安装链路：`Cli.Recipe("web", release)` 自动带消费端插件；实测从 npm 装进实例成功。
+- 版本矩阵：0.2.1 fragment / 0.1.0 query 的已知 id 均可 opened、未知 id 均 unknown 不崩（0.1 合成 profile 有壳层 Loading plugins 环境问题，与本插件无关）。
+- 基础修复：`LaunchPolicy.PatchVirtualStoreDir` 兼容 pnpm 11 JSON `.modules.yaml`（此前会让所有 `dsh plugin add` 失败）；单测 28 pass。
+- 官方桌面端：插件已文件级预置进 `E:\DSH-Home\profiles\desktop`（备份 `package.json.bak-pad-jump`），重启后按 `EVIDENCE/D101-desktop-e2e/run-after-restart.ps1` 跑最后一步（本会话宿主就是该壳，agent 无法自己重启）。
 
 ## 下一步（P0）
 

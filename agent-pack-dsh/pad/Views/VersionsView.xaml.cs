@@ -149,9 +149,33 @@ public partial class VersionsView : UserControl, IRefreshable
         var dlg = new OpenFileDialog
         {
             Title = "选一个整合包",
-            Filter = "整合包 (*.pack.zip;*.pack.json;*.pinst.zip)|*.pack.zip;*.pack.json;*.pinst.zip|所有文件|*.*",
+            Filter = "整合包 (*.pack.zip;*.pack.json;*.pinst.zip;*.dspack)|*.pack.zip;*.pack.json;*.pinst.zip;*.dspack|所有文件|*.*",
         };
         if (dlg.ShowDialog(_win) != true) return;
+
+        // PackForge .dspack：走 compat 引擎（新实例 + overrides/home/bundles/deps），
+        // 与原生 .pack.zip 的投影路径分开，不混装。
+        if (LaunchPolicy.IsDspackDrop(dlg.FileName))
+        {
+            try
+            {
+                _win.Toast("正在装 " + Path.GetFileName(dlg.FileName));
+                var result = await PacksForge.ImportAuto(_state.Launcher, packs, dlg.FileName,
+                    deps: true, new Progress<string>(Log), CancellationToken.None);
+                _state.Reload();
+                var newestDspack = _state.Instances.OrderByDescending(i => i.Created).FirstOrDefault();
+                if (newestDspack is not null) _state.SelectedInstance = newestDspack;
+                _win.ShowInner("instance", "版本设置");
+                _win.Toast($"装好了：{result.Name}（DSH {result.Release}）");
+                _ = RefreshPacksAsync();
+            }
+            catch (Exception ex)
+            {
+                _win.Toast(PadError.Describe(ex), bad: true);
+            }
+            return;
+        }
+
         try
         {
             // 先留一份进整合包库：import 成功后 ts 侧可能不再保留原文件，

@@ -1,0 +1,6 @@
+# pad-gateway-jump bundle patch: mounts the jump-only carrier row.
+# Deliberately does NOT insert apiproxy / directory-picker rows: dsh 0.2.x
+# has no matching npm package for them, and the jump channel needs neither.
+- insert:
+    - id: pad-gateway-jump
+      name: '@sakikotgw/pad-gateway-jump'

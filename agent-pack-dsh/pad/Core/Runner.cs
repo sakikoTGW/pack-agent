@@ -93,7 +93,18 @@ public sealed class Runner(Launcher launcher)
             var credDst = Path.Combine(inst.Home, ".credentials.yaml");
             if (!LaunchPolicy.SamePath(credSrc, credDst))
             {
-                var srcCmd = LaunchPolicy.CmdRelativeToRoot(credSrc, _l.Root) ?? credSrc;
+                var source = credSrc;
+                if (CredentialsFile.HarnessReadsRaw(inst.Dsh.Version))
+                {
+                    // 0.2.x reads the file literally: the script must copy a raw-key
+                    // variant, not PAD's `"REF: ..."` library form.
+                    var rawPath = Path.Combine(inst.Home, ".pad", "credentials.raw.yaml");
+                    Directory.CreateDirectory(Path.GetDirectoryName(rawPath)!);
+                    var rawText = CredentialsFile.StripRefPrefixes(File.ReadAllText(credSrc));
+                    File.WriteAllText(rawPath, rawText, new System.Text.UTF8Encoding(false));
+                    source = rawPath;
+                }
+                var srcCmd = LaunchPolicy.CmdRelativeToRoot(source, _l.Root) ?? source;
                 sb.AppendLine($"if exist \"{srcCmd}\" copy /y \"{srcCmd}\" \"%DSH_HOME%\\.credentials.yaml\" >nul");
             }
         }

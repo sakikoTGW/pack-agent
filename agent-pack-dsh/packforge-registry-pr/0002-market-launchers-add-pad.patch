@@ -1,0 +1,36 @@
+diff --git a/index/launchers.json b/index/launchers.json
+index 383fa95..f8ab32b 100644
+--- a/index/launchers.json
++++ b/index/launchers.json
+@@ -17,6 +17,13 @@
+       "support": "基于 HMCL",
+       "desc": "HMCL 内核 JavaFX；.dspack 市场采纳者，另维护自有 .hdslp 格式。注意与 dshl（PCL 系）一个字母之差、完全无关。"
+     },
++    {
++      "id": "pad",
++      "name": "PAD · pack-agent for DSH",
++      "url": "https://github.com/sakikoTGW/pack-agent",
++      "support": "Windows",
++      "desc": "DSH 启动器与整合包管理器（WPF）；支持 PackForge .dspack；自报版本 `pad cli version --json`。"
++    },
+     {
+       "id": "dsh-packforge-app",
+       "name": "DSH PackForge GUI / dspack CLI",
+diff --git a/web/launchers.json b/web/launchers.json
+index 383fa95..f8ab32b 100644
+--- a/web/launchers.json
++++ b/web/launchers.json
+@@ -17,6 +17,13 @@
+       "support": "基于 HMCL",
+       "desc": "HMCL 内核 JavaFX；.dspack 市场采纳者，另维护自有 .hdslp 格式。注意与 dshl（PCL 系）一个字母之差、完全无关。"
+     },
++    {
++      "id": "pad",
++      "name": "PAD · pack-agent for DSH",
++      "url": "https://github.com/sakikoTGW/pack-agent",
++      "support": "Windows",
++      "desc": "DSH 启动器与整合包管理器（WPF）；支持 PackForge .dspack；自报版本 `pad cli version --json`。"
++    },
+     {
+       "id": "dsh-packforge-app",
+       "name": "DSH PackForge GUI / dspack CLI",

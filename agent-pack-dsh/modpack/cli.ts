@@ -55,6 +55,7 @@ function printHelp(): void {
   packagent dsh set-save <name> [--cwd dir]
   packagent dsh set-load <name> [--cwd dir]
   packagent dsh set-list [--cwd dir]
+  packagent dsh packforge inspect|convert|export|decide|launchers …
   packagent dsh launcher …`)
 }
 
@@ -107,6 +108,11 @@ export async function runDshCli(args: string[]): Promise<void> {
   if (cmd === 'launcher') {
     const { runLauncherCli } = await import('./launcher.js')
     await runLauncherCli(args.slice(1))
+    return
+  }
+  if (cmd === 'packforge') {
+    const { runPackforgeCli } = await import('./packforge.js')
+    await runPackforgeCli(args.slice(1))
     return
   }
   const { positional, out, cwd, from, help, allow, enabled } = parseFlags(args.slice(1))
@@ -228,7 +234,7 @@ export async function runDshCli(args: string[]): Promise<void> {
     return
   }
 
-  fail(`Unknown dsh subcommand: ${cmd}. Use: compile | ours | project | map | index | search | allow | deny | list | snapshot | set-save | set-load | set-list | launcher`)
+  fail(`Unknown dsh subcommand: ${cmd}. Use: compile | ours | project | map | index | search | allow | deny | list | snapshot | set-save | set-load | set-list | packforge | launcher`)
 }
 
 if (import.meta.main) {

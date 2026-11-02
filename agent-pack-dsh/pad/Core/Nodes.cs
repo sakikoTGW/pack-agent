@@ -523,7 +523,8 @@ public static class Nodes
     /// no handshake to wait for.
     /// </summary>
     public static async Task<Opened> OpenTerminal(
-        string home, string profile, string bin, string nodeExe, string? title, TimeSpan timeout, CancellationToken ct)
+        string home, string profile, string bin, string nodeExe, string? title, TimeSpan timeout, CancellationToken ct,
+        IReadOnlyDictionary<string, string>? extraEnv = null, IReadOnlyList<string>? extraArgs = null)
     {
         var padDir = Path.Combine(home, ".pad");
         Directory.CreateDirectory(padDir);
@@ -533,6 +534,17 @@ public static class Nodes
         // A fresh console: UseShellExecute=false + CreateNoWindow=false gives the child
         // its own console window, so cmd /k keeps the TUI alive after PAD exits.
         var command = $"\"{nodeExe}\" \"{bin}\" --profile {profile}";
+        if (extraArgs is { Count: > 0 })
+        {
+            var sb = new System.Text.StringBuilder(command);
+            foreach (var arg in extraArgs)
+            {
+                sb.Append(' ');
+                if (arg.Contains(' ')) sb.Append('"').Append(arg).Append('"');
+                else sb.Append(arg);
+            }
+            command = sb.ToString();
+        }
         var psi = new ProcessStartInfo
         {
             FileName = "cmd.exe",
@@ -542,6 +554,9 @@ public static class Nodes
             WorkingDirectory = home,
         };
         psi.Environment["DSH_HOME"] = home;
+        if (extraEnv is not null)
+            foreach (var (key, value) in extraEnv)
+                psi.Environment[key] = value;
 
         Process term;
         try

@@ -1,0 +1,40 @@
+2026-11-01T19:32:09.653Z apply() in pid 8800
+2026-11-01T19:32:15.330Z listening on http://127.0.0.1:59594/api (jump channel ready)
+2026-11-01T19:32:15.331Z importing @deepseek-ai/dsh-host-apiproxy
+2026-11-01T19:32:15.335Z apiproxy unavailable; jump-only mode: Cannot find package '@deepseek-ai/dsh-host-apiproxy' imported from E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\ev-project\home\profiles\web\node_modules\@sakikotgw\pad-gateway-jump\lib\index.js
+2026-11-01T19:33:53.020Z apply() in pid 60952
+2026-11-01T19:33:54.580Z listening on http://127.0.0.1:61145/api (jump channel ready)
+2026-11-01T19:33:54.581Z importing @deepseek-ai/dsh-host-apiproxy
+2026-11-01T19:33:54.586Z apiproxy unavailable; jump-only mode: Cannot find package '@deepseek-ai/dsh-host-apiproxy' imported from E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\ev-project\home\profiles\web\node_modules\@sakikotgw\pad-gateway-jump\lib\index.js
+2026-11-01T19:36:19.458Z apply() in pid 60200
+2026-11-01T19:36:20.992Z listening on http://127.0.0.1:52359/api (jump channel ready)
+2026-11-01T19:36:20.993Z importing @deepseek-ai/dsh-host-apiproxy
+2026-11-01T19:36:20.997Z apiproxy unavailable; jump-only mode: Cannot find package '@deepseek-ai/dsh-host-apiproxy' imported from E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\ev-project\home\profiles\web\node_modules\@sakikotgw\pad-gateway-jump\lib\index.js
+2026-11-01T19:38:06.273Z apply() in pid 2612
+2026-11-01T19:38:07.657Z listening on http://127.0.0.1:57107/api (jump channel ready)
+2026-11-01T19:38:07.658Z importing @deepseek-ai/dsh-host-apiproxy
+2026-11-01T19:38:07.663Z apiproxy unavailable; jump-only mode: Cannot find package '@deepseek-ai/dsh-host-apiproxy' imported from E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\ev-project\home\profiles\web\node_modules\@sakikotgw\pad-gateway-jump\lib\index.js
+2026-11-01T19:39:11.909Z apply() in pid 33632
+2026-11-01T19:39:13.112Z listening on http://127.0.0.1:51204/api (jump channel ready)
+2026-11-01T19:39:13.112Z importing @deepseek-ai/dsh-host-apiproxy
+2026-11-01T19:39:13.117Z apiproxy unavailable; jump-only mode: Cannot find package '@deepseek-ai/dsh-host-apiproxy' imported from E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\ev-project\home\profiles\web\node_modules\@sakikotgw\pad-gateway-jump\lib\index.js
+2026-11-01T19:40:47.550Z apply() in pid 53060
+2026-11-01T19:40:48.674Z listening on http://127.0.0.1:59036/api (jump channel ready)
+2026-11-01T19:40:48.674Z importing @deepseek-ai/dsh-host-apiproxy
+2026-11-01T19:40:48.677Z apiproxy unavailable; jump-only mode: Cannot find package '@deepseek-ai/dsh-host-apiproxy' imported from E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\ev-project\home\profiles\web\node_modules\@sakikotgw\pad-gateway-jump\lib\index.js
+2026-11-01T19:41:49.882Z apply() in pid 35220
+2026-11-01T19:41:51.141Z listening on http://127.0.0.1:54741/api (jump channel ready)
+2026-11-01T19:41:51.141Z importing @deepseek-ai/dsh-host-apiproxy
+2026-11-01T19:41:51.145Z apiproxy unavailable; jump-only mode: Cannot find package '@deepseek-ai/dsh-host-apiproxy' imported from E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\ev-project\home\profiles\web\node_modules\@sakikotgw\pad-gateway-jump\lib\index.js
+2026-11-01T19:43:45.608Z apply() in pid 29404
+2026-11-01T19:43:46.986Z listening on http://127.0.0.1:62021/api (jump channel ready)
+2026-11-01T19:43:46.987Z importing @deepseek-ai/dsh-host-apiproxy
+2026-11-01T19:43:46.991Z apiproxy unavailable; jump-only mode: Cannot find package '@deepseek-ai/dsh-host-apiproxy' imported from E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\ev-project\home\profiles\web\node_modules\@sakikotgw\pad-gateway-jump\lib\index.js
+2026-11-01T19:44:46.065Z apply() in pid 70752
+2026-11-01T19:44:48.760Z listening on http://127.0.0.1:63553/api (jump channel ready)
+2026-11-01T19:44:48.762Z importing @deepseek-ai/dsh-host-apiproxy
+2026-11-01T19:44:48.772Z apiproxy unavailable; jump-only mode: Cannot find package '@deepseek-ai/dsh-host-apiproxy' imported from E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\ev-project\home\profiles\web\node_modules\@sakikotgw\pad-gateway-jump\lib\index.js
+2026-11-01T19:46:09.579Z apply() in pid 56096
+2026-11-01T19:46:12.618Z listening on http://127.0.0.1:59143/api (jump channel ready)
+2026-11-01T19:46:12.619Z importing @deepseek-ai/dsh-host-apiproxy
+2026-11-01T19:46:12.628Z apiproxy unavailable; jump-only mode: Cannot find package '@deepseek-ai/dsh-host-apiproxy' imported from E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\ev-project\home\profiles\web\node_modules\@sakikotgw\pad-gateway-jump\lib\index.js

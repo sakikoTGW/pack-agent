@@ -588,7 +588,19 @@ public partial class DownloadView : UserControl, IRefreshable
         ClearBtn.IsEnabled = what is null;
     }
 
-    void Search_Click(object sender, RoutedEventArgs e) { _from = 0; _ = Load(); }
+    /// <summary>搜索永远在「全部插件」里做；增长首页收到搜索词时先切回搜索模式。</summary>
+    void RunSearch()
+    {
+        _from = 0;
+        if (_storeMode != "all")
+        {
+            ModeAll.IsChecked = true; // 触发 StoreMode_Changed -> Load
+            return;
+        }
+        _ = Load();
+    }
+
+    void Search_Click(object sender, RoutedEventArgs e) => RunSearch();
 
     void Clear_Click(object sender, RoutedEventArgs e)
     {
@@ -600,8 +612,7 @@ public partial class DownloadView : UserControl, IRefreshable
     void Search_Key(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter) return;
-        _from = 0;
-        _ = Load();
+        RunSearch();
     }
 
     void First_Click(object sender, RoutedEventArgs e) { _from = 0; _ = Load(); }

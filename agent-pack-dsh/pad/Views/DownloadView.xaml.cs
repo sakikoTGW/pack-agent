@@ -24,6 +24,9 @@ public partial class DownloadView : UserControl, IRefreshable
     int _storePageSizeUsed = 20;
     bool _rankingLoaded;
     bool _rankingBusy;
+    Leaderboards? _rankBoards;
+    string _rankMetric = "stars";
+    int _rankPeriod = 7;
     DispatcherTimer? _storeResizeTimer;
 
     void HookResize()
@@ -883,6 +886,7 @@ public partial class DownloadView : UserControl, IRefreshable
         {
             var boards = await MarketMetrics.GetAsync(_state.Launcher, force,
                 new Progress<string>(s => RankingNote.Text = s), CancellationToken.None);
+            _rankBoards = boards;
             PaintRanking(boards);
         }
         catch (Exception ex)
@@ -901,77 +905,154 @@ public partial class DownloadView : UserControl, IRefreshable
         _ = LoadRanking(true);
     }
 
+    void RankToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (sender is not RadioButton { IsChecked: true } rb) return;
+        switch (rb.Name)
+        {
+            case nameof(RankStar): _rankMetric = "stars"; break;
+            case nameof(RankDownloads): _rankMetric = "downloads"; break;
+            case nameof(RankDay): _rankPeriod = 1; break;
+            case nameof(RankWeek): _rankPeriod = 7; break;
+            case nameof(RankMonth): _rankPeriod = 30; break;
+        }
+        if (_rankBoards is not null) PaintRanking(_rankBoards);
+    }
+
     void PaintRanking(Leaderboards boards)
     {
+        _rankBoards = boards;
         RankingHost.Children.Clear();
-        RankingNote.Text = boards.FromCache ? $"缓存 · {boards.GeneratedText}" : $"刚刚更新 · {boards.GeneratedText}";
+        RankingNote.Text = boards.FromCache ? $"缓存 · {boards.GeneratedText}" : $"更新 · {boards.GeneratedText}";
         RankingNote.ToolTip = boards.Note;
 
-        // 两列小榜：Star 三档在左/上，下载三档在右/下，一屏能同时看到。
-        var wrap = new WrapPanel { Orientation = Orientation.Horizontal };
-        foreach (var board in boards.Boards)
+        var periodKey = _rankPeriod switch { 1 => "day", 7 => "week", _ => "month" };
+        var board = boards.Boards.FirstOrDefault(b => b.Key == $"{_rankMetric}-{periodKey}");
+        if (board is null || board.Rows.Count == 0)
         {
-            var box = new StackPanel { Width = 318, Margin = new Thickness(0, 2, 16, 12) };
-            box.Children.Add(new TextBlock
-            {
-                Text = $"{board.Label} · Top {Math.Min(5, board.Rows.Count)}",
-                Style = (Style)FindResource("Label"),
-                Margin = new Thickness(0, 0, 0, 6),
-            });
-            foreach (var row in board.Rows.Take(5)) box.Children.Add(PeakRow(row));
-            wrap.Children.Add(box);
-        }
-        RankingHost.Children.Add(wrap);
-
-        if (boards.Boards.All(b => b.Rows.Count == 0))
             RankingHost.Children.Add(new TextBlock
             {
-                Text = "暂时拉不到增长数据（网络或 GitHub 限流）。",
-                Style = (Style)FindResource("Muted"),
-            });
-        else if (boards.Boards.Where(b => b.Key.StartsWith("stars-", StringComparison.Ordinal)).All(b => b.Rows.Count == 0))
-            RankingHost.Children.Add(new TextBlock
-            {
-                Text = "Star 榜需要 GitHub API（匿名 60 次/小时）；可设环境变量 PAD_GITHUB_TOKEN 提高配额。",
+                Text = _rankMetric == "stars"
+                    ? "Star 榜暂时没有数据（GitHub API 匿名限流 60 次/小时）；可设环境变量 PAD_GITHUB_TOKEN 提高配额，或等配额恢复后点刷新。"
+                    : "下载榜暂时没有数据（npm 统计不可达）。点刷新重试。",
                 Style = (Style)FindResource("Muted"),
                 TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 12, 0, 0),
+                Margin = new Thickness(2, 6, 2, 6),
             });
+            return;
+        }
 
-        FrameworkElement PeakRow(MetricRow row)
+        var card = new Border
         {
-            var grid = new Grid { Margin = new Thickness(0, 1, 0, 1) };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(22) });
+            Style = (Style)FindResource("Card"),
+            Background = (Brush)FindResource("BgCard"),
+            Padding = new Thickness(16, 12, 16, 6),
+        };
+        var stack = new StackPanel();
+        var head = new Grid { Margin = new Thickness(0, 0, 0, 2) };
+        var title = new TextBlock
+        {
+            Text = board.Label,
+            Style = (Style)FindResource("CardTitle"),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var note = new TextBlock
+        {
+            Text = $"Top {Math.Min(8, board.Rows.Count)} · 按本期增长排序",
+            Style = (Style)FindResource("Muted"),
+            FontSize = (double)FindResource("FsSmall"),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        head.Children.Add(title);
+        head.Children.Add(note);
+        stack.Children.Add(head);
+
+        var shown = board.Rows.Take(8).ToList();
+        for (var i = 0; i < shown.Count; i++)
+        {
+            stack.Children.Add(RankRow(shown[i]));
+            if (i < shown.Count - 1)
+                stack.Children.Add(new Border
+                {
+                    Height = 1,
+                    Background = (Brush)FindResource("BgPage"),
+                    Margin = new Thickness(34, 4, 0, 4),
+                });
+        }
+        card.Child = stack;
+        RankingHost.Children.Add(card);
+
+        FrameworkElement RankRow(MetricRow row)
+        {
+            var grid = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) });
             grid.ColumnDefinitions.Add(new ColumnDefinition());
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var rank = new TextBlock
+
+            var badge = new Border
             {
-                Text = row.Rank.ToString(),
-                Style = (Style)FindResource("Muted"),
+                Width = 24,
+                Height = 24,
+                CornerRadius = new CornerRadius(12),
+                Background = row.Rank <= 3 ? (Brush)FindResource("Accent") : Brushes.Transparent,
                 VerticalAlignment = VerticalAlignment.Center,
+                Child = new TextBlock
+                {
+                    Text = row.Rank.ToString(),
+                    FontSize = 11,
+                    FontWeight = FontWeights.SemiBold,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Foreground = row.Rank <= 3 ? (Brush)FindResource("AccentText") : (Brush)FindResource("TextMuted"),
+                },
             };
-            Grid.SetColumn(rank, 0);
-            var name = new TextBlock
+            Grid.SetColumn(badge, 0);
+
+            var nameStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 10, 0) };
+            nameStack.Children.Add(new TextBlock
             {
                 Text = row.Name,
-                VerticalAlignment = VerticalAlignment.Center,
+                FontSize = 13,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = (Brush)FindResource("TextPrimary"),
                 TextTrimming = TextTrimming.CharacterEllipsis,
-                ToolTip = (row.Description.Length > 0 ? row.Description + "\n" : "")
-                          + $"本期 {row.TotalText} · 增长 {row.GrowthText}",
-            };
-            Grid.SetColumn(name, 1);
-            var grow = new TextBlock
+                ToolTip = row.Description,
+            });
+            nameStack.Children.Add(new TextBlock
+            {
+                Text = string.IsNullOrWhiteSpace(row.Publisher) ? "npm" : "by " + row.Publisher,
+                FontSize = 10.5,
+                Foreground = (Brush)FindResource("TextMuted"),
+                Margin = new Thickness(0, 1, 0, 0),
+                TextTrimming = TextTrimming.CharacterEllipsis,
+            });
+            Grid.SetColumn(nameStack, 1);
+
+            var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
+            right.Children.Add(new TextBlock
             {
                 Text = row.GrowthText,
-                VerticalAlignment = VerticalAlignment.Center,
+                FontSize = 16,
                 FontWeight = FontWeights.SemiBold,
-                Margin = new Thickness(10, 0, 0, 0),
-                ToolTip = "本期 " + row.TotalText,
-            };
-            Grid.SetColumn(grow, 2);
-            grid.Children.Add(rank);
-            grid.Children.Add(name);
-            grid.Children.Add(grow);
+                Foreground = row.Growth > 0 ? (Brush)FindResource("Success")
+                    : row.Growth < 0 ? (Brush)FindResource("Danger")
+                    : (Brush)FindResource("TextMuted"),
+                HorizontalAlignment = HorizontalAlignment.Right,
+            });
+            right.Children.Add(new TextBlock
+            {
+                Text = "本期 " + row.TotalText,
+                FontSize = 10,
+                Foreground = (Brush)FindResource("TextMuted"),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 1, 0, 0),
+            });
+            Grid.SetColumn(right, 2);
+
+            grid.Children.Add(badge);
+            grid.Children.Add(nameStack);
+            grid.Children.Add(right);
             return grid;
         }
     }

@@ -31,7 +31,7 @@
 
 入口：
 
-- UI：下载 → 左侧「排行榜」（6 个小榜，两列布局，各 Top 5）
+- UI：下载 → 左侧「排行榜」：Star/下载 切换 × 日/周/月 切换，Top 8 榜单（默认 Star 周增）
 - CLI：`pad cli market ranking [--refresh] [--out ranking.json]`（`--out` 输出 JSON）
 
 真实数据实测（2026-11-02 15:07，候选 30，Star 30/30 全部取到）：

@@ -891,8 +891,11 @@ public partial class DownloadView : UserControl, IRefreshable
         }
         catch (Exception ex)
         {
-            RankingHost.Children.Clear();
-            RankingHost.Children.Add(new TextBlock { Text = PadError.Describe(ex), TextWrapping = TextWrapping.Wrap });
+            RankTitle.Text = "排行榜";
+            RankSubtitle.Text = "";
+            RankList.ItemsSource = null;
+            RankEmpty.Text = PadError.Describe(ex);
+            RankEmpty.Visibility = Visibility.Visible;
             RankingNote.Text = "加载失败";
         }
         finally { _rankingBusy = false; }
@@ -922,139 +925,27 @@ public partial class DownloadView : UserControl, IRefreshable
     void PaintRanking(Leaderboards boards)
     {
         _rankBoards = boards;
-        RankingHost.Children.Clear();
         RankingNote.Text = boards.FromCache ? $"缓存 · {boards.GeneratedText}" : $"更新 · {boards.GeneratedText}";
         RankingNote.ToolTip = boards.Note;
 
         var periodKey = _rankPeriod switch { 1 => "day", 7 => "week", _ => "month" };
         var board = boards.Boards.FirstOrDefault(b => b.Key == $"{_rankMetric}-{periodKey}");
+        var metricLabel = _rankMetric == "stars" ? "Star" : "下载";
         if (board is null || board.Rows.Count == 0)
         {
-            RankingHost.Children.Add(new TextBlock
-            {
-                Text = _rankMetric == "stars"
-                    ? "Star 榜暂时没有数据（GitHub API 匿名限流 60 次/小时）；可设环境变量 PAD_GITHUB_TOKEN 提高配额，或等配额恢复后点刷新。"
-                    : "下载榜暂时没有数据（npm 统计不可达）。点刷新重试。",
-                Style = (Style)FindResource("Muted"),
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(2, 6, 2, 6),
-            });
+            RankTitle.Text = metricLabel + "榜";
+            RankSubtitle.Text = "";
+            RankList.ItemsSource = null;
+            RankEmpty.Text = _rankMetric == "stars"
+                ? "Star 榜暂时没有数据（GitHub API 匿名限流 60 次/小时）；可设环境变量 PAD_GITHUB_TOKEN 提高配额，或等配额恢复后点刷新。"
+                : "下载榜暂时没有数据（npm 统计不可达）。点刷新重试。";
+            RankEmpty.Visibility = Visibility.Visible;
             return;
         }
-
-        var card = new Border
-        {
-            Style = (Style)FindResource("Card"),
-            Background = (Brush)FindResource("BgCard"),
-            Padding = new Thickness(16, 12, 16, 6),
-        };
-        var stack = new StackPanel();
-        var head = new Grid { Margin = new Thickness(0, 0, 0, 2) };
-        var title = new TextBlock
-        {
-            Text = board.Label,
-            Style = (Style)FindResource("CardTitle"),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        var note = new TextBlock
-        {
-            Text = $"Top {Math.Min(8, board.Rows.Count)} · 按本期增长排序",
-            Style = (Style)FindResource("Muted"),
-            FontSize = (double)FindResource("FsSmall"),
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        head.Children.Add(title);
-        head.Children.Add(note);
-        stack.Children.Add(head);
-
-        var shown = board.Rows.Take(8).ToList();
-        for (var i = 0; i < shown.Count; i++)
-        {
-            stack.Children.Add(RankRow(shown[i]));
-            if (i < shown.Count - 1)
-                stack.Children.Add(new Border
-                {
-                    Height = 1,
-                    Background = (Brush)FindResource("BgPage"),
-                    Margin = new Thickness(34, 4, 0, 4),
-                });
-        }
-        card.Child = stack;
-        RankingHost.Children.Add(card);
-
-        FrameworkElement RankRow(MetricRow row)
-        {
-            var grid = new Grid { Margin = new Thickness(0, 4, 0, 4) };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition());
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            var badge = new Border
-            {
-                Width = 24,
-                Height = 24,
-                CornerRadius = new CornerRadius(12),
-                Background = row.Rank <= 3 ? (Brush)FindResource("Accent") : Brushes.Transparent,
-                VerticalAlignment = VerticalAlignment.Center,
-                Child = new TextBlock
-                {
-                    Text = row.Rank.ToString(),
-                    FontSize = 11,
-                    FontWeight = FontWeights.SemiBold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = row.Rank <= 3 ? (Brush)FindResource("AccentText") : (Brush)FindResource("TextMuted"),
-                },
-            };
-            Grid.SetColumn(badge, 0);
-
-            var nameStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 10, 0) };
-            nameStack.Children.Add(new TextBlock
-            {
-                Text = row.Name,
-                FontSize = 13,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = (Brush)FindResource("TextPrimary"),
-                TextTrimming = TextTrimming.CharacterEllipsis,
-                ToolTip = row.Description,
-            });
-            nameStack.Children.Add(new TextBlock
-            {
-                Text = string.IsNullOrWhiteSpace(row.Publisher) ? "npm" : "by " + row.Publisher,
-                FontSize = 10.5,
-                Foreground = (Brush)FindResource("TextMuted"),
-                Margin = new Thickness(0, 1, 0, 0),
-                TextTrimming = TextTrimming.CharacterEllipsis,
-            });
-            Grid.SetColumn(nameStack, 1);
-
-            var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
-            right.Children.Add(new TextBlock
-            {
-                Text = row.GrowthText,
-                FontSize = 16,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = row.Growth > 0 ? (Brush)FindResource("Success")
-                    : row.Growth < 0 ? (Brush)FindResource("Danger")
-                    : (Brush)FindResource("TextMuted"),
-                HorizontalAlignment = HorizontalAlignment.Right,
-            });
-            right.Children.Add(new TextBlock
-            {
-                Text = "本期 " + row.TotalText,
-                FontSize = 10,
-                Foreground = (Brush)FindResource("TextMuted"),
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Thickness(0, 1, 0, 0),
-            });
-            Grid.SetColumn(right, 2);
-
-            grid.Children.Add(badge);
-            grid.Children.Add(nameStack);
-            grid.Children.Add(right);
-            return grid;
-        }
+        RankTitle.Text = board.Label;
+        RankSubtitle.Text = $"Top {Math.Min(8, board.Rows.Count)} · 按本期增长排序";
+        RankEmpty.Visibility = Visibility.Collapsed;
+        RankList.ItemsSource = board.Rows.Take(8).ToList();
     }
 
     /// <summary>货架行逐个补“插件自己的图标”：官方 DSH 包用内置品牌图标，其余按 npm 元数据里的仓库取 logo。</summary>

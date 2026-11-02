@@ -26,6 +26,10 @@ public sealed class MetricRow
     [JsonIgnore] public string GrowthText => (Growth >= 0 ? "+" : "") + Growth.ToString("N0");
     [JsonIgnore] public string TotalText => Total.ToString("N0");
     [JsonIgnore] public string VersionText => string.IsNullOrWhiteSpace(Version) ? "" : "v" + Version;
+    [JsonIgnore] public string PublisherText => string.IsNullOrWhiteSpace(Publisher) ? "npm" : "by " + Publisher;
+    [JsonIgnore] public string TotalLine => "本期 " + TotalText;
+    [JsonIgnore] public bool Top3 => Rank is >= 1 and <= 3;
+    [JsonIgnore] public string GrowthSign => Growth > 0 ? "pos" : Growth < 0 ? "neg" : "zero";
 }
 
 public sealed class Leaderboard

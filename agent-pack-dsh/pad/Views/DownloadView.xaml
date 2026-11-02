@@ -538,7 +538,93 @@
                 <RadioButton x:Name="RankMonth" Style="{StaticResource FilterTab}" Content="月增"
                              GroupName="rankPeriod" Margin="6,0,0,0" Checked="RankToggle_Changed" />
               </StackPanel>
-              <StackPanel x:Name="RankingHost" />
+              <Border x:Name="RankingCardBody" Style="{StaticResource Card}"
+                      Background="{StaticResource BgCard}" Padding="16,10,16,4">
+                <StackPanel>
+                  <Grid Margin="0,0,0,2">
+                    <TextBlock x:Name="RankTitle" Style="{StaticResource CardTitle}"
+                               VerticalAlignment="Center" />
+                    <TextBlock x:Name="RankSubtitle" Style="{StaticResource Muted}"
+                               FontSize="{StaticResource FsSmall}" HorizontalAlignment="Right"
+                               VerticalAlignment="Center" />
+                  </Grid>
+                  <TextBlock x:Name="RankEmpty" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                             Visibility="Collapsed" Margin="0,8,0,8" />
+                  <ItemsControl x:Name="RankList" Margin="0,2,0,0">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <Grid Margin="0,5">
+                            <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="30" />
+                              <ColumnDefinition />
+                              <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="24" Height="24" CornerRadius="12" VerticalAlignment="Center">
+                              <Border.Style>
+                                <Style TargetType="Border">
+                                  <Setter Property="Background" Value="Transparent" />
+                                  <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Top3}" Value="True">
+                                      <Setter Property="Background" Value="{StaticResource Accent}" />
+                                    </DataTrigger>
+                                  </Style.Triggers>
+                                </Style>
+                              </Border.Style>
+                              <TextBlock Text="{Binding Rank}" FontSize="11" FontWeight="SemiBold"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                  <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                                    <Style.Triggers>
+                                      <DataTrigger Binding="{Binding Top3}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource AccentText}" />
+                                      </DataTrigger>
+                                    </Style.Triggers>
+                                  </Style>
+                                </TextBlock.Style>
+                              </TextBlock>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,10,0">
+                              <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                         Foreground="{StaticResource TextPrimary}"
+                                         TextTrimming="CharacterEllipsis"
+                                         ToolTip="{Binding Description}" />
+                              <TextBlock Text="{Binding PublisherText}" FontSize="10.5"
+                                         Foreground="{StaticResource TextMuted}" Margin="0,1,0,0"
+                                         TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Right"
+                                        VerticalAlignment="Center">
+                              <TextBlock Text="{Binding GrowthText}" FontSize="16"
+                                         FontWeight="SemiBold" HorizontalAlignment="Right">
+                                <TextBlock.Style>
+                                  <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                                    <Style.Triggers>
+                                      <DataTrigger Binding="{Binding GrowthSign}" Value="pos">
+                                        <Setter Property="Foreground" Value="{StaticResource Success}" />
+                                      </DataTrigger>
+                                      <DataTrigger Binding="{Binding GrowthSign}" Value="neg">
+                                        <Setter Property="Foreground" Value="{StaticResource Danger}" />
+                                      </DataTrigger>
+                                    </Style.Triggers>
+                                  </Style>
+                                </TextBlock.Style>
+                              </TextBlock>
+                              <TextBlock Text="{Binding TotalLine}" FontSize="10"
+                                         Foreground="{StaticResource TextMuted}"
+                                         HorizontalAlignment="Right" Margin="0,1,0,0" />
+                            </StackPanel>
+                          </Grid>
+                          <Border Height="1" Background="{StaticResource BgPage}"
+                                  Margin="34,0,0,0" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
             </StackPanel>
           </Border>
         </StackPanel>

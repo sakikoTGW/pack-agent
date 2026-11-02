@@ -55,6 +55,18 @@ public sealed class MarketRow : System.ComponentModel.INotifyPropertyChanged
     /// <summary>True when the package declares itself a DSH profile layer.</summary>
     public bool IsBundle { get; set; }
 
+    /// <summary>增长榜名次（1 起）。普通搜索结果 / 0 表示不显示。</summary>
+    public int Rank { get; set; }
+
+    /// <summary>增长榜的本期增长，如 +186,498；空串表示不显示。</summary>
+    public string GrowthBadge { get; set; } = "";
+
+    /// <summary>pos / neg / zero，供模板上色。</summary>
+    public string GrowthSign { get; set; } = "zero";
+
+    public bool HasRank => Rank > 0;
+    public bool HasGrowth => GrowthBadge.Length > 0;
+
     public string Title => Name;
 
     public string DescriptionText => string.IsNullOrWhiteSpace(Description)

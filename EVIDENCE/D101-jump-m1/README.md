@@ -259,3 +259,29 @@ clipboard = session-a36714d1-4b78-451a-a080-efd0244570f2
   删除 `node_modules\@sakikotgw`；当前桌面端/本会话未受影响（host 仍在跑）。
 - 留了可重复脚本：`EVIDENCE/D101-desktop-e2e/stage-desktop-e2e.ps1`（staging / `-Rollback`）、
   `run-after-restart.ps1`（等 ad → ping → POST /pad/jump）、`README.md` 三步说明。
+- **后续（16:2x）改用“复制官方壳实例”绕开单实例限制，E2E 已真正跑通，见 §2.15。**
+
+### 2.15 官方桌面端 E2E：复制实例法（2026-11-02 16:2x）✅
+
+**为什么不重启当前桌面端也能做**：原生 exe 的单实例锁按 Electron userData 判重，`--user-data-dir` 被应用忽略；
+但 `app.name` 来自 asar 里的 `package.json`，改掉它就能得到独立 userData，从而并存第二个官方壳。
+
+做法：
+- 复制官方 app（1.09GB）→ `E:\pack-agent\.tmp\DSH-App-padtest`；
+- `npx @electron/asar extract` 官方 `app.asar`，把 `package.json#name` 改成
+  `@deepseek-ai/dsh-desktop-padtest`，再 `asar pack` 回副本；
+- 启动副本：`DSH_HOME=E:\pack-agent\.tmp\desk2-home`（全新 home，自动生成 `profiles/desktop`）+ `--remote-debugging-port=9223`；
+- 文件级装两个插件到副本 profile（`node_modules\@sakikotgw\*` + `dsh.profile.bundles`），重启副本壳。
+
+结果（官方壳副本，Electron 44.7.0 / DSH 0.2.1-rc.2）：
+- renderer UA：`@deepseek-ai/dsh-desktop-padtest/0.2.1-rc.2 ... Electron/44.7.0`；
+- `gateway-jump` host 半启动 carrier：`pad-gateway.json` = `{url: http://127.0.0.1:64884/api, pid: 75856,
+  capabilities.jump: true, webUrl: http://127.0.0.1:64885, profile: "desktop"}`；
+- CDP 连到渲染器 `dsh-app://app/`，注入生效：`__PAD_SESSION_JUMP_DEBUG__ = {phase:"ready", ready:true, hasOpener:true}`；
+- `POST /pad/jump {"sessionId":"session-f17907b0-…"}` → `200 {"ok":true,"seq":1}`（复测 seq 2）；
+- renderer `__PAD_SESSION_JUMP_EVENTS__`：`queued → opened`（两次跳转各一对）；
+- 证据：`EVIDENCE/D101-desktop-e2e/official-desktop-jump.log`、截图 `official-desktop-jump.png`、
+  CDP helper `cdp-eval.mjs` / `cdp-shot.mjs`。
+
+说明：副本是**官方二进制**（只改 app.name），当前桌面端全程未重启、`E:\DSH-Home` 未被改动（§2.14 的 staging 已回滚）。
+真实用户路径 = 把两个插件装进当前 `profiles/desktop` 后重启一次（脚本在 `EVIDENCE/D101-desktop-e2e/`）。

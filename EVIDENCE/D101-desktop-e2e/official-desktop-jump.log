@@ -1,0 +1,37 @@
+# 官方桌面端（复制实例）E2E 证据 — 2026-11-02
+
+- 实例：E:\pack-agent\.tmp\DSH-App-padtest（官方 0.2.1-rc.2 shell 的复制，patch app.name = @deepseek-ai/dsh-desktop-padtest → 独立 userData）
+- DSH_HOME: E:\pack-agent\.tmp\desk2-home（独立 home/profile，不碰 E:\DSH-Home）
+- renderer UA: 
+Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) @deepseek-ai/dsh-desktop-padtest/0.2.1-rc.2 Chrome/152.0.7977.130 Electron/44.7.0 Safari/537.36
+
+## carrier ad（gateway-jump host 半在官方 shell 里启动）
+``json
+{
+    "schema":  "pack-agent.pad-gateway/v1",
+    "url":  "http://127.0.0.1:64884/api",
+    "token":  "ada6f04b6ca8a909564fa2f399428a44aa8aa586a6d1563ab19e2839b2883390",
+    "pid":  75856,
+    "capabilities":  {
+                         "jump":  true,
+                         "api":  false
+                     },
+    "webUrl":  "http://127.0.0.1:64885",
+    "apiStyle":  "dsh-0.2",
+    "profile":  "desktop"
+}
+``
+
+## jump
+POST 
+http://127.0.0.1:64884/pad/jump
+ → 
+200
+ 
+{"ok":true,"seq":2}
+
+## renderer events（CDP Runtime.evaluate）
+"[{\"kind\":\"queued\",\"at\":1793608094358,\"target\":\"session-f17907b0-7fed-4800-9b39-40d2c4fff7f3\"},{\"kind\":\"opened\",\"at\":1793608094361,\"target\":\"session-f17907b0-7fed-4800-9b39-40d2c4fff7f3\"},{\"kind\":\"queued\",\"at\":1793608306644,\"target\":\"session-f17907b0-7fed-4800-9b39-40d2c4fff7f3\"},{\"kind\":\"opened\",\"at\":1793608306645,\"target\":\"session-f17907b0-7fed-4800-9b39-40d2c4fff7f3\"}]"
+
+## renderer debug
+"{\"phase\":\"ready\",\"ready\":true,\"hasOpener\":true}"

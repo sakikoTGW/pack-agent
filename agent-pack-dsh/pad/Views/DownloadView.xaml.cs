@@ -22,11 +22,10 @@ public partial class DownloadView : UserControl, IRefreshable
     int StorePageSize => Math.Clamp((int)(_win.ActualHeight / 17), 10, 100);
 
     int _storePageSizeUsed = 20;
-    bool _rankingLoaded;
-    bool _rankingBusy;
-    Leaderboards? _rankBoards;
-    string _rankMetric = "stars";
-    int _rankPeriod = 7;
+    bool _growthBusy;
+    string _storeMode = "all";
+    int _storePeriod = 7;
+    MarketRow? _heroRow;
     DispatcherTimer? _storeResizeTimer;
 
     void HookResize()
@@ -626,6 +625,11 @@ public partial class DownloadView : UserControl, IRefreshable
     async Task Load()
     {
         if (_shelf == "dltasks") return;
+        if (_storeMode != "all")
+        {
+            await LoadGrowth();
+            return;
+        }
         _live?.Cancel();
         var live = _live = new CancellationTokenSource();
 
@@ -645,9 +649,6 @@ public partial class DownloadView : UserControl, IRefreshable
             if (live.IsCancellationRequested) return;
             Paint(page);
             PrefetchNext(page);
-            // App Store 式：排行榜是插件商店里的一区，不是另一个页面。
-            RankingSection.Visibility = _shelf == "plugin" ? Visibility.Visible : Visibility.Collapsed;
-            if (_shelf == "plugin" && !_rankingLoaded) _ = LoadRanking(false);
             if (App.ShotPage == "market-more")
             {
                 StoreMore.Visibility = Visibility.Visible;
@@ -811,6 +812,10 @@ public partial class DownloadView : UserControl, IRefreshable
         foreach (var r in shown) r.Favorite = Favorites.IsFavorite(_state.Launcher.Root, r.Name);
         ResultList.ItemsSource = shown;
         _ = LoadMarketIcons(page.Rows);
+        GrowthHero.Visibility = Visibility.Collapsed;
+        StoreSectionTitle.Text = "全部插件";
+        StoreSectionSub.Text = $"{page.Total:N0} 个插件";
+        StoreSectionRight.Text = SearchBox.Text.Trim().Length > 0 ? $"搜索“{SearchBox.Text.Trim()}”" : "";
         ResultCard.Visibility = page.Rows.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
         EmptyText.Text = SearchBox.Text.Trim().Length == 0
@@ -848,92 +853,123 @@ public partial class DownloadView : UserControl, IRefreshable
         });
     }
 
-    /// <summary>下载/Star 增长榜：六个小榜（日/周/月 × 下载/Star），数据来自 npm range 与
-    /// GitHub stargazers/history，缓存在 launcher 根下 6 小时。</summary>
-    async Task LoadRanking(bool force)
+    // ── 商店的三种模式：全部 / Star 增长 / 下载增长；增长不是单独页面。 ──
+
+    void StoreMode_Changed(object sender, RoutedEventArgs e)
     {
-        if (_rankingBusy) return;
-        _rankingBusy = true;
-        _rankingLoaded = true;
-        RankingNote.Text = "加载中…首次约 10–20 秒";
+        if (sender is not RadioButton { IsChecked: true } rb) return;
+        _storeMode = rb.Name == nameof(ModeStars) ? "stars"
+            : rb.Name == nameof(ModeDownloads) ? "downloads" : "all";
+        if (!IsLoaded) return;
+        _from = 0;
+        _ = Load();
+    }
+
+    void StorePeriod_Changed(object sender, RoutedEventArgs e)
+    {
+        if (sender is not RadioButton { IsChecked: true } rb) return;
+        _storePeriod = rb.Name == nameof(PeriodDay) ? 1 : rb.Name == nameof(PeriodMonth) ? 30 : 7;
+        if (!IsLoaded || _storeMode == "all") return;
+        _from = 0;
+        _ = Load();
+    }
+
+    /// <summary>供 --shot-page 用：截收起的侧栏。</summary>
+    public void CollapseRailForShot()
+    {
+        StoreRail.Visibility = Visibility.Collapsed;
+        StoreRailShow.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>供 --shot-page 用：打开下载增长模式看新商店的样子。</summary>
+    public void ShowGrowthShot()
+    {
+        Dispatcher.BeginInvoke(async () =>
+        {
+            ModeDownloads.IsChecked = true; // 触发 StoreMode_Changed
+            _storeMode = "downloads";
+            _from = 0;
+            await Load();
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    void HeroOpen_Click(object sender, RoutedEventArgs e)
+    {
+        if (_heroRow is not null) OpenStoreDetail(_heroRow);
+    }
+
+    void StoreRailToggle_Click(object sender, RoutedEventArgs e)
+    {
+        var hide = StoreRail.Visibility == Visibility.Visible;
+        StoreRail.Visibility = hide ? Visibility.Collapsed : Visibility.Visible;
+        StoreRailShow.Visibility = hide ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    async Task LoadGrowth()
+    {
+        if (_growthBusy) return;
+        _growthBusy = true;
+        MarketError.Visibility = Visibility.Collapsed;
+        EmptyCard.Visibility = Visibility.Collapsed;
+        ResultCard.Visibility = Visibility.Visible;
+        PagerCard.Visibility = Visibility.Collapsed;
+        GrowthHero.Visibility = Visibility.Collapsed;
+        LoadCard.Visibility = ResultList.ItemsSource is null ? Visibility.Visible : Visibility.Collapsed;
+        StoreSectionTitle.Text = "增长榜";
+        StoreSectionSub.Text = _storeMode == "stars" ? "Star 增长" : "下载增长";
+        StoreSectionRight.Text = "";
+        Working("正在算增长榜");
         try
         {
-            var boards = await MarketMetrics.GetAsync(_state.Launcher, force,
-                new Progress<string>(s => RankingNote.Text = s), CancellationToken.None);
-            _rankBoards = boards;
-            PaintRanking(boards);
+            var boards = await MarketMetrics.GetAsync(_state.Launcher, false,
+                new Progress<string>(x => StoreSectionRight.Text = x), CancellationToken.None);
+            var periodKey = _storePeriod switch { 1 => "day", 7 => "week", _ => "month" };
+            var board = boards.Boards.FirstOrDefault(b => b.Key == $"{_storeMode}-{periodKey}");
+            var rows = (board?.Rows ?? []).Take(12).Select(m => new MarketRow
+            {
+                Name = m.Name,
+                Version = m.Version,
+                Publisher = m.Publisher,
+                Description = m.Description,
+                Repository = m.Repository,
+                Homepage = m.Repository,
+                Date = DateTimeOffset.UtcNow.ToString("o"),
+                Rank = m.Rank,
+                GrowthBadge = m.GrowthText,
+                GrowthSign = m.GrowthSign,
+            }).ToList();
+            foreach (var r in rows) r.Favorite = Favorites.IsFavorite(_state.Launcher.Root, r.Name);
+            ResultList.ItemsSource = rows;
+            StoreSectionSub.Text = $"{board?.Label ?? ""} · Top {rows.Count}";
+            StoreSectionRight.Text = boards.FromCache ? $"缓存 · {boards.GeneratedText}" : $"更新 · {boards.GeneratedText}";
+            var any = rows.Count > 0;
+            ResultCard.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
+            EmptyCard.Visibility = any ? Visibility.Collapsed : Visibility.Visible;
+            EmptyText.Text = "暂时拉不到增长数据（网络或 GitHub 限流）";
+            if (any)
+            {
+                _heroRow = rows[0];
+                HeroTitle.Text = _heroRow.Title;
+                HeroDesc.Text = $"{_heroRow.DescriptionText} · 本期 {_heroRow.GrowthBadge}";
+                HeroIcon.Spec = _heroRow.Name;
+                GrowthHero.Visibility = Visibility.Visible;
+                await LoadMarketIcons(rows);
+                HeroIcon.IconPath = _heroRow.IconPath;
+            }
         }
         catch (Exception ex)
         {
-            RankTitle.Text = "";
-            RankList.ItemsSource = null;
-            RankEmpty.Text = PadError.Describe(ex);
-            RankEmpty.Visibility = Visibility.Visible;
-            RankingNote.Text = "加载失败";
+            ResultList.ItemsSource = null;
+            ResultCard.Visibility = Visibility.Collapsed;
+            EmptyCard.Visibility = Visibility.Visible;
+            EmptyText.Text = PadError.Describe(ex);
         }
-        finally { _rankingBusy = false; }
-    }
-
-    void RankingRefresh_Click(object sender, RoutedEventArgs e)
-    {
-        MarketMetrics.ClearCache(_state.Launcher);
-        _rankingLoaded = false;
-        _ = LoadRanking(true);
-    }
-
-    void RankRow_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is not FrameworkElement { DataContext: MetricRow metric }) return;
-        var row = new MarketRow
+        finally
         {
-            Name = metric.Name,
-            Version = metric.Version,
-            Publisher = metric.Publisher,
-            Description = metric.Description,
-            Repository = metric.Repository,
-            Homepage = metric.Repository,
-            Date = DateTimeOffset.UtcNow.ToString("o"),
-        };
-        OpenStoreDetail(row);
-        e.Handled = true;
-    }
-
-    void RankToggle_Changed(object sender, RoutedEventArgs e)
-    {
-        if (sender is not RadioButton { IsChecked: true } rb) return;
-        switch (rb.Name)
-        {
-            case nameof(RankStar): _rankMetric = "stars"; break;
-            case nameof(RankDownloads): _rankMetric = "downloads"; break;
-            case nameof(RankDay): _rankPeriod = 1; break;
-            case nameof(RankWeek): _rankPeriod = 7; break;
-            case nameof(RankMonth): _rankPeriod = 30; break;
+            _growthBusy = false;
+            LoadCard.Visibility = Visibility.Collapsed;
+            Working(null);
         }
-        if (_rankBoards is not null) PaintRanking(_rankBoards);
-    }
-
-    void PaintRanking(Leaderboards boards)
-    {
-        _rankBoards = boards;
-        RankingNote.Text = boards.FromCache ? $"缓存 · {boards.GeneratedText}" : $"更新 · {boards.GeneratedText}";
-        RankingNote.ToolTip = boards.Note;
-
-        var periodKey = _rankPeriod switch { 1 => "day", 7 => "week", _ => "month" };
-        var board = boards.Boards.FirstOrDefault(b => b.Key == $"{_rankMetric}-{periodKey}");
-        var metricLabel = _rankMetric == "stars" ? "Star" : "下载";
-        if (board is null || board.Rows.Count == 0)
-        {
-            RankTitle.Text = "";
-            RankList.ItemsSource = null;
-            RankEmpty.Text = _rankMetric == "stars"
-                ? "Star 榜暂时没有数据（GitHub API 匿名限流 60 次/小时）；可设环境变量 PAD_GITHUB_TOKEN 提高配额，或等配额恢复后点刷新。"
-                : "下载榜暂时没有数据（npm 统计不可达）。点刷新重试。";
-            RankEmpty.Visibility = Visibility.Visible;
-            return;
-        }
-        RankTitle.Text = $"{board.Label} · Top {Math.Min(5, board.Rows.Count)}";
-        RankEmpty.Visibility = Visibility.Collapsed;
-        RankList.ItemsSource = board.Rows.Take(5).ToList();
     }
 
     /// <summary>货架行逐个补“插件自己的图标”：官方 DSH 包用内置品牌图标，其余按 npm 元数据里的仓库取 logo。</summary>

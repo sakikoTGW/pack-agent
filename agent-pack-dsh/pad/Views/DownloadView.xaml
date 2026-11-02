@@ -84,16 +84,19 @@
 
   <Grid>
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="196" />
+      <ColumnDefinition Width="Auto" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
 
     <!-- The version axis first, then the community shelves under one heading. Each
          shelf is an npm search qualifier, so nothing can appear here that
          `dsh plugin add` could not install. -->
-    <Border Grid.Column="0" Background="{StaticResource BgSidebar}" BorderThickness="0,0,1,0"
-            BorderBrush="{StaticResource LineBorder}">
-      <StackPanel Margin="8,12,8,0">
+    <Border x:Name="StoreRail" Grid.Column="0" Width="196" Background="{StaticResource BgSidebar}"
+            BorderThickness="0,0,1,0" BorderBrush="{StaticResource LineBorder}">
+      <StackPanel Margin="8,10,8,0">
+        <Button x:Name="StoreRailHide" Style="{StaticResource IcoBtn}" Content="‹"
+                HorizontalAlignment="Right" Height="26" Width="26" Margin="0,0,2,6"
+                Click="StoreRailToggle_Click" ToolTip="收起侧栏" />
         <RadioButton x:Name="NavRelease" Style="{StaticResource NavItem}" Content="发行号"
                      v:Ico.Of="{StaticResource I.Block}" IsChecked="True" Checked="Nav_Checked"
                      GroupName="dlNav" Tag="release" />
@@ -104,6 +107,11 @@
                      GroupName="dlNav" Tag="dltasks" />
       </StackPanel>
     </Border>
+
+    <Button x:Name="StoreRailShow" Grid.Column="0" Width="18" MaxWidth="18"
+            HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,12,0,0"
+            Style="{StaticResource BtnGhost}" Content="›" Padding="0" Panel.ZIndex="3"
+            Visibility="Collapsed" Click="StoreRailToggle_Click" ToolTip="展开侧栏" />
 
     <Grid Grid.Column="1">
       <!-- 发行号 -->
@@ -296,172 +304,169 @@
         </Grid.RowDefinitions>
         <ScrollViewer Grid.Row="0" Padding="25,25,25,10" VerticalScrollBarVisibility="Auto">
         <StackPanel>
-          <Border x:Name="StoreHeadCard" Style="{StaticResource Slab}">
-            <StackPanel>
-              <!-- 商店头：默认只留标题 + 搜索 + 筛选开关；版本/装到/排序/分类折叠 -->
-              <DockPanel LastChildFill="False">
-                <TextBlock DockPanel.Dock="Left" Text="插件商店" FontSize="28"
-                           FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" />
-                <Button DockPanel.Dock="Right" x:Name="StoreMoreBtn" Style="{StaticResource IcoBtn}"
-                        Click="StoreMore_Click" ToolTip="高级筛选" VerticalAlignment="Center">
-                  <v:Ico x:Name="StoreMoreIcon" Glyph="{StaticResource I.Chevron}" Height="12">
-                    <v:Ico.RenderTransform>
-                      <RotateTransform x:Name="StoreMoreAngle" Angle="0" CenterX="6" CenterY="6" />
-                    </v:Ico.RenderTransform>
-                  </v:Ico>
-                </Button>
-              </DockPanel>
-              <TextBlock x:Name="ShelfTitle" Visibility="Collapsed" />
-              <Grid Margin="0,12,0,0">
+          <StackPanel>
+            <StackPanel Visibility="Collapsed">
+              <TextBlock x:Name="ShelfTitle" />
+              <Border>
+                <Border.RenderTransform>
+                  <RotateTransform x:Name="StoreMoreAngle" />
+                </Border.RenderTransform>
+              </Border>
+            </StackPanel>
+            <Grid>
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                <TextBlock Text="插件商店" FontSize="33" FontWeight="Bold"
+                           Foreground="{StaticResource TextPrimary}" />
+                <TextBlock x:Name="StoreSubtitle" Text="社区插件 · 一键安装"
+                           Style="{StaticResource Muted}" FontSize="{StaticResource FsSmall}"
+                           Margin="14,0,0,7" VerticalAlignment="Center" />
+              </StackPanel>
+              <Button x:Name="StoreMoreBtn" Style="{StaticResource Btn}" Content="筛选"
+                      HorizontalAlignment="Right" VerticalAlignment="Center"
+                      Click="StoreMore_Click" Height="30" Padding="14,0" />
+            </Grid>
+
+            <Border Margin="0,16,0,0" Height="42" CornerRadius="21"
+                    Background="{StaticResource BgCard}" BorderThickness="1"
+                    BorderBrush="{StaticResource LineBorder}">
+              <Grid>
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="*" />
                   <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBox x:Name="SearchBox" Height="34" Width="Auto"
-                         Tag="搜索名称 / 描述（回车搜索）" KeyDown="Search_Key" />
-                <Button Grid.Column="1" x:Name="SearchBtn" Style="{StaticResource BtnPrimary}"
-                        Content="搜索" Height="34" Padding="22,0" Margin="10,0,0,0"
-                        Click="Search_Click" v:Ico.Of="{StaticResource I.Search}" />
-              </Grid>
-              <StackPanel x:Name="StoreMore" Visibility="Collapsed" Margin="0,2,0,0">
-                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                  <StackPanel Margin="0,0,28,0">
-                    <TextBlock Text="版本" Style="{StaticResource Label}" Margin="0,0,0,6" />
-                    <ComboBox x:Name="TargetRelease" Width="160" Height="32" IsEditable="False"
-                              ToolTip="这份实例钉的 DSH 发行号" />
-                  </StackPanel>
-                  <StackPanel>
-                    <TextBlock Text="装到" Style="{StaticResource Label}" Margin="0,0,0,6" />
-                    <ComboBox x:Name="TargetInstance" Width="240" Height="32"
-                              ItemsSource="{Binding Instances}"
-                              SelectionChanged="TargetInstance_Changed">
-                      <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                          <TextBlock Text="{Binding Name}" />
-                        </DataTemplate>
-                      </ComboBox.ItemTemplate>
-                    </ComboBox>
-                  </StackPanel>
-                </StackPanel>
-                <Grid Margin="0,12,0,0">
-                  <StackPanel Orientation="Horizontal">
-                    <Button x:Name="ClearBtn" Style="{StaticResource BtnWide}" Content="重置条件"
-                            Click="Clear_Click" ToolTip="重置条件"
-                            v:Ico.Of="{StaticResource I.Globe}" />
-                    <ContentControl x:Name="MarketBusy" Style="{StaticResource Spinner}"
-                                    Margin="16,0,0,0" VerticalAlignment="Center"
-                                    Visibility="Collapsed" />
-                    <TextBlock x:Name="MarketStatus" Style="{StaticResource Muted}" Margin="10,0,0,0"
-                               VerticalAlignment="Center" Visibility="Collapsed" />
-                  </StackPanel>
+                <Grid Grid.Column="0">
+                  <ContentControl Style="{StaticResource Pict}" v:Ico.Of="{StaticResource I.Search}"
+                                  HorizontalAlignment="Left" VerticalAlignment="Center"
+                                  Margin="16,0,0,0" />
+                  <TextBox x:Name="SearchBox" BorderThickness="0" Background="Transparent"
+                           Margin="46,0,10,0" VerticalContentAlignment="Center"
+                           Tag="搜索插件、作者、关键词…" KeyDown="Search_Key" />
                 </Grid>
-                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                  <TextBlock Text="排序" Style="{StaticResource Label}" VerticalAlignment="Center"
-                             Margin="0,0,8,0" />
-                  <ComboBox x:Name="SortBox" Width="120" Height="30" SelectionChanged="Sort_Changed">
-                    <ComboBoxItem Tag="hot" Content="热度" IsSelected="True" />
-                    <ComboBoxItem Tag="date" Content="最近更新" />
-                    <ComboBoxItem Tag="name" Content="名称" />
-                  </ComboBox>
-                  <TextBlock Text="分类" Style="{StaticResource Label}" VerticalAlignment="Center"
-                             Margin="18,0,8,0" />
-                  <ComboBox x:Name="TagBox" Width="140" Height="30" SelectionChanged="Tag_Changed" />
-                  <CheckBox x:Name="InstalledOnly" Content="只看已安装" Margin="18,0,0,0"
-                            VerticalAlignment="Center" Checked="StoreFilter_Changed"
-                            Unchecked="StoreFilter_Changed" />
+                <Button Grid.Column="1" x:Name="SearchBtn" Style="{StaticResource BtnPrimary}"
+                        Content="搜索" Height="32" Padding="20,0" Margin="0,0,5,0"
+                        Click="Search_Click" />
+              </Grid>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+              <RadioButton x:Name="ModeAll" Style="{StaticResource FilterTab}" Content="全部插件"
+                           GroupName="storeMode" IsChecked="True" Checked="StoreMode_Changed" />
+              <RadioButton x:Name="ModeStars" Style="{StaticResource FilterTab}" Content="Star 增长"
+                           GroupName="storeMode" Margin="8,0,0,0" Checked="StoreMode_Changed" />
+              <RadioButton x:Name="ModeDownloads" Style="{StaticResource FilterTab}" Content="下载增长"
+                           GroupName="storeMode" Margin="8,0,0,0" Checked="StoreMode_Changed" />
+              <Border Width="1" Height="18" Background="{StaticResource LineBorder}"
+                      Margin="14,0" VerticalAlignment="Center" />
+              <RadioButton x:Name="PeriodDay" Style="{StaticResource FilterTab}" Content="日"
+                           GroupName="storePeriod" Checked="StorePeriod_Changed" />
+              <RadioButton x:Name="PeriodWeek" Style="{StaticResource FilterTab}" Content="周"
+                           GroupName="storePeriod" IsChecked="True" Margin="6,0,0,0"
+                           Checked="StorePeriod_Changed" />
+              <RadioButton x:Name="PeriodMonth" Style="{StaticResource FilterTab}" Content="月"
+                           GroupName="storePeriod" Margin="6,0,0,0" Checked="StorePeriod_Changed" />
+              <TextBlock x:Name="StoreSortNote" Style="{StaticResource Muted}"
+                         FontSize="{StaticResource FsSmall}" Margin="14,0,0,0"
+                         VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel x:Name="StoreMore" Visibility="Collapsed" Margin="0,10,0,0">
+              <StackPanel Orientation="Horizontal">
+                <StackPanel Margin="0,0,28,0">
+                  <TextBlock Text="版本" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                  <ComboBox x:Name="TargetRelease" Width="160" Height="32" IsEditable="False"
+                            ToolTip="这份实例钉的 DSH 发行号" />
                 </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="装到" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                  <ComboBox x:Name="TargetInstance" Width="240" Height="32"
+                            ItemsSource="{Binding Instances}"
+                            SelectionChanged="TargetInstance_Changed">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding Name}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+              </StackPanel>
+              <Grid Margin="0,12,0,0">
+                <StackPanel Orientation="Horizontal">
+                  <Button x:Name="ClearBtn" Style="{StaticResource BtnWide}" Content="重置条件"
+                          Click="Clear_Click" ToolTip="重置条件" v:Ico.Of="{StaticResource I.Globe}" />
+                  <ContentControl x:Name="MarketBusy" Style="{StaticResource Spinner}"
+                                  Margin="16,0,0,0" VerticalAlignment="Center"
+                                  Visibility="Collapsed" />
+                  <TextBlock x:Name="MarketStatus" Style="{StaticResource Muted}" Margin="10,0,0,0"
+                             VerticalAlignment="Center" Visibility="Collapsed" />
+                </StackPanel>
+              </Grid>
+              <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <TextBlock Text="排序" Style="{StaticResource Label}" VerticalAlignment="Center"
+                           Margin="0,0,8,0" />
+                <ComboBox x:Name="SortBox" Width="120" Height="30" SelectionChanged="Sort_Changed">
+                  <ComboBoxItem Tag="hot" Content="热度" IsSelected="True" />
+                  <ComboBoxItem Tag="date" Content="最近更新" />
+                  <ComboBoxItem Tag="name" Content="名称" />
+                </ComboBox>
+                <TextBlock Text="分类" Style="{StaticResource Label}" VerticalAlignment="Center"
+                           Margin="18,0,8,0" />
+                <ComboBox x:Name="TagBox" Width="140" Height="30" SelectionChanged="Tag_Changed" />
+                <CheckBox x:Name="InstalledOnly" Content="只看已安装" Margin="18,0,0,0"
+                          VerticalAlignment="Center" Checked="StoreFilter_Changed"
+                          Unchecked="StoreFilter_Changed" />
               </StackPanel>
             </StackPanel>
-          </Border>
 
-          <!-- App Store 式 Top Charts：商店页里的一横排，点卡片走同一个插件详情窗口。 -->
-          <StackPanel x:Name="RankingSection" Margin="0,2,0,18">
-            <Grid Margin="2,0,2,10">
+            <!-- Hero：本周增长最快的插件；右边直接用插件自己的图标 -->
+            <Border x:Name="GrowthHero" Visibility="Collapsed" Height="172" Margin="0,18,0,0"
+                    CornerRadius="20" ClipToBounds="True">
+              <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                  <GradientStop Color="#0B4D51" Offset="0" />
+                  <GradientStop Color="#126A6E" Offset="0.55" />
+                  <GradientStop Color="#0B3F43" Offset="1" />
+                </LinearGradientBrush>
+              </Border.Background>
+              <Grid Margin="28,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="本周增长最快" Foreground="#9EDCDD" FontSize="11"
+                             FontWeight="Bold" />
+                  <TextBlock x:Name="HeroTitle" Foreground="White" FontSize="27" FontWeight="Bold"
+                             Margin="0,6,0,0" TextTrimming="CharacterEllipsis" />
+                  <TextBlock x:Name="HeroDesc" Foreground="#C6E9EA" FontSize="12.5"
+                             Margin="0,6,0,0" MaxWidth="560" HorizontalAlignment="Left"
+                             TextTrimming="CharacterEllipsis" />
+                  <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                    <Button Style="{StaticResource BtnPrimary}" Content="查看" Height="34"
+                            Padding="20,0" Click="HeroOpen_Click" />
+                    <Button Style="{StaticResource Btn}" Content="安装" Height="34"
+                            Padding="18,0" Margin="10,0,0,0" Click="HeroOpen_Click" />
+                  </StackPanel>
+                </StackPanel>
+                <Border Grid.Column="1" Width="86" Height="86" CornerRadius="22"
+                        Background="#33FFFFFF" VerticalAlignment="Center" Margin="20,0,4,0">
+                  <v:PluginMark x:Name="HeroIcon" Width="70" Height="70" Size="70" />
+                </Border>
+              </Grid>
+            </Border>
+
+            <Grid Margin="2,20,2,12">
               <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="排行榜" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                <TextBlock x:Name="RankingNote" Style="{StaticResource Muted}" Margin="10,0,0,0"
-                           VerticalAlignment="Center" FontSize="{StaticResource FsSmall}" />
+                <TextBlock x:Name="StoreSectionTitle" Text="全部插件" FontSize="17"
+                           FontWeight="Bold" Foreground="{StaticResource TextPrimary}" />
+                <TextBlock x:Name="StoreSectionSub" Style="{StaticResource Muted}"
+                           Margin="10,0,0,0" VerticalAlignment="Center"
+                           FontSize="{StaticResource FsSmall}" />
+                <TextBlock x:Name="ResultCount" Visibility="Collapsed" />
               </StackPanel>
-              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <RadioButton x:Name="RankStar" Style="{StaticResource FilterTab}" Content="Star"
-                             GroupName="rankMetric" IsChecked="True" Checked="RankToggle_Changed" />
-                <RadioButton x:Name="RankDownloads" Style="{StaticResource FilterTab}" Content="下载"
-                             GroupName="rankMetric" Margin="6,0,0,0" Checked="RankToggle_Changed" />
-                <RadioButton x:Name="RankDay" Style="{StaticResource FilterTab}" Content="日"
-                             GroupName="rankPeriod" Margin="18,0,0,0" Checked="RankToggle_Changed" />
-                <RadioButton x:Name="RankWeek" Style="{StaticResource FilterTab}" Content="周"
-                             GroupName="rankPeriod" IsChecked="True" Margin="6,0,0,0"
-                             Checked="RankToggle_Changed" />
-                <RadioButton x:Name="RankMonth" Style="{StaticResource FilterTab}" Content="月"
-                             GroupName="rankPeriod" Margin="6,0,0,0" Checked="RankToggle_Changed" />
-                <Button x:Name="RankingRefreshBtn" Style="{StaticResource IcoBtn}" Margin="12,0,0,0"
-                        Click="RankingRefresh_Click" ToolTip="刷新榜单">
-                  <v:Ico Glyph="{StaticResource I.Refresh}" Height="11" />
-                </Button>
-              </StackPanel>
+              <TextBlock x:Name="StoreSectionRight" Style="{StaticResource Muted}"
+                         HorizontalAlignment="Right" VerticalAlignment="Center"
+                         FontSize="{StaticResource FsSmall}" />
             </Grid>
-            <TextBlock x:Name="RankTitle" Style="{StaticResource Muted}" Margin="2,0,0,8"
-                       FontSize="{StaticResource FsSmall}" />
-            <TextBlock x:Name="RankEmpty" Style="{StaticResource Muted}" TextWrapping="Wrap"
-                       Visibility="Collapsed" Margin="2,0,2,8" />
-              <ItemsControl x:Name="RankList">
-                <ItemsControl.ItemsPanel>
-                  <ItemsPanelTemplate>
-                    <StackPanel Orientation="Horizontal" />
-                  </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate>
-                    <Border Width="134" Height="138" Margin="0,0,10,0" CornerRadius="12"
-                            Background="{StaticResource BgCard}" BorderBrush="{StaticResource BgPage}"
-                            BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="RankRow_Click">
-                      <Grid Margin="12">
-                        <Grid.RowDefinitions>
-                          <RowDefinition Height="Auto" />
-                          <RowDefinition Height="Auto" />
-                          <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <Grid>
-                          <TextBlock Text="{Binding Rank}" FontSize="22" FontWeight="Bold"
-                                     Foreground="{StaticResource TextMuted}" VerticalAlignment="Top" />
-                          <TextBlock Text="{Binding GrowthText}" FontSize="13" FontWeight="SemiBold"
-                                     HorizontalAlignment="Right" VerticalAlignment="Top">
-                            <TextBlock.Style>
-                              <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
-                                <Style.Triggers>
-                                  <DataTrigger Binding="{Binding GrowthSign}" Value="pos">
-                                    <Setter Property="Foreground" Value="{StaticResource Success}" />
-                                  </DataTrigger>
-                                  <DataTrigger Binding="{Binding GrowthSign}" Value="neg">
-                                    <Setter Property="Foreground" Value="{StaticResource Danger}" />
-                                  </DataTrigger>
-                                </Style.Triggers>
-                              </Style>
-                            </TextBlock.Style>
-                          </TextBlock>
-                        </Grid>
-                        <Border Grid.Row="1" Width="40" Height="40" CornerRadius="10"
-                                Background="{Binding TileColor}" HorizontalAlignment="Left"
-                                Margin="0,6,0,6">
-                          <TextBlock Text="{Binding Monogram}" FontSize="18" FontWeight="SemiBold"
-                                     Foreground="{StaticResource AccentText}"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <StackPanel Grid.Row="2">
-                          <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
-                                     Foreground="{StaticResource TextPrimary}" TextWrapping="Wrap"
-                                     MaxHeight="32" TextTrimming="CharacterEllipsis"
-                                     ToolTip="{Binding Description}" />
-                          <TextBlock Text="{Binding PublisherText}" FontSize="10"
-                                     Foreground="{StaticResource TextMuted}" Margin="0,2,0,0"
-                                     TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-                      </Grid>
-                    </Border>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
           </StackPanel>
 
           <Border x:Name="MarketError" Style="{StaticResource BannerWarn}" Margin="0,0,0,15"
@@ -490,14 +495,7 @@
             </Grid>
           </Border>
 
-          <Border x:Name="ResultCard" Style="{StaticResource Slab}" Padding="14,12,14,6"
-                  Background="{StaticResource BgPage}" Visibility="Collapsed">
-            <StackPanel>
-            <Grid Margin="2,0,2,6">
-              <TextBlock x:Name="ResultCount" Style="{StaticResource Muted}"
-                         FontSize="{StaticResource FsSmall}" />
-
-            </Grid>
+          <Border x:Name="ResultCard" Padding="0" Background="Transparent" Visibility="Collapsed">
             <ItemsControl x:Name="ResultList">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -506,77 +504,82 @@
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Border local:Fx.Enter="row" Width="214" MinHeight="150" Padding="13,12,13,10"
-                          Margin="0,0,12,12" CornerRadius="16" Cursor="Hand"
-                          Background="{StaticResource BgCard}"
+                  <Border Width="232" MinHeight="178" Margin="0,0,14,14" CornerRadius="17"
+                          Cursor="Hand" Background="{StaticResource BgCard}"
+                          BorderBrush="{StaticResource LineBorder}" BorderThickness="1"
                           Tag="{Binding}" MouseLeftButtonUp="Row_OpenDetail">
-                    <Border.Style>
-                      <Style TargetType="Border">
-                        <Setter Property="Background" Value="Transparent" />
-                        <Style.Triggers>
-                          <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{StaticResource AccentWash}" />
-                          </Trigger>
-                        </Style.Triggers>
-                      </Style>
-                    </Border.Style>
-                    <Grid>
+                    <Border.Effect>
+                      <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.07"
+                                        Color="#101820" />
+                    </Border.Effect>
+                    <Grid Margin="16,15,16,13">
                       <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                       </Grid.RowDefinitions>
-                      <Grid Grid.Row="0">
+                      <Grid>
                         <Grid.ColumnDefinitions>
                           <ColumnDefinition Width="Auto" />
                           <ColumnDefinition Width="*" />
                           <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <v:PluginMark Grid.Column="0" Width="44" Height="44" Size="44"
+                        <v:PluginMark Grid.Column="0" Width="52" Height="52" Size="52"
                                       IconPath="{Binding IconPath}" Spec="{Binding Name}"
-                                      VerticalAlignment="Top" Margin="0,0,10,0" />
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding Title}" FontSize="{StaticResource FsBody}"
-                                     FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
-                                     TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis" />
-                          <TextBlock Text="{Binding Publisher}" Style="{StaticResource Mono}"
-                                     FontSize="{StaticResource FsMicro}"
-                                     Foreground="{StaticResource TextMuted}" Margin="0,3,0,0" />
+                                      VerticalAlignment="Top" Margin="0,0,12,0" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
+                          <TextBlock Text="{Binding Title}" FontSize="14.5" FontWeight="Bold"
+                                     Foreground="{StaticResource TextPrimary}" TextWrapping="Wrap"
+                                     MaxHeight="40" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding Publisher}" FontSize="10.5"
+                                     Foreground="{StaticResource TextMuted}" Margin="0,3,0,0"
+                                     TextTrimming="CharacterEllipsis" />
                         </StackPanel>
-                        <Button Grid.Column="2" Style="{StaticResource IcoBtn}" Click="MarketFav_Click"
-                                Tag="{Binding}" ToolTip="收藏（本地歌单）" VerticalAlignment="Top">
-                          <Grid>
-                            <v:Ico Glyph="{StaticResource I.Star}" Height="13"
-                                   Foreground="{StaticResource TextMuted}"
-                                   Visibility="{Binding Favorite, Converter={StaticResource B2VNot}}" />
-                            <v:Ico Glyph="{StaticResource I.Star}" Height="13"
-                                   Foreground="{StaticResource Accent}"
-                                   Visibility="{Binding Favorite, Converter={StaticResource B2V}}" />
-                          </Grid>
-                        </Button>
+                        <Border Grid.Column="2" MinWidth="24" Height="24" CornerRadius="12"
+                                Background="{StaticResource AccentWash}" VerticalAlignment="Top"
+                                Visibility="{Binding HasRank, Converter={StaticResource B2V}}">
+                          <TextBlock Text="{Binding Rank}" FontSize="11" FontWeight="Bold"
+                                     Foreground="{StaticResource Accent}"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
                       </Grid>
-                      <TextBlock Grid.Row="1" Text="{Binding DescriptionText}"
-                                 FontSize="{StaticResource FsSmall}"
-                                 Foreground="{StaticResource TextSecondary}" Margin="0,10,0,0"
-                                 TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis"
+                      <TextBlock Grid.Row="1" Text="{Binding DescriptionText}" FontSize="12"
+                                 Foreground="{StaticResource TextSecondary}" Margin="0,11,0,0"
+                                 TextWrapping="Wrap" MaxHeight="34" TextTrimming="CharacterEllipsis"
                                  ToolTip="{Binding DescriptionText}" />
-                      <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
-                          <ContentControl Style="{StaticResource QuantMono}"
-                                          v:Ico.Of="{StaticResource I.Gear}"
-                                          Content="{Binding VersionText}" />
-                          <ContentControl Style="{StaticResource Quant}"
-                                          v:Ico.Of="{StaticResource I.Upload}"
-                                          Content="{Binding DateText}" />
-                          <ContentControl Style="{StaticResource Quant}" Margin="0"
-                                          Content="{Binding TagText}"
-                                          Visibility="{Binding HasTag, Converter={StaticResource B2V}}" />
+                      <Grid Grid.Row="2" Margin="0,11,0,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                          <Border BorderBrush="{StaticResource LineBorder}" BorderThickness="1"
+                                  CornerRadius="6" Padding="6,1" Margin="0,0,8,0">
+                            <TextBlock Text="{Binding VersionText}" FontSize="10.5"
+                                       Foreground="{StaticResource TextMuted}" />
+                          </Border>
+                          <TextBlock Text="{Binding DateText}" FontSize="10.5"
+                                     Foreground="{StaticResource TextMuted}" />
                         </StackPanel>
+                        <TextBlock Text="{Binding GrowthBadge}" FontSize="14" FontWeight="Bold"
+                                   HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Visibility="{Binding HasGrowth, Converter={StaticResource B2V}}">
+                          <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                              <Setter Property="Foreground" Value="{StaticResource Success}" />
+                              <Style.Triggers>
+                                <DataTrigger Binding="{Binding GrowthSign}" Value="neg">
+                                  <Setter Property="Foreground" Value="{StaticResource Danger}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding GrowthSign}" Value="zero">
+                                  <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                                </DataTrigger>
+                              </Style.Triggers>
+                            </Style>
+                          </TextBlock.Style>
+                        </TextBlock>
+                      </Grid>
                     </Grid>
                   </Border>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-            </StackPanel>
           </Border>
 
           <Border x:Name="LoadCard" Style="{StaticResource Slab}" Padding="40,30"

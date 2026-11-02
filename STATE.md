@@ -91,6 +91,9 @@ close 先查账本、再杀进程树、最后删记录；找不到就报 PA081�
 - 版本矩阵：0.2.1 fragment / 0.1.0 query 的已知 id 均可 opened、未知 id 均 unknown 不崩（0.1 合成 profile 有壳层 Loading plugins 环境问题，与本插件无关）。
 - 基础修复：`LaunchPolicy.PatchVirtualStoreDir` 兼容 pnpm 11 JSON `.modules.yaml`（此前会让所有 `dsh plugin add` 失败）；单测 28 pass。
 - 官方桌面端：插件已文件级预置进 `E:\DSH-Home\profiles\desktop`（备份 `package.json.bak-pad-jump`），重启后按 `EVIDENCE/D101-desktop-e2e/run-after-restart.ps1` 跑最后一步（本会话宿主就是该壳，agent 无法自己重启）。
+- **16:2x 补完**：用“复制官方 shell 实例”绕开单实例锁（改 asar 内 `app.name` 得独立 userData + 独立 `DSH_HOME` + CDP 9223），在副本里跑通真实 E2E：
+  gateway carrier ad 出现（jump=true）、渲染器注入 ready、`POST /pad/jump` 返回 `seq=1/2`、renderer `queued → opened`。
+  当前桌面端与 `E:\DSH-Home` 未被改动，临时 1GB 副本已清理；证据 `EVIDENCE/D101-jump-m1/` §2.15 + `EVIDENCE/D101-desktop-e2e/`。
 
 ## 下一步（P0）
 

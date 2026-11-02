@@ -549,3 +549,15 @@ gateway:      node --test --test-timeout=5000 test/jump.test.mjs
   已回滚预置改动（桌面 profile 保持原样），保留可重复脚本 `EVIDENCE/D101-desktop-e2e/stage-desktop-e2e.ps1`
   （staging/`-Rollback`）和 `run-after-restart.ps1`（等 ad → ping → POST /pad/jump）。想跑时三步：
   staging → 重启官方壳 → 运行跳转脚本。
+
+### 15.13 官方桌面端 E2E：复制实例法（2026-11-02 16:2x）✅
+
+证据：[`EVIDENCE/D101-jump-m1/`](../../EVIDENCE/D101-jump-m1/README.md) §2.15、[`EVIDENCE/D101-desktop-e2e/`](../../EVIDENCE/D101-desktop-e2e/README.md)
+
+- 绕开单实例：复制官方 app（1.09GB）→ 改 asar 内 `package.json#name` 为 `@deepseek-ai/dsh-desktop-padtest`
+  （独立 Electron userData）→ 独立 `DSH_HOME` 启动副本，`--remote-debugging-port=9223`。
+- 副本 shell 里文件级装入两个插件并重启：carrier ad 出现（`capabilities.jump=true`，webUrl 64885），
+  渲染器注入生效（`__PAD_SESSION_JUMP_DEBUG__` ready/hasOpener）。
+- `POST /pad/jump {sessionId}` → `200 {"ok":true,"seq":1}`；渲染器事件 `queued → opened`。
+- 官方二进制只改了 app.name；当前桌面端与 `E:\DSH-Home` 未被改动。证据（日志/截图/CDP helper）
+  在 `EVIDENCE/D101-desktop-e2e/`。

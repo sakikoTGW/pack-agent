@@ -1,4 +1,8 @@
+using System.Collections.Concurrent;
+using System.IO;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace Pad.Core;
@@ -97,6 +101,56 @@ public sealed class Market
 {
     static readonly HttpClient Http = new();
 
+    const int SearchCacheTtlSec = 300;
+    static readonly ConcurrentDictionary<string, (MarketPage Page, DateTimeOffset At)> SearchCache = new();
+    static readonly ConcurrentDictionary<string, Task<MarketPage>> InFlight = new();
+
+    /// <summary>Wall time of the last page load; 0 when the page came from cache.</summary>
+    public static long LastSearchMs { get; private set; }
+
+    public static void ClearSearchCache() => SearchCache.Clear();
+
+    // Search pages also survive process restarts: opening the store again, or coming
+    // back after a while, should not wait on npm again for an unchanged query.
+    static string DiskCacheDir => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "pack-agent-dsh", "market-cache");
+
+    static string DiskCacheFile(string key)
+    {
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key))).ToLowerInvariant();
+        return Path.Combine(DiskCacheDir, hash + ".json");
+    }
+
+    static bool TryReadDiskCache(string key, out MarketPage page)
+    {
+        page = null!;
+        try
+        {
+            var file = DiskCacheFile(key);
+            if (!File.Exists(file)) return false;
+            if ((DateTime.UtcNow - File.GetLastWriteTimeUtc(file)).TotalSeconds >= SearchCacheTtlSec) return false;
+            var parsed = JsonSerializer.Deserialize<MarketPage>(File.ReadAllText(file));
+            if (parsed is null) return false;
+            page = parsed;
+            return true;
+        }
+        catch { return false; }
+    }
+
+    static void WriteDiskCache(string key, MarketPage page)
+    {
+        try
+        {
+            Directory.CreateDirectory(DiskCacheDir);
+            var file = DiskCacheFile(key);
+            var tmp = file + ".tmp";
+            File.WriteAllText(tmp, JsonSerializer.Serialize(page));
+            File.Move(tmp, file, overwrite: true);
+        }
+        catch { /* disk cache is best-effort */ }
+    }
+
     public const int DefaultPageSize = 20;
 
     /// <summary>Shelves come from pad.json; empty/invalid falls back to the built-in four.</summary>
@@ -149,6 +203,10 @@ public sealed class Market
     /// <summary>
     /// One page of a shelf. <paramref name="text"/> is the user's words, appended to the
     /// shelf qualifier rather than replacing it.
+    ///
+    /// Paged npm search is the slowest thing in the store, so results are kept for a few
+    /// minutes and identical in-flight requests are shared. Switching back to a page,
+    /// opening the tab again, or prefetching the next page then costs no network.
     /// </summary>
     public static async Task<MarketPage> Search(string shelfQuery, string text, int from,
         CancellationToken ct, int pageSize = 0)
@@ -158,7 +216,43 @@ public sealed class Market
         var host = RegistryBase;
         var url = $"{host}/-/v1/search"
                   + $"?text={Uri.EscapeDataString(q)}&size={size}&from={Math.Max(0, from)}";
+        var key = $"{host}|{q}|{from}|{size}";
 
+        if (SearchCache.TryGetValue(key, out var hit)
+            && (DateTimeOffset.UtcNow - hit.At).TotalSeconds < SearchCacheTtlSec)
+        {
+            LastSearchMs = 0;
+            return hit.Page;
+        }
+        if (TryReadDiskCache(key, out var diskPage))
+        {
+            SearchCache[key] = (diskPage, DateTimeOffset.UtcNow);
+            LastSearchMs = 0;
+            return diskPage;
+        }
+        if (InFlight.TryGetValue(key, out var running))
+            return await running;
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var task = SearchCore(host, url, from, size, ct);
+        InFlight[key] = task;
+        try
+        {
+            var page = await task;
+            SearchCache[key] = (page, DateTimeOffset.UtcNow);
+            WriteDiskCache(key, page);
+            return page;
+        }
+        finally
+        {
+            InFlight.TryRemove(key, out _);
+            sw.Stop();
+            LastSearchMs = sw.ElapsedMilliseconds;
+        }
+    }
+
+    static async Task<MarketPage> SearchCore(string host, string url, int from, int size, CancellationToken ct)
+    {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct);
         linked.CancelAfter(TimeSpan.FromSeconds(TimeoutSec));
 

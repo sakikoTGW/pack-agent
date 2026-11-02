@@ -1,0 +1,762 @@
+{
+  "GeneratedAt": "2026-11-02T07:07:53.727689+00:00",
+  "Note": "\u5019\u9009 30\uFF08npm \u70ED\u5EA6\uFF09\u00B7 \u4E0B\u8F7D 30 \u00B7 Star 30",
+  "Boards": [
+    {
+      "Key": "stars-day",
+      "Label": "Star\u65E5\u589E",
+      "Rows": [
+        {
+          "Rank": 1,
+          "Name": "dsh-genui",
+          "Version": "0.3.1",
+          "Publisher": "lhs.c",
+          "Description": "GenUI for DeepSeek Harness: interactive charts, forms, calculators, dashboards, and mini apps rendered inline in assistant replies, with actions that flow back to the model.",
+          "Repository": "git\u002Bhttps://github.com/lhuans/dsh-genui.git",
+          "Total": 0,
+          "Growth": 0
+        },
+        {
+          "Rank": 2,
+          "Name": "dsh-dream-skin",
+          "Version": "11.2.0",
+          "Publisher": "lllaaa",
+          "Description": "DeepSeek Harness \u6362\u80A4\u63D2\u4EF6\uFF08Dream Skin for DSH\uFF09\uFF1A8 \u5957 iOS / Linear \u5F0F\u6E05\u900F\u51B7\u8C03\u7684\u9AD8\u8D28\u611F\u4E3B\u9898 \u002B \u5F25\u6563\u5149\u58C1\u7EB8 \u002B \u6BCF\u76AE\u80A4\u667A\u80FD\u80CC\u666F \u002B \u5F3A\u8C03\u8272 \u002B \u4E3B\u9898\u5305\u5206\u4EAB\uFF0C\u628A\u6362\u80A4\u505A\u6210\u6750\u8D28\u4E0E\u914D\u8272\u514B\u5236\u7684\u9AD8\u7EA7\u611F\u5DE5\u827A\uFF0C\u800C\u975E\u8D34\u56FE\u3002Works in native DSH Web and third-party desktop clients (DSH Desktop): 8 original premium themes, glass materials, wallpaper 2.0",
+          "Repository": "git\u002Bhttps://github.com/RevolutionLA/dsh-dream-skin.git",
+          "Total": 0,
+          "Growth": -1
+        },
+        {
+          "Rank": 3,
+          "Name": "dsh-univer-office",
+          "Version": "0.3.9",
+          "Publisher": "jikkai",
+          "Description": "DSH \u00D7 Univer integration with a bundled collaboration Gateway and Viewer: inline previews, live floating Worktree windows, and session-end review actions in DeepSeek Harness.",
+          "Repository": "git\u002Bhttps://github.com/dream-num/dsh-univer-office.git",
+          "Total": 0,
+          "Growth": -3
+        },
+        {
+          "Rank": 4,
+          "Name": "@michengai/dsh-archive-manager",
+          "Version": "1.1.22",
+          "Publisher": "GitHub Actions",
+          "Description": "\u5F52\u6863\u3001\u6062\u590D\u3001\u6536\u85CF\u548C\u6C38\u4E45\u5220\u9664\u4F1A\u8BDD\uFF0C\u5E76\u8BCA\u65AD\u635F\u574F\u7684\u4F1A\u8BDD\u65E5\u5FD7\u3002 \u00B7 Archive, restore, favorite, and permanently delete sessions, and diagnose damaged session logs.",
+          "Repository": "git\u002Bhttps://github.com/MichengAI/dsh-archive-manager.git",
+          "Total": 0,
+          "Growth": -5
+        },
+        {
+          "Rank": 5,
+          "Name": "@liustack/modsearch",
+          "Version": "5.10.11",
+          "Publisher": "GitHub Actions",
+          "Description": "The strongest free web search plugin for coding agents. Plug-in web search, X search, and page fetch for models without native web access. Free out of the box: no signup, no API key (Firecrawl keyless, 1,000 free credits/month)",
+          "Repository": "git\u002Bhttps://github.com/liustack/modsearch.git",
+          "Total": 0,
+          "Growth": -6
+        },
+        {
+          "Rank": 6,
+          "Name": "dsh-dafeiyu",
+          "Version": "0.1.23",
+          "Publisher": "GitHub Actions",
+          "Description": "A desktop-native BigFish companion driven by DeepSeek Harness session events.",
+          "Repository": "git\u002Bhttps://github.com/QCYTSN/dsh-dafeiyu.git",
+          "Total": 0,
+          "Growth": -6
+        },
+        {
+          "Rank": 7,
+          "Name": "dsh-unlag",
+          "Version": "1.15.0",
+          "Publisher": "regrevia",
+          "Description": "DSH \u684C\u9762\u7AEF\u81EA\u5DF1\u7684\u5237\u65B0\u6309\u94AE\uFF1A\u6539\u63D2\u4EF6\u4E0D\u7528\u91CD\u542F\u3001\u5F00\u4E45\u4E86\u5361\u4E86\u4E5F\u70B9\u4E00\u4E0B\uFF0C\u6B63\u5728\u8FDB\u884C\u7684\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\u3002",
+          "Repository": "git\u002Bhttps://github.com/regrevia/dsh-unlag.git",
+          "Total": 0,
+          "Growth": -7
+        },
+        {
+          "Rank": 8,
+          "Name": "dsh-cost-meter",
+          "Version": "1.9.49",
+          "Publisher": "smallsun",
+          "Description": "DeepSeek Harness \u4F1A\u8BDD\u8D39\u7528\u7EDF\u8BA1\u63D2\u4EF6:\u672C\u4F1A\u8BDD\u6210\u672C\u3001\u5F53\u65E5\u8D39\u7528\u3001\u5386\u53F2\u8BB0\u5F55\u4E0E\u5B98\u65B9\u4EF7\u683C\u540C\u6B65,\u652F\u6301\u591A\u5382\u5546\u591A\u6A21\u578B\u4EF7\u683C\u8BA1\u8D39(\u5185\u7F6E 170\u002B \u6A21\u578B ID \u4EF7\u683C\u76EE\u5F55\u4E0E\u81EA\u52A8\u5339\u914D)\u3001\u4E3B\u6D41 Coding Plan \u8BA2\u9605\u989D\u5EA6\u67E5\u8BE2\u4E0E\u663E\u793A(16 \u5BB6,\u542B WorkBuddy \u5B98\u65B9\u79EF\u5206\u3001OpenDesign \u5DE5\u4F5C\u533A\u67E5\u8BE2\u3001\u542B\u5C0F\u7C73 MiMo Token Plan \u63A7\u5236\u53F0 Cookie \u67E5\u8BE2\u3001SCNet Token Plan \u672C\u5730 Credits \u8BA1\u91CF\u4E0E\u706B\u5C71\u65B9\u821F Volcano Ark Coding Plan AK/SK \u7B7E\u540D\u67E5\u8BE2",
+          "Repository": "git\u002Bhttps://github.com/Han-1413141/dsh-cost-meter.git",
+          "Total": 0,
+          "Growth": -9
+        },
+        {
+          "Rank": 9,
+          "Name": "dsh-plugin",
+          "Version": "2.2.7",
+          "Publisher": "dshplugin",
+          "Description": "A community plugin marketplace for DeepSeek Harness, built to the official plugin spec \u2014 browse, search and install 10000\u002B human-curated community plugins without leaving the app. \u00B7 DeepSeek Harness \u793E\u533A\u63D2\u4EF6\u5E02\u573A\uFF08\u9075\u5FAA\u5B98\u65B9\u5F00\u53D1\u89C4\u8303\uFF09\uFF1A10000\u002B \u4EBA\u5DE5\u7CBE\u9009\u793E\u533A\u63D2\u4EF6\uFF0C\u6BCF\u65E5\u66F4\u65B0\u3002",
+          "Repository": "git\u002Bhttps://github.com/dshplugin/dsh-plugin-hub.git",
+          "Total": 0,
+          "Growth": -9
+        },
+        {
+          "Rank": 10,
+          "Name": "dsh-remote",
+          "Version": "0.8.67",
+          "Publisher": "flymysql",
+          "Description": "Remote-work assistant for DeepSeek Harness: connect SSH (password/key/agent/keyboard-interactive, multi-hop ProxyJump), pick a remote workspace, operate on it with 22 rw_* tools, conflict-aware mirror sync, an embedded PTY terminal, one-click remote dsh d",
+          "Repository": "git\u002Bhttps://github.com/flymysql/dsh-remote.git",
+          "Total": 0,
+          "Growth": -9
+        },
+        {
+          "Rank": 11,
+          "Name": "dsh-meme",
+          "Version": "0.1.76",
+          "Publisher": "yyh001",
+          "Description": "DeepSeek Harness \u8868\u60C5\u5305\u63D2\u4EF6\uFF1A\u8F93\u5165\u6846\u4E00\u952E\u53D1\u56FE\uFF08\u56FE\u5E93/\u60C5\u7EEA\u591A\u9009\u7B5B\u9009\u3001\u60AC\u6D6E\u5927\u56FE\u9884\u89C8\uFF09\u3001\u591A\u56FE\u5E93\u5F00\u5173\u3001\u60C5\u7EEA\u4E0E\u5173\u952E\u8BCD\u641C\u56FE\u3001AI \u5B66\u56FE\uFF0C\u56FE\u5E93\u53EF\u4ECE\u5E02\u573A\u4E00\u952E\u5B89\u88C5\u6216\u5BFC\u5165/\u5BFC\u51FA ZIP\u3002",
+          "Repository": "git\u002Bhttps://github.com/yyh-001/dsh-meme.git",
+          "Total": 0,
+          "Growth": -12
+        },
+        {
+          "Rank": 12,
+          "Name": "@michengai/dsh-skills-manager",
+          "Version": "1.2.26",
+          "Publisher": "GitHub Actions",
+          "Description": "DSH Skills Manager \u2014 \u5728 DeepSeek Harness \u4E2D\u7EDF\u4E00\u52A0\u8F7D\u5E76\u5B89\u5168\u7BA1\u7406\u672C\u673A Agent Skills \u00B7 Load and safely manage local Agent Skills in DSH",
+          "Repository": "git\u002Bhttps://github.com/MichengAI/dsh-skills-manager.git",
+          "Total": 0,
+          "Growth": -13
+        }
+      ]
+    },
+    {
+      "Key": "stars-week",
+      "Label": "Star\u5468\u589E",
+      "Rows": [
+        {
+          "Rank": 1,
+          "Name": "dsh-image-gen",
+          "Version": "0.10.2",
+          "Publisher": "shanliuling",
+          "Description": "Bring ChatGPT-like image generation to DeepSeek Harness \u2014 Gemini, OpenAI, Seedream, DashScope, local ComfyUI \u0026 more.",
+          "Repository": "git\u002Bhttps://github.com/shanliuling/dsh-image-gen.git",
+          "Total": 294,
+          "Growth": 154
+        },
+        {
+          "Rank": 2,
+          "Name": "@tencent-connect/dsh-qqbot",
+          "Version": "0.5.5",
+          "Publisher": "tencentconnectqqbot",
+          "Description": "\u5728 QQ \u79C1\u804A\u548C\u7FA4\u804A\u91CC\u76F4\u63A5\u5BF9\u8BDD DeepSeek Harness\u3002 Chat with DeepSeek Harness in QQ private and group chats.",
+          "Repository": "git\u002Bhttps://github.com/tencent-connect/dsh-qqbot.git",
+          "Total": 212,
+          "Growth": 88
+        },
+        {
+          "Rank": 3,
+          "Name": "dsh-unlag",
+          "Version": "1.15.0",
+          "Publisher": "regrevia",
+          "Description": "DSH \u684C\u9762\u7AEF\u81EA\u5DF1\u7684\u5237\u65B0\u6309\u94AE\uFF1A\u6539\u63D2\u4EF6\u4E0D\u7528\u91CD\u542F\u3001\u5F00\u4E45\u4E86\u5361\u4E86\u4E5F\u70B9\u4E00\u4E0B\uFF0C\u6B63\u5728\u8FDB\u884C\u7684\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\u3002",
+          "Repository": "git\u002Bhttps://github.com/regrevia/dsh-unlag.git",
+          "Total": 45,
+          "Growth": 45
+        },
+        {
+          "Rank": 4,
+          "Name": "dsh-remote",
+          "Version": "0.8.67",
+          "Publisher": "flymysql",
+          "Description": "Remote-work assistant for DeepSeek Harness: connect SSH (password/key/agent/keyboard-interactive, multi-hop ProxyJump), pick a remote workspace, operate on it with 22 rw_* tools, conflict-aware mirror sync, an embedded PTY terminal, one-click remote dsh d",
+          "Repository": "git\u002Bhttps://github.com/flymysql/dsh-remote.git",
+          "Total": 43,
+          "Growth": 15
+        },
+        {
+          "Rank": 5,
+          "Name": "dsh-dafeiyu",
+          "Version": "0.1.23",
+          "Publisher": "GitHub Actions",
+          "Description": "A desktop-native BigFish companion driven by DeepSeek Harness session events.",
+          "Repository": "git\u002Bhttps://github.com/QCYTSN/dsh-dafeiyu.git",
+          "Total": 63,
+          "Growth": 7
+        },
+        {
+          "Rank": 6,
+          "Name": "dsh-genui",
+          "Version": "0.3.1",
+          "Publisher": "lhs.c",
+          "Description": "GenUI for DeepSeek Harness: interactive charts, forms, calculators, dashboards, and mini apps rendered inline in assistant replies, with actions that flow back to the model.",
+          "Repository": "git\u002Bhttps://github.com/lhuans/dsh-genui.git",
+          "Total": 8,
+          "Growth": -1
+        },
+        {
+          "Rank": 7,
+          "Name": "@xmanrui/dsh-im",
+          "Version": "5.9.1",
+          "Publisher": "xmanrui",
+          "Description": "\u628A\u5FAE\u4FE1\u3001\u98DE\u4E66\u3001\u4F01\u5FAE\u3001\u9489\u9489\u3001QQ\u3001Telegram\u3001WhatsApp\u3001Slack\u3001Discord\u3001Matrix\u63A5\u5165DSH\u3002 Connect Telegram, WhatsApp, Slack, Discord, Matrix, WeChat, Feishu, WeCom, DingTalk, and QQ to DSH.",
+          "Repository": "git\u002Bhttps://github.com/xmanrui/dsh-im.git",
+          "Total": 448,
+          "Growth": -2
+        },
+        {
+          "Rank": 8,
+          "Name": "dsh-free-search",
+          "Version": "0.9.26",
+          "Publisher": "dddmuc",
+          "Description": "Free web search for DeepSeek Harness: 27 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable/Firecrawl/Parallel/You.com keyless; Zhihu global/site via MCP and Perplexity/SerpBase/DeepSeek (official \u002B native tools/search)/Baidu/Kimi/Aliyun/Douba",
+          "Repository": "git\u002Bhttps://github.com/DDDMUC/dsh-free-search.git",
+          "Total": 147,
+          "Growth": -7
+        },
+        {
+          "Rank": 9,
+          "Name": "dsh-univer-office",
+          "Version": "0.3.9",
+          "Publisher": "jikkai",
+          "Description": "DSH \u00D7 Univer integration with a bundled collaboration Gateway and Viewer: inline previews, live floating Worktree windows, and session-end review actions in DeepSeek Harness.",
+          "Repository": "git\u002Bhttps://github.com/dream-num/dsh-univer-office.git",
+          "Total": 38,
+          "Growth": -7
+        },
+        {
+          "Rank": 10,
+          "Name": "@liustack/modsearch",
+          "Version": "5.10.11",
+          "Publisher": "GitHub Actions",
+          "Description": "The strongest free web search plugin for coding agents. Plug-in web search, X search, and page fetch for models without native web access. Free out of the box: no signup, no API key (Firecrawl keyless, 1,000 free credits/month)",
+          "Repository": "git\u002Bhttps://github.com/liustack/modsearch.git",
+          "Total": 65,
+          "Growth": -14
+        },
+        {
+          "Rank": 11,
+          "Name": "dsh-cost-meter",
+          "Version": "1.9.49",
+          "Publisher": "smallsun",
+          "Description": "DeepSeek Harness \u4F1A\u8BDD\u8D39\u7528\u7EDF\u8BA1\u63D2\u4EF6:\u672C\u4F1A\u8BDD\u6210\u672C\u3001\u5F53\u65E5\u8D39\u7528\u3001\u5386\u53F2\u8BB0\u5F55\u4E0E\u5B98\u65B9\u4EF7\u683C\u540C\u6B65,\u652F\u6301\u591A\u5382\u5546\u591A\u6A21\u578B\u4EF7\u683C\u8BA1\u8D39(\u5185\u7F6E 170\u002B \u6A21\u578B ID \u4EF7\u683C\u76EE\u5F55\u4E0E\u81EA\u52A8\u5339\u914D)\u3001\u4E3B\u6D41 Coding Plan \u8BA2\u9605\u989D\u5EA6\u67E5\u8BE2\u4E0E\u663E\u793A(16 \u5BB6,\u542B WorkBuddy \u5B98\u65B9\u79EF\u5206\u3001OpenDesign \u5DE5\u4F5C\u533A\u67E5\u8BE2\u3001\u542B\u5C0F\u7C73 MiMo Token Plan \u63A7\u5236\u53F0 Cookie \u67E5\u8BE2\u3001SCNet Token Plan \u672C\u5730 Credits \u8BA1\u91CF\u4E0E\u706B\u5C71\u65B9\u821F Volcano Ark Coding Plan AK/SK \u7B7E\u540D\u67E5\u8BE2",
+          "Repository": "git\u002Bhttps://github.com/Han-1413141/dsh-cost-meter.git",
+          "Total": 56,
+          "Growth": -21
+        },
+        {
+          "Rank": 12,
+          "Name": "dsh-dream-skin",
+          "Version": "11.2.0",
+          "Publisher": "lllaaa",
+          "Description": "DeepSeek Harness \u6362\u80A4\u63D2\u4EF6\uFF08Dream Skin for DSH\uFF09\uFF1A8 \u5957 iOS / Linear \u5F0F\u6E05\u900F\u51B7\u8C03\u7684\u9AD8\u8D28\u611F\u4E3B\u9898 \u002B \u5F25\u6563\u5149\u58C1\u7EB8 \u002B \u6BCF\u76AE\u80A4\u667A\u80FD\u80CC\u666F \u002B \u5F3A\u8C03\u8272 \u002B \u4E3B\u9898\u5305\u5206\u4EAB\uFF0C\u628A\u6362\u80A4\u505A\u6210\u6750\u8D28\u4E0E\u914D\u8272\u514B\u5236\u7684\u9AD8\u7EA7\u611F\u5DE5\u827A\uFF0C\u800C\u975E\u8D34\u56FE\u3002Works in native DSH Web and third-party desktop clients (DSH Desktop): 8 original premium themes, glass materials, wallpaper 2.0",
+          "Repository": "git\u002Bhttps://github.com/RevolutionLA/dsh-dream-skin.git",
+          "Total": 13,
+          "Growth": -21
+        }
+      ]
+    },
+    {
+      "Key": "stars-month",
+      "Label": "Star\u6708\u589E",
+      "Rows": [
+        {
+          "Rank": 1,
+          "Name": "dsh-ops",
+          "Version": "0.4.4",
+          "Publisher": "autofx",
+          "Description": "Native file and PTC tools for DSH on Windows x64, Linux x64 and macOS arm64/x64; Windows-only optional Bash payload and host PowerShell integration",
+          "Repository": "git\u002Bhttps://github.com/T-Auto/dsh-ops.git",
+          "Total": 5025,
+          "Growth": 5025
+        },
+        {
+          "Rank": 2,
+          "Name": "dsh-pet",
+          "Version": "0.4.0",
+          "Publisher": "pc2005-cloud",
+          "Description": "\u5403\u767D\u996D\u7684\u84DD\u8272\u5927\u80A5\u9C7C\uFF0C\u8D56\u5728 DeepSeek Harness \u91CC\u4E0D\u8D70\u4E86\u3002\u5E73\u65F6\u7231\u73A9\u9B54\u65B9\u3001\u7231\u5403\u5404\u79CD\u96F6\u98DF\u3001\u5076\u5C14\u6253\u4E2A\u76F9\uFF0C\u95F2\u4E0D\u4F4F\u5C31\u5728\u684C\u9762\u4E0A\u6E9C\u8FBE\u4E24\u5708\uFF0C\u88AB\u4F60\u62D6\u6765\u7529\u53BB\u4E5F\u7167\u65E7\u8D56\u7740\uFF1B\u4F60\u5FD9\u8D77\u6765\u5B83\u8DDF\u7740\u5FD9\u524D\u5FD9\u540E\uFF0C\u4E5F\u4F1A\u5E2E\u4F60\u6253\u7406\u4F59\u989D\u94B1\u5305\uFF0C\u95F2\u4E0B\u6765\u7231\u788E\u788E\u5FF5\uFF0C\u8FD8\u4E50\u610F\u966A\u4F60\u5520\u4E24\u53E5\u3002",
+          "Repository": "git\u002Bhttps://github.com/PC2005-cloud/dsh-pet.git",
+          "Total": 4261,
+          "Growth": 3783
+        },
+        {
+          "Rank": 3,
+          "Name": "dsh-plugin-wallpaper-engine",
+          "Version": "1.4.0",
+          "Publisher": "chensyovo",
+          "Description": "Wallpaper Engine backgrounds for the DSH web GUI: render your local Wallpaper Engine wallpapers behind the chat \u2014 Scene and Web in real time through the bundled WebWallGL engine, Video played directly \u2014 with iOS-style liquid glass, adjustable blur/scrim/b",
+          "Repository": "git\u002Bhttps://github.com/elysia395/dsh-wallpaper-engine.git",
+          "Total": 3999,
+          "Growth": 3681
+        },
+        {
+          "Rank": 4,
+          "Name": "dshmarket",
+          "Version": "1.73.8",
+          "Publisher": "GitHub Actions",
+          "Description": "Visual plugin market inside DeepSeek Harness \u2014 browse, search, and one-click install community plugins. \u00B7 DSH \u53EF\u89C6\u5316\u63D2\u4EF6\u5E02\u573A\uFF1A\u901B\u4E00\u901B\uFF0C\u70B9\u4E00\u4E0B\uFF0C\u88C5\u597D\u3002",
+          "Repository": "git\u002Bhttps://github.com/dsh-market/dsh-market.git",
+          "Total": 4793,
+          "Growth": 2468
+        },
+        {
+          "Rank": 5,
+          "Name": "@deepseek-harness-tui/dsh-tui",
+          "Version": "0.18.0",
+          "Publisher": "ccchimneyyy",
+          "Description": "Interactive terminal interface for DeepSeek Harness agents, sessions and tools.",
+          "Repository": "git\u002Bhttps://github.com/ccch1mneyyy/dsh-TUI.git",
+          "Total": 2635,
+          "Growth": 1434
+        },
+        {
+          "Rank": 6,
+          "Name": "dsh-bili-scroll",
+          "Version": "2.4.0",
+          "Publisher": "cloverzz",
+          "Description": "DSH \u63D2\u4EF6\uFF1A\u6BCF\u5929\u66FF\u4F60\u5237\u4E00\u8F6E B\u7AD9 \u2014\u2014 \u8BFB\u5B57\u5E55\u6311\u51FA\u503C\u5F97\u7684\u3001\u5199\u4E00\u4EFD\u65E5\u62A5\uFF0C\u503C\u5F97\u7684\u5C31 @ \u4F60",
+          "Repository": "git\u002Bhttps://github.com/c1overzz/dsh-bili-scroll.git",
+          "Total": 1128,
+          "Growth": 1128
+        },
+        {
+          "Rank": 7,
+          "Name": "@xmanrui/dsh-im",
+          "Version": "5.9.1",
+          "Publisher": "xmanrui",
+          "Description": "\u628A\u5FAE\u4FE1\u3001\u98DE\u4E66\u3001\u4F01\u5FAE\u3001\u9489\u9489\u3001QQ\u3001Telegram\u3001WhatsApp\u3001Slack\u3001Discord\u3001Matrix\u63A5\u5165DSH\u3002 Connect Telegram, WhatsApp, Slack, Discord, Matrix, WeChat, Feishu, WeCom, DingTalk, and QQ to DSH.",
+          "Repository": "git\u002Bhttps://github.com/xmanrui/dsh-im.git",
+          "Total": 1514,
+          "Growth": 1011
+        },
+        {
+          "Rank": 8,
+          "Name": "dsh-plugin-catalog",
+          "Version": "2026.1102.13952",
+          "Publisher": "GitHub Actions",
+          "Description": "The DeepSeek Harness plugin catalog (8281 entries) \u00B7 DeepSeek Harness \u63D2\u4EF6\u76EE\u5F55",
+          "Repository": "git\u002Bhttps://github.com/awesome-dsh-plugin/awesome-dsh-plugin.git",
+          "Total": 4377,
+          "Growth": 990
+        },
+        {
+          "Rank": 9,
+          "Name": "dsh-plugin-updates",
+          "Version": "2026.1102.13952",
+          "Publisher": "GitHub Actions",
+          "Description": "Per-plugin update notes for the DeepSeek Harness plugin catalog (8281 entries) \u00B7 \u63D2\u4EF6\u66F4\u65B0\u8BF4\u660E\u6570\u636E",
+          "Repository": "git\u002Bhttps://github.com/awesome-dsh-plugin/awesome-dsh-plugin.git",
+          "Total": 4377,
+          "Growth": 990
+        },
+        {
+          "Rank": 10,
+          "Name": "dsh-connect-workbuddy",
+          "Version": "5.17.0",
+          "Publisher": "dmh2002",
+          "Description": "\u628A\u672C\u673A\u767B\u5F55\u7684 WorkBuddy \u6A21\u578B\uFF08\u56FD\u5185\u7248\u4E0E\u56FD\u9645\u7248\uFF09\u63A5\u5165 DeepSeek Harness\uFF1A\u6BCF\u6B21\u5237\u65B0\u6309\u4E0A\u6E38\u76EE\u5F55\u81EA\u52A8\u8BFB\u53D6\u6BCF\u4E2A\u6A21\u578B\u7684\u79EF\u5206\u500D\u7387\uFF0C\u652F\u6301\u9010\u6A21\u578B\u56FE\u7247\u8F93\u5165\u5F00\u5173\u3001\u591A\u8D26\u53F7\u5207\u6362\u4E0E\u8D26\u53F7\u6C60\u81EA\u52A8\u6362\u53F7\uFF0C\u5E76\u63D0\u4F9B\u6BCF\u65E5\u7B7E\u5230\u3001\u5361\u7247\u4E0E\u8F93\u5165\u6846\u91CC\u7684\u80F6\u56CA\u79EF\u5206\u8BFB\u6570\u7B49\u53EA\u8BFB\u79EF\u5206\u6982\u89C8\u3002",
+          "Repository": "git\u002Bhttps://github.com/dingminhua/dsh-connect-workbuddy.git",
+          "Total": 954,
+          "Growth": 904
+        },
+        {
+          "Rank": 11,
+          "Name": "dsh-whale-widget",
+          "Version": "0.4.2",
+          "Publisher": "GitHub Actions",
+          "Description": "DSH Web \u754C\u9762\u53F3\u4E0B\u89D2\u7684 DeepSeek \u4F59\u989D\u5C0F\u9CB8\u9C7C\u6302\u4EF6:\u4F59\u989D/\u4ECA\u65E5\u5DF2\u7528/\u5CF0\u8C37\u5B9A\u4EF7\u3001\u81EA\u5B9A\u4E49\u6CE1\u6CE1\u70B9\u51FB\u5E8F\u5217(\u6587\u672C/\u4F59\u989D/\u4ECA\u65E5/\u5CF0\u8C37/\u56FE\u7247/\u968F\u673A\u8BED\u53E5\u4E0E\u5E76\u5217\u52A0\u6743\u9009\u62E9)\u3001\u9010\u884C\u6837\u5F0F\u4E0E\u5B57\u4F53\u3001\u60AC\u6D6E\u5FEB\u6377\u7F16\u8F91\u3001\u97F3\u6548\u4E0E\u6BCF\u8F6E\u6D88\u8017\u3001\u81EA\u5B9A\u4E49\u89D2\u8272/\u52A8\u56FE/\u97F3\u6548\u3001\u5438\u9644\u4E0E\u7FFB\u8F6C\u81EA\u5B9A\u4E49",
+          "Repository": "git\u002Bhttps://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget.git",
+          "Total": 2815,
+          "Growth": 560
+        },
+        {
+          "Rank": 12,
+          "Name": "@tencent-connect/dsh-qqbot",
+          "Version": "0.5.5",
+          "Publisher": "tencentconnectqqbot",
+          "Description": "\u5728 QQ \u79C1\u804A\u548C\u7FA4\u804A\u91CC\u76F4\u63A5\u5BF9\u8BDD DeepSeek Harness\u3002 Chat with DeepSeek Harness in QQ private and group chats.",
+          "Repository": "git\u002Bhttps://github.com/tencent-connect/dsh-qqbot.git",
+          "Total": 378,
+          "Growth": 341
+        }
+      ]
+    },
+    {
+      "Key": "downloads-day",
+      "Label": "\u4E0B\u8F7D\u65E5\u589E",
+      "Rows": [
+        {
+          "Rank": 1,
+          "Name": "dsh-plugin-catalog",
+          "Version": "2026.1102.13952",
+          "Publisher": "GitHub Actions",
+          "Description": "The DeepSeek Harness plugin catalog (8281 entries) \u00B7 DeepSeek Harness \u63D2\u4EF6\u76EE\u5F55",
+          "Repository": "git\u002Bhttps://github.com/awesome-dsh-plugin/awesome-dsh-plugin.git",
+          "Total": 38104,
+          "Growth": 4573
+        },
+        {
+          "Rank": 2,
+          "Name": "dsh-connect-workbuddy",
+          "Version": "5.17.0",
+          "Publisher": "dmh2002",
+          "Description": "\u628A\u672C\u673A\u767B\u5F55\u7684 WorkBuddy \u6A21\u578B\uFF08\u56FD\u5185\u7248\u4E0E\u56FD\u9645\u7248\uFF09\u63A5\u5165 DeepSeek Harness\uFF1A\u6BCF\u6B21\u5237\u65B0\u6309\u4E0A\u6E38\u76EE\u5F55\u81EA\u52A8\u8BFB\u53D6\u6BCF\u4E2A\u6A21\u578B\u7684\u79EF\u5206\u500D\u7387\uFF0C\u652F\u6301\u9010\u6A21\u578B\u56FE\u7247\u8F93\u5165\u5F00\u5173\u3001\u591A\u8D26\u53F7\u5207\u6362\u4E0E\u8D26\u53F7\u6C60\u81EA\u52A8\u6362\u53F7\uFF0C\u5E76\u63D0\u4F9B\u6BCF\u65E5\u7B7E\u5230\u3001\u5361\u7247\u4E0E\u8F93\u5165\u6846\u91CC\u7684\u80F6\u56CA\u79EF\u5206\u8BFB\u6570\u7B49\u53EA\u8BFB\u79EF\u5206\u6982\u89C8\u3002",
+          "Repository": "git\u002Bhttps://github.com/dingminhua/dsh-connect-workbuddy.git",
+          "Total": 7439,
+          "Growth": 2439
+        },
+        {
+          "Rank": 3,
+          "Name": "@michengai/dsh-skills-manager",
+          "Version": "1.2.26",
+          "Publisher": "GitHub Actions",
+          "Description": "DSH Skills Manager \u2014 \u5728 DeepSeek Harness \u4E2D\u7EDF\u4E00\u52A0\u8F7D\u5E76\u5B89\u5168\u7BA1\u7406\u672C\u673A Agent Skills \u00B7 Load and safely manage local Agent Skills in DSH",
+          "Repository": "git\u002Bhttps://github.com/MichengAI/dsh-skills-manager.git",
+          "Total": 6013,
+          "Growth": 1784
+        },
+        {
+          "Rank": 4,
+          "Name": "@deepseek-harness-tui/dsh-tui",
+          "Version": "0.18.0",
+          "Publisher": "ccchimneyyy",
+          "Description": "Interactive terminal interface for DeepSeek Harness agents, sessions and tools.",
+          "Repository": "git\u002Bhttps://github.com/ccch1mneyyy/dsh-TUI.git",
+          "Total": 2785,
+          "Growth": 271
+        },
+        {
+          "Rank": 5,
+          "Name": "dsh-cost-meter",
+          "Version": "1.9.49",
+          "Publisher": "smallsun",
+          "Description": "DeepSeek Harness \u4F1A\u8BDD\u8D39\u7528\u7EDF\u8BA1\u63D2\u4EF6:\u672C\u4F1A\u8BDD\u6210\u672C\u3001\u5F53\u65E5\u8D39\u7528\u3001\u5386\u53F2\u8BB0\u5F55\u4E0E\u5B98\u65B9\u4EF7\u683C\u540C\u6B65,\u652F\u6301\u591A\u5382\u5546\u591A\u6A21\u578B\u4EF7\u683C\u8BA1\u8D39(\u5185\u7F6E 170\u002B \u6A21\u578B ID \u4EF7\u683C\u76EE\u5F55\u4E0E\u81EA\u52A8\u5339\u914D)\u3001\u4E3B\u6D41 Coding Plan \u8BA2\u9605\u989D\u5EA6\u67E5\u8BE2\u4E0E\u663E\u793A(16 \u5BB6,\u542B WorkBuddy \u5B98\u65B9\u79EF\u5206\u3001OpenDesign \u5DE5\u4F5C\u533A\u67E5\u8BE2\u3001\u542B\u5C0F\u7C73 MiMo Token Plan \u63A7\u5236\u53F0 Cookie \u67E5\u8BE2\u3001SCNet Token Plan \u672C\u5730 Credits \u8BA1\u91CF\u4E0E\u706B\u5C71\u65B9\u821F Volcano Ark Coding Plan AK/SK \u7B7E\u540D\u67E5\u8BE2",
+          "Repository": "git\u002Bhttps://github.com/Han-1413141/dsh-cost-meter.git",
+          "Total": 6142,
+          "Growth": 206
+        },
+        {
+          "Rank": 6,
+          "Name": "dsh-univer-office",
+          "Version": "0.3.9",
+          "Publisher": "jikkai",
+          "Description": "DSH \u00D7 Univer integration with a bundled collaboration Gateway and Viewer: inline previews, live floating Worktree windows, and session-end review actions in DeepSeek Harness.",
+          "Repository": "git\u002Bhttps://github.com/dream-num/dsh-univer-office.git",
+          "Total": 2363,
+          "Growth": 181
+        },
+        {
+          "Rank": 7,
+          "Name": "@liustack/modsearch",
+          "Version": "5.10.11",
+          "Publisher": "GitHub Actions",
+          "Description": "The strongest free web search plugin for coding agents. Plug-in web search, X search, and page fetch for models without native web access. Free out of the box: no signup, no API key (Firecrawl keyless, 1,000 free credits/month)",
+          "Repository": "git\u002Bhttps://github.com/liustack/modsearch.git",
+          "Total": 3138,
+          "Growth": 179
+        },
+        {
+          "Rank": 8,
+          "Name": "dsh-genui",
+          "Version": "0.3.1",
+          "Publisher": "lhs.c",
+          "Description": "GenUI for DeepSeek Harness: interactive charts, forms, calculators, dashboards, and mini apps rendered inline in assistant replies, with actions that flow back to the model.",
+          "Repository": "git\u002Bhttps://github.com/lhuans/dsh-genui.git",
+          "Total": 12882,
+          "Growth": 44
+        },
+        {
+          "Rank": 9,
+          "Name": "@tt-a1i/archify-dsh",
+          "Version": "1.0.0",
+          "Publisher": "tt-a1i",
+          "Description": "Opt-in DeepSeek Harness Skill-only bundle for the Archify architecture-diagram skill.",
+          "Repository": "git\u002Bhttps://github.com/tt-a1i/archify.git",
+          "Total": 2584,
+          "Growth": 37
+        },
+        {
+          "Rank": 10,
+          "Name": "dsh-plugin-updates",
+          "Version": "2026.1102.13952",
+          "Publisher": "GitHub Actions",
+          "Description": "Per-plugin update notes for the DeepSeek Harness plugin catalog (8281 entries) \u00B7 \u63D2\u4EF6\u66F4\u65B0\u8BF4\u660E\u6570\u636E",
+          "Repository": "git\u002Bhttps://github.com/awesome-dsh-plugin/awesome-dsh-plugin.git",
+          "Total": 2259,
+          "Growth": -7
+        },
+        {
+          "Rank": 11,
+          "Name": "@wxg-prc-cpg/browser-skill-dsh-plugin",
+          "Version": "0.4.1",
+          "Publisher": "wxg-prc-cpg",
+          "Description": "DeepSeek Harness tool plugin that exposes BrowserSkill browser automation (bsk_* tools) to the model",
+          "Repository": "git\u002Bhttps://github.com/Tencent/BrowserSkill.git",
+          "Total": 1519,
+          "Growth": -40
+        },
+        {
+          "Rank": 12,
+          "Name": "dsh-meme",
+          "Version": "0.1.76",
+          "Publisher": "yyh001",
+          "Description": "DeepSeek Harness \u8868\u60C5\u5305\u63D2\u4EF6\uFF1A\u8F93\u5165\u6846\u4E00\u952E\u53D1\u56FE\uFF08\u56FE\u5E93/\u60C5\u7EEA\u591A\u9009\u7B5B\u9009\u3001\u60AC\u6D6E\u5927\u56FE\u9884\u89C8\uFF09\u3001\u591A\u56FE\u5E93\u5F00\u5173\u3001\u60C5\u7EEA\u4E0E\u5173\u952E\u8BCD\u641C\u56FE\u3001AI \u5B66\u56FE\uFF0C\u56FE\u5E93\u53EF\u4ECE\u5E02\u573A\u4E00\u952E\u5B89\u88C5\u6216\u5BFC\u5165/\u5BFC\u51FA ZIP\u3002",
+          "Repository": "git\u002Bhttps://github.com/yyh-001/dsh-meme.git",
+          "Total": 4865,
+          "Growth": -77
+        }
+      ]
+    },
+    {
+      "Key": "downloads-week",
+      "Label": "\u4E0B\u8F7D\u5468\u589E",
+      "Rows": [
+        {
+          "Rank": 1,
+          "Name": "dshmarket",
+          "Version": "1.73.8",
+          "Publisher": "GitHub Actions",
+          "Description": "Visual plugin market inside DeepSeek Harness \u2014 browse, search, and one-click install community plugins. \u00B7 DSH \u53EF\u89C6\u5316\u63D2\u4EF6\u5E02\u573A\uFF1A\u901B\u4E00\u901B\uFF0C\u70B9\u4E00\u4E0B\uFF0C\u88C5\u597D\u3002",
+          "Repository": "git\u002Bhttps://github.com/dsh-market/dsh-market.git",
+          "Total": 361739,
+          "Growth": 186498
+        },
+        {
+          "Rank": 2,
+          "Name": "dsh-pet",
+          "Version": "0.4.0",
+          "Publisher": "pc2005-cloud",
+          "Description": "\u5403\u767D\u996D\u7684\u84DD\u8272\u5927\u80A5\u9C7C\uFF0C\u8D56\u5728 DeepSeek Harness \u91CC\u4E0D\u8D70\u4E86\u3002\u5E73\u65F6\u7231\u73A9\u9B54\u65B9\u3001\u7231\u5403\u5404\u79CD\u96F6\u98DF\u3001\u5076\u5C14\u6253\u4E2A\u76F9\uFF0C\u95F2\u4E0D\u4F4F\u5C31\u5728\u684C\u9762\u4E0A\u6E9C\u8FBE\u4E24\u5708\uFF0C\u88AB\u4F60\u62D6\u6765\u7529\u53BB\u4E5F\u7167\u65E7\u8D56\u7740\uFF1B\u4F60\u5FD9\u8D77\u6765\u5B83\u8DDF\u7740\u5FD9\u524D\u5FD9\u540E\uFF0C\u4E5F\u4F1A\u5E2E\u4F60\u6253\u7406\u4F59\u989D\u94B1\u5305\uFF0C\u95F2\u4E0B\u6765\u7231\u788E\u788E\u5FF5\uFF0C\u8FD8\u4E50\u610F\u966A\u4F60\u5520\u4E24\u53E5\u3002",
+          "Repository": "git\u002Bhttps://github.com/PC2005-cloud/dsh-pet.git",
+          "Total": 224840,
+          "Growth": 178799
+        },
+        {
+          "Rank": 3,
+          "Name": "dsh-whale-widget",
+          "Version": "0.4.2",
+          "Publisher": "GitHub Actions",
+          "Description": "DSH Web \u754C\u9762\u53F3\u4E0B\u89D2\u7684 DeepSeek \u4F59\u989D\u5C0F\u9CB8\u9C7C\u6302\u4EF6:\u4F59\u989D/\u4ECA\u65E5\u5DF2\u7528/\u5CF0\u8C37\u5B9A\u4EF7\u3001\u81EA\u5B9A\u4E49\u6CE1\u6CE1\u70B9\u51FB\u5E8F\u5217(\u6587\u672C/\u4F59\u989D/\u4ECA\u65E5/\u5CF0\u8C37/\u56FE\u7247/\u968F\u673A\u8BED\u53E5\u4E0E\u5E76\u5217\u52A0\u6743\u9009\u62E9)\u3001\u9010\u884C\u6837\u5F0F\u4E0E\u5B57\u4F53\u3001\u60AC\u6D6E\u5FEB\u6377\u7F16\u8F91\u3001\u97F3\u6548\u4E0E\u6BCF\u8F6E\u6D88\u8017\u3001\u81EA\u5B9A\u4E49\u89D2\u8272/\u52A8\u56FE/\u97F3\u6548\u3001\u5438\u9644\u4E0E\u7FFB\u8F6C\u81EA\u5B9A\u4E49",
+          "Repository": "git\u002Bhttps://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget.git",
+          "Total": 174422,
+          "Growth": 120723
+        },
+        {
+          "Rank": 4,
+          "Name": "dsh-plugin-catalog",
+          "Version": "2026.1102.13952",
+          "Publisher": "GitHub Actions",
+          "Description": "The DeepSeek Harness plugin catalog (8281 entries) \u00B7 DeepSeek Harness \u63D2\u4EF6\u76EE\u5F55",
+          "Repository": "git\u002Bhttps://github.com/awesome-dsh-plugin/awesome-dsh-plugin.git",
+          "Total": 136941,
+          "Growth": 119567
+        },
+        {
+          "Rank": 5,
+          "Name": "dsh-unlag",
+          "Version": "1.15.0",
+          "Publisher": "regrevia",
+          "Description": "DSH \u684C\u9762\u7AEF\u81EA\u5DF1\u7684\u5237\u65B0\u6309\u94AE\uFF1A\u6539\u63D2\u4EF6\u4E0D\u7528\u91CD\u542F\u3001\u5F00\u4E45\u4E86\u5361\u4E86\u4E5F\u70B9\u4E00\u4E0B\uFF0C\u6B63\u5728\u8FDB\u884C\u7684\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\u3002",
+          "Repository": "git\u002Bhttps://github.com/regrevia/dsh-unlag.git",
+          "Total": 47178,
+          "Growth": 47178
+        },
+        {
+          "Rank": 6,
+          "Name": "dsh-ops",
+          "Version": "0.4.4",
+          "Publisher": "autofx",
+          "Description": "Native file and PTC tools for DSH on Windows x64, Linux x64 and macOS arm64/x64; Windows-only optional Bash payload and host PowerShell integration",
+          "Repository": "git\u002Bhttps://github.com/T-Auto/dsh-ops.git",
+          "Total": 66334,
+          "Growth": 44721
+        },
+        {
+          "Rank": 7,
+          "Name": "@tencent-connect/dsh-qqbot",
+          "Version": "0.5.5",
+          "Publisher": "tencentconnectqqbot",
+          "Description": "\u5728 QQ \u79C1\u804A\u548C\u7FA4\u804A\u91CC\u76F4\u63A5\u5BF9\u8BDD DeepSeek Harness\u3002 Chat with DeepSeek Harness in QQ private and group chats.",
+          "Repository": "git\u002Bhttps://github.com/tencent-connect/dsh-qqbot.git",
+          "Total": 46665,
+          "Growth": 42220
+        },
+        {
+          "Rank": 8,
+          "Name": "dsh-genui",
+          "Version": "0.3.1",
+          "Publisher": "lhs.c",
+          "Description": "GenUI for DeepSeek Harness: interactive charts, forms, calculators, dashboards, and mini apps rendered inline in assistant replies, with actions that flow back to the model.",
+          "Repository": "git\u002Bhttps://github.com/lhuans/dsh-genui.git",
+          "Total": 40705,
+          "Growth": 38616
+        },
+        {
+          "Rank": 9,
+          "Name": "dsh-plugin-wallpaper-engine",
+          "Version": "1.4.0",
+          "Publisher": "chensyovo",
+          "Description": "Wallpaper Engine backgrounds for the DSH web GUI: render your local Wallpaper Engine wallpapers behind the chat \u2014 Scene and Web in real time through the bundled WebWallGL engine, Video played directly \u2014 with iOS-style liquid glass, adjustable blur/scrim/b",
+          "Repository": "git\u002Bhttps://github.com/elysia395/dsh-wallpaper-engine.git",
+          "Total": 54956,
+          "Growth": 34577
+        },
+        {
+          "Rank": 10,
+          "Name": "dsh-dafeiyu",
+          "Version": "0.1.23",
+          "Publisher": "GitHub Actions",
+          "Description": "A desktop-native BigFish companion driven by DeepSeek Harness session events.",
+          "Repository": "git\u002Bhttps://github.com/QCYTSN/dsh-dafeiyu.git",
+          "Total": 48293,
+          "Growth": 30338
+        },
+        {
+          "Rank": 11,
+          "Name": "dsh-bili-scroll",
+          "Version": "2.4.0",
+          "Publisher": "cloverzz",
+          "Description": "DSH \u63D2\u4EF6\uFF1A\u6BCF\u5929\u66FF\u4F60\u5237\u4E00\u8F6E B\u7AD9 \u2014\u2014 \u8BFB\u5B57\u5E55\u6311\u51FA\u503C\u5F97\u7684\u3001\u5199\u4E00\u4EFD\u65E5\u62A5\uFF0C\u503C\u5F97\u7684\u5C31 @ \u4F60",
+          "Repository": "git\u002Bhttps://github.com/c1overzz/dsh-bili-scroll.git",
+          "Total": 36179,
+          "Growth": 29316
+        },
+        {
+          "Rank": 12,
+          "Name": "dsh-meme",
+          "Version": "0.1.76",
+          "Publisher": "yyh001",
+          "Description": "DeepSeek Harness \u8868\u60C5\u5305\u63D2\u4EF6\uFF1A\u8F93\u5165\u6846\u4E00\u952E\u53D1\u56FE\uFF08\u56FE\u5E93/\u60C5\u7EEA\u591A\u9009\u7B5B\u9009\u3001\u60AC\u6D6E\u5927\u56FE\u9884\u89C8\uFF09\u3001\u591A\u56FE\u5E93\u5F00\u5173\u3001\u60C5\u7EEA\u4E0E\u5173\u952E\u8BCD\u641C\u56FE\u3001AI \u5B66\u56FE\uFF0C\u56FE\u5E93\u53EF\u4ECE\u5E02\u573A\u4E00\u952E\u5B89\u88C5\u6216\u5BFC\u5165/\u5BFC\u51FA ZIP\u3002",
+          "Repository": "git\u002Bhttps://github.com/yyh-001/dsh-meme.git",
+          "Total": 34025,
+          "Growth": 28126
+        }
+      ]
+    },
+    {
+      "Key": "downloads-month",
+      "Label": "\u4E0B\u8F7D\u6708\u589E",
+      "Rows": [
+        {
+          "Rank": 1,
+          "Name": "dshmarket",
+          "Version": "1.73.8",
+          "Publisher": "GitHub Actions",
+          "Description": "Visual plugin market inside DeepSeek Harness \u2014 browse, search, and one-click install community plugins. \u00B7 DSH \u53EF\u89C6\u5316\u63D2\u4EF6\u5E02\u573A\uFF1A\u901B\u4E00\u901B\uFF0C\u70B9\u4E00\u4E0B\uFF0C\u88C5\u597D\u3002",
+          "Repository": "git\u002Bhttps://github.com/dsh-market/dsh-market.git",
+          "Total": 813066,
+          "Growth": 348483
+        },
+        {
+          "Rank": 2,
+          "Name": "dsh-pet",
+          "Version": "0.4.0",
+          "Publisher": "pc2005-cloud",
+          "Description": "\u5403\u767D\u996D\u7684\u84DD\u8272\u5927\u80A5\u9C7C\uFF0C\u8D56\u5728 DeepSeek Harness \u91CC\u4E0D\u8D70\u4E86\u3002\u5E73\u65F6\u7231\u73A9\u9B54\u65B9\u3001\u7231\u5403\u5404\u79CD\u96F6\u98DF\u3001\u5076\u5C14\u6253\u4E2A\u76F9\uFF0C\u95F2\u4E0D\u4F4F\u5C31\u5728\u684C\u9762\u4E0A\u6E9C\u8FBE\u4E24\u5708\uFF0C\u88AB\u4F60\u62D6\u6765\u7529\u53BB\u4E5F\u7167\u65E7\u8D56\u7740\uFF1B\u4F60\u5FD9\u8D77\u6765\u5B83\u8DDF\u7740\u5FD9\u524D\u5FD9\u540E\uFF0C\u4E5F\u4F1A\u5E2E\u4F60\u6253\u7406\u4F59\u989D\u94B1\u5305\uFF0C\u95F2\u4E0B\u6765\u7231\u788E\u788E\u5FF5\uFF0C\u8FD8\u4E50\u610F\u966A\u4F60\u5520\u4E24\u53E5\u3002",
+          "Repository": "git\u002Bhttps://github.com/PC2005-cloud/dsh-pet.git",
+          "Total": 303052,
+          "Growth": 279679
+        },
+        {
+          "Rank": 3,
+          "Name": "dsh-whale-widget",
+          "Version": "0.4.2",
+          "Publisher": "GitHub Actions",
+          "Description": "DSH Web \u754C\u9762\u53F3\u4E0B\u89D2\u7684 DeepSeek \u4F59\u989D\u5C0F\u9CB8\u9C7C\u6302\u4EF6:\u4F59\u989D/\u4ECA\u65E5\u5DF2\u7528/\u5CF0\u8C37\u5B9A\u4EF7\u3001\u81EA\u5B9A\u4E49\u6CE1\u6CE1\u70B9\u51FB\u5E8F\u5217(\u6587\u672C/\u4F59\u989D/\u4ECA\u65E5/\u5CF0\u8C37/\u56FE\u7247/\u968F\u673A\u8BED\u53E5\u4E0E\u5E76\u5217\u52A0\u6743\u9009\u62E9)\u3001\u9010\u884C\u6837\u5F0F\u4E0E\u5B57\u4F53\u3001\u60AC\u6D6E\u5FEB\u6377\u7F16\u8F91\u3001\u97F3\u6548\u4E0E\u6BCF\u8F6E\u6D88\u8017\u3001\u81EA\u5B9A\u4E49\u89D2\u8272/\u52A8\u56FE/\u97F3\u6548\u3001\u5438\u9644\u4E0E\u7FFB\u8F6C\u81EA\u5B9A\u4E49",
+          "Repository": "git\u002Bhttps://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget.git",
+          "Total": 347565,
+          "Growth": 270562
+        },
+        {
+          "Rank": 4,
+          "Name": "dsh-plugin-catalog",
+          "Version": "2026.1102.13952",
+          "Publisher": "GitHub Actions",
+          "Description": "The DeepSeek Harness plugin catalog (8281 entries) \u00B7 DeepSeek Harness \u63D2\u4EF6\u76EE\u5F55",
+          "Repository": "git\u002Bhttps://github.com/awesome-dsh-plugin/awesome-dsh-plugin.git",
+          "Total": 161163,
+          "Growth": 149561
+        },
+        {
+          "Rank": 5,
+          "Name": "dsh-ops",
+          "Version": "0.4.4",
+          "Publisher": "autofx",
+          "Description": "Native file and PTC tools for DSH on Windows x64, Linux x64 and macOS arm64/x64; Windows-only optional Bash payload and host PowerShell integration",
+          "Repository": "git\u002Bhttps://github.com/T-Auto/dsh-ops.git",
+          "Total": 97591,
+          "Growth": 97591
+        },
+        {
+          "Rank": 6,
+          "Name": "dsh-plugin-wallpaper-engine",
+          "Version": "1.4.0",
+          "Publisher": "chensyovo",
+          "Description": "Wallpaper Engine backgrounds for the DSH web GUI: render your local Wallpaper Engine wallpapers behind the chat \u2014 Scene and Web in real time through the bundled WebWallGL engine, Video played directly \u2014 with iOS-style liquid glass, adjustable blur/scrim/b",
+          "Repository": "git\u002Bhttps://github.com/elysia395/dsh-wallpaper-engine.git",
+          "Total": 109268,
+          "Growth": 85872
+        },
+        {
+          "Rank": 7,
+          "Name": "dsh-dafeiyu",
+          "Version": "0.1.23",
+          "Publisher": "GitHub Actions",
+          "Description": "A desktop-native BigFish companion driven by DeepSeek Harness session events.",
+          "Repository": "git\u002Bhttps://github.com/QCYTSN/dsh-dafeiyu.git",
+          "Total": 79810,
+          "Growth": 71045
+        },
+        {
+          "Rank": 8,
+          "Name": "@tencent-connect/dsh-qqbot",
+          "Version": "0.5.5",
+          "Publisher": "tencentconnectqqbot",
+          "Description": "\u5728 QQ \u79C1\u804A\u548C\u7FA4\u804A\u91CC\u76F4\u63A5\u5BF9\u8BDD DeepSeek Harness\u3002 Chat with DeepSeek Harness in QQ private and group chats.",
+          "Repository": "git\u002Bhttps://github.com/tencent-connect/dsh-qqbot.git",
+          "Total": 53157,
+          "Growth": 50182
+        },
+        {
+          "Rank": 9,
+          "Name": "dsh-connect-workbuddy",
+          "Version": "5.17.0",
+          "Publisher": "dmh2002",
+          "Description": "\u628A\u672C\u673A\u767B\u5F55\u7684 WorkBuddy \u6A21\u578B\uFF08\u56FD\u5185\u7248\u4E0E\u56FD\u9645\u7248\uFF09\u63A5\u5165 DeepSeek Harness\uFF1A\u6BCF\u6B21\u5237\u65B0\u6309\u4E0A\u6E38\u76EE\u5F55\u81EA\u52A8\u8BFB\u53D6\u6BCF\u4E2A\u6A21\u578B\u7684\u79EF\u5206\u500D\u7387\uFF0C\u652F\u6301\u9010\u6A21\u578B\u56FE\u7247\u8F93\u5165\u5F00\u5173\u3001\u591A\u8D26\u53F7\u5207\u6362\u4E0E\u8D26\u53F7\u6C60\u81EA\u52A8\u6362\u53F7\uFF0C\u5E76\u63D0\u4F9B\u6BCF\u65E5\u7B7E\u5230\u3001\u5361\u7247\u4E0E\u8F93\u5165\u6846\u91CC\u7684\u80F6\u56CA\u79EF\u5206\u8BFB\u6570\u7B49\u53EA\u8BFB\u79EF\u5206\u6982\u89C8\u3002",
+          "Repository": "git\u002Bhttps://github.com/dingminhua/dsh-connect-workbuddy.git",
+          "Total": 55952,
+          "Growth": 48881
+        },
+        {
+          "Rank": 10,
+          "Name": "dsh-unlag",
+          "Version": "1.15.0",
+          "Publisher": "regrevia",
+          "Description": "DSH \u684C\u9762\u7AEF\u81EA\u5DF1\u7684\u5237\u65B0\u6309\u94AE\uFF1A\u6539\u63D2\u4EF6\u4E0D\u7528\u91CD\u542F\u3001\u5F00\u4E45\u4E86\u5361\u4E86\u4E5F\u70B9\u4E00\u4E0B\uFF0C\u6B63\u5728\u8FDB\u884C\u7684\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\u3002",
+          "Repository": "git\u002Bhttps://github.com/regrevia/dsh-unlag.git",
+          "Total": 47178,
+          "Growth": 47178
+        },
+        {
+          "Rank": 11,
+          "Name": "dsh-free-search",
+          "Version": "0.9.26",
+          "Publisher": "dddmuc",
+          "Description": "Free web search for DeepSeek Harness: 27 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable/Firecrawl/Parallel/You.com keyless; Zhihu global/site via MCP and Perplexity/SerpBase/DeepSeek (official \u002B native tools/search)/Baidu/Kimi/Aliyun/Douba",
+          "Repository": "git\u002Bhttps://github.com/DDDMUC/dsh-free-search.git",
+          "Total": 71211,
+          "Growth": 45651
+        },
+        {
+          "Rank": 12,
+          "Name": "dsh-bili-scroll",
+          "Version": "2.4.0",
+          "Publisher": "cloverzz",
+          "Description": "DSH \u63D2\u4EF6\uFF1A\u6BCF\u5929\u66FF\u4F60\u5237\u4E00\u8F6E B\u7AD9 \u2014\u2014 \u8BFB\u5B57\u5E55\u6311\u51FA\u503C\u5F97\u7684\u3001\u5199\u4E00\u4EFD\u65E5\u62A5\uFF0C\u503C\u5F97\u7684\u5C31 @ \u4F60",
+          "Repository": "git\u002Bhttps://github.com/c1overzz/dsh-bili-scroll.git",
+          "Total": 43042,
+          "Growth": 43042
+        }
+      ]
+    }
+  ]
+}

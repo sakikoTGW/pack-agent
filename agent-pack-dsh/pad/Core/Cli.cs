@@ -284,12 +284,19 @@ public static class Cli
 
                 case "market":
                 {
+                    if (cmd == "ranking")
+                    {
+                        var boards = await MarketMetrics.GetAsync(launcher, rest.Contains("--refresh"), log,
+                            CancellationToken.None);
+                        WriteOrOut(rest, JsonSerializer.Serialize(boards, Pretty));
+                        return 0;
+                    }
                     var shelf = Market.Shelves.FirstOrDefault(s => s.Id == cmd);
                     if (shelf.Query is null)
                         return Usage($"pad cli market <{string.Join('|', Market.Shelves.Select(s => s.Id))}> [text]");
                     var page = await Market.Search(shelf.Query, string.Join(' ', rest), 0,
                         CancellationToken.None);
-                    Say($"{shelf.Label}: 共 {page.Total} 个，第 1/{page.PageCount} 页");
+                    Say($"{shelf.Label}: 共 {page.Total} 个，第 1/{page.PageCount} 页（搜索 {Market.LastSearchMs} ms{(Market.LastSearchMs == 0 ? "，缓存" : "")}）");
                     Out(page.Rows);
                     return 0;
                 }

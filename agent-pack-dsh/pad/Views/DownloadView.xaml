@@ -296,7 +296,7 @@
         </Grid.RowDefinitions>
         <ScrollViewer Grid.Row="0" Padding="25,25,25,10" VerticalScrollBarVisibility="Auto">
         <StackPanel>
-          <Border Style="{StaticResource Slab}">
+          <Border x:Name="StoreHeadCard" Style="{StaticResource Slab}">
             <StackPanel>
               <!-- 商店头：默认只留标题 + 搜索 + 筛选开关；版本/装到/排序/分类折叠 -->
               <DockPanel LastChildFill="False">
@@ -508,6 +508,23 @@
               <Border Height="2" Background="{StaticResource Accent}" HorizontalAlignment="Left"
                       Width="34" />
               <TextBlock x:Name="EmptyText" Style="{StaticResource Muted}" Margin="0,15,0,0" />
+            </StackPanel>
+          </Border>
+
+          <Border x:Name="RankingCard" Style="{StaticResource Slab}" Padding="18,14,18,16"
+                  Visibility="Collapsed" Margin="0,4,0,0">
+            <StackPanel>
+              <Grid Margin="2,0,2,10">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                  <TextBlock Text="排行榜" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                  <TextBlock x:Name="RankingNote" Style="{StaticResource Muted}" Margin="10,0,0,0"
+                             VerticalAlignment="Center" FontSize="{StaticResource FsSmall}" />
+                </StackPanel>
+                <Button x:Name="RankingRefreshBtn" Style="{StaticResource Btn}" Content="刷新"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Click="RankingRefresh_Click" />
+              </Grid>
+              <StackPanel x:Name="RankingHost" />
             </StackPanel>
           </Border>
         </StackPanel>

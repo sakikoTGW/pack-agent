@@ -22,6 +22,8 @@ public partial class DownloadView : UserControl, IRefreshable
     int StorePageSize => Math.Clamp((int)(_win.ActualHeight / 17), 10, 100);
 
     int _storePageSizeUsed = 20;
+    bool _rankingLoaded;
+    bool _rankingBusy;
     DispatcherTimer? _storeResizeTimer;
 
     void HookResize()
@@ -139,6 +141,18 @@ public partial class DownloadView : UserControl, IRefreshable
         }
         ShelfNav.Tag = want;
         _shelvesPainted = true;
+
+        // 排行榜不是 npm 查询货架，但入口和其他货架放一起。
+        var rank = new RadioButton
+        {
+            Style = (Style)FindResource("NavItem"),
+            Content = "排行榜",
+            Tag = "ranking",
+            GroupName = "dlNav",
+        };
+        if (TryGeom("I.Sun") is { } rg) Ico.SetOf(rank, rg);
+        rank.Checked += Nav_Checked;
+        ShelfNav.Children.Add(rank);
     }
 
     Geometry? TryGeom(string key) =>
@@ -375,6 +389,23 @@ public partial class DownloadView : UserControl, IRefreshable
         ShowMarketList();
         if (Fx.Animated) Fx.PageIn(release ? PaneRelease : PaneMarket);
         if (release) { _shelf = ""; return; }
+
+        // 排行榜：替换掉 npm 搜索列表，但保留同一个货架栏。
+        var ranking = tag == "ranking";
+        RankingCard.Visibility = ranking ? Visibility.Visible : Visibility.Collapsed;
+        if (ranking)
+        {
+            _shelf = "ranking";
+            _live?.Cancel();
+            StoreHeadCard.Visibility = Visibility.Collapsed;
+            ResultCard.Visibility = Visibility.Collapsed;
+            PagerCard.Visibility = Visibility.Collapsed;
+            EmptyCard.Visibility = Visibility.Collapsed;
+            LoadCard.Visibility = Visibility.Collapsed;
+            if (!_rankingLoaded) _ = LoadRanking(false);
+            return;
+        }
+        StoreHeadCard.Visibility = Visibility.Visible;
 
         if (_shelf == tag) return;
         _shelf = tag;
@@ -619,7 +650,7 @@ public partial class DownloadView : UserControl, IRefreshable
     /// </summary>
     async Task Load()
     {
-        if (_shelf == "dltasks") return;
+        if (_shelf is "dltasks" or "ranking") return;
         _live?.Cancel();
         var live = _live = new CancellationTokenSource();
 
@@ -638,6 +669,7 @@ public partial class DownloadView : UserControl, IRefreshable
             var page = await Market.Search(Shelf().Query, SearchBox.Text, _from, live.Token, _storePageSizeUsed);
             if (live.IsCancellationRequested) return;
             Paint(page);
+            PrefetchNext(page);
             if (App.ShotPage == "market-more")
             {
                 StoreMore.Visibility = Visibility.Visible;
@@ -794,6 +826,7 @@ public partial class DownloadView : UserControl, IRefreshable
 
     void Paint(MarketPage page)
     {
+        if (_shelf == "ranking") return;
         _from = page.From;
         _lastPage = page;
         BuildTagChoices(page.Rows);
@@ -822,11 +855,136 @@ public partial class DownloadView : UserControl, IRefreshable
     /// package declares <c>dsh.bundle</c>, so the result can say whether it became a
     /// profile layer or a plain dependency rather than leaving the user to guess.
     /// </summary>
+    /// <summary>Next page is one click away in practice; loading it while the user reads
+    /// this one makes pagination feel instant (Market keeps a short-lived page cache).</summary>
+    void PrefetchNext(MarketPage page)
+    {
+        if (!page.HasNext || _shelf is "ranking" or "dltasks") return;
+        var query = Shelf().Query;
+        var text = SearchBox.Text;
+        var size = page.Size;
+        var next = page.From + page.Size;
+        _ = Task.Run(async () =>
+        {
+            try { await Market.Search(query, text, next, CancellationToken.None, size); }
+            catch { /* prefetch is best-effort; the real load will surface errors */ }
+        });
+    }
+
+    /// <summary>下载/Star 增长榜：六个小榜（日/周/月 × 下载/Star），数据来自 npm range 与
+    /// GitHub stargazers/history，缓存在 launcher 根下 6 小时。</summary>
+    async Task LoadRanking(bool force)
+    {
+        if (_rankingBusy) return;
+        _rankingBusy = true;
+        _rankingLoaded = true;
+        RankingNote.Text = "加载中…首次约 10–20 秒";
+        try
+        {
+            var boards = await MarketMetrics.GetAsync(_state.Launcher, force,
+                new Progress<string>(s => RankingNote.Text = s), CancellationToken.None);
+            PaintRanking(boards);
+        }
+        catch (Exception ex)
+        {
+            RankingHost.Children.Clear();
+            RankingHost.Children.Add(new TextBlock { Text = PadError.Describe(ex), TextWrapping = TextWrapping.Wrap });
+            RankingNote.Text = "加载失败";
+        }
+        finally { _rankingBusy = false; }
+    }
+
+    void RankingRefresh_Click(object sender, RoutedEventArgs e)
+    {
+        MarketMetrics.ClearCache(_state.Launcher);
+        _rankingLoaded = false;
+        _ = LoadRanking(true);
+    }
+
+    void PaintRanking(Leaderboards boards)
+    {
+        RankingHost.Children.Clear();
+        RankingNote.Text = boards.FromCache ? $"缓存 · {boards.GeneratedText}" : $"刚刚更新 · {boards.GeneratedText}";
+        RankingNote.ToolTip = boards.Note;
+
+        // 两列小榜：Star 三档在左/上，下载三档在右/下，一屏能同时看到。
+        var wrap = new WrapPanel { Orientation = Orientation.Horizontal };
+        foreach (var board in boards.Boards)
+        {
+            var box = new StackPanel { Width = 318, Margin = new Thickness(0, 2, 16, 12) };
+            box.Children.Add(new TextBlock
+            {
+                Text = $"{board.Label} · Top {Math.Min(5, board.Rows.Count)}",
+                Style = (Style)FindResource("Label"),
+                Margin = new Thickness(0, 0, 0, 6),
+            });
+            foreach (var row in board.Rows.Take(5)) box.Children.Add(PeakRow(row));
+            wrap.Children.Add(box);
+        }
+        RankingHost.Children.Add(wrap);
+
+        if (boards.Boards.All(b => b.Rows.Count == 0))
+            RankingHost.Children.Add(new TextBlock
+            {
+                Text = "暂时拉不到增长数据（网络或 GitHub 限流）。",
+                Style = (Style)FindResource("Muted"),
+            });
+        else if (boards.Boards.Where(b => b.Key.StartsWith("stars-", StringComparison.Ordinal)).All(b => b.Rows.Count == 0))
+            RankingHost.Children.Add(new TextBlock
+            {
+                Text = "Star 榜需要 GitHub API（匿名 60 次/小时）；可设环境变量 PAD_GITHUB_TOKEN 提高配额。",
+                Style = (Style)FindResource("Muted"),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 12, 0, 0),
+            });
+
+        FrameworkElement PeakRow(MetricRow row)
+        {
+            var grid = new Grid { Margin = new Thickness(0, 1, 0, 1) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(22) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition());
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var rank = new TextBlock
+            {
+                Text = row.Rank.ToString(),
+                Style = (Style)FindResource("Muted"),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(rank, 0);
+            var name = new TextBlock
+            {
+                Text = row.Name,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                ToolTip = (row.Description.Length > 0 ? row.Description + "\n" : "")
+                          + $"本期 {row.TotalText} · 增长 {row.GrowthText}",
+            };
+            Grid.SetColumn(name, 1);
+            var grow = new TextBlock
+            {
+                Text = row.GrowthText,
+                VerticalAlignment = VerticalAlignment.Center,
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(10, 0, 0, 0),
+                ToolTip = "本期 " + row.TotalText,
+            };
+            Grid.SetColumn(grow, 2);
+            grid.Children.Add(rank);
+            grid.Children.Add(name);
+            grid.Children.Add(grow);
+            return grid;
+        }
+    }
+
     /// <summary>货架行逐个补“插件自己的图标”：官方 DSH 包用内置品牌图标，其余按 npm 元数据里的仓库取 logo。</summary>
     async Task LoadMarketIcons(IReadOnlyList<MarketRow> rows)
     {
-        foreach (var row in rows)
+        // Icons are one GitHub fetch each; a semaphore keeps the page responsive while
+        // letting several rows finish together instead of waiting one by one.
+        using var gate = new SemaphoreSlim(6);
+        await Task.WhenAll(rows.Select(async row =>
         {
+            await gate.WaitAsync();
             try
             {
                 var icon = await BundleIcon.EnsureFromRepo(_state.Launcher.Root, row.Name,
@@ -834,7 +992,8 @@ public partial class DownloadView : UserControl, IRefreshable
                 if (icon is not null) row.IconPath = icon;
             }
             catch { /* 网络/仓库不可达就用占位字形 */ }
-        }
+            finally { gate.Release(); }
+        }));
     }
 
     async Task InstallFrom(MarketRow row, string version, FrameworkElement? busy)

@@ -83,9 +83,7 @@ public partial class MainWindow : Window
                     or "plugin-detail")
                     ShowInner("instance", "版本设置");
                 if (App.ShotPage == "tray-hint") ShowTrayHintPreview();
-                if (App.ShotPage == "market-ranking" && Page("download") is DownloadView rankingView)
-                    rankingView.OpenShelf("ranking");
-                if (App.ShotPage is "market" or "market-more" or "market-detail" && Page("download") is DownloadView market)
+                if (App.ShotPage is "market" or "market-more" or "market-detail" or "market-ranking" && Page("download") is DownloadView market)
                     market.OpenShelf("plugin");
                 if (App.ShotPage == "dl-tasks" && Page("download") is DownloadView dlTasks)
                     dlTasks.OpenShelf("dltasks");

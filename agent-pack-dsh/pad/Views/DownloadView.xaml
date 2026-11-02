@@ -374,6 +374,96 @@
             </StackPanel>
           </Border>
 
+          <!-- App Store 式 Top Charts：商店页里的一横排，点卡片走同一个插件详情窗口。 -->
+          <StackPanel x:Name="RankingSection" Margin="0,2,0,18">
+            <Grid Margin="2,0,2,10">
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="排行榜" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                <TextBlock x:Name="RankingNote" Style="{StaticResource Muted}" Margin="10,0,0,0"
+                           VerticalAlignment="Center" FontSize="{StaticResource FsSmall}" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <RadioButton x:Name="RankStar" Style="{StaticResource FilterTab}" Content="Star"
+                             GroupName="rankMetric" IsChecked="True" Checked="RankToggle_Changed" />
+                <RadioButton x:Name="RankDownloads" Style="{StaticResource FilterTab}" Content="下载"
+                             GroupName="rankMetric" Margin="6,0,0,0" Checked="RankToggle_Changed" />
+                <RadioButton x:Name="RankDay" Style="{StaticResource FilterTab}" Content="日"
+                             GroupName="rankPeriod" Margin="18,0,0,0" Checked="RankToggle_Changed" />
+                <RadioButton x:Name="RankWeek" Style="{StaticResource FilterTab}" Content="周"
+                             GroupName="rankPeriod" IsChecked="True" Margin="6,0,0,0"
+                             Checked="RankToggle_Changed" />
+                <RadioButton x:Name="RankMonth" Style="{StaticResource FilterTab}" Content="月"
+                             GroupName="rankPeriod" Margin="6,0,0,0" Checked="RankToggle_Changed" />
+                <Button x:Name="RankingRefreshBtn" Style="{StaticResource IcoBtn}" Margin="12,0,0,0"
+                        Click="RankingRefresh_Click" ToolTip="刷新榜单">
+                  <v:Ico Glyph="{StaticResource I.Refresh}" Height="11" />
+                </Button>
+              </StackPanel>
+            </Grid>
+            <TextBlock x:Name="RankTitle" Style="{StaticResource Muted}" Margin="2,0,0,8"
+                       FontSize="{StaticResource FsSmall}" />
+            <TextBlock x:Name="RankEmpty" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                       Visibility="Collapsed" Margin="2,0,2,8" />
+              <ItemsControl x:Name="RankList">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Width="134" Height="138" Margin="0,0,10,0" CornerRadius="12"
+                            Background="{StaticResource BgCard}" BorderBrush="{StaticResource BgPage}"
+                            BorderThickness="1" Cursor="Hand" MouseLeftButtonUp="RankRow_Click">
+                      <Grid Margin="12">
+                        <Grid.RowDefinitions>
+                          <RowDefinition Height="Auto" />
+                          <RowDefinition Height="Auto" />
+                          <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid>
+                          <TextBlock Text="{Binding Rank}" FontSize="22" FontWeight="Bold"
+                                     Foreground="{StaticResource TextMuted}" VerticalAlignment="Top" />
+                          <TextBlock Text="{Binding GrowthText}" FontSize="13" FontWeight="SemiBold"
+                                     HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <TextBlock.Style>
+                              <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                                <Style.Triggers>
+                                  <DataTrigger Binding="{Binding GrowthSign}" Value="pos">
+                                    <Setter Property="Foreground" Value="{StaticResource Success}" />
+                                  </DataTrigger>
+                                  <DataTrigger Binding="{Binding GrowthSign}" Value="neg">
+                                    <Setter Property="Foreground" Value="{StaticResource Danger}" />
+                                  </DataTrigger>
+                                </Style.Triggers>
+                              </Style>
+                            </TextBlock.Style>
+                          </TextBlock>
+                        </Grid>
+                        <Border Grid.Row="1" Width="40" Height="40" CornerRadius="10"
+                                Background="{Binding TileColor}" HorizontalAlignment="Left"
+                                Margin="0,6,0,6">
+                          <TextBlock Text="{Binding Monogram}" FontSize="18" FontWeight="SemiBold"
+                                     Foreground="{StaticResource AccentText}"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Row="2">
+                          <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
+                                     Foreground="{StaticResource TextPrimary}" TextWrapping="Wrap"
+                                     MaxHeight="32" TextTrimming="CharacterEllipsis"
+                                     ToolTip="{Binding Description}" />
+                          <TextBlock Text="{Binding PublisherText}" FontSize="10"
+                                     Foreground="{StaticResource TextMuted}" Margin="0,2,0,0"
+                                     TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+          </StackPanel>
+
           <Border x:Name="MarketError" Style="{StaticResource BannerWarn}" Margin="0,0,0,15"
                   Visibility="Collapsed">
             <Grid>
@@ -511,122 +601,7 @@
             </StackPanel>
           </Border>
 
-          <Border x:Name="RankingCard" Style="{StaticResource Slab}" Padding="18,14,18,14"
-                  Visibility="Collapsed" Margin="0,4,0,0">
-            <StackPanel>
-              <Grid Margin="2,0,2,8">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                  <TextBlock Text="排行榜" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                  <TextBlock x:Name="RankingNote" Style="{StaticResource Muted}" Margin="10,0,0,0"
-                             VerticalAlignment="Center" FontSize="{StaticResource FsSmall}" />
-                </StackPanel>
-                <Button x:Name="RankingRefreshBtn" Style="{StaticResource Btn}" Content="刷新"
-                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                        Click="RankingRefresh_Click" />
-              </Grid>
-              <StackPanel Orientation="Horizontal" Margin="2,0,0,12">
-                <RadioButton x:Name="RankStar" Style="{StaticResource FilterTab}" Content="Star 增长"
-                             GroupName="rankMetric" IsChecked="True" Checked="RankToggle_Changed" />
-                <RadioButton x:Name="RankDownloads" Style="{StaticResource FilterTab}" Content="下载增长"
-                             GroupName="rankMetric" Margin="6,0,0,0" Checked="RankToggle_Changed" />
-                <RadioButton x:Name="RankDay" Style="{StaticResource FilterTab}" Content="日增"
-                             GroupName="rankPeriod" Margin="18,0,0,0"
-                             Checked="RankToggle_Changed" />
-                <RadioButton x:Name="RankWeek" Style="{StaticResource FilterTab}" Content="周增"
-                             GroupName="rankPeriod" IsChecked="True" Margin="6,0,0,0"
-                             Checked="RankToggle_Changed" />
-                <RadioButton x:Name="RankMonth" Style="{StaticResource FilterTab}" Content="月增"
-                             GroupName="rankPeriod" Margin="6,0,0,0" Checked="RankToggle_Changed" />
-              </StackPanel>
-              <Border x:Name="RankingCardBody" Style="{StaticResource Card}"
-                      Background="{StaticResource BgCard}" Padding="16,10,16,4">
-                <StackPanel>
-                  <Grid Margin="0,0,0,2">
-                    <TextBlock x:Name="RankTitle" Style="{StaticResource CardTitle}"
-                               VerticalAlignment="Center" />
-                    <TextBlock x:Name="RankSubtitle" Style="{StaticResource Muted}"
-                               FontSize="{StaticResource FsSmall}" HorizontalAlignment="Right"
-                               VerticalAlignment="Center" />
-                  </Grid>
-                  <TextBlock x:Name="RankEmpty" Style="{StaticResource Muted}" TextWrapping="Wrap"
-                             Visibility="Collapsed" Margin="0,8,0,8" />
-                  <ItemsControl x:Name="RankList" Margin="0,2,0,0">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate>
-                        <StackPanel>
-                          <Grid Margin="0,5">
-                            <Grid.ColumnDefinitions>
-                              <ColumnDefinition Width="30" />
-                              <ColumnDefinition />
-                              <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Border Width="24" Height="24" CornerRadius="12" VerticalAlignment="Center">
-                              <Border.Style>
-                                <Style TargetType="Border">
-                                  <Setter Property="Background" Value="Transparent" />
-                                  <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Top3}" Value="True">
-                                      <Setter Property="Background" Value="{StaticResource Accent}" />
-                                    </DataTrigger>
-                                  </Style.Triggers>
-                                </Style>
-                              </Border.Style>
-                              <TextBlock Text="{Binding Rank}" FontSize="11" FontWeight="SemiBold"
-                                         HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                  <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
-                                    <Style.Triggers>
-                                      <DataTrigger Binding="{Binding Top3}" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource AccentText}" />
-                                      </DataTrigger>
-                                    </Style.Triggers>
-                                  </Style>
-                                </TextBlock.Style>
-                              </TextBlock>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,10,0">
-                              <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
-                                         Foreground="{StaticResource TextPrimary}"
-                                         TextTrimming="CharacterEllipsis"
-                                         ToolTip="{Binding Description}" />
-                              <TextBlock Text="{Binding PublisherText}" FontSize="10.5"
-                                         Foreground="{StaticResource TextMuted}" Margin="0,1,0,0"
-                                         TextTrimming="CharacterEllipsis" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2" HorizontalAlignment="Right"
-                                        VerticalAlignment="Center">
-                              <TextBlock Text="{Binding GrowthText}" FontSize="16"
-                                         FontWeight="SemiBold" HorizontalAlignment="Right">
-                                <TextBlock.Style>
-                                  <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
-                                    <Style.Triggers>
-                                      <DataTrigger Binding="{Binding GrowthSign}" Value="pos">
-                                        <Setter Property="Foreground" Value="{StaticResource Success}" />
-                                      </DataTrigger>
-                                      <DataTrigger Binding="{Binding GrowthSign}" Value="neg">
-                                        <Setter Property="Foreground" Value="{StaticResource Danger}" />
-                                      </DataTrigger>
-                                    </Style.Triggers>
-                                  </Style>
-                                </TextBlock.Style>
-                              </TextBlock>
-                              <TextBlock Text="{Binding TotalLine}" FontSize="10"
-                                         Foreground="{StaticResource TextMuted}"
-                                         HorizontalAlignment="Right" Margin="0,1,0,0" />
-                            </StackPanel>
-                          </Grid>
-                          <Border Height="1" Background="{StaticResource BgPage}"
-                                  Margin="34,0,0,0" />
-                        </StackPanel>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </StackPanel>
-              </Border>
-            </StackPanel>
-          </Border>
+
         </StackPanel>
         </ScrollViewer>
         <Border Grid.Row="1" x:Name="PagerCard" Style="{StaticResource Slab}" Padding="10,7"

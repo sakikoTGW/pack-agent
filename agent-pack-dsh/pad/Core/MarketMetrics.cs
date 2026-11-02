@@ -27,6 +27,17 @@ public sealed class MetricRow
     [JsonIgnore] public string TotalText => Total.ToString("N0");
     [JsonIgnore] public string VersionText => string.IsNullOrWhiteSpace(Version) ? "" : "v" + Version;
     [JsonIgnore] public string PublisherText => string.IsNullOrWhiteSpace(Publisher) ? "npm" : "by " + Publisher;
+    [JsonIgnore] public string Monogram => string.IsNullOrWhiteSpace(Name) ? "?" : Name.TrimStart('@', '.').Substring(0, 1).ToUpperInvariant();
+    [JsonIgnore] public string TileColor
+    {
+        get
+        {
+            string[] palette = ["#3E6F6A", "#5C6BC0", "#B4674E", "#7A8F3A", "#8E5E9E", "#C08A2E"];
+            var hash = 0;
+            foreach (var ch in Name) hash = (hash * 31 + ch) & 0x7fffffff;
+            return palette[hash % palette.Length];
+        }
+    }
     [JsonIgnore] public string TotalLine => "本期 " + TotalText;
     [JsonIgnore] public bool Top3 => Rank is >= 1 and <= 3;
     [JsonIgnore] public string GrowthSign => Growth > 0 ? "pos" : Growth < 0 ? "neg" : "zero";

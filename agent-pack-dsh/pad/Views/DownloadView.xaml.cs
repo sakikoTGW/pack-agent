@@ -145,17 +145,6 @@ public partial class DownloadView : UserControl, IRefreshable
         ShelfNav.Tag = want;
         _shelvesPainted = true;
 
-        // 排行榜不是 npm 查询货架，但入口和其他货架放一起。
-        var rank = new RadioButton
-        {
-            Style = (Style)FindResource("NavItem"),
-            Content = "排行榜",
-            Tag = "ranking",
-            GroupName = "dlNav",
-        };
-        if (TryGeom("I.Sun") is { } rg) Ico.SetOf(rank, rg);
-        rank.Checked += Nav_Checked;
-        ShelfNav.Children.Add(rank);
     }
 
     Geometry? TryGeom(string key) =>
@@ -392,23 +381,6 @@ public partial class DownloadView : UserControl, IRefreshable
         ShowMarketList();
         if (Fx.Animated) Fx.PageIn(release ? PaneRelease : PaneMarket);
         if (release) { _shelf = ""; return; }
-
-        // 排行榜：替换掉 npm 搜索列表，但保留同一个货架栏。
-        var ranking = tag == "ranking";
-        RankingCard.Visibility = ranking ? Visibility.Visible : Visibility.Collapsed;
-        if (ranking)
-        {
-            _shelf = "ranking";
-            _live?.Cancel();
-            StoreHeadCard.Visibility = Visibility.Collapsed;
-            ResultCard.Visibility = Visibility.Collapsed;
-            PagerCard.Visibility = Visibility.Collapsed;
-            EmptyCard.Visibility = Visibility.Collapsed;
-            LoadCard.Visibility = Visibility.Collapsed;
-            if (!_rankingLoaded) _ = LoadRanking(false);
-            return;
-        }
-        StoreHeadCard.Visibility = Visibility.Visible;
 
         if (_shelf == tag) return;
         _shelf = tag;
@@ -653,7 +625,7 @@ public partial class DownloadView : UserControl, IRefreshable
     /// </summary>
     async Task Load()
     {
-        if (_shelf is "dltasks" or "ranking") return;
+        if (_shelf == "dltasks") return;
         _live?.Cancel();
         var live = _live = new CancellationTokenSource();
 
@@ -673,6 +645,9 @@ public partial class DownloadView : UserControl, IRefreshable
             if (live.IsCancellationRequested) return;
             Paint(page);
             PrefetchNext(page);
+            // App Store 式：排行榜是插件商店里的一区，不是另一个页面。
+            RankingSection.Visibility = _shelf == "plugin" ? Visibility.Visible : Visibility.Collapsed;
+            if (_shelf == "plugin" && !_rankingLoaded) _ = LoadRanking(false);
             if (App.ShotPage == "market-more")
             {
                 StoreMore.Visibility = Visibility.Visible;
@@ -829,7 +804,6 @@ public partial class DownloadView : UserControl, IRefreshable
 
     void Paint(MarketPage page)
     {
-        if (_shelf == "ranking") return;
         _from = page.From;
         _lastPage = page;
         BuildTagChoices(page.Rows);
@@ -862,7 +836,7 @@ public partial class DownloadView : UserControl, IRefreshable
     /// this one makes pagination feel instant (Market keeps a short-lived page cache).</summary>
     void PrefetchNext(MarketPage page)
     {
-        if (!page.HasNext || _shelf is "ranking" or "dltasks") return;
+        if (!page.HasNext || _shelf == "dltasks") return;
         var query = Shelf().Query;
         var text = SearchBox.Text;
         var size = page.Size;
@@ -891,8 +865,7 @@ public partial class DownloadView : UserControl, IRefreshable
         }
         catch (Exception ex)
         {
-            RankTitle.Text = "排行榜";
-            RankSubtitle.Text = "";
+            RankTitle.Text = "";
             RankList.ItemsSource = null;
             RankEmpty.Text = PadError.Describe(ex);
             RankEmpty.Visibility = Visibility.Visible;
@@ -906,6 +879,23 @@ public partial class DownloadView : UserControl, IRefreshable
         MarketMetrics.ClearCache(_state.Launcher);
         _rankingLoaded = false;
         _ = LoadRanking(true);
+    }
+
+    void RankRow_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: MetricRow metric }) return;
+        var row = new MarketRow
+        {
+            Name = metric.Name,
+            Version = metric.Version,
+            Publisher = metric.Publisher,
+            Description = metric.Description,
+            Repository = metric.Repository,
+            Homepage = metric.Repository,
+            Date = DateTimeOffset.UtcNow.ToString("o"),
+        };
+        OpenStoreDetail(row);
+        e.Handled = true;
     }
 
     void RankToggle_Changed(object sender, RoutedEventArgs e)
@@ -933,8 +923,7 @@ public partial class DownloadView : UserControl, IRefreshable
         var metricLabel = _rankMetric == "stars" ? "Star" : "下载";
         if (board is null || board.Rows.Count == 0)
         {
-            RankTitle.Text = metricLabel + "榜";
-            RankSubtitle.Text = "";
+            RankTitle.Text = "";
             RankList.ItemsSource = null;
             RankEmpty.Text = _rankMetric == "stars"
                 ? "Star 榜暂时没有数据（GitHub API 匿名限流 60 次/小时）；可设环境变量 PAD_GITHUB_TOKEN 提高配额，或等配额恢复后点刷新。"
@@ -942,10 +931,9 @@ public partial class DownloadView : UserControl, IRefreshable
             RankEmpty.Visibility = Visibility.Visible;
             return;
         }
-        RankTitle.Text = board.Label;
-        RankSubtitle.Text = $"Top {Math.Min(8, board.Rows.Count)} · 按本期增长排序";
+        RankTitle.Text = $"{board.Label} · Top {Math.Min(5, board.Rows.Count)}";
         RankEmpty.Visibility = Visibility.Collapsed;
-        RankList.ItemsSource = board.Rows.Take(8).ToList();
+        RankList.ItemsSource = board.Rows.Take(5).ToList();
     }
 
     /// <summary>货架行逐个补“插件自己的图标”：官方 DSH 包用内置品牌图标，其余按 npm 元数据里的仓库取 logo。</summary>
@@ -1015,6 +1003,12 @@ public partial class DownloadView : UserControl, IRefreshable
     void Row_OpenDetail(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: MarketRow row }) return;
+        OpenStoreDetail(row);
+    }
+
+    /// <summary>App Store 式插件详情窗口：商店卡片、排行榜行共用同一个入口。</summary>
+    void OpenStoreDetail(MarketRow row)
+    {
         var inst = TargetInstance.SelectedItem as Instance;
         var plugin = new PluginRow
         {

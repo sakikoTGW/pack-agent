@@ -21,7 +21,7 @@
 
 ## 2. 增长榜（下载日/周/月 + Star 日/周/月）
 
-![排行榜](01-ranking-tabbed.png)
+![插件商店内的 Top Charts 横排](01-store-top-charts.png)
 
 数据源：
 
@@ -31,7 +31,7 @@
 
 入口：
 
-- UI：下载 → 左侧「排行榜」：Star/下载 切换 × 日/周/月 切换，Top 8 榜单（默认 Star 周增）
+- UI：**并入插件商店页**（App Store 式 Top Charts 横排，不再单开页面/货架）：Star/下载 × 日/周/月，Top 5 卡片刻度；点卡片走同一个插件详情窗口（PluginDetailWindow）
 - CLI：`pad cli market ranking [--refresh] [--out ranking.json]`（`--out` 输出 JSON）
 
 真实数据实测（2026-11-02 15:07，候选 30，Star 30/30 全部取到）：
@@ -47,9 +47,6 @@ Star月增   dsh-ops +5,025 / dsh-pet +3,783 / dsh-plugin-wallpaper-engine +3,68
 
 完整样例：`ranking-sample.json`（`--out` 产物）。
 
-## 3. 商店页
-
-![商店](02-store.png)
 
 ## 4. 测试
 

@@ -21,7 +21,7 @@
 
 ## 2. 增长榜（下载日/周/月 + Star 日/周/月）
 
-![排行榜](01-ranking.png)
+![排行榜](01-ranking-tabbed.png)
 
 数据源：
 

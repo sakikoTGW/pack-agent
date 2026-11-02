@@ -25,6 +25,7 @@ public partial class DownloadView : UserControl, IRefreshable
     bool _growthBusy;
     string _storeMode = "downloads";
     MarketRow? _heroRow;
+    bool _crossShelf;
     int _storePeriod = 7;
     DispatcherTimer? _storeResizeTimer;
 
@@ -656,8 +657,22 @@ public partial class DownloadView : UserControl, IRefreshable
         try
         {
             _storePageSizeUsed = StorePageSize;
-            var page = await Market.Search(Shelf().Query, SearchBox.Text, _from, live.Token, _storePageSizeUsed);
+            _crossShelf = false;
+            var text = SearchBox.Text.Trim();
+            var page = await Market.Search(Shelf().Query, text, _from, live.Token, _storePageSizeUsed);
             if (live.IsCancellationRequested) return;
+            if (page.Rows.Count == 0 && text.Length > 0 && _shelf == "plugin")
+            {
+                // 货架内没结果：去掉 keywords 限定再找一次，只留 DSH 相关的包。
+                var broad = await Market.Search("", text, 0, live.Token, _storePageSizeUsed);
+                if (live.IsCancellationRequested) return;
+                var rows = broad.Rows.Where(LooksLikeDsh).ToList();
+                if (rows.Count > 0)
+                {
+                    page = new MarketPage(rows, rows.Count, 0, rows.Count);
+                    _crossShelf = true;
+                }
+            }
             Paint(page);
             PrefetchNext(page);
             if (App.ShotPage == "market-more")
@@ -814,6 +829,12 @@ public partial class DownloadView : UserControl, IRefreshable
         _win.Toast(on ? $"已收藏 {row.Title}" : $"取消收藏 {row.Title}");
     }
 
+    static bool LooksLikeDsh(MarketRow row)
+    {
+        var text = (row.Name + " " + row.Description + " " + string.Join(" ", row.Keywords)).ToLowerInvariant();
+        return text.Contains("dsh") || text.Contains("deepseek");
+    }
+
     void Paint(MarketPage page)
     {
         _from = page.From;
@@ -821,6 +842,13 @@ public partial class DownloadView : UserControl, IRefreshable
         BuildTagChoices(page.Rows);
         var shown = ApplyStoreControls(page.Rows);
         foreach (var r in shown) r.Favorite = Favorites.IsFavorite(_state.Launcher.Root, r.Name);
+        var text = SearchBox.Text.Trim();
+        var best = 0;
+        if (text.Length > 0)
+        {
+            shown = Market.RankForQuery(shown, text);
+            best = shown.Count == 0 ? 0 : shown.Max(r => Market.QueryScore(r, text));
+        }
         ResultList.ItemsSource = shown;
         _ = LoadMarketIcons(page.Rows);
         GrowthHero.Visibility = Visibility.Collapsed;
@@ -829,7 +857,10 @@ public partial class DownloadView : UserControl, IRefreshable
         StoreModeLink.Content = "‹ 返回增长榜";
         StoreSectionTitle.Text = "全部插件";
         StoreSectionSub.Text = $"{page.Total:N0} 个插件";
-        StoreSectionRight.Text = SearchBox.Text.Trim().Length > 0 ? $"搜索“{SearchBox.Text.Trim()}”" : "";
+        StoreSectionRight.Text = text.Length == 0 ? ""
+            : _crossShelf ? $"已跨货架找到 {shown.Count} 个"
+            : best == 0 ? "没有精确命中 · 按 npm 相关性显示"
+            : $"搜索“{text}”";
         ScrollStoreTop();
         ResultCard.Visibility = page.Rows.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
@@ -843,7 +874,7 @@ public partial class DownloadView : UserControl, IRefreshable
         FirstBtn.IsEnabled = page.HasPrev;
         PrevBtn.IsEnabled = page.HasPrev;
         NextBtn.IsEnabled = page.HasNext;
-        PagerCard.Visibility = page.PageCount > 1 ? Visibility.Visible : Visibility.Collapsed;
+        PagerCard.Visibility = !_crossShelf && page.PageCount > 1 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>

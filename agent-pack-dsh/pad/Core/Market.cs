@@ -215,6 +215,42 @@ public sealed class Market
     }
 
     /// <summary>
+    /// <summary>Local relevance for a user's words: exact name hit &gt; all tokens in name
+    /// &gt; any token in name/description/keywords. Used before falling back to npm order.</summary>
+    public static int QueryScore(MarketRow row, string text)
+    {
+        var q = NormalizeQuery(text);
+        if (q.Length == 0) return 0;
+        var tokens = text.Split([' ', '\t', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(NormalizeQuery)
+            .Where(t => t.Length > 0)
+            .ToList();
+        var name = NormalizeQuery(row.Name);
+        var hay = NormalizeQuery(row.Name + " " + row.Description + " " +
+                                 string.Join(" ", row.Keywords) + " " + row.Publisher);
+
+        var score = 0;
+        if (q.Length >= 3 && name.Contains(q, StringComparison.Ordinal)) score += 4;
+        else if (q.Length >= 3 && hay.Contains(q, StringComparison.Ordinal)) score += 2;
+        if (tokens.Count > 1 && tokens.All(t => name.Contains(t, StringComparison.Ordinal))) score += 2;
+        if (tokens.Any(t => name.Contains(t, StringComparison.Ordinal))) score += 1;
+        if (tokens.Any(t => hay.Contains(t, StringComparison.Ordinal))) score += 1;
+        return score;
+    }
+
+    /// <summary>Stable relevance sort; rows that actually contain the words come first.</summary>
+    public static List<MarketRow> RankForQuery(IEnumerable<MarketRow> rows, string text)
+    {
+        var list = rows as List<MarketRow> ?? rows.ToList();
+        if (string.IsNullOrWhiteSpace(text)) return list;
+        return list.OrderByDescending(r => QueryScore(r, text)).ToList();
+    }
+
+    static string NormalizeQuery(string text) =>
+        new string(text.ToLowerInvariant()
+            .Where(ch => ch is not ('-' or '_' or '.' or '/' or '@' or ' ' or '\t'))
+            .ToArray());
+
     /// One page of a shelf. <paramref name="text"/> is the user's words, appended to the
     /// shelf qualifier rather than replacing it.
     ///

@@ -16,6 +16,46 @@ public partial class DownloadView : UserControl, IRefreshable
     readonly AppState _state = AppState.Current;
     bool _pickingTarget;
     MarketRow? _detail;
+    MarketPage? _lastPage;
+
+    /// <summary>每页多少个按窗口高度自适应（近似 17px/个），不再固定 20。</summary>
+    int StorePageSize => Math.Clamp((int)(_win.ActualHeight / 17), 10, 100);
+
+    int _storePageSizeUsed = 20;
+    DispatcherTimer? _storeResizeTimer;
+
+    void HookResize()
+    {
+        SizeChanged += (_, _) =>
+        {
+            _storeResizeTimer ??= CreateStoreResizeTimer();
+            _storeResizeTimer.Stop();
+            _storeResizeTimer.Start();
+        };
+    }
+
+    DispatcherTimer CreateStoreResizeTimer()
+    {
+        var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(240) };
+        t.Tick += (_, _) =>
+        {
+            t.Stop();
+            ReloadStoreForResize();
+        };
+        return t;
+    }
+
+    void ReloadStoreForResize()
+    {
+        if (!IsVisible || PaneMarket.Visibility != Visibility.Visible) return;
+        var now = StorePageSize;
+        if (now == _storePageSizeUsed) return;
+        var pageIndex = _storePageSizeUsed > 0 ? _from / _storePageSizeUsed : 0;
+        _storePageSizeUsed = now;
+        _from = Math.Max(0, pageIndex * now);
+        _ = Load();
+    }
+    string _tag = "";
     PluginCatalog? _catalog;
     string _detailHome = "";
     string _chip = "全部";
@@ -33,6 +73,7 @@ public partial class DownloadView : UserControl, IRefreshable
         _win = win;
         DataContext = _state;
         Loaded += (_, _) => PaintShelves();
+        HookResize();
         IsVisibleChanged += (_, e) =>
         {
             if (e.NewValue is not true) StopDlPoll();
@@ -338,7 +379,7 @@ public partial class DownloadView : UserControl, IRefreshable
         if (_shelf == tag) return;
         _shelf = tag;
         var shelf = Shelf();
-        ShelfTitle.Content = $"搜索{shelf.Label}";
+        ShelfTitle.Text = $"{shelf.Label} · {shelf.Query}";
         ShelfTitle.ToolTip = shelf.Query;
         SearchBox.Clear();
         _from = 0;
@@ -562,13 +603,13 @@ public partial class DownloadView : UserControl, IRefreshable
 
     void Prev_Click(object sender, RoutedEventArgs e)
     {
-        _from = Math.Max(0, _from - Market.PageSize);
+        _from = Math.Max(0, _from - StorePageSize);
         _ = Load();
     }
 
     void Next_Click(object sender, RoutedEventArgs e)
     {
-        _from += Market.PageSize;
+        _from += StorePageSize;
         _ = Load();
     }
 
@@ -593,9 +634,16 @@ public partial class DownloadView : UserControl, IRefreshable
 
         try
         {
-            var page = await Market.Search(Shelf().Query, SearchBox.Text, _from, live.Token);
+            _storePageSizeUsed = StorePageSize;
+            var page = await Market.Search(Shelf().Query, SearchBox.Text, _from, live.Token, _storePageSizeUsed);
             if (live.IsCancellationRequested) return;
             Paint(page);
+            if (App.ShotPage == "market-more")
+            {
+                StoreMore.Visibility = Visibility.Visible;
+                StoreMoreAngle.Angle = 180;
+            }
+            if (App.ShotPage == "market-detail" && page.Rows.Count > 0) QueueStoreDetailShot(page.Rows[0]);
         }
         catch (OperationCanceledException)
         {
@@ -617,10 +665,141 @@ public partial class DownloadView : UserControl, IRefreshable
         }
     }
 
+    bool _storeShotQueued;
+    void QueueStoreDetailShot(MarketRow row)
+    {
+        if (_storeShotQueued || App.ShotPath is not { Length: > 0 } shot) return;
+        _storeShotQueued = true;
+        var dir = System.IO.Path.GetDirectoryName(shot) ?? "";
+        var path = System.IO.Path.Combine(dir, System.IO.Path.GetFileNameWithoutExtension(shot) + "-store-detail.png");
+        var inst = TargetInstance.SelectedItem as Instance;
+        var plugin = new PluginRow
+        {
+            Profile = inst?.Name ?? "",
+            Spec = row.Name,
+            Version = row.Version,
+            Description = row.DescriptionText,
+            Repository = row.Repository,
+            Keywords = row.Keywords,
+            IconPath = row.IconPath,
+            Latest = "",
+        };
+        var win = new PluginDetailWindow(
+            plugin,
+            install: null,
+            versions: async () =>
+            {
+                var cat = await Market.FetchPackument(row.Name, CancellationToken.None);
+                return cat.Versions.Count > 0 ? cat.Versions : cat.Files.Select(f => f.Version).ToList();
+            },
+            installVersion: _ => { })
+        {
+            ShowInTaskbar = false,
+            Left = -20000,
+            Top = -20000,
+        };
+        win.Loaded += (_, _) =>
+        {
+            win.Dispatcher.BeginInvoke(async () =>
+            {
+                try
+                {
+                    var wait = Task.WhenAll(
+                        Task.WhenAny(win.ShotsLoaded, Task.Delay(TimeSpan.FromSeconds(8))),
+                        Task.WhenAny(win.VersionsLoaded, Task.Delay(TimeSpan.FromSeconds(8))));
+                    await wait;
+                    win.RenderTo(path);
+                }
+                finally { win.Close(); }
+            }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        };
+        win.Show();
+    }
+
+    bool _tagBuilding;
+    void BuildTagChoices(List<MarketRow> rows)
+    {
+        _tagBuilding = true;
+        try
+        {
+            var tags = rows.Select(r => r.TagText)
+                .Where(t => t.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
+                .Take(8)
+                .ToList();
+            var items = new List<object> { "全部" };
+            items.AddRange(tags);
+            TagBox.ItemsSource = items;
+            TagBox.SelectedItem = _tag.Length > 0 && tags.Contains(_tag, StringComparer.OrdinalIgnoreCase)
+                ? tags.First(t => string.Equals(t, _tag, StringComparison.OrdinalIgnoreCase))
+                : "全部";
+        }
+        finally { _tagBuilding = false; }
+    }
+
+    void Tag_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_tagBuilding) return;
+        _tag = TagBox.SelectedItem as string ?? "";
+        if (_tag == "全部") _tag = "";
+        if (_lastPage is not null) Paint(_lastPage);
+    }
+
+    List<MarketRow> ApplyStoreControls(List<MarketRow> rows)
+    {
+        IEnumerable<MarketRow> q = rows;
+        if (_tag.Length > 0) q = q.Where(r => string.Equals(r.TagText, _tag, StringComparison.OrdinalIgnoreCase));
+        if (InstalledOnly.IsChecked == true && TargetInstance.SelectedItem is Instance inst)
+        {
+            var have = _state.Launcher.ListBundles(inst)
+                .Select(b => b.Spec)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            q = q.Where(r => have.Contains(r.Name));
+        }
+        var sort = (SortBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "hot";
+        q = sort switch
+        {
+            "date" => q.OrderByDescending(r => DateTimeOffset.TryParse(r.Date, out var t) ? t : DateTimeOffset.MinValue),
+            "name" => q.OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase),
+            _ => q.OrderByDescending(r => r.Popularity),
+        };
+        return q.ToList();
+    }
+
+    void StoreMore_Click(object sender, RoutedEventArgs e)
+    {
+        var show = StoreMore.Visibility != Visibility.Visible;
+        StoreMore.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        StoreMoreAngle.Angle = show ? 180 : 0;
+    }
+
+    void Sort_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_lastPage is not null) Paint(_lastPage);
+    }
+
+    void StoreFilter_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_lastPage is not null) Paint(_lastPage);
+    }
+
+    void MarketFav_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: MarketRow row }) return;
+        var on = Favorites.Toggle(_state.Launcher.Root, row.Name);
+        row.Favorite = on;
+        _win.Toast(on ? $"已收藏 {row.Title}" : $"取消收藏 {row.Title}");
+    }
+
     void Paint(MarketPage page)
     {
         _from = page.From;
-        ResultList.ItemsSource = page.Rows;
+        _lastPage = page;
+        BuildTagChoices(page.Rows);
+        var shown = ApplyStoreControls(page.Rows);
+        foreach (var r in shown) r.Favorite = Favorites.IsFavorite(_state.Launcher.Root, r.Name);
+        ResultList.ItemsSource = shown;
         _ = LoadMarketIcons(page.Rows);
         ResultCard.Visibility = page.Rows.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
@@ -630,7 +809,6 @@ public partial class DownloadView : UserControl, IRefreshable
         EmptyCard.Visibility = page.Rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         ResultCount.Text = $"{page.Total:N0} 个插件";
-        SearchSummary.Text = $"共 {page.Total:N0} 个 · 第 {page.PageIndex + 1}/{page.PageCount} 页";
         PageText.Text = $"{page.PageIndex + 1} / {page.PageCount}";
         FirstBtn.IsEnabled = page.HasPrev;
         PrevBtn.IsEnabled = page.HasPrev;
@@ -705,7 +883,33 @@ public partial class DownloadView : UserControl, IRefreshable
 
     void Row_OpenDetail(object sender, MouseButtonEventArgs e)
     {
-        if (sender is FrameworkElement { Tag: MarketRow row }) _ = OpenDetail(row);
+        if (sender is not FrameworkElement { Tag: MarketRow row }) return;
+        var inst = TargetInstance.SelectedItem as Instance;
+        var plugin = new PluginRow
+        {
+            Profile = inst?.Name ?? "",
+            Spec = row.Name,
+            Version = row.Version,
+            Description = row.DescriptionText,
+            Repository = row.Repository,
+            Keywords = row.Keywords,
+            IconPath = row.IconPath,
+            Latest = "",
+        };
+        // 商店详情也用 App Store 式窗口；安装走现有 InstallFrom（默认装最新版本）
+        var win = new PluginDetailWindow(
+            plugin,
+            install: null,
+            versions: async () =>
+            {
+                var cat = await Market.FetchPackument(row.Name, CancellationToken.None);
+                return cat.Versions.Count > 0 ? cat.Versions : cat.Files.Select(f => f.Version).ToList();
+            },
+            installVersion: version => _ = InstallFrom(row, version, null))
+        {
+            Owner = _win,
+        };
+        win.ShowDialog();
     }
 
     void ShowMarketList()

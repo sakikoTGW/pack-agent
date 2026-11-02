@@ -2311,6 +2311,7 @@ public sealed class Launcher
                     Version = meta.Version,
                     Description = meta.Description,
                     Keywords = meta.Keywords,
+                    Repository = meta.Repository,
                     PackageDir = dir,
                     Provided = provided,
                     Latest = PluginList.ReadCachedLatest(Root, spec) ?? "",

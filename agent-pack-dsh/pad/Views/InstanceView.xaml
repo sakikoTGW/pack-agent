@@ -57,6 +57,7 @@
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="Auto" />
                   <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <local:InstMark x:Name="OverviewMark" Width="32" Height="32"
                                 VerticalAlignment="Center" IsHitTestVisible="False"
@@ -75,6 +76,15 @@
                              Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0"
                              TextTrimming="CharacterEllipsis" />
                 </StackPanel>
+                <Button Grid.Column="2" x:Name="InstMoreBtn" Style="{StaticResource IcoBtn}"
+                        Click="InstMore_Click" ToolTip="更多设置" HorizontalAlignment="Right"
+                        VerticalAlignment="Top">
+                  <v:Ico x:Name="InstMoreIcon" Glyph="{StaticResource I.Chevron}" Height="12">
+                    <v:Ico.RenderTransform>
+                      <RotateTransform x:Name="InstMoreAngle" Angle="180" CenterX="6" CenterY="6" />
+                    </v:Ico.RenderTransform>
+                  </v:Ico>
+                </Button>
               </Grid>
               <StackPanel Grid.Row="1" x:Name="OverviewExtra" Margin="40,6,4,4"
                           Visibility="Collapsed">
@@ -88,6 +98,7 @@
             </Grid>
           </Border>
 
+          <StackPanel x:Name="InstMore">
           <Border Style="{StaticResource Slab}" Padding="25,12,25,15">
             <StackPanel>
               <TextBlock Style="{StaticResource CardHead}" Text="个性化" />
@@ -199,17 +210,30 @@
               </Grid>
             </StackPanel>
           </Border>
+          </StackPanel>
         </StackPanel>
 
         <!-- 插件: PCL Mod 管理 — one list, search, 全部/可更新/试验中. -->
         <StackPanel x:Name="PanePlugins" Visibility="Collapsed">
           <Grid Height="32" Margin="0,4,0,12">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
             <TextBox x:Name="PluginSearch" Height="32"
                      Tag="搜索插件名称 / 描述 / 标签"
                      TextChanged="PluginSearch_Changed" />
+            <Button Grid.Column="1" x:Name="PluginMoreBtn" Style="{StaticResource IcoBtn}"
+                    Click="PluginMore_Click" ToolTip="更多操作" Margin="8,0,0,0">
+              <v:Ico x:Name="PluginMoreIcon" Glyph="{StaticResource I.Chevron}" Height="12">
+                <v:Ico.RenderTransform>
+                  <RotateTransform x:Name="PluginMoreAngle" Angle="0" CenterX="6" CenterY="6" />
+                </v:Ico.RenderTransform>
+              </v:Ico>
+            </Button>
           </Grid>
 
-          <WrapPanel Margin="0,0,0,12">
+          <WrapPanel x:Name="PluginActions" Visibility="Collapsed" Margin="0,0,0,12">
             <Button Style="{StaticResource BtnWide}" Content="打开文件夹" Margin="0,0,20,8"
                     Click="PluginOpenDir_Click" v:Ico.Of="{StaticResource I.Folder}" />
             <Button Style="{StaticResource BtnWide}" Content="从文件安装" Margin="0,0,20,8"
@@ -232,6 +256,9 @@
                            Checked="PluginFilter_Changed" />
               <RadioButton x:Name="FilterTrial" Style="{StaticResource FilterTab}" Content="试验中"
                            GroupName="pluginFilter" Tag="trial"
+                           Checked="PluginFilter_Changed" />
+              <RadioButton x:Name="FilterFav" Style="{StaticResource FilterTab}" Content="收藏"
+                           GroupName="pluginFilter" Tag="favorite"
                            Checked="PluginFilter_Changed" />
             </StackPanel>
             <ComboBox x:Name="PluginProfile" Width="140" Height="28"
@@ -324,6 +351,17 @@
                       </StackPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                      <Button Style="{StaticResource IcoBtn}" Click="PluginFav_Click" Tag="{Binding}"
+                              ToolTip="收藏（本地歌单）">
+                        <Grid>
+                          <v:Ico Glyph="{StaticResource I.Star}" Height="13"
+                                 Foreground="{StaticResource TextMuted}"
+                                 Visibility="{Binding Favorite, Converter={StaticResource B2VNot}}" />
+                          <v:Ico Glyph="{StaticResource I.Star}" Height="13"
+                                 Foreground="{StaticResource Accent}"
+                                 Visibility="{Binding Favorite, Converter={StaticResource B2V}}" />
+                        </Grid>
+                      </Button>
                       <Button Style="{StaticResource IcoBtn}" Click="PluginInfo_Click" Tag="{Binding}"
                               ToolTip="详情">
                         <v:Ico Glyph="{StaticResource I.Info}" Height="12" />
@@ -374,6 +412,22 @@
                          Visibility="Collapsed" />
             </StackPanel>
           </Border>
+
+          <Grid x:Name="PluginPager" Margin="0,10,0,10" Visibility="Collapsed">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+              <Button x:Name="PluginPrevBtn" Style="{StaticResource IcoBtn}" Click="PluginPrev_Click"
+                      ToolTip="上一页">
+                <v:Ico Glyph="{StaticResource I.Prev}" Height="11" />
+              </Button>
+              <TextBlock x:Name="PluginPageText" Style="{StaticResource Mono}"
+                         FontSize="{StaticResource FsSmall}" Foreground="{StaticResource TextSecondary}"
+                         Margin="14,0" VerticalAlignment="Center" />
+              <Button x:Name="PluginNextBtn" Style="{StaticResource IcoBtn}" Click="PluginNext_Click"
+                      ToolTip="下一页">
+                <v:Ico Glyph="{StaticResource I.Next}" Height="11" />
+              </Button>
+            </StackPanel>
+          </Grid>
 
           <Grid Margin="0,16,0,12">
             <Grid.ColumnDefinitions>

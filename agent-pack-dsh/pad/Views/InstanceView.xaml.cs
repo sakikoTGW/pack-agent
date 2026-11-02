@@ -30,6 +30,7 @@ public partial class InstanceView : UserControl, IRefreshable
         _trials = new Trials(_state.Launcher);
         DataContext = _state;
         ShowPane(Checked());
+        HookResize();
     }
 
     string Checked() => new[] { NavOverview, NavSettings, NavPlugins, NavSessions, NavPresets }
@@ -906,7 +907,7 @@ public partial class InstanceView : UserControl, IRefreshable
 
     PluginQuery.Filter CurrentPluginFilter()
     {
-        var tag = new[] { FilterAll, FilterUpdatable, FilterTrial }
+        var tag = new[] { FilterAll, FilterUpdatable, FilterTrial, FilterFav }
             .FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
         return PluginQuery.Parse(tag);
     }
@@ -961,6 +962,8 @@ public partial class InstanceView : UserControl, IRefreshable
             if (r.IconPath.Length == 0) continue;
             if (Skin.LoadBitmap(r.IconPath) is null) r.IconPath = "";
         }
+        var favRoot = _state.Launcher.Root;
+        foreach (var r in rows) r.Favorite = Favorites.IsFavorite(favRoot, r.Spec);
         _pluginRows = rows;
         PaintPlugins();
         if (App.ShotPage == "plugin-detail") QueueDetailShot();
@@ -991,11 +994,16 @@ public partial class InstanceView : UserControl, IRefreshable
         };
         win.Loaded += (_, _) =>
         {
-            win.Dispatcher.BeginInvoke(new Action(() =>
+            win.Dispatcher.BeginInvoke(async () =>
             {
-                try { win.RenderTo(path); }
+                try
+                {
+                    // 等仓库图片下载完（最多 10 秒），否则截出来的空页面没法看
+                    await Task.WhenAny(win.ShotsLoaded, Task.Delay(TimeSpan.FromSeconds(10)));
+                    win.RenderTo(path);
+                }
                 finally { win.Close(); }
-            }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         };
         win.Show();
     }
@@ -1038,6 +1046,81 @@ public partial class InstanceView : UserControl, IRefreshable
         catch { /* registry unreachable; 可更新 stays empty */ }
     }
 
+    /// <summary>每页多少个按窗口高度自适应（约 17px/个），窗口越高一页越多。</summary>
+    int PluginPageSize =>
+        Math.Clamp((int)((Window.GetWindow(this)?.ActualHeight ?? 900) / 17), 24, 84);
+
+    int _pluginPageSizeUsed = 54;
+    System.Windows.Threading.DispatcherTimer? _resizeTimer;
+
+    void HookResize()
+    {
+        SizeChanged += (_, _) =>
+        {
+            _resizeTimer ??= CreateResizeTimer();
+            _resizeTimer.Stop();
+            _resizeTimer.Start();
+        };
+    }
+
+    System.Windows.Threading.DispatcherTimer CreateResizeTimer()
+    {
+        var t = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(220),
+        };
+        t.Tick += (_, _) =>
+        {
+            t.Stop();
+            RepaintPluginsForResize();
+        };
+        return t;
+    }
+
+    void RepaintPluginsForResize()
+    {
+        if (PluginList is null || PanePlugins.Visibility != Visibility.Visible) return;
+        var now = PluginPageSize;
+        if (now == _pluginPageSizeUsed) return;
+        var first = _pluginPage * Math.Max(1, _pluginPageSizeUsed);
+        _pluginPageSizeUsed = now;
+        _pluginPage = Math.Max(0, first / now);
+        PaintPlugins();
+    }
+    int _pluginPage;
+
+    void InstMore_Click(object sender, RoutedEventArgs e)
+    {
+        var show = InstMore.Visibility != Visibility.Visible;
+        InstMore.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        InstMoreAngle.Angle = show ? 180 : 0;
+    }
+
+    void PluginMore_Click(object sender, RoutedEventArgs e)
+    {
+        var show = PluginActions.Visibility != Visibility.Visible;
+        PluginActions.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        PluginMoreAngle.Angle = show ? 180 : 0;
+    }
+
+    void PluginPrev_Click(object sender, RoutedEventArgs e)
+    {
+        if (_pluginPage <= 0) return;
+        _pluginPage--;
+        PaintPlugins();
+    }
+
+    void PluginNext_Click(object sender, RoutedEventArgs e)
+    {
+        var pick = SelectedPluginProfile();
+        var inProfile = _pluginRows.Where(r => pick is null || r.Profile == pick).ToList();
+        var total = PluginQuery.Apply(inProfile, PluginSearch?.Text ?? "", CurrentPluginFilter()).Count();
+        var pages = Math.Max(1, (total + PluginPageSize - 1) / PluginPageSize);
+        if (_pluginPage >= pages - 1) return;
+        _pluginPage++;
+        PaintPlugins();
+    }
+
     void PaintPlugins()
     {
         var pick = SelectedPluginProfile();
@@ -1045,9 +1128,20 @@ public partial class InstanceView : UserControl, IRefreshable
         FilterAll.Content = $"全部 ({inProfile.Count})";
         FilterUpdatable.Content = $"可更新 ({inProfile.Count(r => r.Updatable)})";
         FilterTrial.Content = $"试验中 ({inProfile.Count(r => r.Trial)})";
+        FilterFav.Content = $"收藏 ({inProfile.Count(r => r.Favorite)})";
 
         var shown = PluginQuery.Apply(inProfile, PluginSearch?.Text ?? "", CurrentPluginFilter()).ToList();
-        PluginList.ItemsSource = shown;
+        var pageSize = PluginPageSize;
+        _pluginPageSizeUsed = pageSize;
+        var pages = Math.Max(1, (shown.Count + pageSize - 1) / pageSize);
+        if (_pluginPage >= pages) _pluginPage = pages - 1;
+        if (_pluginPage < 0) _pluginPage = 0;
+        var slice = shown.Skip(_pluginPage * pageSize).Take(pageSize).ToList();
+        PluginList.ItemsSource = slice;
+        PluginPager.Visibility = pages > 1 ? Visibility.Visible : Visibility.Collapsed;
+        PluginPageText.Text = $"{_pluginPage + 1} / {pages}";
+        PluginPrevBtn.IsEnabled = _pluginPage > 0;
+        PluginNextBtn.IsEnabled = _pluginPage < pages - 1;
 
         var empty = shown.Count == 0;
         PluginEmptyBox.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
@@ -1057,6 +1151,8 @@ public partial class InstanceView : UserControl, IRefreshable
             PluginEmpty.Text = "没有试验中的插件";
         else if (CurrentPluginFilter() == PluginQuery.Filter.Updatable)
             PluginEmpty.Text = "没有可更新的插件";
+        else if (CurrentPluginFilter() == PluginQuery.Filter.Favorite)
+            PluginEmpty.Text = "还没有收藏的插件：点行尾的星标收藏。";
         else if ((PluginSearch?.Text ?? "").Trim().Length > 0)
             PluginEmpty.Text = "没有匹配的插件";
         else
@@ -1078,18 +1174,21 @@ public partial class InstanceView : UserControl, IRefreshable
     void PluginSearch_Changed(object sender, TextChangedEventArgs e)
     {
         if (PluginList is null) return;
+        _pluginPage = 0;
         PaintPlugins();
     }
 
     void PluginFilter_Changed(object sender, RoutedEventArgs e)
     {
         if (PluginList is null) return;
+        _pluginPage = 0;
         PaintPlugins();
     }
 
     void PluginProfile_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (_pluginLoading || PluginList is null) return;
+        _pluginPage = 0;
         PaintPlugins();
     }
 
@@ -1138,6 +1237,17 @@ public partial class InstanceView : UserControl, IRefreshable
             spec = Path.GetDirectoryName(spec) ?? spec;
         PluginSpecBox.Text = spec;
         PluginAdd_Click(sender, e);
+    }
+
+    void PluginFav_Click(object sender, RoutedEventArgs e)
+    {
+        var row = PluginFrom(sender);
+        if (row is null) return;
+        var root = _state.Launcher.Root;
+        var on = Favorites.Toggle(root, row.Spec);
+        row.Favorite = on;
+        if (_win is not null) _win.Toast(on ? $"已收藏 {row.Title}" : $"取消收藏 {row.Title}", bad: !on ? false : false);
+        PaintPlugins();
     }
 
     void PluginInfo_Click(object sender, RoutedEventArgs e)

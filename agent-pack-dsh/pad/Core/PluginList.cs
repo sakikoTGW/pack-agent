@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Pad.Core;
 
-public readonly record struct PackageMeta(string Version, string Description, List<string> Keywords);
+public readonly record struct PackageMeta(string Version, string Description, List<string> Keywords, string Repository = "");
 
 /// <summary>
 /// One row on the version-settings plugin list. Counterpart of a PCL Mod row:
@@ -19,7 +19,16 @@ public sealed class PluginRow : Observable
     public string Version { get; init; } = "";
     public string Description { get; init; } = "";
     public List<string> Keywords { get; init; } = [];
+    public string Repository { get; init; } = "";
     public string PackageDir { get; init; } = "";
+
+    bool _favorite;
+    /// <summary>本地收藏（歌单式），由 <see cref="Favorites"/> 持久化。</summary>
+    public bool Favorite
+    {
+        get => _favorite;
+        set { if (_favorite == value) return; _favorite = value; Raise(nameof(Favorite)); }
+    }
     public bool Trial { get; init; }
     public TrialRecord? TrialRec { get; init; }
 
@@ -150,7 +159,7 @@ public sealed class PluginRow : Observable
 /// </summary>
 public static class PluginList
 {
-    public enum Filter { All, Updatable, Trial }
+    public enum Filter { All, Updatable, Trial, Favorite }
 
     public static bool Matches(PluginRow row, string query)
     {
@@ -171,6 +180,7 @@ public static class PluginList
             if (!Matches(r, query)) continue;
             if (filter == Filter.Updatable && !r.Updatable) continue;
             if (filter == Filter.Trial && !r.Trial) continue;
+            if (filter == Filter.Favorite && !r.Favorite) continue;
             yield return r;
         }
     }
@@ -182,6 +192,7 @@ public static class PluginList
     {
         "updatable" => Filter.Updatable,
         "trial" => Filter.Trial,
+        "favorite" => Filter.Favorite,
         _ => Filter.All,
     };
 
@@ -202,7 +213,17 @@ public static class PluginList
                 foreach (var k in kw.EnumerateArray())
                     if (k.GetString() is { Length: > 0 } s) keys.Add(s);
             }
-            return new(ver, desc, keys);
+            var repo = "";
+            if (root.TryGetProperty("repository", out var rp))
+            {
+                if (rp.ValueKind == JsonValueKind.String) repo = (rp.GetString() ?? "").Trim();
+                else if (rp.ValueKind == JsonValueKind.Object
+                         && rp.TryGetProperty("url", out var ru) && ru.ValueKind == JsonValueKind.String)
+                    repo = (ru.GetString() ?? "").Trim();
+            }
+            if (repo.Length == 0 && root.TryGetProperty("homepage", out var hp) && hp.ValueKind == JsonValueKind.String)
+                repo = (hp.GetString() ?? "").Trim();
+            return new(ver, desc, keys, repo);
         }
         catch { return new("", "", []); }
     }
@@ -215,6 +236,7 @@ public static class PluginList
         Version = b.Version,
         Description = b.Description,
         Keywords = b.Keywords,
+        Repository = b.Repository,
         PackageDir = b.PackageDir,
         IconPath = b.IconPath,
         Latest = b.Latest,
@@ -235,6 +257,7 @@ public static class PluginList
             Version = meta.Version,
             Description = meta.Description,
             Keywords = meta.Keywords,
+            Repository = meta.Repository,
             PackageDir = dir,
             IconPath = BundleIcon.Resolve(launcherRoot, dir, spec) ?? "",
             Trial = true,

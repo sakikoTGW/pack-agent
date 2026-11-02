@@ -62,7 +62,7 @@ public partial class MainWindow : Window
                     // "relations-" 会被守卫否决——所以这里用显式布尔，不玩模式组合。
                     _ when App.ShotPage.StartsWith("relations") => TabManage,
                     "tasks" => TabTasks,
-                    "download" or "market" or "market-more" or "market-detail" or "market-ranking" or "market-growth" or "market-all" or "market-collapsed" or "dl-tasks" => TabDownload,
+                    "download" or "market" or "market-more" or "market-detail" or "market-ranking" or "market-growth" or "market-all" or "market-search" or "market-collapsed" or "dl-tasks" => TabDownload,
                     "settings" or "settings-ui" or "settings-download" or "settings-other"
                         or "settings-launch" or "settings-api" => TabSettings,
                     _ => TabLaunch,
@@ -83,7 +83,7 @@ public partial class MainWindow : Window
                     or "plugin-detail")
                     ShowInner("instance", "版本设置");
                 if (App.ShotPage == "tray-hint") ShowTrayHintPreview();
-                if (App.ShotPage is "market" or "market-more" or "market-detail" or "market-ranking" or "market-growth" or "market-collapsed" or "market-all" && Page("download") is DownloadView market)
+                if (App.ShotPage is "market" or "market-more" or "market-detail" or "market-ranking" or "market-growth" or "market-collapsed" or "market-all" or "market-search" && Page("download") is DownloadView market)
                     market.OpenShelf("plugin");
                 if (App.ShotPage == "market-growth" && Page("download") is DownloadView growth)
                     growth.ShowGrowthShot();
@@ -91,6 +91,8 @@ public partial class MainWindow : Window
                     collapsed.CollapseRailForShot();
                 if (App.ShotPage == "market-all" && Page("download") is DownloadView allStore)
                     allStore.ShowAllShot();
+                if (App.ShotPage == "market-search" && Page("download") is DownloadView searchStore)
+                    searchStore.ShowSearchShot("jingyu");
                 if (App.ShotPage == "dl-tasks" && Page("download") is DownloadView dlTasks)
                     dlTasks.OpenShelf("dltasks");
                 if (App.ShotPage is "settings-ui" or "settings-download" or "settings-other"

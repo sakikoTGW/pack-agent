@@ -26,6 +26,7 @@ public partial class DownloadView : UserControl, IRefreshable
     string _storeMode = "downloads";
     MarketRow? _heroRow;
     bool _crossShelf;
+    bool _pinyin;
     int _storePeriod = 7;
     DispatcherTimer? _storeResizeTimer;
 
@@ -658,6 +659,7 @@ public partial class DownloadView : UserControl, IRefreshable
         {
             _storePageSizeUsed = StorePageSize;
             _crossShelf = false;
+            _pinyin = false;
             var text = SearchBox.Text.Trim();
             var page = await Market.Search(Shelf().Query, text, _from, live.Token, _storePageSizeUsed);
             if (live.IsCancellationRequested) return;
@@ -671,6 +673,24 @@ public partial class DownloadView : UserControl, IRefreshable
                 {
                     page = new MarketPage(rows, rows.Count, 0, rows.Count);
                     _crossShelf = true;
+                }
+            }
+            // 拼音/首字母：npm 结果里一个都没命中时，用本地小索引兜底（热度前 3000）。
+            if (_shelf == "plugin" && text.Length > 0 && PinyinSearch.LooksLikePinyinQuery(text) &&
+                !page.Rows.Any(r => Market.NameMatches(r, text)))
+            {
+                {
+                    StoreSectionRight.Text = "正在匹配拼音…";
+                    if (await MarketPinyinIndex.EnsureAsync(_state.Launcher,
+                            new Progress<string>(x => StoreSectionRight.Text = x), live.Token))
+                    {
+                        var hits = MarketPinyinIndex.Lookup(text);
+                        if (hits.Count > 0)
+                        {
+                            page = new MarketPage(hits, hits.Count, 0, hits.Count);
+                            _pinyin = true;
+                        }
+                    }
                 }
             }
             Paint(page);
@@ -840,11 +860,11 @@ public partial class DownloadView : UserControl, IRefreshable
         _from = page.From;
         _lastPage = page;
         BuildTagChoices(page.Rows);
-        var shown = ApplyStoreControls(page.Rows);
+        var shown = _pinyin ? page.Rows : ApplyStoreControls(page.Rows);
         foreach (var r in shown) r.Favorite = Favorites.IsFavorite(_state.Launcher.Root, r.Name);
         var text = SearchBox.Text.Trim();
         var best = 0;
-        if (text.Length > 0)
+        if (text.Length > 0 && !_pinyin)
         {
             shown = Market.RankForQuery(shown, text);
             best = shown.Count == 0 ? 0 : shown.Max(r => Market.QueryScore(r, text));
@@ -858,6 +878,7 @@ public partial class DownloadView : UserControl, IRefreshable
         StoreSectionTitle.Text = "全部插件";
         StoreSectionSub.Text = $"{page.Total:N0} 个插件";
         StoreSectionRight.Text = text.Length == 0 ? ""
+            : _pinyin ? $"拼音/首字母匹配 {shown.Count} 个"
             : _crossShelf ? $"已跨货架找到 {shown.Count} 个"
             : best == 0 ? "没有精确命中 · 按 npm 相关性显示"
             : $"搜索“{text}”";
@@ -874,7 +895,7 @@ public partial class DownloadView : UserControl, IRefreshable
         FirstBtn.IsEnabled = page.HasPrev;
         PrevBtn.IsEnabled = page.HasPrev;
         NextBtn.IsEnabled = page.HasNext;
-        PagerCard.Visibility = !_crossShelf && page.PageCount > 1 ? Visibility.Visible : Visibility.Collapsed;
+        PagerCard.Visibility = !_crossShelf && !_pinyin && page.PageCount > 1 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>
@@ -918,6 +939,19 @@ public partial class DownloadView : UserControl, IRefreshable
         if (!IsLoaded || _storeMode == "all") return;
         _from = 0;
         _ = Load();
+    }
+
+    /// <summary>供 --shot-page 用：在全部插件里搜一个词。</summary>
+    public void ShowSearchShot(string text)
+    {
+        Dispatcher.BeginInvoke(async () =>
+        {
+            _storeMode = "all";
+            ModeAll.IsChecked = true;
+            SearchBox.Text = text;
+            _from = 0;
+            await Load();
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
     /// <summary>供 --shot-page 用：切到全部插件模式。</summary>

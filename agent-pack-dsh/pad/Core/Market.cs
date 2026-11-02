@@ -238,6 +238,13 @@ public sealed class Market
         return score;
     }
 
+    /// <summary>包名本身是否包含查询词（忽略 - _ . @ / 大小写）。</summary>
+    public static bool NameMatches(MarketRow row, string text)
+    {
+        var q = NormalizeQuery(text);
+        return q.Length > 0 && NormalizeQuery(row.Name).Contains(q, StringComparison.Ordinal);
+    }
+
     /// <summary>Stable relevance sort; rows that actually contain the words come first.</summary>
     public static List<MarketRow> RankForQuery(IEnumerable<MarketRow> rows, string text)
     {
@@ -261,7 +268,7 @@ public sealed class Market
     public static async Task<MarketPage> Search(string shelfQuery, string text, int from,
         CancellationToken ct, int pageSize = 0)
     {
-        var size = pageSize > 0 ? Math.Clamp(pageSize, 5, 100) : PageSize;
+        var size = pageSize > 0 ? Math.Clamp(pageSize, 5, 250) : PageSize;
         var q = string.IsNullOrWhiteSpace(text) ? shelfQuery : $"{shelfQuery} {text.Trim()}";
         var host = RegistryBase;
         var url = $"{host}/-/v1/search"

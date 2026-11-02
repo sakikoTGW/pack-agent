@@ -291,6 +291,15 @@ public static class Cli
                         WriteOrOut(rest, JsonSerializer.Serialize(boards, Pretty));
                         return 0;
                     }
+                    if (cmd == "pinyin")
+                    {
+                        var text = string.Join(' ', rest);
+                        var ok = await MarketPinyinIndex.EnsureAsync(launcher, log, CancellationToken.None);
+                        var hits = ok ? MarketPinyinIndex.Lookup(text) : [];
+                        Say(ok ? $"拼音/首字母匹配：{hits.Count} 个（{text}）" : "拼音索引不可用");
+                        Out(hits);
+                        return 0;
+                    }
                     var shelf = Market.Shelves.FirstOrDefault(s => s.Id == cmd);
                     if (shelf.Query is null)
                         return Usage($"pad cli market <{string.Join('|', Market.Shelves.Select(s => s.Id))}> [text]");

@@ -172,7 +172,7 @@ public sealed class Market
             // 调用方自己取消（换页 / 重新搜索 / 离开页面）：这不是网络错误，原样抛给上层忽略。
             throw;
         }
-        catch (OperationCanceledException ex)
+        catch (OperationCanceledException)
         {
             throw new PadError("PA033", "npm 搜索超时", host,
                 $"等了 {TimeoutSec} 秒还没响应。",
@@ -290,7 +290,7 @@ public sealed class Market
         {
             throw;
         }
-        catch (OperationCanceledException ex)
+        catch (OperationCanceledException)
         {
             throw new PadError("PA033", "npm packument 超时", url,
                 $"等了 {TimeoutSec} 秒还没响应。",

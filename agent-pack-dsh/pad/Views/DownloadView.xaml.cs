@@ -1055,6 +1055,12 @@ public partial class DownloadView : UserControl, IRefreshable
             if (any)
             {
                 ScrollStoreTop();
+                HeroKicker.Text = _storePeriod switch
+                {
+                    1 => "今日增长最快",
+                    7 => "本周增长最快",
+                    _ => "本月增长最快",
+                };
                 _heroRow = rows[0];
                 HeroTitle.Text = _heroRow.Title;
                 HeroDesc.Text = $"{_heroRow.DescriptionText} · 本期 {_heroRow.GrowthBadge}";

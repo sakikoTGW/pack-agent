@@ -433,7 +433,7 @@
                   <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center">
-                  <TextBlock Text="本周增长最快" Foreground="#E8B26A" FontSize="11"
+                  <TextBlock x:Name="HeroKicker" Text="本周增长最快" Foreground="#E8B26A" FontSize="11"
                              FontWeight="Bold" />
                   <TextBlock x:Name="HeroTitle" Foreground="White" FontSize="27" FontWeight="Bold"
                              Margin="0,6,0,0" TextTrimming="CharacterEllipsis" />

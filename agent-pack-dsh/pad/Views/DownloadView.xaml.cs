@@ -813,9 +813,13 @@ public partial class DownloadView : UserControl, IRefreshable
         ResultList.ItemsSource = shown;
         _ = LoadMarketIcons(page.Rows);
         GrowthHero.Visibility = Visibility.Collapsed;
+        ChipRow.Visibility = Visibility.Collapsed;
+        StoreMoreBtn.Visibility = Visibility.Visible;
+        StoreModeLink.Content = "‹ 返回增长榜";
         StoreSectionTitle.Text = "全部插件";
         StoreSectionSub.Text = $"{page.Total:N0} 个插件";
         StoreSectionRight.Text = SearchBox.Text.Trim().Length > 0 ? $"搜索“{SearchBox.Text.Trim()}”" : "";
+        ScrollStoreTop();
         ResultCard.Visibility = page.Rows.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
         EmptyText.Text = SearchBox.Text.Trim().Length == 0
@@ -874,6 +878,18 @@ public partial class DownloadView : UserControl, IRefreshable
         _ = Load();
     }
 
+    /// <summary>供 --shot-page 用：切到全部插件模式。</summary>
+    public void ShowAllShot()
+    {
+        Dispatcher.BeginInvoke(async () =>
+        {
+            ModeAll.IsChecked = true;
+            _storeMode = "all";
+            _from = 0;
+            await Load();
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
     /// <summary>供 --shot-page 用：截收起的侧栏。</summary>
     public void CollapseRailForShot()
     {
@@ -891,6 +907,16 @@ public partial class DownloadView : UserControl, IRefreshable
             _from = 0;
             await Load();
         }, System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    void ScrollStoreTop() =>
+        Dispatcher.BeginInvoke(() => MarketScroll.ScrollToVerticalOffset(0),
+            System.Windows.Threading.DispatcherPriority.Loaded);
+
+    void StoreModeLink_Click(object sender, RoutedEventArgs e)
+    {
+        if (_storeMode == "all") ModeDownloads.IsChecked = true;
+        else ModeAll.IsChecked = true;
     }
 
     void HeroOpen_Click(object sender, RoutedEventArgs e)
@@ -914,6 +940,9 @@ public partial class DownloadView : UserControl, IRefreshable
         ResultCard.Visibility = Visibility.Visible;
         PagerCard.Visibility = Visibility.Collapsed;
         GrowthHero.Visibility = Visibility.Collapsed;
+        ChipRow.Visibility = Visibility.Visible;
+        StoreMoreBtn.Visibility = Visibility.Collapsed;
+        StoreModeLink.Content = "浏览全部插件 ›";
         LoadCard.Visibility = ResultList.ItemsSource is null ? Visibility.Visible : Visibility.Collapsed;
         StoreSectionTitle.Text = "增长榜";
         StoreSectionSub.Text = _storeMode == "stars" ? "Star 增长" : "下载增长";
@@ -949,6 +978,7 @@ public partial class DownloadView : UserControl, IRefreshable
             EmptyText.Text = "暂时拉不到增长数据（网络或 GitHub 限流）";
             if (any)
             {
+                ScrollStoreTop();
                 _heroRow = rows[0];
                 HeroTitle.Text = _heroRow.Title;
                 HeroDesc.Text = $"{_heroRow.DescriptionText} · 本期 {_heroRow.GrowthBadge}";

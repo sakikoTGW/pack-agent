@@ -302,7 +302,8 @@
           <RowDefinition Height="*" />
           <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ScrollViewer Grid.Row="0" Padding="25,25,25,10" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer x:Name="MarketScroll" Grid.Row="0" Padding="25,25,25,10"
+                      VerticalScrollBarVisibility="Auto">
         <StackPanel>
           <StackPanel>
             <StackPanel Visibility="Collapsed">
@@ -348,16 +349,14 @@
               </Grid>
             </Border>
 
-            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+            <StackPanel x:Name="ChipRow" Orientation="Horizontal" Margin="0,14,0,0">
               <RadioButton x:Name="ModeAll" Style="{StaticResource FilterTab}" Content="全部插件"
-                           GroupName="storeMode" Checked="StoreMode_Changed" />
+                           GroupName="storeMode" Visibility="Collapsed" Checked="StoreMode_Changed" />
               <RadioButton x:Name="ModeStars" Style="{StaticResource FilterTab}" Content="Star 增长"
-                           GroupName="storeMode" Margin="8,0,0,0" Checked="StoreMode_Changed" />
+                           GroupName="storeMode" Margin="8,0,0,0" Visibility="Collapsed" Checked="StoreMode_Changed" />
               <RadioButton x:Name="ModeDownloads" Style="{StaticResource FilterTab}" Content="下载增长"
-                           GroupName="storeMode" Margin="8,0,0,0" IsChecked="True"
+                           GroupName="storeMode" Margin="8,0,0,0" IsChecked="True" Visibility="Collapsed"
                            Checked="StoreMode_Changed" />
-              <Border Width="1" Height="18" Background="{StaticResource LineBorder}"
-                      Margin="14,0" VerticalAlignment="Center" />
               <RadioButton x:Name="PeriodDay" Style="{StaticResource FilterTab}" Content="日"
                            GroupName="storePeriod" Checked="StorePeriod_Changed" />
               <RadioButton x:Name="PeriodWeek" Style="{StaticResource FilterTab}" Content="周"
@@ -464,9 +463,15 @@
                            FontSize="{StaticResource FsSmall}" />
                 <TextBlock x:Name="ResultCount" Visibility="Collapsed" />
               </StackPanel>
-              <TextBlock x:Name="StoreSectionRight" Style="{StaticResource Muted}"
-                         HorizontalAlignment="Right" VerticalAlignment="Center"
-                         FontSize="{StaticResource FsSmall}" />
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                          VerticalAlignment="Center">
+                <TextBlock x:Name="StoreSectionRight" Style="{StaticResource Muted}"
+                           VerticalAlignment="Center" FontSize="{StaticResource FsSmall}"
+                           Margin="0,0,14,0" />
+                <Button x:Name="StoreModeLink" Style="{StaticResource BtnGhost}"
+                        Content="浏览全部插件 ›" Height="26" Padding="8,0"
+                        FontSize="{StaticResource FsSmall}" Click="StoreModeLink_Click" />
+              </StackPanel>
             </Grid>
 
           </StackPanel>

@@ -56,6 +56,13 @@ const instanceCs = read('Views/InstanceView.xaml.cs')
 must('InstanceView.xaml.cs', instanceCs, 'ExportPackforge_Click')
 must('InstanceView.xaml.cs', instanceCs, 'PackforgeExportInstance')
 
+const manage = read('Views/ManageView.xaml')
+must('ManageView.xaml', manage, 'ExportDspackBtn')
+must('ManageView.xaml', manage, '导出 .dspack')
+const manageCs = read('Views/ManageView.xaml.cs')
+must('ManageView.xaml.cs', manageCs, 'ExportDspack_Click')
+must('ManageView.xaml.cs', manageCs, 'PackforgeExportInstance')
+
 const packs = read('Core/Packs.cs')
 must('Packs.cs', packs, 'PackforgeExportInstance')
 must('Packs.cs', packs, 'export-instance')

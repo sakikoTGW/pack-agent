@@ -226,6 +226,10 @@
                         Click="BundleImport_Click"
                         ToolTip="选 .pack.zip / .pack.json / .pinst.zip，装进这个实例"
                         v:Ico.Of="{StaticResource I.Pack}" />
+                <Button x:Name="ExportDspackBtn" Style="{StaticResource Btn}" Content="导出 .dspack" Margin="8,0,0,0"
+                        Click="ExportDspack_Click"
+                        ToolTip="把当前实例导出成 PackForge .dspack，给别的启动器装（sessions/凭据不进包）"
+                        v:Ico.Of="{StaticResource I.Download}" />
               </StackPanel>
             </Grid>
           </StackPanel>

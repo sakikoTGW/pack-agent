@@ -312,6 +312,47 @@ public partial class ManageView : UserControl, IRefreshable
         finally { BundleBusy(false); }
     }
 
+    /// <summary>
+    /// 反向兼容：把当前实例导出成 PackForge <c>.dspack</c>（profile / dshhome 自动判别），
+    /// 别的启动器（HDSL / PackForge GUI / official-desktop）也能装。sessions/凭据/运行数据不进包。
+    /// </summary>
+    async void ExportDspack_Click(object sender, RoutedEventArgs e)
+    {
+        var inst = _state.SelectedInstance;
+        if (inst is null)
+        {
+            _win.Toast("先选一个实例", bad: true);
+            return;
+        }
+        var dlg = new SaveFileDialog
+        {
+            Title = "导出为 PackForge .dspack",
+            Filter = "PackForge 整合包 (*.dspack)|*.dspack|所有文件|*.*",
+            FileName = $"{inst.Id}-{inst.Dsh.Version}.dspack",
+        };
+        if (dlg.ShowDialog(_win) != true) return;
+        try
+        {
+            _win.Toast("正在导出 " + Path.GetFileName(dlg.FileName));
+            var json = await _packs.PackforgeExportInstance(
+                inst.Home, dlg.FileName, null, inst.Id, null, inst.Dsh.Version, CancellationToken.None);
+            var path = dlg.FileName;
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("path", out var p) && p.GetString() is { Length: > 0 } got)
+                    path = got;
+            }
+            catch { /* 导出已成功，路径落回对话框选择 */ }
+            _win.Toast("导出好了：" + path);
+            try { Reveal.Path(Path.GetDirectoryName(path) ?? ""); } catch { /* reveal 只是便利 */ }
+        }
+        catch (Exception ex)
+        {
+            _win.Toast(PadError.Describe(ex), bad: true);
+        }
+    }
+
     async void BundleAdd_Click(object sender, RoutedEventArgs e)
     {
         if (_bundleBusy) return;

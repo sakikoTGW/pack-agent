@@ -60,6 +60,8 @@ public sealed class MarketRow : System.ComponentModel.INotifyPropertyChanged
 
     /// <summary>增长榜的本期增长，如 +186,498；空串表示不显示。</summary>
     public string GrowthBadge { get; set; } = "";
+    public string GrowthTotal { get; set; } = "";
+    public string GrowthTotalLine => GrowthTotal.Length > 0 ? "本期 " + GrowthTotal : "";
 
     /// <summary>pos / neg / zero，供模板上色。</summary>
     public string GrowthSign { get; set; } = "zero";

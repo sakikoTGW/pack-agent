@@ -25,7 +25,6 @@ public partial class DownloadView : UserControl, IRefreshable
     bool _growthBusy;
     string _storeMode = "all";
     int _storePeriod = 7;
-    MarketRow? _heroRow;
     DispatcherTimer? _storeResizeTimer;
 
     void HookResize()
@@ -812,7 +811,7 @@ public partial class DownloadView : UserControl, IRefreshable
         foreach (var r in shown) r.Favorite = Favorites.IsFavorite(_state.Launcher.Root, r.Name);
         ResultList.ItemsSource = shown;
         _ = LoadMarketIcons(page.Rows);
-        GrowthHero.Visibility = Visibility.Collapsed;
+        GrowthPanel.Visibility = Visibility.Collapsed;
         StoreSectionTitle.Text = "全部插件";
         StoreSectionSub.Text = $"{page.Total:N0} 个插件";
         StoreSectionRight.Text = SearchBox.Text.Trim().Length > 0 ? $"搜索“{SearchBox.Text.Trim()}”" : "";
@@ -893,11 +892,6 @@ public partial class DownloadView : UserControl, IRefreshable
         }, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
-    void HeroOpen_Click(object sender, RoutedEventArgs e)
-    {
-        if (_heroRow is not null) OpenStoreDetail(_heroRow);
-    }
-
     void StoreRailToggle_Click(object sender, RoutedEventArgs e)
     {
         var hide = StoreRail.Visibility == Visibility.Visible;
@@ -911,10 +905,10 @@ public partial class DownloadView : UserControl, IRefreshable
         _growthBusy = true;
         MarketError.Visibility = Visibility.Collapsed;
         EmptyCard.Visibility = Visibility.Collapsed;
-        ResultCard.Visibility = Visibility.Visible;
+        ResultCard.Visibility = Visibility.Collapsed;
+        GrowthPanel.Visibility = Visibility.Collapsed;
         PagerCard.Visibility = Visibility.Collapsed;
-        GrowthHero.Visibility = Visibility.Collapsed;
-        LoadCard.Visibility = ResultList.ItemsSource is null ? Visibility.Visible : Visibility.Collapsed;
+        LoadCard.Visibility = GrowthList.ItemsSource is null ? Visibility.Visible : Visibility.Collapsed;
         StoreSectionTitle.Text = "增长榜";
         StoreSectionSub.Text = _storeMode == "stars" ? "Star 增长" : "下载增长";
         StoreSectionRight.Text = "";
@@ -936,30 +930,24 @@ public partial class DownloadView : UserControl, IRefreshable
                 Date = DateTimeOffset.UtcNow.ToString("o"),
                 Rank = m.Rank,
                 GrowthBadge = m.GrowthText,
+                GrowthTotal = m.TotalText,
                 GrowthSign = m.GrowthSign,
             }).ToList();
             foreach (var r in rows) r.Favorite = Favorites.IsFavorite(_state.Launcher.Root, r.Name);
-            ResultList.ItemsSource = rows;
+            GrowthList.ItemsSource = rows;
             StoreSectionSub.Text = $"{board?.Label ?? ""} · Top {rows.Count}";
             StoreSectionRight.Text = boards.FromCache ? $"缓存 · {boards.GeneratedText}" : $"更新 · {boards.GeneratedText}";
             var any = rows.Count > 0;
-            ResultCard.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
+            GrowthPanel.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
+            ResultCard.Visibility = Visibility.Collapsed;
             EmptyCard.Visibility = any ? Visibility.Collapsed : Visibility.Visible;
             EmptyText.Text = "暂时拉不到增长数据（网络或 GitHub 限流）";
-            if (any)
-            {
-                _heroRow = rows[0];
-                HeroTitle.Text = _heroRow.Title;
-                HeroDesc.Text = $"{_heroRow.DescriptionText} · 本期 {_heroRow.GrowthBadge}";
-                HeroIcon.Spec = _heroRow.Name;
-                GrowthHero.Visibility = Visibility.Visible;
-                await LoadMarketIcons(rows);
-                HeroIcon.IconPath = _heroRow.IconPath;
-            }
+            if (any) await LoadMarketIcons(rows);
         }
         catch (Exception ex)
         {
-            ResultList.ItemsSource = null;
+            GrowthList.ItemsSource = null;
+            GrowthPanel.Visibility = Visibility.Collapsed;
             ResultCard.Visibility = Visibility.Collapsed;
             EmptyCard.Visibility = Visibility.Visible;
             EmptyText.Text = PadError.Describe(ex);

@@ -417,43 +417,6 @@
               </StackPanel>
             </StackPanel>
 
-            <!-- Hero：本周增长最快的插件；右边直接用插件自己的图标 -->
-            <Border x:Name="GrowthHero" Visibility="Collapsed" Height="172" Margin="0,18,0,0"
-                    CornerRadius="20" ClipToBounds="True">
-              <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                  <GradientStop Color="#1B2227" Offset="0" />
-                  <GradientStop Color="#2A343B" Offset="0.55" />
-                  <GradientStop Color="#171E23" Offset="1" />
-                </LinearGradientBrush>
-              </Border.Background>
-              <Grid Margin="28,0">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="*" />
-                  <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel VerticalAlignment="Center">
-                  <TextBlock Text="本周增长最快" Foreground="#E8B26A" FontSize="11"
-                             FontWeight="Bold" />
-                  <TextBlock x:Name="HeroTitle" Foreground="White" FontSize="27" FontWeight="Bold"
-                             Margin="0,6,0,0" TextTrimming="CharacterEllipsis" />
-                  <TextBlock x:Name="HeroDesc" Foreground="#C3CBD1" FontSize="12.5"
-                             Margin="0,6,0,0" MaxWidth="560" HorizontalAlignment="Left"
-                             TextTrimming="CharacterEllipsis" />
-                  <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                    <Button Style="{StaticResource BtnPrimary}" Content="查看" Height="34"
-                            Padding="20,0" Click="HeroOpen_Click" />
-                    <Button Style="{StaticResource Btn}" Content="安装" Height="34"
-                            Padding="18,0" Margin="10,0,0,0" Click="HeroOpen_Click" />
-                  </StackPanel>
-                </StackPanel>
-                <Border Grid.Column="1" Width="86" Height="86" CornerRadius="22"
-                        Background="#33FFFFFF" VerticalAlignment="Center" Margin="20,0,4,0">
-                  <v:PluginMark x:Name="HeroIcon" Width="70" Height="70" Size="70" />
-                </Border>
-              </Grid>
-            </Border>
-
             <Grid Margin="2,20,2,12">
               <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock x:Name="StoreSectionTitle" Text="全部插件" FontSize="17"
@@ -467,6 +430,69 @@
                          HorizontalAlignment="Right" VerticalAlignment="Center"
                          FontSize="{StaticResource FsSmall}" />
             </Grid>
+
+            <!-- 增长榜：榜单式平铺列表，每行一张真实插件图片 -->
+            <Border x:Name="GrowthPanel" Visibility="Collapsed" Margin="0,2,0,10"
+                    Background="{StaticResource BgCard}" CornerRadius="18"
+                    BorderBrush="{StaticResource LineBorder}" BorderThickness="1">
+              <ItemsControl x:Name="GrowthList">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel>
+                      <Grid Height="86" Background="Transparent" Tag="{Binding}"
+                            MouseLeftButtonUp="Row_OpenDetail" Cursor="Hand">
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="42" />
+                          <ColumnDefinition Width="72" />
+                          <ColumnDefinition Width="*" />
+                          <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Rank}" FontSize="18" FontWeight="Bold"
+                                   Foreground="{StaticResource TextMuted}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <v:PluginMark Grid.Column="1" Width="56" Height="56" Size="56"
+                                      IconPath="{Binding IconPath}" Spec="{Binding Name}"
+                                      VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="14,0,14,0">
+                          <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="Bold"
+                                     Foreground="{StaticResource TextPrimary}"
+                                     TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding Publisher}" FontSize="10.5"
+                                     Foreground="{StaticResource TextMuted}" Margin="0,2,0,0"
+                                     TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding DescriptionText}" FontSize="11.5"
+                                     Foreground="{StaticResource TextSecondary}" Margin="0,3,0,0"
+                                     TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="3" VerticalAlignment="Center"
+                                    HorizontalAlignment="Right" Margin="0,0,20,0">
+                          <TextBlock Text="{Binding GrowthBadge}" FontSize="19" FontWeight="Bold"
+                                     HorizontalAlignment="Right">
+                            <TextBlock.Style>
+                              <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource Success}" />
+                                <Style.Triggers>
+                                  <DataTrigger Binding="{Binding GrowthSign}" Value="neg">
+                                    <Setter Property="Foreground" Value="{StaticResource Danger}" />
+                                  </DataTrigger>
+                                  <DataTrigger Binding="{Binding GrowthSign}" Value="zero">
+                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                                  </DataTrigger>
+                                </Style.Triggers>
+                              </Style>
+                            </TextBlock.Style>
+                          </TextBlock>
+                          <TextBlock Text="{Binding GrowthTotalLine}" FontSize="10.5"
+                                     Foreground="{StaticResource TextMuted}"
+                                     HorizontalAlignment="Right" Margin="0,2,0,0" />
+                        </StackPanel>
+                      </Grid>
+                      <Border Height="1" Background="{StaticResource BgPage}" Margin="42,0,0,0" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Border>
           </StackPanel>
 
           <Border x:Name="MarketError" Style="{StaticResource BannerWarn}" Margin="0,0,0,15"

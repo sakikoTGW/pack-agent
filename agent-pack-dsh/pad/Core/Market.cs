@@ -154,6 +154,17 @@ public sealed class Market
         {
             body = await Http.GetStringAsync(url, linked.Token);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // 调用方自己取消（换页 / 重新搜索 / 离开页面）：这不是网络错误，原样抛给上层忽略。
+            throw;
+        }
+        catch (OperationCanceledException ex)
+        {
+            throw new PadError("PA033", "npm 搜索超时", host,
+                $"等了 {TimeoutSec} 秒还没响应。",
+                ["网络慢或代理不通", "到设置 → 下载调大超时 / 换 registry", "点重试再试一次"]);
+        }
         catch (Exception ex)
         {
             throw new PadError("PA033", "npm 搜索没连上", host, ex.Message,
@@ -261,6 +272,16 @@ public sealed class Market
         try
         {
             body = await Http.GetStringAsync(url, cts.Token);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException ex)
+        {
+            throw new PadError("PA033", "npm packument 超时", url,
+                $"等了 {TimeoutSec} 秒还没响应。",
+                ["网络慢或代理不通", "到设置 → 下载调大超时 / 换 registry"]);
         }
         catch (Exception ex)
         {

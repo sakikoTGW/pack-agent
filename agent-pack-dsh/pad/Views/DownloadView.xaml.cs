@@ -513,17 +513,18 @@ public partial class DownloadView : UserControl, IRefreshable
     void Warn(string text)
     {
         var t = (text ?? "").Trim();
-        MarketErrorTitle.Text = t.Contains("PA033") || t.Contains("没连上")
-            ? "npm 搜索没连上"
-            : "搜索出错了";
+        MarketErrorTitle.Text = t.Contains("超时")
+            ? "npm 搜索超时"
+            : t.Contains("PA033") || t.Contains("没连上")
+                ? "npm 搜索没连上"
+                : "搜索出错了";
         // 原始错误里 error[..]/--> / | / = help 是给命令行看的；界面只留一句人话 + 一条建议。
         var lines = t.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Trim())
+            .Select(x => x.Trim().TrimStart('|').Trim())
             .Where(x => x.Length > 0)
-            .Where(x => !x.StartsWith("error[") && !x.StartsWith("-->")
-                        && !x.StartsWith("|") && !x.Contains("= help"))
+            .Where(x => !x.StartsWith("error[") && !x.StartsWith("-->") && !x.Contains("= help"))
             .Select(x => x.Contains("A task was canceled", StringComparison.OrdinalIgnoreCase)
-                ? "连接被取消（超时或网络不通）。" : x)
+                ? "请求被取消（超时或网络不通）。" : x)
             .ToList();
         MarketErrorText.Text = lines.Count > 0
             ? string.Join(" ", lines.Take(2))

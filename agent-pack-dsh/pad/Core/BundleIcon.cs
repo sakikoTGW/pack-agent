@@ -45,6 +45,7 @@ public static class BundleIcon
             var p = Path.Combine(packageDir, name.Replace('/', Path.DirectorySeparatorChar));
             if (File.Exists(p)) return p;
         }
+        if (ResolvePackageIcon(launcherRoot, packageDir, spec) is { } npmIcon) return npmIcon;
         var cache = CacheDir(launcherRoot, spec);
         foreach (var name in new[] { "icon.png", "logo.svg", "logo.png" })
         {
@@ -148,6 +149,38 @@ public static class BundleIcon
             }
             catch (OperationCanceledException) { throw; }
             catch { /* next url */ }
+        }
+    }
+
+    /// <summary>已安装包自带的 npm 官方 icon：读 package.json 的 icon，本地文件优先，SVG 光栅化。</summary>
+    static string? ResolvePackageIcon(string launcherRoot, string packageDir, string spec)
+    {
+        if (string.IsNullOrWhiteSpace(packageDir)) return null;
+        var pkg = Path.Combine(packageDir, "package.json");
+        if (!File.Exists(pkg)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(pkg));
+            var icon = doc.RootElement.TryGetProperty("icon", out var value) ? value.GetString() : null;
+            if (string.IsNullOrWhiteSpace(icon)) return null;
+            var relative = icon.Trim().Replace('\\', '/').TrimStart('/');
+            while (relative.StartsWith("./", StringComparison.Ordinal)) relative = relative[2..];
+            var local = Path.Combine(packageDir,
+                relative.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(local)) return null;
+
+            if (!Path.GetExtension(local).Equals(".svg", StringComparison.OrdinalIgnoreCase))
+                return local;
+
+            var cache = CacheDir(launcherRoot, spec);
+            Directory.CreateDirectory(cache);
+            var png = Path.Combine(cache, "icon-npm.png");
+            if (File.Exists(png)) return png;
+            return TryRasterizeSvg(File.ReadAllText(local), png) ? png : null;
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+        {
+            return null;
         }
     }
 

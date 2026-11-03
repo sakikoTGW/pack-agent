@@ -47,7 +47,11 @@ pad cli market icon dshmarket
 1. 搜索接口不返回 `icon`，所以每个包多一次 `latest` 请求（6h 缓存；图标文件缓存后不再下载）
 2. WebP/BMP 等格式未转换，直接回退仓库 logo
 3. SVG 只实现常用子集（无渐变/滤镜/`<use>`），复杂图标可能失败并回退
-4. 已安装插件列表的图标仍走本地包目录解析（本轮只改商店展示链路）
+4. 已安装插件列表也走同一套：BundleIcon.Resolve 先读包内 package.json 的 icon（SVG 光栅化到缓存），再退回默认图标文件 / 仓库 logo
+
+已安装插件列表（版本设置 → 插件）：
+
+![已安装插件图标](02-installed-plugins.png)
 
 ## 验证
 

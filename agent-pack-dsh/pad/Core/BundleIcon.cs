@@ -128,6 +128,14 @@ public static class BundleIcon
         if (Resolve(launcherRoot, packageDir, spec) is not null) return;
         var repo = ReadRepository(Path.Combine(packageDir, "package.json"));
         var ver = ReadVersion(Path.Combine(packageDir, "package.json"));
+
+        // 本地包没带 icon：先从 npm 官方 package icon 取一次，再退回仓库 logo。
+        if (await NpmPackageIcon.EnsureAsync(launcherRoot, LaunchPolicy.BundleBareName(spec),
+                ver ?? "", ct) is not null)
+        {
+            Notify();
+            return;
+        }
         var cache = CacheDir(launcherRoot, spec);
         Directory.CreateDirectory(cache);
         foreach (var url in LaunchPolicy.BundleIconUrls(repo, ver))

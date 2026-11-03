@@ -42,6 +42,18 @@ pad cli market icon dshmarket
 
 商店截图里 dsh-pet 已从 GitHub 头像换成 npm 包自带图标。
 
+## 1. 图标加载加速
+
+- 图标文件命中时**完全不联网**：EnsureAsync 先查 library/plugins-meta/<包>/icon-npm.*，有就直接返回
+- /latest 元数据落盘缓存（library/cache/market/npm-icons.json，24h），重开 PAD 不再逐包请求 registry
+- 实测 pad cli market icon dsh-ops（含进程启动）：冷 4.0s（下载 119KB 图标）→ 热 1.0s（只读本地文件）
+
+## 2. 已安装列表也用来源图标
+
+- BundleIcon.Resolve 先读包内 package.json 的 icon（本地文件，SVG 光栅化）
+- 本地没有时，BundleIcon.Ensure 先试 npm 官方 icon，再退回仓库 logo
+- 版本设置/管理页图标加载完成后会重绘行，冷启动时异步补齐
+
 ## 边界
 
 1. 搜索接口不返回 `icon`，所以每个包多一次 `latest` 请求（6h 缓存；图标文件缓存后不再下载）

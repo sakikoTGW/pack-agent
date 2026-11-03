@@ -1,0 +1,4 @@
+﻿installer: Deepseek.Harness.Desktop_0.30.2_x64-setup.exe
+size: 123271286
+sha256: F53B4B79C06A25A2D3FA2D98A88212C42B828D5586E71F5A83064DD440F430C5
+source: ghfast.top mirror of github release v0.30.2

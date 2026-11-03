@@ -1,0 +1,6 @@
+﻿D107 PREP LOG 2026-11-04T04:13:54.8142323+08:00
+- Lead: backend/CLI API frozen by p2-core (Packs.PreflightPack/InstallPackToInstance/ResolveCard, Launcher.AllowVersions, pack preflight/install; exit 0/2/1, State installed|incomplete|needs-decision|dry-run). pad-ui still wiring UI (task-12).
+- Quiet build attempt at 04:13 (UI WIP) -> FAIL (pad-ui mid-edit MainWindow.xaml.cs CS1002/CS1513). Expected mid-flight; official M5 build happens after M5 GO freeze.
+  preflight-build.log kept for traceability (NOT a product failure).
+- Harness scripts ready: .tmp\d107-verify\run-cli-e2e.ps1 (a-g matrix + hash snapshots), run-ui-shots.ps1 (versions/instance-packs/pack-picker/pack-preflight + regression phases).
+- Scratch root for M5 stays E:\pack-agent\.tmp\d107-verify\.pack-launcher (inst-empty / verify-probe). Disposable pre root: .tmp\d107-pre.

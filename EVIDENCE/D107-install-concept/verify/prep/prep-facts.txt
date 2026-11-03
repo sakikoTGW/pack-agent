@@ -1,0 +1,22 @@
+﻿D107 VERIFIER PREP FACTS captured=2026-11-04T04:04:59.9599893+08:00
+scratch root=E:\pack-agent\.tmp\d107-verify\.pack-launcher
+versions junction -> live versions: Junction E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\versions
+library/packs:
+  Test-0.1.0.pack.zip sha256=51B52D7979007975FB6D9B48B56CC51D8849F36872C26118DFBABEE7C0D1BD7D size=129484
+  Verify-Probe-0.1.0.pack.zip sha256=CC287D54C836264AC9414AF7691E148D27817438AB8F6F2274BD6D000390929B size=1099
+instances:
+  inst-empty: status=ready version=0.2.1-rc.2 lastProfile=web profiles=[] ledger=False projections=[]
+  verify-probe: status=ready version=0.2.1-rc.2 lastProfile= profiles=[web] ledger=True projections=[pack-agent-modpack-verify-probe]
+prototypes: agent-pack-dsh/docs/proposals/install-concept/
+  01-versions.html sha256=8CF96F2D6AE7C74C2B0523670434B24FECCAC27236B288519F50B53CB87AA8B6 size=6196
+  01-versions.png sha256=A8218BE4C2E59C61B64B67D6F61EB7416F14333413A5D323EE5A5A937A12EB81 size=123367
+  02-instance-picker.html sha256=6E63B19F5BB47A1FB071F5B3E54CE50698445572F00F4D3A9264EC4AA2F0EF23 size=5885
+  02-instance-picker.png sha256=23B5C9414A4A63E7CE9827164C5978120C9C15E5D161653A86272CC7EA952B4D size=128905
+  03-preflight-report.html sha256=C628C793C97CBD222D3CB81516FFD5306AB3497C7FA3EC1D914A8209B05C534A size=6608
+  03-preflight-report.png sha256=B9A98B138F4D16E43AEF087C0F37F849C86968AD4EEC26FB2576F37761D4E6C8 size=155580
+  index.html sha256=855E6DD49064C65FAF6D6B14066D1B998E92C69908B3FEDB1A42D0EB23446F90 size=3685
+  mock.css sha256=FA611D85C754DBB8F8DD1D5D60AC0A9E412C9BF3400238351B8B6F20ABB2CA31 size=11464
+baseline shots: EVIDENCE/D107-install-concept/verify/baseline/ (01-versions, 02-instance-packs, 03-pack-picker-unsupported, 04-pack-preflight-unsupported)
+current deployed dll sha=A765CF9C373EC6D1D6121128AD4CEB2265680B25FAB43545C8F00F271198E88A
+live PAD pid 75696 alive=True
+sisyphus web pid 61272 alive=True

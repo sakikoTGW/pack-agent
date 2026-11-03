@@ -1,0 +1,6 @@
+{
+  "schema": "pack-agent.launcher.runtime/v2",
+  "entries": [
+    { "instance": "ev-hot", "profile": "web", "version": "0.2.1-rc.2", "pid": 33888, "port": 3126, "controlUrl": null, "startedAt": "2026-11-03T21:25:10.5026886+00:00" }
+  ]
+}

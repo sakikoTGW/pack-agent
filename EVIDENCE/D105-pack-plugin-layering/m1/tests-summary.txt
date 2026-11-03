@@ -1,0 +1,6 @@
+﻿M1 TESTS @ diff_sha_before=3739cb722efc738b835e2d566b270234353b863b after=3739cb722efc738b835e2d566b270234353b863b
+EXIT=0 agent-pack-dsh/modpack/pad-window.test.ts
+EXIT=0 agent-pack-dsh/modpack/pad-pack.test.ts
+EXIT=0 agent-pack-dsh/modpack/import-pack.test.ts
+EXIT=0 agent-pack-dsh/modpack/test.ts
+EXIT=0 agent-pack-dsh/modpack/pack-catalog.test.ts

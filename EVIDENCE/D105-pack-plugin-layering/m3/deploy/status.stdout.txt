@@ -1,0 +1,2 @@
+--- 03:05:15 pad cli status --json --out E:\pack-agent\EVIDENCE\D105-pack-plugin-layering\m3\deploy\status-after-deploy.json
+wrote E:\pack-agent\EVIDENCE\D105-pack-plugin-layering\m3\deploy\status-after-deploy.json

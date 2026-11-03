@@ -1,0 +1,3 @@
+logical 1060x680
+dpi 1.5x1.5
+pixels 1590x1020

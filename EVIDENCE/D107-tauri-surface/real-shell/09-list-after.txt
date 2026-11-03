@@ -1,0 +1,11 @@
+$ pad cli cli node list E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --json
+exit=0 elapsed=0.4s
+--- stdout ---
+--- 05:31:52 pad cli node list E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --json
+{
+  "home": "E:\\pack-agent\\.tmp\\d107-tauri-real\\instances\\t1\\dsh-home",
+  "nodes": []
+}
+
+--- stderr ---
+

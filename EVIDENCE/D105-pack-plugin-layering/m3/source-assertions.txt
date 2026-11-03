@@ -1,0 +1,68 @@
+﻿M3 P3 UI SOURCE ASSERTIONS 2026-11-04T02:52:57.3195551+08:00
+PASS  PackCompat used in InstanceView :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1665
+PASS  compat three-way accept-risk :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1705
+PASS  compat three-way switch-kernel :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1651
+PASS  Launcher.AllowVersion call :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1651
+PASS  version conflict three-way :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1787
+PASS  MarkInstanceStatus in resume flow :: agent-pack-dsh\pad\Views\VersionsView.xaml.cs:642
+PASS  VersionsView RecoverIncompatibleImportAsync :: agent-pack-dsh\pad\Views\VersionsView.xaml.cs:645
+PASS  stale-row filter (dir missing) :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1838
+FAIL  stale filter 投影/账本 :: 'ProjectionExists' not in agent-pack-dsh\pad\Views\InstanceView.xaml.cs
+PASS  AllowVersionArgs contract :: agent-pack-dsh\pad\Core\Launcher.cs:2478
+PASS  PackCompat class :: agent-pack-dsh\pad\Core\PackCompat.cs:12
+
+pad-window.test.ts P3 block markers:
+  +// 「搜索插件、作者、关键词…」；旧断言按字面禁「关键词」，和现在的产品意图冲突。
+  +// 用户 2026-11-03：整合包看不出装没装；点「新建实例」其实只投影，插件一个都没装。
+  +// Packs.ImportPack（TS import 链：建实例 + 投影 + manager + dsh plugin add）。
+  +  if (!versionsPackCs.includes('import-failed') || !versionsPackCs.includes('上次没装完'))
+  +    fail('import-failed 的实例被当成「已装到」：用户会以为上次装成功了')
+  +  // P3 起兼容门解析搬进 Core/PackCompat.cs（VersionsView 只调它，不再自己扫字面量）。
+  +  const compatSrcD104 = existsSync(join(pad, 'Core/PackCompat.cs')) ? read('Core/PackCompat.cs') : ''
+  +    fail('用整合包新建实例没走 Packs.ImportPack（只投影装不上 dsh.plugins）')
+  +    fail('新建实例还在走只投影的 Launcher.CreateFromPack')
+  +    fail('「新建实例」按钮没接 InstallPackAsync（点了还是旧投影路径）')
+  +    fail('「新建实例」按钮还在投影路径')
+  +    fail('旧的投影-only CreateInstanceFromPackAsync 还在')
+  +// ---- D105 P1 提示层：包↔插件双向标注 + 卸/更新冲突确认 + 管理器 PA110（只读，不写数据）----
+  +    fail('PackPluginFacts 不读投影 catalog.json / mods/*/plugin.json，包声明从哪来')
+  +// 卸载 = 删投影 + 只回滚独占插件（共享保留）；修复 = 账本 incomplete 时出现；
+  +    fail('包行没把投影 id 对回账本 packId（停用/卸载会找错包）')
+  +    fail('实例页装包还在只投影（P2 R8 入口统一）')
+  +    fail('实例页装包还直调 Project（只投影、不装插件）')
+  +    fail('装包冲突/失败没有回显（不许静默）')
+  +    fail('装包结果没把冲突/失败列出来')
+  +    fail('版本页账本装态没校验投影还在（删了目录还显示已装到）')
+  +// ---- D105 P3：DSH allow-version 允许通道 + 冲突三选一 + 换内核重试（§6 P3）----
+  +// 不兼容不再只有死路：解析 DSH 的 allow-version 提示 → 三选一（接受风险/换内核/取消）；
+  +// 版本冲突三选一（升到包版本/保留现有/取消）。不静默、不死循环。
+  +  if (!existsSync(join(pad, 'Core/PackCompat.cs')))
+  +    fail('缺 Core/PackCompat.cs：DSH allow-version 提示没有 parser')
+  +  const compat = read('Core/PackCompat.cs')
+  +    fail('PackCompat 不认 DSH 的 allow-version 提示（精确 pkg@version + --dsh-version + --accept-risk）')
+  +    fail('PackCompat 没有 incompatible / to accept the risk 兜底解析')
+  +  if (!compat.includes('class PackCompatFix') || !compat.includes('FromApplyResult') || !compat.includes('FromError'))
+  +    fail('PackCompat 没有 PackCompatFix / FromApplyResult / FromError API')
+  +  if (!launcherSrc.includes('public async Task AllowVersion('))
+  +    fail('Launcher 没有 AllowVersion（DSH 官方 allow-version 通道）')
+  +  if (!launcherSrc.includes('AllowVersionArgs') || !launcherSrc.includes('--accept-risk'))
+  +    fail('AllowVersion 没拼 DSH 的 allow-version 参数（缺 --accept-risk）')
+  +  if (!launcherSrc.includes('MarkInstanceStatus'))
+  +    fail('缺 MarkInstanceStatus：续装成功后 import-failed 实例恢复不了 ready')
+  +  if (!instCs3.includes('AskAndApplyCompatAsync') || !instCs3.includes('AllowVersion'))
+  +    fail('实例页装包撞兼容门没有「接受风险安装」路径')
+  +  if (!instCs3.includes('接受风险安装') || !instCs3.includes('换内核') || !instCs3.includes('取消'))
+  +    fail('兼容三选一没写全（接受风险安装 / 换内核重试 / 取消）')
+  +    fail('版本冲突没有三选一（升到包版本 / 保留现有 / 取消）')
+  +    fail('换内核重试没列本机已装版本并 PinInstance')
+  +  if (!instCs3.includes('result.Failures') || !instCs3.includes('PackCompat.FromApplyResult'))
+  +  // P3 add-on：catalog DB 残留（投影目录已不在且账本无条目）不能显示假「未登记」行。
+  +  if (!verCs3.includes('PackCompat.FromError') || !verCs3.includes('RecoverIncompatibleImportAsync'))
+  +    fail('版本页新建实例撞兼容门没有续装/换内核恢复路径')
+  +  if (!verCs3.includes('AllowVersion') || !verCs3.includes('MarkInstanceStatus'))
+  +  if (verCs3.includes('PackCompatLine'))
+  +    fail('旧的 PackCompatLine 死路提示还在（P3 应换成三选一恢复）')
+
+P3 unit tests (PackCompatTests) count=11
+source full_diff_sha=4ee5c643641304965bad25bbb8ad436f4a17eae1 product_diff_sha=65751b9892af7048441a5f93256058a73cd289b9
+live PAD pid 78308 alive=True

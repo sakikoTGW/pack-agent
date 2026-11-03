@@ -1,0 +1,17 @@
+Round 2 — official @deepseek-ai/dsh-hmr behaviour, measured on a live dsh 0.2.1-rc.2 web instance
+(scratch home E:\pack-agent\.tmp\lab-e2e, port 3099, PID 68520, started 04:38:49, never restarted)
+
+1) Host services visible from a hot-mounted plugin:
+   [hot-e2e] services: hmr=true profileContext=true appReady=true loader=true pluginPackages=true
+2) Add a REAL bundle (dsh.bundle.patch) to dsh.profile.bundles in the live profile package.json:
+   -> [hot-bundle-probe] mounted via bundle layer   (same PID)
+3) Remove that bundle from the list:
+   -> process alive, PID unchanged
+4) Re-add the bundle (fresh code with disposer):
+   -> [hot-bundle-probe] mounted (with disposer)    (same PID)
+5) Remove again:
+   -> disposer ran, bundle-marker.txt deleted       (same PID)
+
+Conclusion: dsh.profile.bundles additions/removals are hot-reconciled by the official
+dsh-hmr on a plain `dsh` CLI surface; no restart. Earlier failures were because the
+test package was not a bundle (no dsh.bundle.patch declaration).

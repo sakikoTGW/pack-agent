@@ -1,0 +1,11 @@
+✓ registry maps every packable unit
+✓ package.json is a dsh.bundle
+✓ skills/ copied from pack bundle
+✓ modpack ships mods/ with reserved identity fields
+✓ cordis.patch.yml insert skill-filesystem + mcp-client
+✓ install path is project + allow, not dsh plugin add
+✓ ours: packer skill compiled onto DSH bundle
+✓ everything packable: files + persona + plugins + hooks + preset + mods/
+✓ origin marker is not compiled as a skill/mod
+✓ json-only pack without mods is rejected
+[OK] dsh-modpack compile

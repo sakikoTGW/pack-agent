@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>PAD 前端规范 v1 · 系统与组件</title>
+<link rel="stylesheet" href="spec.css">
+</head>
+<body>
+  <div class="hd"><span class="badge">PAD UI SPEC v1</span><h1>设计系统 · 组件 · 动效</h1></div>
+  <div class="sub">同一概念全局一套：一个图标、一种颜色、一个组件尺寸。新东西先查表，查不到先改规范再实现。</div>
+
+  <h2><span class="n">A</span>Tokens（颜色 / 字号 / 间距 / 圆角）</h2>
+  <div class="sec">
+    <div class="swatches">
+      <div class="sw"><div class="c" style="background:#0f5f6b"></div><div class="m"><b>accent</b>#0f5f6b 主操作</div></div>
+      <div class="sw"><div class="c" style="background:#e6f1f3"></div><div class="m"><b>accent-wash</b>#e6f1f3 底</div></div>
+      <div class="sw"><div class="c" style="background:#3fbf73"></div><div class="m"><b>green</b>#3fbf73 可/运行</div></div>
+      <div class="sw"><div class="c" style="background:#c9932f"></div><div class="m"><b>amber</b>#c9932f 需注意</div></div>
+      <div class="sw"><div class="c" style="background:#c24a4a"></div><div class="m"><b>red</b>#c24a4a 不可/失败</div></div>
+      <div class="sw"><div class="c" style="background:#eef1f4"></div><div class="m"><b>bg</b>#eef1f4 窗口底</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:30px;margin-top:18px">
+      <div>
+        <div class="typerow"><span class="t">22 · 卡片标题</span><span style="font-size:22px;font-weight:650">整合包 / 安装报告</span></div>
+        <div class="typerow"><span class="t">19 · 行标题</span><span style="font-size:19px;font-weight:600">Test 0.1.0</span></div>
+        <div class="typerow"><span class="t">17 · 正文/按钮</span><span style="font-size:17px">装到当前实例（sisyphus）</span></div>
+        <div class="typerow"><span class="t">15 · 辅助</span><span style="font-size:15px;color:var(--ink2)">0.2.1-rc.2 · 插件 10</span></div>
+        <div class="typerow"><span class="t">13 · 说明</span><span style="font-size:13px;color:var(--muted)">预检会先跑，不会盲目装</span></div>
+        <div class="mini" style="margin-top:8px">正文不低于 15；行高 1.4–1.5；中英文之间空格。</div>
+      </div>
+      <div>
+        <div class="spacing">
+          <div class="s"><div class="bar" style="height:4px"></div>4</div>
+          <div class="s"><div class="bar" style="height:8px"></div>8</div>
+          <div class="s"><div class="bar" style="height:12px"></div>12</div>
+          <div class="s"><div class="bar" style="height:16px"></div>16</div>
+          <div class="s"><div class="bar" style="height:24px"></div>24</div>
+          <div class="s"><div class="bar" style="height:32px"></div>32</div>
+        </div>
+        <div style="margin-top:18px;font-size:13.5px;color:var(--ink2);line-height:1.8">
+          圆角：控件 10 · 行 14 · 卡片 16 · 弹窗 20 · 药丸 999<br>
+          卡片 padding 22–24 · 行内 gap 12–16<br>
+          阴影：card 轻 / pop 中 / dialog 重（同现有 PAD）
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2><span class="n">B</span>一套图标（≤20 个）· 禁止文字作图</h2>
+  <div class="sec">
+    <div class="icons">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>包<span class="use">包/整合包</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>安装<span class="use">装到实例/下载</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12a8 8 0 1 1 2.5 5.7M4 12H2m2 0l3-3"/></svg>修复<span class="use">重新应用/刷新</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg>卸载<span class="use">删除投影</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5l3 2"/></svg>停用<span class="use">停用/待机</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>可<span class="use">通过/已启用</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 16H3l9-16z"/><path d="M12 10v4M12 17v.5"/></svg>注意<span class="use">需授权/不完整</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 8l8 8M16 8l-8 8"/></svg>不可<span class="use">失败/下架</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></svg>未登记<span class="use">状态未知</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16M4 12h16M4 19h10"/></svg>列表<span class="use">包库</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg>搜索<span class="use">筛选</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>新建<span class="use">新建实例</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 20V4h9l3 3v13H6z"/><path d="M9 9h6M9 13h6"/></svg>报告<span class="use">安装报告</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16M14 6l6 6-6 6"/></svg>打开<span class="use">打开实例</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z"/></svg>安全<span class="use">风险/授权</span></div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v6M12 14v6M4 12h6M14 12h6"/></svg>更多<span class="use">菜单/详情</span></div>
+    </div>
+    <div class="dont" style="margin-top:14px">✕ 禁止：用「包」「装」「安」这类文字块/RGB 方块当图标；同一个动作这页用 +、那页用 ⬇；不同含义复用同一个 icon（⚠ 不能同时表示"需授权"和"可装"）。</div>
+  </div>
+
+  <h2><span class="n">C</span>组件：行 / 药丸 / 弹窗 / 反馈</h2>
+  <div class="sec">
+    <div class="grid g2">
+      <div>
+        <div class="mini" style="margin-bottom:8px">列表行（主按钮在行右，辅助 ≤1 行）</div>
+        <div class="chk" style="border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:#fff">
+          <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#f7b8c8,#e98aa5);display:grid;place-items:center;color:#fff;font-weight:700">T</div>
+          <div class="t"><b>Test · 0.1.0</b><small>0.2.1-rc.2 · 插件 10</small></div>
+          <span class="pill green" style="margin-right:6px">已启用</span>
+          <button class="btn primary" style="padding:6px 12px;font-size:13px">安装 ▾</button>
+        </div>
+        <div class="mini" style="margin:12px 0 6px">药丸（≤3 个，超出折叠 +N）</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill green">可装</span><span class="pill amber">需授权</span><span class="pill red">已下架</span><span class="pill">未登记</span><span class="pill">+2</span></div>
+        <div class="mini" style="margin:12px 0 6px">按钮层级：主 / 次 / 行内 icon</div>
+        <div style="display:flex;gap:10px"><button class="btn primary">开始安装</button><button class="btn">取消</button><button class="btn" style="padding:6px 10px">…</button></div>
+      </div>
+      <div>
+        <div class="mini" style="margin-bottom:8px">反馈：进度 → 结果 → 失败可重试</div>
+        <div style="background:#f8fafb;border:1px solid var(--line);border-radius:14px;padding:14px">
+          <div class="tick"><span class="st ok">✓</span>预检完成 · 8 可装 / 1 需授权 / 1 下架</div>
+          <div class="tick"><span class="st ok">✓</span>已装到 sisyphus · 新增 9 · 豁免 1 · 跳过 1</div>
+          <div class="tick"><span class="st warn">!</span>包标「不完整 · 缺 1」· <span style="color:var(--accent)">去修复</span></div>
+        </div>
+        <div class="mini" style="margin:12px 0 6px">Toast（一句话，3–5s）/ 空态（一句 + 一个按钮）</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="background:var(--green-w);color:var(--green-t);border-radius:10px;padding:9px 14px;font-size:13.5px">✓ Test 已装到 sisyphus · 不完整</div>
+          <div style="background:#fff;border:1px dashed var(--line);border-radius:10px;padding:9px 14px;font-size:13.5px;color:var(--muted)">还没有整合包 › 导入</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2><span class="n">D</span>动效与反馈</h2>
+  <div class="sec">
+    <div class="motion">
+      <div class="demo"><div class="box">▾</div><div><b style="font-size:15px">hover / focus · 120ms</b><small>鼠标移上去：颜色/边框变化，不位移</small></div></div>
+      <div class="demo"><div class="box glow">●</div><div><b style="font-size:15px">呼吸 · 1.6s loop</b><small>全局唯一"活着"语义：运行中 / 已启用</small></div></div>
+    </div>
+    <table class="tbl mtable" style="margin-top:16px">
+      <tr><th>场景</th><th>时长 / 曲线</th><th>备注</th></tr>
+      <tr><td>hover / focus</td><td>120ms ease-out</td><td>只改颜色/阴影，不缩放布局</td></tr>
+      <tr><td>状态切换 / 行插入删除</td><td>160–200ms ease-out</td><td>不弹跳、不整页闪</td></tr>
+      <tr><td>菜单 / 弹窗出现</td><td>180ms ease-out + 8px 上移</td><td>淡入；关闭可更快（120ms）</td></tr>
+      <tr><td>长任务（>400ms）</td><td>阶段推进</td><td>预检 → 授权 → 安装 → 报告，同窗推进</td></tr>
+    </table>
+    <div class="mini" style="margin-top:10px">每个操作必须有反馈：按下态 → 进度 → 结果 →（失败）原文 + 重试。禁止静默。</div>
+  </div>
+
+  <h2><span class="n">E</span>PR 检查清单（10 条）</h2>
+  <div class="sec">
+    <div class="check">
+      <div class="it"><span class="n">1</span>常驻文字删到 ≤1 句主提示 / ≤1 行辅助？</div>
+      <div class="it"><span class="n">2</span>技术原文都进了 Tooltip / 展开 / 报告？</div>
+      <div class="it"><span class="n">3</span>状态用视觉（药丸/颜色/图标）而不是句子？</div>
+      <div class="it"><span class="n">4</span>图标都来自同一套，没有文字作图？</div>
+      <div class="it"><span class="n">5</span>同类组件尺寸/圆角/状态色与其他页一致？</div>
+      <div class="it"><span class="n">6</span>默认值顺手（目标实例、菜单第一项、Enter/Esc）？</div>
+      <div class="it"><span class="n">7</span>每个操作有反馈，失败可读可重试？</div>
+      <div class="it"><span class="n">8</span>动效 120–200ms，且呼吸只有一个语义？</div>
+      <div class="it"><span class="n">9</span>一屏只让人看一件事？</div>
+      <div class="it"><span class="n">10</span>动词/状态词全局一致，没有同义词混用？</div>
+    </div>
+  </div>
+
+  <div class="foot">完整文字规范：<code>agent-pack-dsh/docs/frontend-spec.md</code> · 本手册：<code>agent-pack-dsh/docs/frontend-spec/index.html</code></div>
+  <div class="pageno">2 / 2</div>
+</body>
+</html>

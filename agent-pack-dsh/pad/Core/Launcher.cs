@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace Pad.Core;
@@ -244,6 +245,35 @@ public sealed class Launcher
         inst.Updated = NowIso();
         WriteAtomic(Path.Combine(InstanceDir(inst.Id), "instance.json"), JsonSerializer.Serialize(inst, Json));
         RewriteLaunchScripts(inst);
+    }
+
+    /// <summary>
+    /// 只改 <c>instance.json</c> 的 <c>status</c>（P3：续装成功后把 import-failed 恢复成 ready）。
+    /// 用 JSON 节点而不是 C# <see cref="Instance"/> 模型回写：模型不认识 TS 写的
+    /// packs / plugins / profile 等字段，序列化回来会把它们抹掉（设计稿 §2.3）。
+    /// </summary>
+    public void MarkInstanceStatus(string id, string status)
+    {
+        var file = Path.Combine(InstanceDir(id), "instance.json");
+        if (!File.Exists(file))
+            throw new PadError("PA026", "no such instance", $"instances/{id}", id, ["pad cli instance list"]);
+        JsonObject? node;
+        try
+        {
+            node = JsonNode.Parse(File.ReadAllText(file)) as JsonObject;
+        }
+        catch (JsonException ex)
+        {
+            throw new PadError("PA026", "instance.json is unreadable", $"instances/{id}", ex.Message,
+                ["pad cli instance list"]);
+        }
+        if (node is null)
+            throw new PadError("PA026", "instance.json is not an object", $"instances/{id}", id,
+                ["pad cli instance list"]);
+        node["status"] = status;
+        // 不调用 Instance/SaveInstance：状态不影响启动脚本，这里只做最小的 JSON 补丁，
+        // 避免任何 C# 模型回写把 TS 字段抹掉（§2.3）。
+        WriteAtomic(file, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
     }
 
     public static string Slug(string name)
@@ -1630,9 +1660,12 @@ public sealed class Launcher
         return outPath;
     }
 
-    /// <summary>Run dsh plugin add/remove/update on an instance's profile.</summary>
+    /// <summary>Run dsh plugin add/remove/update on an instance's profile.
+    /// <paramref name="hot"/> leaves the instance status alone: the caller verifies the
+    /// live tree and clears the status itself. Cold (default) marks restart-required,
+    /// because a restart is the documented way the change lands.</summary>
     public async Task<List<string>> PluginOp(string id, string action, string spec,
-        IProgress<string>? log, CancellationToken ct, string? profile = null)
+        IProgress<string>? log, CancellationToken ct, string? profile = null, bool hot = false)
     {
         var inst = Instance(id) ?? throw new PadError("PA026", "no such instance", $"instances/{id}", id,
             ["pad cli instance list"]);
@@ -1677,8 +1710,8 @@ public sealed class Launcher
                 throw new PadError("PA014", $"plugin {action} failed: {spec}", $"instance `{id}`",
                     res.Tail, ["看上面的 pnpm 输出", "确认包名与网络"]);
 
-            // Mark restart required
-            if (inst.Status != "import-failed")
+            // Mark restart required (cold only: the hot path is verified and cleared by the caller).
+            if (!hot && inst.Status != "import-failed")
             {
                 inst.Status = "restart-required";
                 SaveInstance(inst);
@@ -2383,9 +2416,14 @@ public sealed class Launcher
     /// <summary>
     /// Create a profile by running DSH's own <c>dsh plugin --profile &lt;name&gt; add</c>,
     /// so the bundle set is written the way DSH writes it.
+    ///
+    /// <paramref name="heal"/>：装之前要不要跑 <see cref="PnpmHeal.Relink"/>。它对 release 的
+    /// <c>node_modules</c>（1 万多个目录）一次要 60–70s，批量安装时每个插件都跑一遍会把
+    /// 10 个插件的安装拖成十几分钟（CPU 全在 PAD 自己身上、无子进程，看起来像卡死）。
+    /// 批量路径只在本次安装的第一次 add 前 heal 一次；单插件路径保持默认 true（行为不变）。
     /// </summary>
     public async Task AddBundles(Instance inst, string profile, IEnumerable<string> specs,
-        IProgress<string>? log, CancellationToken ct)
+        IProgress<string>? log, CancellationToken ct, bool heal = true)
     {
         var bin = DshBin(inst.Dsh.Version);
         if (!File.Exists(bin))
@@ -2410,11 +2448,21 @@ public sealed class Launcher
         log = TeeJob(job.Id, log);
         try
         {
-            await Task.Run(() =>
+            if (heal)
             {
-                PnpmHeal.Relink(Path.Combine(VersionDir(inst.Dsh.Version), "node_modules"));
-                PnpmHeal.Relink(Path.Combine(inst.Home, "profiles", profile, "node_modules"));
-            }, token);
+                var healStarted = DateTime.UtcNow;
+                log?.Report($"检查 pnpm junction（relink node_modules，可能要几十秒）…");
+                await Task.Run(() =>
+                {
+                    PnpmHeal.Relink(Path.Combine(VersionDir(inst.Dsh.Version), "node_modules"));
+                    PnpmHeal.Relink(Path.Combine(inst.Home, "profiles", profile, "node_modules"));
+                }, token);
+                log?.Report($"relink 完成（{Math.Round((DateTime.UtcNow - healStarted).TotalSeconds)}s）");
+            }
+            else
+            {
+                log?.Report("跳过 relink（本次批量安装已经检查过 node_modules）");
+            }
             foreach (var spec in specList)
             {
                 EnsureProfileNpmrc(inst, profile);
@@ -2440,11 +2488,127 @@ public sealed class Launcher
         }
     }
 
+    /// <summary>
+    /// <c>dsh plugin allow-version</c> 的参数尾（纯函数，便于单测）：DSH 只接受精确
+    /// <c>name@version</c> + 精确 <c>--dsh-version</c>，且必须带 <c>--accept-risk</c>
+    /// （见 docs/pack-plugin-layering.md §8.3）。
+    /// </summary>
+    public static string AllowVersionArgs(string profile, string pkgAtVersion, string dshVersion) =>
+        $"plugin --profile {profile} allow-version {pkgAtVersion} --dsh-version {dshVersion} --accept-risk";
+
+    /// <summary>
+    /// P3：走 DSH 官方的精确版本豁免通道，允许 <paramref name="pkgAtVersion"/> 在指定 DSH
+    /// 版本上运行（写 profile 的 compatibility.json，见 dsh-app-boot 的 setProfileVersionExemption）。
+    /// 不重启 live 进程；下一次安装/启动生效。
+    /// </summary>
+    public async Task AllowVersion(Instance inst, string profile, string pkgAtVersion, string dshVersion,
+        IProgress<string>? log, CancellationToken ct, bool heal = true)
+    {
+        ArgumentNullException.ThrowIfNull(inst);
+        var prof = (profile ?? "").Trim();
+        if (prof.Length == 0)
+            throw new PadError("PA029", "profile is required", $"instance `{inst.Id}`", "",
+                ["指定 profile 名"]);
+        var pkg = (pkgAtVersion ?? "").Trim();
+        var dsh = (dshVersion ?? "").Trim();
+        if (pkg.Length == 0 || dsh.Length == 0)
+            throw new PadError("PA029", "allow-version needs an exact package@version and dsh version",
+                $"instance `{inst.Id}`", $"{pkg} / {dsh}", ["检查 DSH 输出里的兼容提示"]);
+
+        var bin = DshBin(inst.Dsh.Version);
+        if (!File.Exists(bin))
+            throw new PadError("PA001", "the pinned release is not installed", $"instance `{inst.Id}`",
+                bin, ["先装这个发行号"]);
+
+        var env = new Dictionary<string, string>
+        {
+            ["DSH_HOME"] = inst.Home,
+            ["npm_config_ignore_workspace_root_check"] = "true",
+            ["NPM_CONFIG_IGNORE_WORKSPACE_ROOT_CHECK"] = "true",
+        };
+        AddPnpmEnv(env);
+
+        var job = StartJob("plugin-allow-version", inst.Id, null, pkg);
+        var token = TrackCancel(job.Id, ct);
+        log = TeeJob(job.Id, log);
+        try
+        {
+            if (heal)
+            {
+                // relink release node_modules 一次 60–70s；批量豁免只在第一次做。
+                var healStarted = DateTime.UtcNow;
+                log?.Report("检查 pnpm junction（relink node_modules，可能要几十秒）…");
+                await Task.Run(() =>
+                {
+                    PnpmHeal.Relink(Path.Combine(VersionDir(inst.Dsh.Version), "node_modules"));
+                    PnpmHeal.Relink(Path.Combine(inst.Home, "profiles", prof, "node_modules"));
+                }, token);
+                log?.Report($"relink 完成（{Math.Round((DateTime.UtcNow - healStarted).TotalSeconds)}s）");
+            }
+            log?.Report($"dsh plugin --profile {prof} allow-version {pkg} --dsh-version {dsh} --accept-risk");
+            var res = await Proc.Run("node", $"\"{bin}\" {AllowVersionArgs(prof, pkg, dsh)}",
+                inst.Workspace.Path, log, token, env);
+            if (token.IsCancellationRequested)
+            {
+                FinishJob(job.Id, "cancelled");
+                throw new OperationCanceledException();
+            }
+            if (res.ExitCode != 0)
+                throw new PadError("PA024", "dsh plugin allow-version failed",
+                    $"instance `{inst.Id}` / profile `{prof}`", res.Tail,
+                    ["看上面的 DSH 输出", "确认包版本与内核版本都是精确版本"]);
+            FinishJob(job.Id, "done");
+        }
+        catch
+        {
+            FinishJob(job.Id, "failed");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 批量精确版本豁免（安装预检的「一次授权」）：逐个走 <see cref="AllowVersion"/>，
+    /// 失败的只记日志、不中断（返回成功列表，CLI 报告里的 Exempted 用它）。
+    /// </summary>
+    public async Task<List<string>> AllowVersions(Instance inst, string profile,
+        IEnumerable<(string PackageVersion, string DshVersion)> fixes,
+        IProgress<string>? log, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(inst);
+        var granted = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var attempted = 0;
+        foreach (var fix in fixes ?? [])
+        {
+            var pkg = (fix.PackageVersion ?? "").Trim();
+            var dsh = (fix.DshVersion ?? "").Trim();
+            if (pkg.Length == 0 || dsh.Length == 0) continue;
+            if (!seen.Add(pkg)) continue;
+            try
+            {
+                // relink 很贵（release node_modules 一次 60–70s）：批量里只第一次 heal。
+                var heal = attempted++ == 0;
+                await AllowVersion(inst, profile, pkg, dsh, log, ct, heal);
+                granted.Add(pkg);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                log?.Report($"allow-version {pkg} 失败（继续其它豁免）：{PadError.Describe(ex)}");
+            }
+        }
+        if (granted.Count > 0)
+            log?.Report($"已写 {granted.Count} 个精确版本豁免：{string.Join("、", granted)}");
+        return granted;
+    }
+
     /// <summary>Belt-and-braces for the workspace-root check, for pnpm builds that
     /// read the setting from .npmrc but not from the environment.</summary>
     static void EnsureProfileNpmrc(Instance inst, string profile)
-    {
-        var dir = Path.Combine(inst.Home, "profiles", profile);
+    {        var dir = Path.Combine(inst.Home, "profiles", profile);
         if (!Directory.Exists(dir)) return;
         var npmrc = Path.Combine(dir, ".npmrc");
         var text = File.Exists(npmrc) ? File.ReadAllText(npmrc) : "";

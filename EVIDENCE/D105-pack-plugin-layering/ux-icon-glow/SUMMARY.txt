@@ -1,0 +1,86 @@
+﻿D106 M4 GATE RESULT: PASS (independent verifier run; task-9 UX landed)
+captured=2026-11-04T03:36+08:00
+source (frozen): HEAD=54cf34ca419e918e109a9b0f926011d8570d24aa
+  diff_sha_full=5c46b79b98e0b5da92524cf5edb4f53eff24cdb9
+  diff_sha_product=710e23daeba25f5c1f742846e4027c30d6542eca  (.cs/.ts/.xaml/.json)
+  stable before/after all runs (full_stable=True product_stable=True)
+build: dotnet build agent-pack-dsh\pad\pad.csproj -c Debug -o E:\pack-agent\.tmp\pad-build-d106
+  EXIT=0, 0 warnings / 0 errors
+  exe apphost sha256=C47F9830866D1EC418132CC2FE4124CA6CB9EC14A8821AEF2AA13B1CAAA77E55 size=336384
+  dll sha256=A765CF9C373EC6D1D6121128AD4CEB2265680B25FAB43545C8F00F271198E88A size=4836864
+  (differs from D105 deployed dll A0AEA165… -> D106 code really in the binary)
+tests @ frozen diff_sha:
+  dotnet test agent-pack-dsh/pad.tests/Pad.Tests.csproj -> EXIT=0, 126 passed / 0 failed
+  (D105 114 -> 126 = +12 PackIconTests)
+  6/6 bun EXIT=0: pad-window | pad-pack | import-pack | test | pack-catalog | pinst
+  logs: ux-icon-glow\logs\ ; tests-summary.txt ; build-identity.txt ; source-snapshot.txt
+
+SOURCE-LEVEL (ux-icon-glow\source-assertions.txt):
+  A) VersionsView no visible install-state UI: 'InstallStateText' absent (xaml+cs), 'PackStatePill' absent,
+     'IsInstalled' absent, '已装到' absent, '已建实例' absent  => PASS
+  B) IconPath/HasIcon bindings: VersionsView.xaml:179-180, InstanceView.xaml:303-304 (+ pack rows) => PASS
+  C) InstanceView glow: DropShadowEffect (line 1852/1864), DoubleAnimation (1871/1878), RepeatBehavior Forever
+     (1874/1881), Enabled linkage (1857 `if (!row.Enabled) ... card.Effect = null`), accent breathing 1.6s => PASS
+  D) PackIcon: `Resolve`, cache dir `<root>/library/icons/packs` (CacheDir), sha16 cache key
+     (path+mtime+size), `MaxBytes = 2 * 1024 * 1024`, TryRasterizeSvg, corrupt-zip catch, File.Exists => PASS
+     PackIconTests [Fact] count = 12
+  E) pad-window.test.ts D106 block present (50 added lines: PackIcon.Resolve/IconPath/HasIcon, no
+     InstallStateText/PackStatePill assertions, 26×26 rounded icon, InstanceView glow+Enabled assertions) => PASS
+
+FIXTURES (verifier-made, .tmp\d106-ux\.pack-launcher\library\packs):
+  Icon-Probe-0.1.0.pack.zip  zip entries [icon.png (root, 500B, 64x64 orange bg + white ring/I), pack.json]
+  NoIcon-Probe-0.1.0.pack.zip zip entries [pack.json]  (no icon)
+  both kernel 0.2.1-rc.2, profile web, required dsh-context (importable)
+  scratch instance icon-probe: Icon-Probe enabled/installed, NoIcon-Probe disabled -> glow contrast
+
+SHOTS (new build, same scratch root; ux-icon-glow\fixed\):
+  01-fixed-versions-icons.png      EXIT=0: Icon-Probe row shows CUSTOM ORANGE ICON; NoIcon-Probe row shows
+                                   「包」fallback pill; **no 已装到/已建实例 pill anywhere**
+  02/03-fixed-instance-packs-glow  EXIT=0 (two captures at different breathing phases)
+  baseline\01/02/03 + baseline\04 (second D105-build control capture)
+
+PIXEL/EVIDENCE (ux-icon-glow\fixed\*.txt):
+  - icon: fixed instance-packs orange_pixels=1251 bbox=(317,256)-(357,296) [41x41 px = 27x27 logical];
+    baseline instance-packs orange_pixels=0 (generic 包 before). => custom icon really rendered
+  - control: two shots with OLD D105 build -> changed_pixels=**0** (page static, no animation)
+  - D106 breathing glow: fixed shot02 vs shot03 -> changed_pixels=**40800**, concentrated in bands
+    y=210..234 (25878px, above enabled card top edge) and y=358..375 (14871px, below enabled card bottom);
+    disabled row bands changed=0 => animation only on enabled row
+  - glow color sampling (band above enabled card top): baseline (225.1,230.7,235.3) vs fixed shot02
+    (212.5,220.4,225.9) vs fixed shot03 (188.2,200.8,208.6) -> accent glow + breathing phase difference;
+    disabled row bottom band identical in all three (234.0,239.0,243.0) => disabled row no glow
+  - cross-ref: pad-ui's own versions-pack-icons.png / instance-packs-glow.png show the same states (consistent)
+
+INTEGRITY: live PAD pid 81852 ALIVE, pad.lock=81852; live root untouched (ux-icon-glow\prep\live-before-m4.txt
+  hashes still baseline); no product source edits by verifier; no commit; no PAD restart.
+
+OBSERVATIONS (not failures):
+- Disabled row additionally renders dimmer (Opacity 0.85 per implementation) — acceptable bonus.
+- Instance-packs page shows ledger badge 「不完整」 on disabled shared-plugin row (P2 behavior, retained by design).
+- Versions page still has a non-visible tooltip/comment? Source check shows InstallState code removed entirely
+  from VersionsView; no visible text anywhere.
+
+DEPLOY-GO PACKET (ready, not executed):
+  artifact .tmp\pad-build-d106\* ; exe apphost sha C47F9830… ; dll sha A765CF9C…
+  target .tmp\pad-build-z\ (preserve .pack-launcher / pad-crash.log / packmaker.exe)
+  current live pid 81852 (lock 81852) -> Stop-Process -> copy -> verify dll sha A765CF9C… -> relaunch
+  `cmd /c E:\pack-agent\.tmp\run-pad-new.cmd` (NO pipe capture) -> wait window
+  post-checks: new pid != 81852 & path build-z; pad-crash.log size/mtime/sha unchanged
+  (21267 / 2026-11-02T16:42:25 / 721F9951…); pad.json/ui-state/runtime/jobs hashes unchanged;
+  sisyphus web pid 61272 alive + cli status Running; live `--shot-page versions --shot-exit` EXIT 0 rendered;
+  pad.lock = new pid; evidence to ux-icon-glow\deploy\
+
+## DEPLOY (executed by verifier after D106 deploy-go)
+time=2026-11-04T03:36:38+08:00 .. 03:37
+pre-state: live pid 81852 ALIVE; build-z dll sha A0AEA165…; crash log 21267 / 2026-11-02T16:42:25 / 721F9951…; settings hashes recorded (ux-icon-glow/deploy/before-state.txt)
+old_pid=81852 stopped=True; copied .tmp\pad-build-d106\* -> .tmp\pad-build-z\ (preserved .pack-launcher / pad-crash.log / packmaker.exe)
+deployed exe sha256=C47F9830866D1EC418132CC2FE4124CA6CB9EC14A8821AEF2AA13B1CAAA77E55 (match=True)
+deployed dll sha256=A765CF9C373EC6D1D6121128AD4CEB2265680B25FAB43545C8F00F271198E88A (match=True)
+NEW PID=75696 started=2026-11-04T03:36:47+08:00 exe=.tmp\pad-build-z\pad-agent-for DSH.exe title=PAD; pad.lock=75696
+post-check: new pid != 81852 & path build-z PASS; pad-crash.log identical before/after shot (21267 / 2026-11-02T16:42:25 / 721F9951…) => NO DELTA
+post-check: pad.json 30AD621B… / ui-state C7D5BEE4… / runtime 6FABFA48… / jobs 50D0726E… all UNCHANGED
+post-check: sisyphus web runtime pid 61272 ALIVE; cli status -> sisyphus Running; dsh adopted instance Running (pre-existing)
+post-check: live --shot-page versions -> ux-icon-glow\deploy\01-deployed-live-versions.png EXIT 0 (97488B); rendered:
+  live root Test 整合包行显示 Test 包自己的 icon.png（不再是通用「包」pill），且没有任何装到哪文字 => D106 UX 在 live root 生效
+post-check: PAD pid 75696 ALIVE after shot; sisyphus 61272 ALIVE after shot
+evidence: ux-icon-glow\deploy\{before-state.txt,copy-result.txt,after-state.txt,status-after-deploy.json,01-deployed-live-versions.png}

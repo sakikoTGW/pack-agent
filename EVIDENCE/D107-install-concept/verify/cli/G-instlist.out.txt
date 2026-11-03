@@ -1,0 +1,125 @@
+--- 05:20:59 pad cli instance list --json --out E:\pack-agent\EVIDENCE\D107-install-concept\verify\cli\G-instlist.json
+[
+  {
+    "schema": "pack-agent.launcher.instance/v1",
+    "id": "verify-probe",
+    "name": "Verify Probe",
+    "dsh": {
+      "version": "0.2.1-rc.2"
+    },
+    "home": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\verify-probe\\home",
+    "workspace": {
+      "kind": "owned",
+      "path": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\verify-probe\\workspace"
+    },
+    "status": "ready",
+    "lastProfile": null,
+    "note": null,
+    "display": {
+      "info": "",
+      "intro": "",
+      "logo": null,
+      "star": false,
+      "category": ""
+    },
+    "launch": null,
+    "source": {
+      "kind": "pack",
+      "packId": "Verify-Probe-0.1.0",
+      "packTitle": "Verify Probe",
+      "packVersion": "0.1.0",
+      "packPath": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\library\\packs\\Verify-Probe-0.1.0.pack.zip"
+    },
+    "adopted": false,
+    "adoptedFingerprint": null,
+    "created": "2026-11-03T21:08:34.555Z",
+    "updated": "2026-11-03T21:08:34.557Z"
+  },
+  {
+    "schema": "pack-agent.launcher.instance/v2",
+    "id": "inst-compat",
+    "name": "inst-compat",
+    "dsh": {
+      "version": "0.2.1-rc.2"
+    },
+    "home": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\inst-compat\\home",
+    "workspace": {
+      "kind": "owned",
+      "path": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\inst-compat\\workspace"
+    },
+    "status": "ready",
+    "lastProfile": "web",
+    "note": null,
+    "display": {
+      "info": "",
+      "intro": "",
+      "logo": null,
+      "star": false,
+      "category": ""
+    },
+    "launch": null,
+    "source": null,
+    "adopted": false,
+    "adoptedFingerprint": null,
+    "created": "2026-11-03T21:15:15.6682952\u002B00:00",
+    "updated": "2026-11-03T21:15:33.095Z"
+  },
+  {
+    "schema": "pack-agent.launcher.instance/v2",
+    "id": "inst-empty",
+    "name": "inst-empty",
+    "dsh": {
+      "version": "0.2.1-rc.2"
+    },
+    "home": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\inst-empty\\home",
+    "workspace": {
+      "kind": "owned",
+      "path": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\inst-empty\\workspace"
+    },
+    "status": "ready",
+    "lastProfile": "web",
+    "note": null,
+    "display": {
+      "info": "",
+      "intro": "",
+      "logo": null,
+      "star": false,
+      "category": ""
+    },
+    "launch": null,
+    "source": null,
+    "adopted": false,
+    "adoptedFingerprint": null,
+    "created": "2026-11-03T21:08:23.5858036\u002B00:00",
+    "updated": "2026-11-03T21:08:34.547Z"
+  },
+  {
+    "schema": "pack-agent.launcher.instance/v2",
+    "id": "inst-human",
+    "name": "inst-human",
+    "dsh": {
+      "version": "0.2.1-rc.2"
+    },
+    "home": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\inst-human\\home",
+    "workspace": {
+      "kind": "owned",
+      "path": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\inst-human\\workspace"
+    },
+    "status": "ready",
+    "lastProfile": "web",
+    "note": null,
+    "display": {
+      "info": "",
+      "intro": "",
+      "logo": null,
+      "star": false,
+      "category": ""
+    },
+    "launch": null,
+    "source": null,
+    "adopted": false,
+    "adoptedFingerprint": null,
+    "created": "2026-11-03T21:18:05.3085258\u002B00:00",
+    "updated": "2026-11-03T21:18:24.292Z"
+  }
+]

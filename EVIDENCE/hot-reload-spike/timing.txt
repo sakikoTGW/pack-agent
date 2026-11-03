@@ -1,0 +1,2 @@
+hot-mount latency (write patch -> apply executed): 2896 ms
+measured with 100 ms polling; includes cordis HMR debounce

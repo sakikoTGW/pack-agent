@@ -79,6 +79,25 @@ public sealed class PluginRow : Observable
     /// <summary>第二行给简介；包没写简介就说清楚，不再拿目录顶替。</summary>
     public string SubLine => Description.Length > 0 ? Description : "包里没写简介。";
 
+    string _packOrigin = "";
+    /// <summary>
+    /// P1 提示层：这个插件由哪些已装整合包要求（来自 <see cref="PackPluginFacts"/>）。
+    /// 只做展示，不改安装行为；空 = 手工插件/没被包声明。
+    /// </summary>
+    public string PackOriginText
+    {
+        get => _packOrigin;
+        set
+        {
+            if (Set(ref _packOrigin, value ?? "")) Raise(nameof(HasPackOrigin));
+        }
+    }
+
+    public bool HasPackOrigin => _packOrigin.Length > 0;
+
+    string _packOriginTip = "";
+    public string PackOriginTip { get => _packOriginTip; set => Set(ref _packOriginTip, value ?? ""); }
+
     public bool ShowUpdateButton => Updatable;
     public bool ShowRefreshButton => !Trial && !Updatable;
     public string UpdateText => Latest.Length > 0 ? $"{VersionText} → {Latest}" : "可更新";

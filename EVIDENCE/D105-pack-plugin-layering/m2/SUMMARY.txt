@@ -1,0 +1,81 @@
+M2 GATE RESULT: PASS (independent verifier run; P2 core + P2 UI both landed)
+captured=2026-11-04T02:30+08:00
+source: HEAD=54cf34ca419e918e109a9b0f926011d8570d24aa  diff_sha=d933536385a5146e3f1a29b70f641f700db4193e
+        (frozen before/after the whole M2 run; Lead confirmed pad-ui stopped editing)
+build: dotnet build agent-pack-dsh\pad\pad.csproj -c Debug -o E:\pack-agent\.tmp\pad-build-d105
+        EXIT=0, 0 warnings / 0 errors
+        exe apphost sha256=C47F9830866D1EC418132CC2FE4124CA6CB9EC14A8821AEF2AA13B1CAAA77E55
+        dll sha256=87CF41CB2CD94F17B4862DD6E097A35D0BDDC78A8F69E786425618CEC171A226 size=4808192
+tests @ frozen diff_sha (all EXIT=0):
+  pad-window.test.ts | pad-pack.test.ts | import-pack.test.ts | test.ts | pack-catalog.test.ts
+  dotnet test agent-pack-dsh/pad.tests/Pad.Tests.csproj -> 103 passed / 0 failed (D104 had 67, +36 incl PackLedgerTests)
+logs: m2\logs\*.out.txt / *.err.txt ; m2\tests-summary.txt ; m2\build-identity.txt
+
+E2E environment: clean scratch root E:\pack-agent\.tmp\d105-m2\.pack-launcher
+  (versions junction -> live versions; library\packs fixtures Verify-Probe-0.1.0 / Shared-A-0.1.0 / Shared-B-0.1.0)
+  driver: E:\pack-agent\.tmp\d105-m2\probe\d105-m2-probe.exe (calls the REAL P2 public APIs: Packs.Import,
+  Packs.ApplyPackToInstance, Packs.SetPackPluginsActive, Packs.UninstallPack, Packs.RepairPack, PackLedger.*)
+
+(a) LEDGER FIELDS — PASS  (instances\verify-probe\pack-ledger.json, m2\ledger\A-after-import.json)
+  schema=pack-agent.pack-ledger/v1
+  packs["Verify-Probe-0.1.0"]: title="Verify Probe" installedVersion=0.1.0
+    path=E:\pack-agent\.tmp\d105-m2\.pack-launcher\library\packs\Verify-Probe-0.1.0.pack.zip
+    installedAt=2026-11-03T18:23:13.338Z
+    content.dir=.agent-pack/modpacks/pack-agent-modpack-verify-probe  content.allow=True
+    profiles.web.state=installed
+    profiles.web.plugins[0]: spec=dsh-context origin=pack addedVersion=0.80.0
+  owners.web["dsh-context"]=["Verify-Probe-0.1.0"]
+
+(b) DISABLE → ENABLE — PASS  (m2\e2e\B1/B2, m2\dump-config\, m2\ledger\B1/B2)
+  disable: state=disabled content.allow=False bundles_removed=[dsh-context]
+    profile: deps=[@sakikotgw/pack-agent-dsh,dsh-context] (KEPT) bundles=[base,web-app,manager] (dsh-context GONE)
+    dsh --dump-config --profile web: EXIT=0, dsh-context layer hits=0   (baseline A had hits=3)
+  enable: state=installed bundles_added=[dsh-context]
+    profile bundles restored (dsh-context back); dump-config hits=3
+  NO RE-DOWNLOAD: node_modules\dsh-context\package.json mtime before==after = 2026-11-04T01:32:16.7740043+08:00
+    (size 4673 unchanged; enable log contains no plugin add / pnpm install)
+
+(c) UNINSTALL w/ SHARED PLUGIN — PASS  (m2\e2e\C1/C2/C3, m2\ledger\C2/C3)
+  import Shared-A -> instance shared-a; then ApplyPackToInstance(Shared-B):
+    RESULT apply ok=True state=installed added=[] kept=[dsh-context] conflicts=[]
+    owners dsh-context=[Shared-A-0.1.0,Shared-B-0.1.0]; projections=[pack-agent-modpack-shared-a,pack-agent-modpack-shared-b]
+  UninstallPack(Shared-A):
+    RESULT uninstall removed=[] skipped_shared=[dsh-context] projection_deleted=True
+    projection dirs after=[pack-agent-modpack-shared-b]  (shared-a projection GONE, shared-b present)
+    profile deps+bundles still contain dsh-context (shared plugin survived); ledger packs=[Shared-B-0.1.0]
+    owners dsh-context=[Shared-B-0.1.0]
+
+(d) APPLY TO EXISTING INSTANCE + VERSIONS PAGE LEDGER PILLS — PASS (C2 above; m2\shots\03-versions-ledger-pills.png)
+  Instance-page 「装整合包…」 wired to Packs.ApplyPackToInstance (source assertion InstanceView.xaml.cs:1774;
+  pad-window.test.ts has R8 assertion "importFn2.includes('ApplyPackToInstance')").
+  Versions pill observed: Shared A -> 「已建实例：Shared A」 (source-only, ledger entry removed by uninstall)
+                          Shared B -> 「已装到 Shared A」     (ledger-based)
+                          Verify Probe -> 「已装到 Verify Probe」 (ledger-based)
+
+(e) MANUAL REMOVE -> INCOMPLETE -> REPAIR — PASS (m2\e2e\E1/E2/E3, m2\shots\01 & 04)
+  manual `dsh plugin --profile web remove dsh-context` EXIT=0 (2.1s); profile deps/bundles lose dsh-context
+  PackLedger read-time reconciliation: RESULT owners ... missing=[dsh-context] state=incomplete
+    (raw pack-ledger.json still has state=installed -> reconciliation happens on read, R1 correct)
+  screenshot 01: Shared B row badge 「不完整」 + repair icon + 「带 1 个插件（1 个不在这个 profile）」
+  RepairPack(Shared-B): EXIT=0 in 105.5s real pnpm, state=installed added=[dsh-context] still_missing=[]
+    profile deps+bundles restored; node_modules\dsh-context present
+  screenshot 04: no 不完整 badge / no repair icon, subtitle 「带 1 个插件（都在这个 profile）」
+
+P2 UI SOURCE ASSERTIONS: 10/10 PASS (m2\source-assertions.txt): Toggle→SetPackPluginsActive,
+  UninstallPack_Click, RepairPack_Click, Import_Click→ApplyPackToInstance (no direct Project),
+  RecordPluginRemoved wiring, VersionsView ledger 「已装到」/LedgerInstalledNames, 未登记 badge,
+  不完整 badge + repair gating; pad-window.test.ts contains the whole P2 assertion block.
+
+INTEGRITY: live PAD pid 78308 ALIVE; live-root hashes identical to prep\live-root-before.txt
+  (pad.json 30AD621B…, runtime 6FABFA48…, ui-state C7D5BEE4…, jobs 50D0726E…, pad.lock 2BE42D13…=78308);
+  source diff_sha unchanged d9335363 before/after; no live-root writes; no PAD restart; no product edits by verifier.
+
+OBSERVATIONS / CAVEATS (not M2 acceptance failures):
+- The legacy PAD CLI import path `Packs.Import(path)` does not take --name; instance id derives from pack title
+  (verify-probe / shared-a). The UI path `Packs.ImportPack(card,name)` passes --name (verified in D104).
+- After UninstallPack the pack can still be listed on the instance page with badge 「未登记」 (allow-row/DB not
+  cleared by P2 scope). Uninstall acceptance itself (projection deleted + exclusive plugin removed + shared kept)
+  is met; recorded as behavior nuance, screenshot 01.
+- Real pnpm operations are slow: repair 105.5s, earlier uninstall 110s -> generous timeouts used.
+- Cross-ref: pad-ui's own p2\ screenshots (instance-packs-ledger-incomplete / unregistered / versions-ledger-installed)
+  show the same states; consistent with my independent shots.

@@ -1,0 +1,45 @@
+M1 GATE RESULT: PASS (independent verifier run)
+captured=2026-11-04T01:41+08:00
+source: HEAD=54cf34ca419e918e109a9b0f926011d8570d24aa  diff_sha=3739cb722efc738b835e2d566b270234353b863b
+        (stable before/after all M1 runs; P1=task-4 completed)
+build: dotnet build agent-pack-dsh\pad\pad.csproj -c Debug -o E:\pack-agent\.tmp\pad-build-d105
+        EXIT=0, 0 warnings / 0 errors
+        exe (apphost) sha256=C47F9830866D1EC418132CC2FE4124CA6CB9EC14A8821AEF2AA13B1CAAA77E55 (same stub as D104, expected)
+        dll sha256=1EFAEAF35B1C39706918EB9DA3352869F98DB5AA1B87E5327BD85885A40D5521  size=4687872
+        (differs from D104 dll E478C31300312E12FA6A29932A0E80DC3EF29CF5A0321A3AD07226358F6BCB32 -> new P1 code is in the binary)
+tests @ stable diff_sha (all EXIT=0):
+        pad-window.test.ts | pad-pack.test.ts | import-pack.test.ts | test.ts | pack-catalog.test.ts
+        logs: m1\logs\*.out.txt / *.err.txt ; summary: m1\tests-summary.txt
+
+SHOTS (new build, MY scratch root E:\pack-agent\.tmp\d105-verify\.pack-launcher; pad.json lastInstance switched per shot):
+  m1\shots\01-instance-packs-full.png      instance-packs on p1-full    -> 包行副标题 "带 1 个插件（都在这个 profile）"          PASS
+  m1\shots\04-instance-packs-missing.png   instance-packs on p1-missing -> 包行副标题 "带 1 个插件（1 个不在这个 profile）"      PASS
+  m1\shots\02-instance-plugins-full.png    instance-plugins on p1-full  -> dsh-context 行小标 "来自整合包 Verify Probe"        PASS
+                                                                          (pack-agent-dsh 管理器行无来源标，符合它不被包声明的事实)
+  m1\shots\03-versions-pills.png           versions page               -> Verify Probe "已建实例：p1-full、p1-missing"；Shared A/B "未安装"  PASS
+  05-instance-plugins-missing.png (p1-missing plugins pane, supplemental)
+  all shots EXIT=0, logical 1040x820 @1.5 dpi = 1560x1230
+
+SOURCE-LEVEL ASSERTIONS (m1\source-assertions.txt, 14/14 PASS):
+  Core\PackPluginFacts.cs (17529B): class PackPluginFacts / PackFacts / PluginOrigin；文案 带{DeclaredCount}个插件（都在/不在）；
+  OriginText 「来自整合包 X」；IsManagerSpec；只读事实（无写文件）
+  InstanceView.xaml.cs: PackListRow 显示模型、PackOriginText 绑定、PA110 文案、
+    PluginRemove_Click 对 package-owned 弹「这个插件由整合包 X 要求：卸掉后包会残缺（可在包详情修复）」+ 管理器 PA110 警告 +
+    `_win.Ask(..., warn:true)` 取消即不执行；
+    PluginUpdate_Click 对 package-owned 弹「…更新会把版本从包钉的版本改走，包会残缺（可在包详情修复）。仍要更新？」
+    （modal 确认框无法离屏截图，改为源码 + pad-window 断言证；pad-window.test.ts 有对应 fail 断言）
+  VersionsView.xaml.cs: 药丸文案「已建实例：X」；MainWindow/InstanceView: --shot-page instance-packs 钩子存在
+  pad-window.test.ts: P1 断言组（"P1 提示层：包↔插件双向标注 + 卸/更新冲突确认 + 管理器 PA110"）
+
+P1 DOES NOT WRITE DATA (expected for P1): p1-full/p1-missing pack-ledger.json exists=False
+
+CROSS-REF: pad-ui's own P1 shots in p1\ (instance-packs-full/missing, instance-plugins-full) show same copy — consistent.
+LIVE INTEGRITY: live PAD pid 78308 ALIVE; live root file hashes identical to prep\live-root-before.txt
+  (pad.json 30AD621B…, runtime 6FABFA48…, ui-state C7D5BEE4…, jobs 50D0726E…, pad.lock 2BE42D13…=78308);
+  no live-root writes, no PAD restart, no product source edits by verifier, no git commit.
+
+CAVEATS:
+- remove/update confirmation dialogs are modal; offscreen --shot cannot capture them -> proven by source inspection +
+  pad-window.test.ts assertions, not by pixel evidence.
+- live PAD MainWindowTitle was empty during final check (window likely hidden to tray by user/session); process alive & lock intact.
+- my scratch p1-missing is an intentionally constructed "bundle line stripped, dependency kept" state (documented in README §1).

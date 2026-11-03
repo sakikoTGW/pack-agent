@@ -1,0 +1,8 @@
+﻿D106 M4 TESTS @ diff_sha_full=5c46b79b98e0b5da92524cf5edb4f53eff24cdb9 diff_sha_product=710e23daeba25f5c1f742846e4027c30d6542eca stable_full=True stable_product=True
+EXIT=0 dotnet test pad.tests
+EXIT=0 agent-pack-dsh/modpack/pad-window.test.ts
+EXIT=0 agent-pack-dsh/modpack/pad-pack.test.ts
+EXIT=0 agent-pack-dsh/modpack/import-pack.test.ts
+EXIT=0 agent-pack-dsh/modpack/test.ts
+EXIT=0 agent-pack-dsh/modpack/pack-catalog.test.ts
+EXIT=0 agent-pack-dsh/modpack/pinst.test.ts

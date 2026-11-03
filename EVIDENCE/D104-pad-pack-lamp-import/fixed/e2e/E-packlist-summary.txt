@@ -1,0 +1,10 @@
+﻿id=cos-best-llm title=cos-best-llm ver=0.3.0 source=drive: E:\ installed=[] kernel= path=E:\pack-agent\.agent-pack\exports\cos-best-llm.pack.json
+id=cos-best-llm title=cos-best-llm ver=0.3.0 source=drive: E:\ installed=[] kernel= path=E:\pack-agent\.agent-pack\exports\cos-best-llm.pack.zip
+id=demo title=demo ver=0.1.0 source=drive: E:\ installed=[] kernel= path=E:\pack-agent\test\fixtures\demo.pack.json
+id=harness-engineer title=harness-engineer ver=0.3.0 source=drive: E:\ installed=[] kernel= path=E:\pack-agent\.agent-pack\exports\harness-engineer.pack.json
+id=packer title=packer ver=0.3.0 source=drive: E:\ installed=[] kernel= path=E:\pack-agent\.agent-pack\exports\packer.pack.json
+id=packer title=packer ver=0.3.0 source=drive: E:\ installed=[] kernel= path=E:\pack-agent\.agent-pack\exports\packer.pack.zip
+id=packer-mcp title=packer-mcp ver=0.3.0 source=drive: E:\ installed=[] kernel= path=E:\pack-agent\.agent-pack\exports\packer-mcp.pack.json
+id=Test-0.1.0 title=Test ver=0.1.0 source=library installed=[test,verify-legacy] kernel=0.2.1-rc.2 path=E:\pack-agent\.tmp\verify-d104-e2e\.pack-launcher\library\packs\Test-0.1.0.pack.zip
+id=Verify-Probe-0.1.0 title=Verify Probe ver=0.1.0 source=library installed=[verify-importpack,verify-probe] kernel=0.2.1-rc.2 path=E:\pack-agent\.tmp\verify-d104-e2e\.pack-launcher\library\packs\Verify-Probe-0.1.0.pack.zip
+id=Verify-Uninstalled-0.1.1 title=Verify Uninstalled ver=0.1.1 source=library installed=[] kernel=0.2.1-rc.2 path=E:\pack-agent\.tmp\verify-d104-e2e\.pack-launcher\library\packs\Verify-Uninstalled-0.1.1.pack.zip

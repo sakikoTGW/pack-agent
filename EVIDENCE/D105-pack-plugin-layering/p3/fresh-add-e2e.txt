@@ -1,0 +1,35 @@
+﻿exit=0 elapsed=3.2s
+== add log tail ==
+Progress: resolved 1, reused 0, downloaded 0, added 0
+[WARN] Issues with peer dependencies found. Run "pnpm peers check" to list them.
+
+dependencies:
++ dsh-find-skill ^0.2.1
+
+Packages: +5
++++++
+Progress: resolved 5, reused 5, downloaded 0, added 5, done
+Done in 812ms using pnpm v11.7.0
+== profile package.json ==
+{
+  "name": "dsh-profile-web",
+  "private": true,
+  "dependencies": {
+    "dsh-find-skill": "^0.2.1"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "dsh-find-skill"
+      ]
+    }
+  }
+}
+
+node_modules dsh-find-skill: True
+== dump-config matches=3 (dump exit=0) ==
+# == dsh-find-skill
+- id: dsh-find-skill
+  name: dsh-find-skill

@@ -1,0 +1,9 @@
+✓ Lockfile passes supply-chain policies (verified 36s ago)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+
+dependencies:
+- dsh-context ^0.80.1
+
+Already up to date
+Progress: resolved 1, reused 0, downloaded 0, added 0, done
+Done in 579ms using pnpm v11.7.0

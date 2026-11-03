@@ -1,0 +1,2 @@
+--- 05:20:56 pad cli pack list --json --out E:\pack-agent\EVIDENCE\D107-install-concept\verify\cli\G-packlist.json
+wrote E:\pack-agent\EVIDENCE\D107-install-concept\verify\cli\G-packlist.json

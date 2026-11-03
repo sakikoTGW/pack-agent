@@ -1,0 +1,5 @@
+--- 05:11:13 pad cli pack install inst-empty --pack Test-0.1.0 --dry-run --json --out E:\pack-agent\EVIDENCE\D107-install-concept\verify\cli\B-dryrun.json
+[install] 预检完成：内核匹配 · 插件 10 个：8 可装 · 1 需授权 · 1 已下架/缺包
+内核匹配 · 插件 10 个：8 可装 · 1 需授权 · 1 已下架/缺包
+预检（未安装，需要决定）：1 个插件需要兼容豁免（--accept-risk / 界面勾选「接受风险」）；1 个插件在 npm 上找不到（--skip-missing / 界面勾选「跳过」）
+wrote E:\pack-agent\EVIDENCE\D107-install-concept\verify\cli\B-dryrun.json

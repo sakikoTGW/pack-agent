@@ -506,6 +506,74 @@ public static class Nodes
         return new Opened(home, "app", "app", 0, "", proc.Id, logPath, verified);
     }
 
+    /// <summary>
+    /// Boot the Tauri-based desktop as the <c>tauri</c> surface.
+    ///
+    /// The shell resolves its DSH home from the exported <c>DSH_HOME</c> (release builds),
+    /// so PAD can point one project's window at its own instance home. It is a
+    /// single-instance app: a second launch forwards activation to the first window and
+    /// exits, and the harness endpoint lives inside the shell (nothing is announced).
+    /// Readiness is therefore "the process stayed up, so a window exists" — not "this
+    /// home is live". The caller names the conflict instead of guessing.
+    /// </summary>
+    public static async Task<Opened> OpenTauri(string home, string exePath, TimeSpan timeout, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath))
+            throw new PadError("PA147", "no tauri desktop executable at that path", exePath ?? "(none)", null,
+                ["pad cli node open <home> --surface tauri --exe <deepseek-harness-desktop.exe>"]);
+
+        var logDir = Path.Combine(home, ".pad", "logs");
+        Directory.CreateDirectory(logDir);
+        var logPath = Path.Combine(logDir, "tauri.log");
+        File.WriteAllText(logPath,
+            $"[pad] {DateTimeOffset.Now:O} launching \"{exePath}\" with DSH_HOME={home}{Environment.NewLine}" +
+            "[pad] the window keeps its own logs under the desktop app's data dir; this file records PAD's launch." + Environment.NewLine);
+
+        // UseShellExecute keeps PAD's stdio out of the GUI's handle table. With a plain
+        // CreateProcess the window inherits PAD's stdout pipe, so a scripted
+        // `pad cli node open` would not see EOF until that window closes (measured: a
+        // 120-second hang), and PAD exiting without draining a pipe turns the window's
+        // next log write into EPIPE. The shell launch takes PAD's environment, so
+        // DSH_HOME is set for the duration of the call.
+        Process proc;
+        var previousHome = Environment.GetEnvironmentVariable("DSH_HOME");
+        try
+        {
+            Environment.SetEnvironmentVariable("DSH_HOME", home);
+            proc = Process.Start(new ProcessStartInfo
+            {
+                FileName = exePath,
+                UseShellExecute = true,
+                WorkingDirectory = home,
+            }) ?? throw new InvalidOperationException("Process.Start returned null");
+        }
+        catch (Exception ex)
+        {
+            throw new PadError("PA148", "could not start the tauri desktop", exePath, ex.Message,
+                ["pad cli node open <home> --surface tauri --exe <deepseek-harness-desktop.exe>"]);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("DSH_HOME", previousHome);
+        }
+
+        var settle = DateTime.UtcNow + (timeout < TimeSpan.FromSeconds(5) ? timeout : TimeSpan.FromSeconds(5));
+        while (DateTime.UtcNow < settle)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (proc.HasExited)
+                throw new PadError("PA149", "the tauri desktop exited instead of opening a window", exePath,
+                    $"exit code {proc.ExitCode} — 单实例壳在已有窗口时会把激活转发给已有窗口后退出；也可能是它不接受 DSH_HOME",
+                    ["关掉已经在跑的 Tauri 桌面端，再开这个项目",
+                     "确认这个 exe 是桌面端本体，不是安装器 / 更新器"]);
+            await Task.Delay(250, ct).ConfigureAwait(false);
+        }
+
+        // The log stays owned by cmd/app for as long as the window lives, so PAD must not
+        // append to it here; the ledger row is the record that the window is up.
+        return new Opened(home, "tauri", "tauri", 0, "", proc.Id, logPath, Verified: false);
+    }
+
     /// <summary>The DSH home the shell itself reported, or null when it has not said yet.</summary>
     static string? ShellHome(string logPath)
     {

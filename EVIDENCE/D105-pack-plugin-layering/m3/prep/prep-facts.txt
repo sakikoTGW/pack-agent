@@ -1,0 +1,21 @@
+﻿D105 M3 PREP FACTS captured=2026-11-04T02:32:07.8871063+08:00
+scratch root=E:\pack-agent\.tmp\d105-m3\.pack-launcher
+instance=test (status=import-failed, source.packId=Test-0.1.0, profile=web with manager)
+
+EXACT DSH INCOMPATIBILITY PROMPT (raw-add.err.txt, exit=1):
+dsh: installation rejected: Plugin dsh-find-skill@0.2.1 is incompatible with dsh 0.2.1-rc.2: requirements {"@deepseek-ai/dsh-commands":"^0.1.0-rc.6","@deepseek-ai/dsh-home-paths":"^0.1.0-rc.6","@deepseek-ai/dsh-skill":"^0.1.0-rc.6","@deepseek-ai/dsh-tools":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-find-skill@0.2.1 on dsh 0.2.1-rc.2 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.
+dsh: to accept the risk, run: dsh plugin --profile web allow-version dsh-find-skill@0.2.1 --dsh-version 0.2.1-rc.2 --accept-risk
+
+ALLOW-VERSION (scratch dry run, P3 E2E mechanics):
+  command: node bin.js plugin --profile web allow-version dsh-find-skill@0.2.1 --dsh-version 0.2.1-rc.2 --accept-risk
+  EXIT=0 in 1.1s; stdout: dsh: allowed dsh-find-skill@0.2.1 for DSH 0.2.1-rc.2
+  wrote: profiles\web\compatibility.json = {   "dsh-find-skill@0.2.1": [     "0.2.1-rc.2"   ] } 
+
+ADD AFTER ALLOW: node bin.js plugin --profile web add dsh-find-skill -> EXIT=0 in 15.2s
+  profile deps=[@sakikotgw/pack-agent-dsh,dsh-find-skill] bundles=[base,web-app,manager,dsh-find-skill]
+  node_modules dsh-find-skill present=True
+  dump-config after add: dsh-find-skill layer hits=3
+
+PARSER FIXTURES for M3 (expect PackCompat to parse):
+  exact: 'dsh: to accept the risk, run: dsh plugin --profile web allow-version dsh-find-skill@0.2.1 --dsh-version 0.2.1-rc.2 --accept-risk'
+  truncated variant to test: '... run: dsh plugin --profile web allow-version dsh-find-skill@0.2.1' (missing --dsh-version/--accept-risk) => parser must not crash, returns null/partial

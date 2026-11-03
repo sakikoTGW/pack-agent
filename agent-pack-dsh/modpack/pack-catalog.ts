@@ -134,6 +134,14 @@ function stemOf(path: string): string {
   return name.replace(/\.[^.]+$/, '') || name
 }
 
+/**
+ * 包文件 → 目录行 id。import 写 `instance.json.source.packId` 走同一个函数，
+ * 这样「装没装」用目录行 id 对得上，不会两边各算一个名字。
+ */
+export function packIdFromPath(path: string): string {
+  return stemOf(path)
+}
+
 /** 发现预算 + 去重（同 path 先到先得；Windows 路径大小写不敏感） */
 class Discovery {
   readonly candidates: Candidate[] = []
@@ -452,7 +460,7 @@ function rowFromPackDoc(pack: PackDoc, candidate: Candidate): PackCatalogRow {
   const components = componentCounts(pack)
   const description = (pack.description || '').trim()
   const row: PackCatalogRow = {
-    id: stemOf(candidate.path),
+    id: packIdFromPath(candidate.path),
     title: (pack.name || '').trim() || stemOf(candidate.path),
     version: (pack.version || '').trim(),
     path: candidate.path,
@@ -486,7 +494,7 @@ function rowFromPinst(candidate: Candidate): PackCatalogRow {
   const dsh = objField(instance, 'dsh')
   const profile = objField(instance, 'profile')
   const source = objField(instance, 'source')
-  const stem = stemOf(candidate.path)
+  const stem = packIdFromPath(candidate.path)
 
   const id =
     strField(source, 'packId') || strField(manifestInstance, 'id') || strField(instance, 'id') || stem

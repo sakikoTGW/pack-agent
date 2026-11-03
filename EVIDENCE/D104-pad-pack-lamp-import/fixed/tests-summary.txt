@@ -1,0 +1,15 @@
+﻿TESTS @ diff_sha=e9b4752c4198d3cbe8cffb33603089416ced1953 HEAD=54cf34ca419e918e109a9b0f926011d8570d24aa
+EXIT=0 time=6.1s agent-pack-dsh/modpack/import-pack.test.ts
+EXIT=0 time=20.3s agent-pack-dsh/modpack/pack-catalog.test.ts
+EXIT=0 time=1.1s agent-pack-dsh/modpack/test.ts
+EXIT=0 time=5.1s agent-pack-dsh/modpack/pad-window.test.ts
+EXIT=0 time=4.1s agent-pack-dsh/modpack/pad-pack.test.ts
+EXIT=0 time=7.7s dotnet test agent-pack-dsh/pad.tests/Pad.Tests.csproj
+
+PAD.TESTS TAIL:
+VSTest 版本 17.14.1 (x64)
+
+正在启动测试执行，请稍候...
+总共 1 个测试文件与指定模式相匹配。
+
+已通过! - 失败:     0，通过:    67，已跳过:     0，总计:    67，持续时间: 194 ms - Pad.Tests.dll (net9.0)

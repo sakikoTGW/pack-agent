@@ -279,7 +279,7 @@ PAD 窗口入口是顶栏管理页：list 读磁盘上该 `--profile` 的随附�
 - 依赖装了但没有 `dsh.bundle` → **PA105** warning（普通依赖，F7 已有此警告，launcher 侧复述口径）。
 - pack-agent 自家 `dsh-plugin` 发布时带头声明 engines.dsh，做生态示范。
 
-**装完必须重启**：`dsh plugin add` 只改 profile `package.json` 的 dependencies/bundles。长寿命进程的 HMR 只 watch `cordis.patch.yml`（`profile-boot.ts` `watchUserPatches`），**不重读 bundles**。运行中 add 不会热进树；启动器在 add/remove/update 成功后把该实例标 `restart-required`，下次 `run` 前必须 stop+start。
+**热重载（2026-11-04 修正）**：官方 `@deepseek-ai/dsh-hmr` 会 watch profile manifest（`dsh.profile.bundles` 有序列表变化）、两份用户 patch（`profiles/<p>/cordis.patch.yml` + home 层）（`app-boot` `watchUserPatches`）以及被 watch 的模块文件；bundle 增删在 HMR 激活时可热组合，不需要重启。但：① 包安装（pnpm）在该队列之外，PAD 必须先装完再写 manifest；② 失败静默（apply 抛错不写 stdout/stderr）、非原子（good+bad 同 patch 时 good 会挂上），事务与验证必须由 PAD 自己做；③ `root: []` 时源码变化不热更、换内核/框架依赖仍需重启。**PAD 的默认路径仍是冷路径（写盘 + `restart-required`），只有 lab 与显式 `--hot` 才驱动热路径**，详见 [hot-reload-integration.md](hot-reload-integration.md)。
 
 **磁盘**：每个实例每个 profile 一份 `node_modules`（F21 hoisted）。多实例钉同一 DSH 版本仍会各肥一份插件树。P0 接受；P2 再评估硬链/pnpm store 复用，且不得破坏实例隔离。
 

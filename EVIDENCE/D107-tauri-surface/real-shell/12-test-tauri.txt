@@ -1,0 +1,3 @@
+﻿✓ tauri 形态源码契约（Surface / Nodes / CLI / jump / PA 码 / 文档）
+✓ tauri 形态实跑：surfaces 可见、PA146/PA147/PA149 行为正确
+

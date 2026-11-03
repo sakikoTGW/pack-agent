@@ -14,6 +14,7 @@
     <local:MiddleEllipsis x:Key="Mid" Max="36" />
     <local:Initial x:Key="Initial" />
     <local:PackAction x:Key="PackAction" />
+    <local:PathToBmp x:Key="PathBmp" />
     <CollectionViewSource x:Key="InstSrc" Source="{Binding Instances}" Filter="InstSrc_Filter" />
     <CollectionViewSource x:Key="LaunchSrc" Source="{Binding Launchables}">
       <CollectionViewSource.SortDescriptions>
@@ -154,7 +155,7 @@
               <ContentControl Style="{StaticResource SlabHead}" Content="整合包"
                               v:Ico.Of="{StaticResource I.Pack}" />
             </DockPanel>
-            <ItemsControl x:Name="PackList" ItemsSource="{Binding PackCatalog}" Margin="0,6,0,0">
+            <ItemsControl x:Name="PackList" Margin="0,6,0,0">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
                   <Border Style="{StaticResource Slab}" Padding="14,10,12,10" Margin="0,0,0,6"
@@ -172,8 +173,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                       </Grid.ColumnDefinitions>
-                      <ContentControl Grid.Column="0" Style="{StaticResource QuantMono}" Content="包"
-                                      v:Ico.Of="{StaticResource I.Pack}" VerticalAlignment="Center" />
+                      <!-- D105 UX：行左列换成整合包自己的 icon；解析不到才回落原来的「包」pill。 -->
+                      <Grid Grid.Column="0" Width="26" Height="26" VerticalAlignment="Center">
+                        <Border CornerRadius="6" ClipToBounds="True"
+                                Visibility="{Binding HasIcon, Converter={StaticResource B2V}}">
+                          <Image Source="{Binding IconPath, Converter={StaticResource PathBmp}}"
+                                 Stretch="UniformToFill" />
+                        </Border>
+                        <ContentControl Style="{StaticResource QuantMono}" Content="包"
+                                        v:Ico.Of="{StaticResource I.Pack}" VerticalAlignment="Center"
+                                        Visibility="{Binding HasIcon, Converter={StaticResource B2VNot}}" />
+                      </Grid>
                       <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal">
                           <TextBlock Text="{Binding Title}" FontSize="{StaticResource FsBody}"
@@ -185,9 +195,10 @@
                         <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0"
                                    Text="{Binding SummaryText}" TextTrimming="CharacterEllipsis" />
                       </StackPanel>
-                      <Button Grid.Column="2" Style="{StaticResource BtnPrimary}" Content="新建实例"
-                              Tag="{Binding}" Click="CreateFromPack_Click" VerticalAlignment="Center"
-                              ToolTip="用这个整合包新建实例" />
+                      <Button Grid.Column="2" Style="{StaticResource BtnPrimary}" Content="安装 ▾"
+                              IsEnabled="{Binding CanCreate}" Tag="{Binding}" Click="InstallMenu_Click"
+                              VerticalAlignment="Center"
+                              ToolTip="装到当前实例 / 新建实例 / 先检查能不能装" />
                     </Grid>
                   </Border>
                 </DataTemplate>

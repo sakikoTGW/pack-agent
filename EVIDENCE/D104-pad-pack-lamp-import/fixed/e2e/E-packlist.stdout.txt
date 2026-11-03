@@ -1,0 +1,2 @@
+--- 23:32:49 pad cli pack list --json --out E:\pack-agent\EVIDENCE\D104-pad-pack-lamp-import\fixed\e2e\E-packlist.json
+wrote E:\pack-agent\EVIDENCE\D104-pad-pack-lamp-import\fixed\e2e\E-packlist.json

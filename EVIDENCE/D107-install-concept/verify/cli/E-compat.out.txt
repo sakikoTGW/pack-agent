@@ -1,0 +1,46 @@
+--- 05:15:16 pad cli pack install inst-compat --pack Verify-Probe-0.1.0 --accept-risk --skip-missing --json --out E:\pack-agent\EVIDENCE\D107-install-concept\verify\cli\E-compat.json
+内核匹配 · 插件 1 个：1 可装
+[install] 预检完成：内核匹配 · 插件 1 个：1 可装
+[install] 开始应用：1 个插件
+{
+  "dir": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\inst-compat\\workspace\\.agent-pack\\modpacks\\pack-agent-modpack-verify-probe",
+  "npmName": "pack-agent-modpack-verify-probe",
+  "id": "pack-agent-modpack-verify-probe",
+  "installCommand": "packagent dsh allow pack-agent-modpack-verify-probe"
+}
+{
+  "ok": true,
+  "allowed": "pack-agent-modpack-verify-probe"
+}
+这个 profile 没有 @sakikotgw/pack-agent-dsh，先装管理器
+检查 pnpm junction（relink node_modules，可能要几十秒）…
+relink 完成（102s）
+dsh plugin --profile web add @sakikotgw/pack-agent-dsh
+dsh: initialized profile web at E:\pack-agent\.tmp\d107-verify\.pack-launcher\instances\inst-compat\home\profiles\web
+Progress: resolved 1, reused 0, downloaded 0, added 0
+
+dependencies:
++ @sakikotgw/pack-agent-dsh ^0.4.3
+
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+Done in 750ms using pnpm v11.7.0
+补装插件 dsh-context
+跳过 relink（本次批量安装已经检查过 node_modules）
+dsh plugin --profile web add dsh-context
+✓ Lockfile passes supply-chain policies (verified 4s ago)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+[WARN] Issues with peer dependencies found. Run "pnpm peers check" to list them.
+
+dependencies:
++ dsh-context ^0.80.2
+
+Packages: +2
+++
+Progress: resolved 3, reused 2, downloaded 0, added 1
+Progress: resolved 3, reused 2, downloaded 0, added 2, done
+Done in 2.3s using pnpm v11.7.0
+包 Verify Probe 已应用到 profile web：新增 1 个插件、保留 0 个、补 bundle 行 0 个
+包 Verify Probe → profile web：installed · 新增 1 · 保留 0 · 豁免 0 · 跳过 0 · 失败 0
+wrote E:\pack-agent\EVIDENCE\D107-install-concept\verify\cli\E-compat.json

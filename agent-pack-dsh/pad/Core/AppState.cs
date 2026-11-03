@@ -29,7 +29,16 @@ public class ProfileVm(Instance inst, DshProfile profile) : Observable
             $"{Kind} · {Release}",
             $"实例 {InstanceName}",
             string.IsNullOrWhiteSpace(Instance.Home) ? "" : $"home {Instance.Home}",
-            Running ? "在跑" : "未跑");
+            StateText);
+
+    /// <summary>
+    /// tooltip / 设置卡里的一行状态。绿灯只认 PAD 账本（<see cref="Running"/>）；
+    /// 本机探测到的容器是 OS 进程活着，走 <see cref="LocalRunning"/>，不点灯。
+    /// </summary>
+    public virtual string StateText =>
+        Running ? "在跑（PAD 启动）"
+        : LocalRunning ? "本机进程在跑（不是 PAD 启动）"
+        : "未跑";
 
     public virtual string Badge => Profile.HasTui ? "TUI" : Profile.IsWeb ? "WEB" : Name.Length > 0
         ? Name[..1].ToUpperInvariant() : "?";
@@ -104,7 +113,15 @@ public class ProfileVm(Instance inst, DshProfile profile) : Observable
     }
 
     bool _running;
+    /// <summary>PAD 账本（runtime.json）里真启动过的 profile —— 呼吸绿灯的唯一判据。</summary>
     public bool Running { get => _running; set => Set(ref _running, value); }
+
+    bool _localRunning;
+    /// <summary>
+    /// 本机进程此刻活着（只给探测到的桌面端 / TUI 用）。OS 进程在跑 ≠ PAD 启动过，
+    /// 所以它只进 tooltip / 设置卡，不点亮 <see cref="Running"/> 那盏呼吸灯。
+    /// </summary>
+    public bool LocalRunning { get => _localRunning; set => Set(ref _localRunning, value); }
 }
 
 /// <summary>
@@ -128,7 +145,7 @@ public sealed class DetectedTuiRow(Tui tui, bool canAdopt) : ProfileVm(Synthetic
         string.Join(Environment.NewLine,
             $"{ShortPackageName(tui.Package)} {tui.Version}",
             $"内核 {tui.DeclaredKernel ?? "?"}",
-            Running ? "在跑" : "未跑",
+            LocalRunning || Running ? "本机进程在跑（不是 PAD 启动的）" : "本机进程没在跑",
             string.IsNullOrWhiteSpace(tui.Home) ? "" : $"home {tui.Home}");
 
     public override string Badge => "TUI";
@@ -174,7 +191,7 @@ public sealed class DetectedShellRow(Shell shell, bool canAdopt) : ProfileVm(Syn
             {
                 $"{(IsOfficialShell(shell.Exe) ? "官方" : "第三方")}桌面端 {shell.Version}",
                 $"内核 {shell.KernelVersion ?? "?"}",
-                Running ? $"在跑 pid {shell.Pid}" : "未跑",
+                LocalRunning || Running ? $"本机进程在跑 pid {shell.Pid}（不是 PAD 启动的）" : "本机进程没在跑",
             };
             if (!string.IsNullOrWhiteSpace(shell.UserData)) lines.Add($"userData {shell.UserData}");
             if (!string.IsNullOrWhiteSpace(shell.Home)) lines.Add($"home {shell.Home}");

@@ -1,0 +1,14 @@
+$ pad cli cli node open E:\pack-agent\.tmp\d107-tauri-real\instances\t2\dsh-home --surface tauri --exe E:\DSH-Tauri\deepseek-harness-desktop.exe
+exit=1 elapsed=0.9s
+--- stdout ---
+--- 05:31:46 pad cli node open E:\pack-agent\.tmp\d107-tauri-real\instances\t2\dsh-home --surface tauri --exe E:\DSH-Tauri\deepseek-harness-desktop.exe
+error[PA149]: the tauri desktop exited instead of opening a window
+ --> E:\DSH-Tauri\deepseek-harness-desktop.exe
+  |
+  | exit code 0 — 单实例壳在已有窗口时会把激活转发给已有窗口后退出；也可能是它不接受 DSH_HOME
+  |
+  = help: 关掉已经在跑的 Tauri 桌面端，再开这个项目
+  = help: 确认这个 exe 是桌面端本体，不是安装器 / 更新器
+
+--- stderr ---
+

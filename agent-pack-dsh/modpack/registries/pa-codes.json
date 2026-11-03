@@ -51,6 +51,15 @@
     { "id": "PA123", "level": "error", "message": "project workspace path is not a directory", "help": ["create the directory, or change the binding: pad cli project add"] },
     { "id": "PA124", "level": "error", "message": "could not write the workspace registry", "note": "PAD never writes a registry DSH would refuse to boot; the old file is kept and a .bak copy is made" },
     { "id": "PA125", "level": "error", "message": "could not bind agent presets for this project", "help": ["copy the preset into the instance home, then re-seed"] },
-    { "id": "PA126", "level": "error", "message": "project window kind is not supported yet", "help": ["set window.kind to \"web\" in project.json"] }
+    { "id": "PA126", "level": "error", "message": "project window kind is not supported yet", "help": ["set window.kind to \"web\" in project.json"] },
+    { "id": "PA146", "level": "error", "message": "the tauri surface needs --exe", "help": ["pad cli node open <home> --surface tauri --exe <deepseek-harness-desktop.exe>"] },
+    { "id": "PA147", "level": "error", "message": "no tauri desktop executable at that path", "help": ["point --exe at the dsh-tauri desktop executable"] },
+    { "id": "PA148", "level": "error", "message": "could not start the tauri desktop" },
+    { "id": "PA149", "level": "error", "message": "the tauri desktop exited instead of opening a window", "note": "the shell is single-instance: an existing window takes the activation and the new process exits", "help": ["close the running Tauri desktop first"] },
+    { "id": "PA201", "level": "error", "message": "hot path is not available for this instance", "note": "either PAD did not start it, the official hmr entry is disabled, or the tree is owned by another manager", "help": ["pad cli plugin status <instance>", "drop --hot to take the cold path"] },
+    { "id": "PA202", "level": "error", "message": "the plugin tree is owned by another manager (e.g. mygo)", "help": ["install from that manager's own UI", "PAD stays read-only here on purpose"] },
+    { "id": "PA203", "level": "error", "message": "checkpoint not found", "help": ["pad cli plugin undo <instance> restores the newest one"] },
+    { "id": "PA204", "level": "error", "message": "checkpoint restore failed; the instance needs manual repair", "note": "the pre-restore checkpoint is kept so nothing was lost" },
+    { "id": "PA205", "level": "error", "message": "hot verify failed; the change was rolled back", "help": ["pad cli plugin verify <instance> <spec>", "check the install log"] }
   ]
 }

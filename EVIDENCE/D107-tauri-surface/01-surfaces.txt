@@ -1,0 +1,36 @@
+exit=0
+--- stdout ---
+--- 04:44:19 pad cli surfaces
+[
+  {
+    "name": "tui",
+    "shows": "\u7EC8\u7AEF\u7A97\u53E3",
+    "exclusive": false,
+    "needsEndpoint": false,
+    "requires": "dsh-tui \u002B gateway"
+  },
+  {
+    "name": "web",
+    "shows": "\u6D4F\u89C8\u5668\u7A97\u53E3",
+    "exclusive": false,
+    "needsEndpoint": true,
+    "requires": "dsh-web-app"
+  },
+  {
+    "name": "app",
+    "shows": "\u684C\u9762\u7AEF\u7A97\u53E3",
+    "exclusive": true,
+    "needsEndpoint": false,
+    "requires": "DSH Desktop\uFF08Electron \u58F3\uFF0C\u5355\u5B9E\u4F8B\uFF09"
+  },
+  {
+    "name": "tauri",
+    "shows": "Tauri \u684C\u9762\u7AEF\u7A97\u53E3",
+    "exclusive": true,
+    "needsEndpoint": false,
+    "requires": "dsh-tauri \u684C\u9762\u7AEF\uFF08\u8BFB DSH_HOME\uFF0C\u5355\u5B9E\u4F8B\uFF09"
+  }
+]
+
+--- stderr ---
+

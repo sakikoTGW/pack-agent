@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>整合包「安装」概念 · 原型预览</title>
+<style>
+  :root { --bg:#0f1a20; --card:#16242c; --line:#26363f; --ink:#e8eef1; --muted:#93a4ad; --accent:#4fb3c0; --green:#5fd18f; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: "Microsoft YaHei","PingFang SC",sans-serif; padding: 46px 56px 60px; }
+  h1 { font-size: 30px; font-weight: 650; letter-spacing:.5px; }
+  .sub { color: var(--muted); font-size: 16px; margin-top: 10px; line-height: 1.7; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 30px; }
+  a.card { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; text-decoration: none; color: var(--ink); transition: .15s; }
+  a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .card .no { color: var(--accent); font-size: 13px; letter-spacing: 1.5px; }
+  .card h3 { font-size: 19px; margin: 8px 0 10px; }
+  .card p { color: var(--muted); font-size: 14px; line-height: 1.65; }
+  .card img { width: 100%; border-radius: 10px; margin-top: 14px; border: 1px solid var(--line); }
+  .rule { margin-top: 34px; border-top: 1px solid var(--line); padding-top: 22px; display: flex; gap: 34px; color: var(--muted); font-size: 14.5px; line-height: 1.75; }
+  .rule b { color: var(--ink); font-weight: 600; }
+  .rule div { max-width: 640px; }
+</style>
+</head>
+<body>
+  <h1>整合包「安装」概念 · 前端原型</h1>
+  <div class="sub">
+    三张可点开的原型，对应提案里的三个界面：①版本页补「安装」动作 ②实例页从包库装 + 预检徽标 ③预检/一次授权/安装报告。<br>
+    尺寸与真实 PAD 窗口一致（1500×930），深顶栏 + 浅灰卡片沿用现有主题。
+  </div>
+  <div class="grid">
+    <a class="card" href="01-versions.html">
+      <div class="no">原型 1 / 3</div>
+      <h3>版本选择页：整合包行补「安装 ▾」</h3>
+      <p>安装 = 装到当前选中实例（推荐）；菜单保留 PCL 式「新建实例」。版本页仍不写"装到哪"。</p>
+      <img src="01-versions.png" alt="版本页安装动作原型">
+    </a>
+    <a class="card" href="02-instance-picker.html">
+      <div class="no">原型 2 / 3</div>
+      <h3>实例页：装整合包 = 从本机包库选</h3>
+      <p>包库列表带图标与预检徽标（✅可装 / ⚠需授权 / ⛔已下架 / 已装可修复），目标实例写在标题上。</p>
+      <img src="02-instance-picker.png" alt="实例页包库选择器原型">
+    </a>
+    <a class="card" href="03-preflight-report.html">
+      <div class="no">原型 3 / 3</div>
+      <h3>预检 · 一次授权 · 安装报告</h3>
+      <p>装之前把内核/下架/需授权/版本冲突一次列清，一次勾选；装完给新增/豁免/跳过/失败报告，包标不完整可修复。</p>
+      <img src="03-preflight-report.png" alt="预检与安装报告原型">
+    </a>
+  </div>
+  <div class="rule">
+    <div><b>效果预言（一句话）</b><br>
+      用户从包列表点「安装」→ 选目标实例 → 看到预检清单（Test 包：8 可装 / 1 需授权 / 1 已下架）→ 勾"全接受风险 + 跳过下架" → 安装报告显示 9 新增 1 豁免 1 跳过，实例页该包发光并标「不完整 · 缺 1 个」，可随时修复。</div>
+    <div><b>不改变的东西</b><br>
+      版本页仍不显示"装到哪"；装态仍由实例页发光/账本药丸表达；新建实例仍是 PCL 式派生；导入/扫描/导出入口不动。</div>
+  </div>
+</body>
+</html>

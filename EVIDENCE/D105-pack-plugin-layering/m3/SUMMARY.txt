@@ -1,0 +1,71 @@
+M3 GATE RESULT: PASS (independent verifier run; P3 = task-7 landed)
+captured=2026-11-04T02:54+08:00
+source (re-frozen): HEAD=54cf34ca419e918e109a9b0f926011d8570d24aa
+  diff_sha_full=4ee5c643641304965bad25bbb8ad436f4a17eae1   (includes Lead's DECISIONS.md/docs README edits)
+  diff_sha_product=65751b9892af7048441a5f93256058a73cd289b9  (.cs/.ts/.xaml/.json only)
+  note: the first M3 snapshot @fb62bb52 saw Lead's DECISIONS.md + agent-pack-dsh/docs/README.md updates land
+        mid-run; product code was unchanged -> re-froze and re-ran entire gate; build dll sha identical both runs.
+build: dotnet build agent-pack-dsh\pad\pad.csproj -c Debug -o E:\pack-agent\.tmp\pad-build-d105
+  EXIT=0, 0 warnings / 0 errors
+  exe apphost sha256=C47F9830866D1EC418132CC2FE4124CA6CB9EC14A8821AEF2AA13B1CAAA77E55 size=336384
+  dll sha256=A0AEA16526EF6FA83499B2934345A6E681DD7490729F47507549D393DB46059A size=4832768
+tests @ frozen product diff_sha:
+  6/6 bun EXIT=0: pad-window | pad-pack | import-pack | test | pack-catalog | pinst
+  dotnet test agent-pack-dsh/pad.tests/Pad.Tests.csproj -> EXIT=0, 114 passed / 0 failed
+  (P3 adds PackCompatTests; 103 -> 114 = +11)
+  stable after run: full_stable=True product_stable=True
+  logs: m3\logs\ ; m3\tests-summary.txt ; m3\build-identity.txt ; m3\source-snapshot.txt
+
+P3 E2E (FRESH DSH_HOME scratch root: E:\pack-agent\.tmp\d105-m3\.pack-launcher recreated from zero;
+         versions junction -> live versions; instances created by the import chain itself)
+1) import Compat-Probe-0.1.0 (required dsh-find-skill, incompatible w/ 0.2.1-rc.2):
+   `cli import` EXIT=1 PA014, instance=compat-probe status=import-failed source=Compat-Probe-0.1.0
+   (m3\e2e\01-import-compat-probe.out.txt)
+2) NEGATIVE CONTROL (no allow-version): raw `dsh plugin --profile web add dsh-find-skill` EXIT=1,
+   stderr contains the exact DSH hint line:
+   "dsh: to accept the risk, run: dsh plugin --profile web allow-version dsh-find-skill@0.2.1 --dsh-version 0.2.1-rc.2 --accept-risk"
+   (m3\e2e\02-negative-add.err.txt)
+3) P3 API `Launcher.AllowVersion(inst,"web","dsh-find-skill@0.2.1","0.2.1-rc.2",...)`:
+   EXIT=0, RESULT allowversion_args matches DSH contract exactly, elapsedMs=102414
+   wrote profiles\web\compatibility.json = {"dsh-find-skill@0.2.1":["0.2.1-rc.2"]}  (m3\compatibility.json)
+   `dsh plugin --profile web version-exemptions` EXIT=0 -> same JSON  (m3\version-exemptions.txt)
+4) add after allow: raw `dsh plugin --profile web add dsh-find-skill` EXIT=0 in 4.1s (cached pnpm)
+   profile deps += dsh-find-skill ^0.2.1 ; bundles += dsh-find-skill ; node_modules/dsh-find-skill present
+   `dsh --dump-config --profile web` EXIT=0, dsh-find-skill layer hits=3  (m3\e2e\05-dump-after-add.yml)
+5) PAD retry path: `Packs.ApplyPackToInstance` after allow -> ok=True added=[] (already installed, idempotent),
+   `Launcher.MarkInstanceStatus("compat-probe","ready")` -> instance status_now=ready
+   (m3\e2e\06-retry-applypack.out.txt / 07-markstatus.out.txt)
+6) REAL VERSION-CONFLICT scenario (R6, no silent overwrite):
+   fresh instance verify-probe has dsh-context 0.80.1; apply Conflict-Probe (pins dsh-context@0.79.0):
+   RESULT apply ok=False state=incomplete conflicts=[dsh-context@0.79.0] added=[] kept=[] restored=[]
+   (m3\e2e\09-conflict-apply.out.txt)
+
+PARSER CHECKS (frozen build; m3\parser-checks.txt + prep\parser-smoke.txt):
+  exact prompt line -> is_incompatible=True, parsed pkg=dsh-find-skill@0.2.1 dsh=0.2.1-rc.2 profile=web name/version ok
+  full captured stderr file -> parsed (profile empty; warning line appears before hint line -> documented fallback
+      "解析不到为空 = 用当前 profile")
+  truncated variant (no --dsh-version) -> is_incompatible=True, parsed=<null>, no crash
+  prep smoke also: --dsh-version=equals form OK, CRLF/'| ' PAD-render OK, scoped @scope/pkg@x OK
+
+P3 UI SOURCE ASSERTIONS (m3\source-assertions.txt + corrections):
+  PASS PackCompat.FromError used in InstanceView; three-way 接受风险安装/换内核/取消; Launcher.AllowVersion call
+  (InstanceView.xaml.cs:1721); version-conflict three-way (PackPluginConflict); VersionsView
+  RecoverIncompatibleImportAsync + MarkInstanceStatus; stale-row filter (InstanceView.xaml.cs:1845
+  `packKey is null && Dir missing -> hide`, verified against actual impl; my first guess "ProjectionExists" was wrong,
+  corrected); AllowVersionArgs contract; PackCompat class; pad-window.test.ts full D105 P3 block present.
+  PackCompatTests = 11 [Fact] (dotnet test 114/114).
+
+CROSS-REF: pad-ui p3\ evidence (fresh-home E2E, version-exemptions output, stale-row screenshots, copy-home
+  ERR_PNPM_UNEXPECTED_VIRTUAL_STORE caveat) is consistent with my independent results.
+
+INTEGRITY: live PAD pid 78308 ALIVE; live-root hashes identical to prep\live-root-before.txt
+  (pad.json 30AD621B…, runtime 6FABFA48…, ui-state C7D5BEE4…, jobs 50D0726E…, pad.lock 2BE42D13…=78308);
+  source stable (full 4ee5c643 / product 65751b98) after all runs; no live-root writes; no PAD restart;
+  no product source edits by verifier; no commit.
+
+OBSERVATIONS (not acceptance failures):
+- Launcher.AllowVersion through PAD took 102.8s vs raw dsh 1.1s: PAD path does bun/pnpm ensure/relink first;
+  UI needs busy/progress (P3 UI does show progress). Raw DSH contract itself is fast.
+- `dsh plugin version-exemptions` requires `--profile <name>` (contract); with profile it returns the map.
+- Full multi-line stderr parses with empty profile because the "installation rejected" warning line precedes the
+  "to accept the risk, run:" hint line; PackCompat documents empty=use current profile. Exact hint line parses profile.

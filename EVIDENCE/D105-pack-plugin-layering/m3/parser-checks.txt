@@ -1,0 +1,11 @@
+﻿M3 PARSER CHECKS (frozen build 2026-11-04T02:49:26.6766647+08:00)
+== 1) exact stderr line from FRESH negative-control add ==
+RESULT compatfile path=E:\pack-agent\EVIDENCE\D105-pack-plugin-layering\m3\e2e\02-negative-add.err.txt len=970
+RESULT compat is_incompatible=True text_len=970
+RESULT compat parsed package_version=dsh-find-skill@0.2.1 dsh_version=0.2.1-rc.2 profile= name=dsh-find-skill version=0.2.1 text=dsh-find-skill@0.2.1 需要 DSH 0.2.1-rc.2
+== 2) exact prompt-only line ==
+RESULT compat is_incompatible=True text_len=128
+RESULT compat parsed package_version=dsh-find-skill@0.2.1 dsh_version=0.2.1-rc.2 profile=web name=dsh-find-skill version=0.2.1 text=dsh-find-skill@0.2.1 需要 DSH 0.2.1-rc.2（profile web）
+== 3) truncated variant ==
+RESULT compat is_incompatible=True text_len=89
+RESULT compat parsed=<null>

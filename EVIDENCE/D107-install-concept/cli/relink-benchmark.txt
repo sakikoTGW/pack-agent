@@ -1,0 +1,12 @@
+﻿PnpmHeal.Relink 基准（0.2.1-rc.2 release node_modules，11810 个目录 / 569 个 .pnpm 包目录）
+命令：dotnet run（引用 pad.tests/pad-bin/pack-agent-for DSH.dll，调 PnpmHeal.Relink 两次）
+日期：2026-11-04
+
+Relink #1: 70027 ms, linked=4889
+Relink #2: 64569 ms, linked=78
+
+结论：单次 Relink ≈ 65–70s，CPU 全在 PAD 进程内（遍历/重建 junction，无子进程）。
+旧实现每个 dsh plugin add 前都跑 Relink（versions + profile 两个），10 个插件 =
+~10×70s ≈ 700s，加上 pnpm/预检正好对上 lead 观察到的 CPU 840s / 无子进程 / 无输出。
+修复后同一批安装只在第一次 add/allow-version 前 Relink 一次（日志里的 "relink 完成（127s）"），
+之后每个插件打 "跳过 relink"。

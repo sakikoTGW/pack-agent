@@ -1,0 +1,22 @@
+{
+  "schema": "pad.checkpoint/v1",
+  "id": "20261103-212620-318",
+  "instance": "ev-hot",
+  "profile": "web",
+  "trigger": "pre-restore 20261103-212541-940",
+  "createdAt": "2026-11-03T21:26:20.3238180\u002B00:00",
+  "files": [
+    {
+      "path": "instance.json",
+      "name": "00-instance.json"
+    },
+    {
+      "path": "home/profiles/web/package.json",
+      "name": "01-package.json"
+    },
+    {
+      "path": "home/profiles/web/cordis.patch.yml",
+      "name": "02-cordis.patch.yml"
+    }
+  ]
+}

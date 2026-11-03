@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>PAD 前端规范 v1 · 视觉手册</title>
+<style>
+  :root { --bg:#0f1a20; --card:#16242c; --line:#26363f; --ink:#e8eef1; --muted:#93a4ad; --accent:#4fb3c0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: "Microsoft YaHei","PingFang SC",sans-serif; padding: 54px 64px 70px; width: 1500px; }
+  h1 { font-size: 34px; font-weight: 650; letter-spacing: .5px; }
+  .sub { color: var(--muted); font-size: 16.5px; margin-top: 12px; line-height: 1.75; max-width: 1180px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 36px; }
+  a.card { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; text-decoration: none; color: var(--ink); }
+  a.card:hover { border-color: var(--accent); }
+  .no { color: var(--accent); font-size: 13px; letter-spacing: 1.5px; }
+  h3 { font-size: 22px; margin: 10px 0 10px; }
+  p { color: var(--muted); font-size: 14.5px; line-height: 1.7; }
+  img { width: 100%; border-radius: 12px; border: 1px solid var(--line); margin-top: 16px; }
+  .rule { margin-top: 36px; border-top: 1px solid var(--line); padding-top: 24px; display: flex; gap: 40px; color: var(--muted); font-size: 14.5px; line-height: 1.8; }
+  .rule b { color: var(--ink); }
+  .rule div { max-width: 610px; }
+  code { background: #1d2d36; padding: 2px 7px; border-radius: 6px; font-size: 13px; color: #b9d9de; }
+</style>
+</head>
+<body>
+  <h1>PAD 前端规范 v1 · 视觉手册</h1>
+  <div class="sub">把用户的原话落成可检查的规则：<b>能删就删；有用但吵的文字用层级藏起来；状态靠视觉表达；一次只让人看一件事；同类必须同一套设计，禁止文字作图。</b> 本手册是 <code>agent-pack-dsh/docs/frontend-spec.md</code> 的配图版。</div>
+  <div class="grid">
+    <a class="card" href="01-text-discipline.html">
+      <div class="no">PAGE 1 / 2</div>
+      <h3>文字纪律 · 视觉表达</h3>
+      <p>五条硬原则、文字决策树、本轮真实反例（预检文字墙 → 4 行视觉 + 1 句决定）。</p>
+      <img src="01-text-discipline.png" alt="文字纪律手册">
+    </a>
+    <a class="card" href="02-system.html">
+      <div class="no">PAGE 2 / 2</div>
+      <h3>设计系统 · 组件 · 动效</h3>
+      <p>Tokens、统一图标表（≤20 个）、行/药丸/弹窗/反馈组件、动效时长与 PR 检查清单。</p>
+      <img src="02-system.png" alt="设计系统手册">
+    </a>
+  </div>
+  <div class="rule">
+    <div><b>适用范围</b><br>PAD 所有页面、弹窗与 CLI 人类可读输出。新增/改动 UI 先过第 9 节 10 条清单；需要新图标/新颜色先改规范再实现。</div>
+    <div><b>本轮落地项</b><br>预检弹窗技术原文收进「展开详情」、检查行改视觉化；包库选择器辅助行收敛；全局「包」文字 fallback 换统一图标；建立单一 Icons/Tokens 源。</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,5 @@
+logical 1040x760
+dpi 1.5x1.5
+pixels 1560x1140
+host 1040x706
+size launch: want 1040x760 from 1000x620 animate=False fx=True

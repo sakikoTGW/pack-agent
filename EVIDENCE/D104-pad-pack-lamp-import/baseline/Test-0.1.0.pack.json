@@ -1,0 +1,72 @@
+﻿{
+  "bundle": {
+    "files": [],
+    "portable": true
+  },
+  "description": "第一个package",
+  "dsh": {
+    "plugins": [
+      {
+        "required": true,
+        "spec": "dsh-find-skill"
+      },
+      {
+        "required": true,
+        "spec": "dsh-better-sidebar"
+      },
+      {
+        "required": true,
+        "spec": "dsh-cost-meter"
+      },
+      {
+        "required": true,
+        "spec": "@michengai/dsh-skills-manager"
+      },
+      {
+        "required": true,
+        "spec": "@yuxianglin/dsh-bridge-browser"
+      },
+      {
+        "required": true,
+        "spec": "dsh-plugin-resolver"
+      },
+      {
+        "required": true,
+        "spec": "dshmarket"
+      },
+      {
+        "required": true,
+        "spec": "dsh-context"
+      },
+      {
+        "required": true,
+        "spec": "dsh-element-picker"
+      },
+      {
+        "required": true,
+        "spec": "dsh-i-have-adhd"
+      }
+    ],
+    "profile": "web",
+    "version": "0.2.1-rc.2"
+  },
+  "meta": {
+    "author": "PAD",
+    "exportedAt": "2026-10-27T16:55:44.147Z",
+    "fidelity": "L1",
+    "portable": true
+  },
+  "modules": {
+    "commands": false,
+    "experiences": false,
+    "hooks": false,
+    "mcp": false,
+    "rules": false,
+    "settings": false,
+    "skills": false,
+    "subagents": false
+  },
+  "name": "Test",
+  "schema": "ccui-pack/v0.2",
+  "version": "0.1.0"
+}

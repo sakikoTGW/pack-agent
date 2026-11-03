@@ -1,0 +1,55 @@
+﻿D106 M4 SOURCE ASSERTIONS 2026-11-04T03:33:35.1889344+08:00
+== A) VersionsView: no visible install-state pill ==
+PASS  absent: 'InstallStateText' (InstallStateText in xaml)
+PASS  absent: 'PackStatePill' (PackStatePill in xaml)
+PASS  absent: 'InstallStateText' (InstallStateText in cs)
+PASS  absent: 'IsInstalled' (IsInstalled binding in xaml)
+PASS  absent: '已装到' (已装到 in cs)
+PASS  absent: '已建实例' (已建实例 in cs)
+== B) IconPath/HasIcon bindings ==
+PASS  IconPath in VersionsView.xaml :: line 180
+PASS  HasIcon in VersionsView.xaml :: line 179
+PASS  IconPath in InstanceView.xaml :: line 303
+PASS  HasIcon in InstanceView.xaml :: line 304
+== C) InstanceView glow ==
+PASS  DropShadowEffect :: line 1852,line 1864
+PASS  DoubleAnimation :: line 1871,line 1878
+PASS  Forever :: line 1874,line 1881
+PASS  Enabled :: line 913,line 914
+PASS  glow :: line 1864,line 1877
+  glow method: line 1864: var glow = new DropShadowEffect
+  glow method: line 1877: glow.BeginAnimation(DropShadowEffect.OpacityProperty, breathe);
+  glow method: line 1884: glow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, blur);
+== D) PackIcon ==
+PASS  PackIcon contains 'static string? Resolve'
+INFO  PackIcon lacks literal 'library\icons\packs' (may be equivalent)
+PASS  PackIcon contains 'sha16'
+INFO  PackIcon lacks literal '2 \* 1024 \* 1024' (may be equivalent)
+PASS  PackIcon contains 'TryRasterizeSvg'
+PASS  PackIcon contains 'catch'
+PASS  PackIcon contains 'File.Exists'
+PackIconTests [Fact] count=12
+== E) pad-window D106 block ==
+pad-window added lines matching D106: 50
+  +// ---- 整合包行：自己的 icon + 新建实例走完整 import 链（D104；D105 UX 2026-11-04 改）----
+  +// 用户新反馈：「把这些换成整合包的icon，不用显示装在哪里了（装态改到实例页发光）」。
+  +// 契约：PackItem 带 IconPath/HasIcon（PackIcon.Resolve）；版本页不再有「已装到/已建实例」药丸；
+  +  // D105 UX：行左列换整合包自己的 icon（解析不到才回落「包」）。
+  +  if (!versionsPackCs.includes('PackIcon.Resolve') || !versionsPackCs.includes('IconPath'))
+  +    fail('整合包行没解析/携带自己的 icon（PackIcon.Resolve / IconPath）')
+  +  if (!versions.includes('x:Key="PathBmp"') || !versions.includes('{Binding IconPath'))
+  +    fail('整合包行 xaml 没把 IconPath 画成图标')
+  +    fail('整合包 icon 不是 26×26 圆角裁切图')
+  +  if (versions.includes('InstallStateText') || versions.includes('PackStatePill'))
+  +  if (versionsPackCs.includes('InstallStateText') || versionsPackCs.includes('InstallState(')
+  +// ⑤（已由 D105 UX 2026-11-04 取代：版本页不再显示装到哪，装态改实例页发光）。P1 不写账本、不改配置。
+  +  // 装态改由实例页「整合包」块的已启用发光表达（见 task-9 断言）。
+  +  if (verCs2.includes('PackLedger.Load') || verCs2.includes('InstallState')
+  +// ---- D105 UX（用户 2026-11-04 截图反馈）：整合包自己的 icon + 不再显示装到哪 + 实例页已启用包发光 ----
+  +// ① 版本页行左列 = 包自己的 icon（PackIcon 解析） ② 删掉「已装到/已建实例」药丸
+  +// ③ 实例页整合包块：Enabled=true 的包行 accent 呼吸光，停用不发光（可调暗）；账本药丸/修复/卸载保留。
+  +  if (!existsSync(join(pad, 'Core/PackIcon.cs')))
+  +    fail('缺 Core/PackIcon.cs：整合包自己的 icon 没解析器')
+  +  const packIcon = read('Core/PackIcon.cs')
+
+source diff_sha_full=5c46b79b98e0b5da92524cf5edb4f53eff24cdb9 product=710e23daeba25f5c1f742846e4027c30d6542eca

@@ -1,0 +1,83 @@
+--- 23:31:35 pad cli import E:\pack-agent\.tmp\verify-d104-e2e\.pack-launcher\library\packs\Verify-Probe-0.1.0.pack.zip
+{
+  "schema": "pack-agent.launcher.instance/v1",
+  "id": "verify-probe",
+  "name": "Verify Probe",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "profile": {
+    "name": "web",
+    "port": "auto"
+  },
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\verify-d104-e2e\\.pack-launcher\\instances\\verify-probe\\workspace"
+  },
+  "status": "ready",
+  "home": "E:\\pack-agent\\.tmp\\verify-d104-e2e\\.pack-launcher\\instances\\verify-probe\\home",
+  "display": {
+    "info": "",
+    "logo": null,
+    "star": false,
+    "category": ""
+  },
+  "packs": {
+    "allowSet": "default"
+  },
+  "plugins": {
+    "disabled": []
+  },
+  "credentials": {
+    "kind": "global"
+  },
+  "created": "2026-11-03T15:31:44.698Z",
+  "updated": "2026-11-03T15:31:44.700Z",
+  "source": {
+    "kind": "pack",
+    "packId": "Verify-Probe-0.1.0",
+    "packTitle": "Verify Probe",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\pack-agent\\.tmp\\verify-d104-e2e\\.pack-launcher\\library\\packs\\Verify-Probe-0.1.0.pack.zip"
+  }
+}
+  "id": "verify-probe",
+  "name": "Verify Probe",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "profile": {
+    "name": "web",
+    "port": "auto"
+  },
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\verify-d104-e2e\\.pack-launcher\\instances\\verify-probe\\workspace"
+  },
+  "status": "ready",
+  "home": "E:\\pack-agent\\.tmp\\verify-d104-e2e\\.pack-launcher\\instances\\verify-probe\\home",
+  "display": {
+    "info": "",
+    "logo": null,
+    "star": false,
+    "category": ""
+  },
+  "packs": {
+    "allowSet": "default"
+  },
+  "plugins": {
+    "disabled": []
+  },
+  "credentials": {
+    "kind": "global"
+  },
+  "created": "2026-11-03T15:31:44.698Z",
+  "updated": "2026-11-03T15:31:44.700Z",
+  "source": {
+    "kind": "pack",
+    "packId": "Verify-Probe-0.1.0",
+    "packTitle": "Verify Probe",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\pack-agent\\.tmp\\verify-d104-e2e\\.pack-launcher\\library\\packs\\Verify-Probe-0.1.0.pack.zip"
+  }
+}

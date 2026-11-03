@@ -2,6 +2,9 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using Microsoft.Win32;
 using Pad.Core;
 using PluginQuery = Pad.Core.PluginList;
@@ -20,6 +23,8 @@ public partial class InstanceView : UserControl, IRefreshable
     bool _pluginLoading;
     bool _pluginBusy;
     List<PluginRow> _pluginRows = [];
+    /// <summary>P1 只读事实：这个实例/profile 的包↔插件归属（插件页小标与卸/更新确认用）。</summary>
+    PackPluginFacts _pluginFacts = PackPluginFacts.Empty;
     CancellationTokenSource? _pluginCts;
 
     public InstanceView(MainWindow win)
@@ -47,6 +52,13 @@ public partial class InstanceView : UserControl, IRefreshable
         if (App.ShotPage is "instance-plugins" or "instance-bundles" or "plugin-detail")
         {
             NavPlugins.IsChecked = true;
+            return;
+        }
+        // --shot-page instance-packs：实例页「整合包」面板没有导航项（D 系列砍掉了），
+        // 截图时直接把它摆出来当证据，避免为了截图加一个用户会看到的入口。
+        if (App.ShotPage == "instance-packs")
+        {
+            ShowPane("packs");
             return;
         }
         LoadSessions();
@@ -964,6 +976,14 @@ public partial class InstanceView : UserControl, IRefreshable
         }
         var favRoot = _state.Launcher.Root;
         foreach (var r in rows) r.Favorite = Favorites.IsFavorite(favRoot, r.Spec);
+        // P1：插件行的小标「来自整合包 X」。事实只读投影 + profile，不改任何安装状态。
+        _pluginFacts = PackPluginFacts.Collect(inst, pick?.Name);
+        foreach (var r in rows)
+        {
+            var origin = _pluginFacts.OriginOf(r.Spec);
+            r.PackOriginText = origin?.OriginText ?? "";
+            r.PackOriginTip = origin?.OriginTip ?? "";
+        }
         _pluginRows = rows;
         PaintPlugins();
         if (App.ShotPage == "plugin-detail") QueueDetailShot();
@@ -1323,10 +1343,28 @@ public partial class InstanceView : UserControl, IRefreshable
             PluginSay("先选一个版本。");
             return;
         }
-        if (targets.Count > 1 || PluginFrom(sender) is not null)
+        // P1 提示 / P2 账本：被已装包声明（账本 owners 优先）的插件 / pack-agent 管理器，
+        // 先说清后果再动手。
+        var owned = targets
+            .Select(t => (t.Spec, Packs: PackOwnersOf(inst, profile, t.Spec)))
+            .Where(x => x.Packs.Count > 0)
+            .ToList();
+        var managers = targets.Where(t => PackPluginFacts.IsManagerSpec(t.Spec)).ToList();
+        if (targets.Count > 1 || PluginFrom(sender) is not null || owned.Count > 0 || managers.Count > 0)
         {
             var names = string.Join("、", targets.Select(t => t.Spec));
-            if (!_win.Ask("移除插件", $"从 {profile} 移除 {names}？", warn: true)) return;
+            var lines = new List<string> { $"从 {profile} 移除 {names}？" };
+            if (owned.Count > 0)
+            {
+                var specList = string.Join("、", owned.Select(o => o.Spec));
+                var packs = string.Join("、", owned
+                    .SelectMany(o => o.Packs)
+                    .Distinct(StringComparer.OrdinalIgnoreCase));
+                lines.Add($"「{specList}」由整合包 {packs} 要求：卸掉后包会残缺（可在包详情修复）。");
+            }
+            if (managers.Count > 0)
+                lines.Add("PA110：pack-agent 是整合包管理器，移除后所有已装整合包的投影内容都不可见，要重新装回管理器才能恢复。");
+            if (!_win.Ask("移除插件", string.Join(Environment.NewLine + Environment.NewLine, lines), warn: true)) return;
         }
         PluginBusy(true);
         try
@@ -1337,7 +1375,11 @@ public partial class InstanceView : UserControl, IRefreshable
                 await _state.Launcher.PluginOp(inst.Id, "remove", t.Spec,
                     new Progress<string>(PluginSay), CancellationToken.None, t.Profile);
             }
+            // P2：账本里登记过这个插件的包 → 标 incomplete（读时对账会把缺件算出来，包行出现「修复」）。
+            var marked = MarkPacksIncomplete(inst, profile, targets.Select(t => t.Spec), removed: true);
             PluginSay("移除了。下次启动生效。");
+            if (marked.Count > 0)
+                _win.Toast("插件已卸；整合包已标不完整：" + string.Join("、", marked) + "（可在包行点「修复」补回）");
             _state.Reload();
             LoadPlugins();
         }
@@ -1357,6 +1399,21 @@ public partial class InstanceView : UserControl, IRefreshable
             PluginSay("先选一个版本。");
             return;
         }
+        // P1 提示 / P2 账本：更新包声明（账本 owners 优先）的插件会改掉包钉的版本 → 先确认。
+        var owned = targets
+            .Select(t => (t.Spec, Packs: PackOwnersOf(inst, profile, t.Spec)))
+            .Where(x => x.Packs.Count > 0)
+            .ToList();
+        if (owned.Count > 0)
+        {
+            var names = string.Join("、", owned.Select(o => o.Spec));
+            var packs = string.Join("、", owned
+                .SelectMany(o => o.Packs)
+                .Distinct(StringComparer.OrdinalIgnoreCase));
+            if (!_win.Ask("更新插件",
+                    $"「{names}」由整合包 {packs} 要求：更新会把版本从包钉的版本改走，包会残缺（可在包详情修复）。" +
+                    Environment.NewLine + Environment.NewLine + "仍要更新？", warn: true)) return;
+        }
         PluginBusy(true);
         try
         {
@@ -1366,7 +1423,11 @@ public partial class InstanceView : UserControl, IRefreshable
                 await _state.Launcher.PluginOp(inst.Id, "update", t.Spec,
                     new Progress<string>(PluginSay), CancellationToken.None, t.Profile);
             }
+            // P2：版本漂移由账本读时对账算 incomplete；这里把登记的包状态写一致。
+            var marked = MarkPacksIncomplete(inst, profile, targets.Select(t => t.Spec), removed: false);
             PluginSay("更新好了。下次启动生效。");
+            if (marked.Count > 0)
+                _win.Toast("版本已改；整合包已标不完整：" + string.Join("、", marked) + "（可在包行点「修复」补回）");
             _state.Reload();
             LoadPlugins();
         }
@@ -1498,6 +1559,332 @@ public partial class InstanceView : UserControl, IRefreshable
         PackMeter.Visibility = total == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
+    /// <summary>包行/插件行看哪个 profile：插件页当前选择 → 全局选中 → 实例 lastProfile → 第一个。</summary>
+    string ProfileForFacts(Instance inst) =>
+        SelectedPluginProfile()
+        ?? _state.SelectedProfile?.Name
+        ?? inst.LastProfile
+        ?? _state.Launcher.Profiles(inst).FirstOrDefault()?.Name
+        ?? "";
+
+    /// <summary>P2：读这个实例的装包账本（旧实例没有文件 = 空账本，不炸）。</summary>
+    PackLedger LedgerFor(Instance inst) => PackLedger.Load(_state.Launcher, inst);
+
+    /// <summary>
+    /// pack list 行（投影目录 id）→ 账本 packId（包文件 stem）。账本条目按
+    /// <c>content.dir</c> 的目录名对上投影；对不上再按 id/标题兜底。
+    /// </summary>
+    static string? LedgerPackKeyFor(PackLedger ledger, PackRow row)
+    {
+        if (ledger.Data.Packs.Count == 0) return null;
+        foreach (var kv in ledger.Data.Packs)
+        {
+            var dir = (kv.Value.Content.Dir ?? "").Trim().TrimEnd('/', '\\');
+            var projection = dir.Length == 0 ? "" : Path.GetFileName(dir.Replace('/', Path.DirectorySeparatorChar));
+            if (string.Equals(projection, row.Id, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(kv.Key, row.Id, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(kv.Key, row.Title, StringComparison.OrdinalIgnoreCase))
+                return kv.Key;
+        }
+        foreach (var kv in ledger.Data.Packs)
+            if (string.Equals(kv.Value.Title, row.Title, StringComparison.OrdinalIgnoreCase)) return kv.Key;
+        return null;
+    }
+
+    /// <summary>包行对应的包文件（图标用）：账本登记路径优先；无账本老实例退回实例来源包（标题匹配）。</summary>
+    static string? PackFileForRow(Instance inst, PackLedger ledger, string? packKey, PackRow row)
+    {
+        try
+        {
+            var fromLedger = packKey is null ? null : ledger.Get(packKey)?.Path;
+            if (!string.IsNullOrWhiteSpace(fromLedger) && File.Exists(fromLedger)) return fromLedger;
+            var source = inst.Source;
+            if (source is null) return null;
+            var matches = packKey is not null
+                ? string.Equals(source.PackId, packKey, StringComparison.OrdinalIgnoreCase)
+                : string.Equals(source.PackTitle, row.Title, StringComparison.OrdinalIgnoreCase);
+            return matches ? source.PackPath : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>P2：要求这个插件的包名（账本 owners 优先；老实例退回 P1 的投影事实）。</summary>
+    List<string> PackOwnersOf(Instance inst, string profile, string spec)
+    {
+        var ledger = LedgerFor(inst);
+        var fromLedger = ledger.OwnersOf(profile, spec)
+            .Select(id => ledger.Get(id)?.Title is { Length: > 0 } title ? title : id)
+            .Where(name => name.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        return fromLedger.Count > 0 ? fromLedger : _pluginFacts.PackTitlesOf(spec).ToList();
+    }
+
+    /// <summary>
+    /// P2：插件被卸/改版本后，把要求它的已装包标成 incomplete（卸 = 从账本摘掉该条，
+    /// 更新 = 只改状态；缺件由 <see cref="PackLedger.GapsFor"/> 读时对账出）。返回包名。
+    /// </summary>
+    List<string> MarkPacksIncomplete(Instance inst, string profile, IEnumerable<string> specs, bool removed)
+    {
+        var ledger = LedgerFor(inst);
+        var titles = new List<string>();
+        var touched = false;
+        foreach (var spec in specs)
+        {
+            foreach (var id in ledger.OwnersOf(profile, spec))
+            {
+                var pack = ledger.Get(id);
+                if (pack is null) continue;
+                touched = true;
+                if (removed && ledger.RecordPluginRemoved(id, profile, spec)) { /* 已从账本摘掉 */ }
+                else ledger.SetState(id, profile, PackLedger.StateIncomplete);
+                var title = pack.Title.Length > 0 ? pack.Title : id;
+                if (!titles.Contains(title, StringComparer.OrdinalIgnoreCase)) titles.Add(title);
+            }
+        }
+        if (touched) ledger.Save();
+        return titles;
+    }
+
+    /// <summary>P2：装包结果不静默——成功一条 toast；冲突/失败/提醒用 Ask 列出来。</summary>
+    void ShowPackApplyResult(PackApplyResult result)
+    {
+        var lines = new List<string> { result.Text };
+        foreach (var conflict in result.Conflicts.Take(4)) lines.Add("冲突：" + conflict.Text);
+        foreach (var failure in result.Failures.Take(4)) lines.Add(failure.Text);
+        foreach (var warning in result.Warnings.Take(4)) lines.Add(warning);
+        if (result.Ok && result.Warnings.Count == 0)
+        {
+            _win.Toast(result.Text);
+            return;
+        }
+        _win.Ask(result.Ok ? "装好了（有提醒）" : "整合包 · 没有静默处理",
+            string.Join(Environment.NewLine + Environment.NewLine, lines), warn: !result.Ok);
+    }
+
+    /// <summary>P3：装一次（兼容门/版本冲突以结构化结果返回，不抛）。</summary>
+    Task<PackApplyResult> ApplyPackOnceAsync(Instance inst, string packPath, string profile) =>
+        _packs.ApplyPackToInstance(inst, packPath, profile, new Progress<string>(PackSay),
+            CancellationToken.None);
+
+    /// <summary>
+    /// P3：实例页装包的完整交互——兼容门三选一（接受风险 / 换内核 / 取消）→ 版本冲突三选一
+    /// （升到包版本 / 保留现有 / 取消）→ 结果展示。重试最多 2 次（一次兼容授权、一次冲突升级），
+    /// 不静默、不死循环。
+    /// </summary>
+    async Task ApplyPackToInstanceInteractiveAsync(Instance inst, string packPath, string profile)
+    {
+        PackApplyResult result;
+        try
+        {
+            result = await ApplyPackOnceAsync(inst, packPath, profile);
+        }
+        catch (Exception ex)
+        {
+            PackSay(PadError.Describe(ex));
+            if (PackCompat.FromError(ex) is { } thrownFix && await AskAndApplyCompatAsync(inst, profile, thrownFix) is { } recovered)
+            {
+                inst = recovered;
+                try { result = await ApplyPackOnceAsync(inst, packPath, profile); }
+                catch (Exception retryEx) { PackSay(PadError.Describe(retryEx)); _win.Toast(PadError.Describe(retryEx), bad: true); return; }
+            }
+            else
+            {
+                _win.Toast(PadError.Describe(ex), bad: true);
+                return;
+            }
+        }
+
+        var retries = 0;
+        while (retries < 2)
+        {
+            if (PackCompat.FromApplyResult(result) is { } fix)
+            {
+                retries++;
+                var next = await AskAndApplyCompatAsync(inst, profile, fix);
+                if (next is null) return;
+                inst = next;
+                result = await ApplyPackOnceAsync(inst, packPath, profile);
+                continue;
+            }
+            if (result.Conflicts.Count > 0)
+            {
+                retries++;
+                var upgraded = await ResolveConflictsAsync(inst, profile, result.Conflicts);
+                if (upgraded is null) return;
+                if (upgraded == 0) break;   // 全保留现有：账本已标 incomplete，直接展示结果
+                result = await ApplyPackOnceAsync(inst, packPath, profile);
+                continue;
+            }
+            break;
+        }
+        ShowPackApplyResult(result);
+    }
+
+    /// <summary>
+    /// P3 兼容三选一：第一问最想要的动作「接受风险安装」；否则第二问「换一个已装内核重试」。
+    /// 返回重试要用的实例（换内核后是新的），取消/失败返回 null。
+    /// </summary>
+    async Task<Instance?> AskAndApplyCompatAsync(Instance inst, string profile, PackCompatFix fix)
+    {
+        var accept = _win.Ask("插件与内核不兼容 · 接受风险安装",
+            $"这个整合包里的插件与它钉的内核不兼容：{fix.Text}。\n\n"
+            + $"接受风险会允许 {fix.PackageVersion} 在 DSH {fix.DshVersion} 上运行；可能崩溃或损坏数据，"
+            + "但这是 DSH 官方给的正门（豁免只对这两个精确版本生效）。\n\n接受风险安装？",
+            warn: true, okText: "接受风险安装", cancelText: "换内核/取消…");
+        if (accept)
+        {
+            // DSH 提示里的 profile 优先（不兼容发生在哪个 profile 就给哪个 profile 授权）。
+            var target = fix.Profile.Length > 0 ? fix.Profile : profile;
+            try
+            {
+                await _state.Launcher.AllowVersion(inst, target, fix.PackageVersion, fix.DshVersion,
+                    new Progress<string>(PackSay), CancellationToken.None);
+                PackSay($"已按 DSH 通道允许 {fix.PackageVersion} 在 DSH {fix.DshVersion} 上运行");
+                return inst;
+            }
+            catch (Exception ex)
+            {
+                PackSay(PadError.Describe(ex));
+                _win.Toast("接受风险没成功：" + PadError.Describe(ex), bad: true);
+                return null;
+            }
+        }
+        return SwitchKernel(inst);
+    }
+
+    /// <summary>
+    /// P3 第二问：列出本机已装内核 → 用户输入/选一个 → PinInstance → Reload。
+    /// 取消返回 null（并说明这是包内容/版本问题）。
+    /// </summary>
+    Instance? SwitchKernel(Instance inst)
+    {
+        var versions = _state.Releases.Select(r => r.Version)
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (versions.Count == 0)
+        {
+            _win.Toast("本机没有别的已装内核可换。这是包内容/版本问题：按当前内核重新导出包，或改插件版本后重试", bad: true);
+            return null;
+        }
+        var pick = _win.AskInput("插件与内核不兼容 · 换内核重试",
+            "本机已装内核：" + string.Join("、", versions) + Environment.NewLine + Environment.NewLine
+            + "输入要换的版本号（留空取消）：", inst.Dsh.Version, warn: true);
+        if (string.IsNullOrWhiteSpace(pick))
+        {
+            _win.Toast("取消：这是包内容/版本问题——按当前内核重新导出包，或改插件版本后重试", bad: true);
+            return null;
+        }
+        var chosen = versions.FirstOrDefault(v => string.Equals(v, pick.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (chosen is null)
+        {
+            _win.Toast("本机没装这个内核：" + pick.Trim(), bad: true);
+            return null;
+        }
+        try
+        {
+            _state.Launcher.PinInstance(inst.Id, chosen);
+            _state.Reload();
+            var fresh = _state.Launcher.Instance(inst.Id) ?? inst;
+            _state.SelectedInstance = _state.Instances.FirstOrDefault(i => i.Id == fresh.Id) ?? _state.SelectedInstance;
+            PackSay($"已改钉到 {chosen}，重试装包…");
+            return fresh;
+        }
+        catch (Exception ex)
+        {
+            PackSay(PadError.Describe(ex));
+            _win.Toast(PadError.Describe(ex), bad: true);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// P3 冲突三选一：升到包版本 / 保留现有（包标 incomplete，可用「修复」后补）/ 取消。
+    /// 返回升级成功的个数；用户取消返回 null。
+    /// </summary>
+    async Task<int?> ResolveConflictsAsync(Instance inst, string profile,
+        IReadOnlyList<PackPluginConflict> conflicts)
+    {
+        var upgraded = 0;
+        foreach (var conflict in conflicts)
+        {
+            if (_win.Ask("插件版本冲突 · " + conflict.Spec,
+                    $"包要 {conflict.Spec} 的 {conflict.Expected}，这个 profile 里是 {conflict.Actual}。\n\n"
+                    + "升到包版本会改掉现有版本；保留现有则包标不完整（可用「按包修复」后补）。\n\n升到包版本？",
+                    warn: true, okText: "升到包版本", cancelText: "保留现有/取消…"))
+            {
+                try
+                {
+                    var name = PackCompat.Split(conflict.Spec, out var bare, out _)
+                        ? bare
+                        : LaunchPolicy.BundleBareName(conflict.Spec);
+                    var target = $"{name}@{conflict.Expected}";
+                    PackSay($"upgrade {target} → {profile}");
+                    await _state.Launcher.PluginOp(inst.Id, "add", target,
+                        new Progress<string>(PackSay), CancellationToken.None, profile);
+                    upgraded++;
+                }
+                catch (Exception ex)
+                {
+                    PackSay(PadError.Describe(ex));
+                    _win.Toast($"升级 {conflict.Spec} 没成功：" + PadError.Describe(ex), bad: true);
+                    return null;
+                }
+                continue;
+            }
+            if (!_win.Ask("插件版本冲突 · " + conflict.Spec,
+                    $"保留 {conflict.Spec} 现在的 {conflict.Actual}？包会标不完整，之后可点「按包修复」重试。"
+                    + Environment.NewLine + Environment.NewLine + "取消 = 不再处理剩余冲突。",
+                    warn: true, okText: "保留现有", cancelText: "取消")) return null;
+        }
+        if (upgraded > 0) PackSay($"已把 {upgraded} 个插件升到包要求的版本，重试整包装配…");
+        else _win.Toast("已保留现有版本；包标不完整，可用包行「修复」按包重试");
+        return upgraded;
+    }
+
+    /// <summary>
+    /// D105 UX：实例页整合包行——已启用（Enabled=true）的包行发 accent 呼吸光；
+    /// 停用的行无光并整体调暗（0.85），让"发光"真的表示这个包此刻是启用的。
+    /// 每行一个轻量 DropShadowEffect（只在包行，数量小；不滥用 Effect）。
+    /// </summary>
+    void PackRow_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: PackListRow row } card) return;
+        if (!row.Enabled)
+        {
+            card.Effect = null;
+            card.Opacity = 0.85;
+            return;
+        }
+        card.Opacity = 1;
+        var glow = new DropShadowEffect
+        {
+            Color = (Color)FindResource("C.Accent"),
+            BlurRadius = 14,
+            ShadowDepth = 0,
+            Opacity = 0.6,
+        };
+        var breathe = new DoubleAnimation(0.35, 0.7, TimeSpan.FromSeconds(1.6))
+        {
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever,
+            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+        };
+        glow.BeginAnimation(DropShadowEffect.OpacityProperty, breathe);
+        var blur = new DoubleAnimation(14, 24, TimeSpan.FromSeconds(1.6))
+        {
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever,
+            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+        };
+        glow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, blur);
+        card.Effect = glow;
+    }
+
     async Task LoadPacks()
     {
         var inst = _state.SelectedInstance;
@@ -1506,8 +1893,38 @@ public partial class InstanceView : UserControl, IRefreshable
         try
         {
             var rows = await _packs.List(inst, CancellationToken.None);
-            PackList.ItemsSource = rows;
-            Tally(rows.Count(r => r.Enabled), rows.Count);
+            // P1：包行副标题「带 N 个插件（M 个不在这个 profile）」来自只读事实（投影 + profile）。
+            var profile = ProfileForFacts(inst);
+            var facts = PackPluginFacts.Collect(inst, profile);
+            var ledger = LedgerFor(inst);
+            var viewRows = new List<PackListRow>();
+            foreach (var r in rows)
+            {
+                // P2：账本条目决定「不完整 / 未登记 / 可修复」；老实例没有账本也能显示（只是标未登记）。
+                var packKey = LedgerPackKeyFor(ledger, r);
+                // P3 add-on（M2 发现）：catalog DB 里可能残留已删包的 allow 行——投影目录已不在且
+                // 账本没有条目 → 是 catalog 残留，直接隐藏；只有目录还在的老实例才保留「未登记」。
+                if (packKey is null && !string.IsNullOrWhiteSpace(r.Dir) && !Directory.Exists(r.Dir))
+                    continue;
+                var state = "";
+                var gaps = 0;
+                var missing = 0;
+                var tip = new List<string>();
+                if (packKey is not null)
+                {
+                    state = ledger.EffectiveState(profile, packKey);
+                    var gapRows = ledger.GapsFor(profile, packKey);
+                    gaps = gapRows.Count;
+                    missing = ledger.MissingFor(profile, packKey).Count;
+                    foreach (var gap in gapRows.Take(4)) tip.Add(gap.Text);
+                    foreach (var conflict in ledger.VersionConflicts(profile, packKey).Take(3))
+                        tip.Add(conflict.Text);
+                }
+                viewRows.Add(new PackListRow(r, facts.PackOf(r.Id) ?? facts.PackOf(r.Title),
+                    packKey, state, gaps, missing, tip, PackFileForRow(inst, ledger, packKey, r)));
+            }
+            PackList.ItemsSource = viewRows;
+            Tally(viewRows.Count(r => r.Enabled), viewRows.Count);
             PackEmptyBox.Visibility = Visibility.Collapsed;
         }
         catch (Exception ex)
@@ -1560,6 +1977,123 @@ public partial class InstanceView : UserControl, IRefreshable
         }
     }
 
+    /// <summary>
+    /// D107 安装概念：实例页「装整合包」→ 包库选择器（不再直接弹文件框）。
+    /// 选择器支持「从文件…」回首层旧的 Import_Click（保留 ApplyPackToInstance 路径）。
+    /// </summary>
+    void OpenPackPicker_Click(object sender, RoutedEventArgs e)
+    {
+        var inst = _state.SelectedInstance;
+        if (inst is null) return;
+        var profile = ProfileForFacts(inst);
+        var picker = new PackPickerWindow(inst.Name, profile) { Owner = Window.GetWindow(this) };
+        var fromFile = false;
+        picker.FromFileRequested += () => fromFile = true;
+        picker.RowActionRequested += row => { _ = PickerRowActionAsync(picker, inst, profile, row); };
+        _ = picker.LoadAsync(_packs, inst, profile, _state.Launcher.Root);
+        picker.ShowDialog();
+        if (fromFile) Import_Click(this, new RoutedEventArgs());
+    }
+
+    /// <summary>包库列表 + 逐行后台预检：真实数据逻辑在 PackPickerWindow.LoadAsync（版本页/截图共用）。</summary>
+    Task LoadPackPickerAsync(PackPickerWindow picker, Instance inst, string profile) =>
+        picker.LoadAsync(_packs, inst, profile, _state.Launcher.Root);
+    /// <summary>选择器里点「安装/修复」：修复直接 RepairPack；安装进预检授权窗口（与版本页同一流程）。</summary>
+    async Task PickerRowActionAsync(PackPickerWindow picker, Instance inst, string profile,
+        PackPickerWindow.Row row)
+    {
+        var packs = new Packs(_state.Launcher);
+        PackCard? card;
+        try
+        {
+            card = await packs.ResolveCard(row.Key, new Progress<string>(PackSay), CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _win.Toast(PadError.Describe(ex), bad: true);
+            return;
+        }
+        if (card is null)
+        {
+            _win.Toast("这个包在包库里找不到了：" + row.Title, bad: true);
+            return;
+        }
+        if (row.Repair)
+        {
+            try
+            {
+                var preflight = await packs.PreflightPack(inst, profile, card,
+                    new Progress<string>(PackSay), CancellationToken.None);
+                var repaired = await packs.RepairPack(inst, preflight.PackId, profile,
+                    new Progress<string>(PackSay), CancellationToken.None);
+                _win.Toast(repaired.Text, repaired.StillMissing.Count > 0);
+                _state.Reload();
+                await LoadPacks();
+                LoadPlugins();
+                await picker.LoadAsync(_packs, inst, profile, _state.Launcher.Root);
+            }
+            catch (Exception ex)
+            {
+                _win.Toast(PadError.Describe(ex), bad: true);
+            }
+            return;
+        }
+
+        picker.Hide();
+        try
+        {
+            await PackPreflightWindow.RunInstallFlowAsync(picker, packs, inst, profile, card,
+                new Progress<string>(PackSay),
+                afterApplied: () =>
+                {
+                    _state.Reload();
+                    _ = LoadPacks();
+                    LoadPlugins();
+                    _ = picker.LoadAsync(_packs, inst, profile, _state.Launcher.Root);
+                },
+                openInstance: () =>
+                {
+                    _state.SelectedInstance = inst;
+                    _win.ShowInner("instance", "版本设置");
+                },
+                reExport: () => ReExportPackFileAsync(card),
+                toast: (text, bad) => _win.Toast(text, bad));
+        }
+        finally
+        {
+            picker.Show();
+            picker.Activate();
+        }
+    }
+
+    /// <summary>报告里的「重新导出这个包」：拷一份包文件到用户选的位置（与版本页右键导出同语义）。</summary>
+    Task ReExportPackFileAsync(PackCard card)
+    {
+        if (!System.IO.File.Exists(card.Path))
+        {
+            _win.Toast("这个包的文件不见了", bad: true);
+            return Task.CompletedTask;
+        }
+        var isZip = card.Path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
+        var dlg = new SaveFileDialog
+        {
+            Title = "重新导出这个包",
+            Filter = isZip ? "整合包 (*.zip)|*.zip" : "整合包 (*.pack.json)|*.pack.json",
+            FileName = System.IO.Path.GetFileName(card.Path),
+        };
+        if (dlg.ShowDialog(_win) != true) return Task.CompletedTask;
+        try
+        {
+            System.IO.File.Copy(card.Path, dlg.FileName, overwrite: true);
+            _win.Toast($"已导出：{System.IO.Path.GetFileName(dlg.FileName)}");
+        }
+        catch (Exception ex)
+        {
+            _win.Toast("导出失败：" + ex.Message, bad: true);
+        }
+        return Task.CompletedTask;
+    }
+
     async void Import_Click(object sender, RoutedEventArgs e)
     {
         var inst = _state.SelectedInstance;
@@ -1582,9 +2116,30 @@ public partial class InstanceView : UserControl, IRefreshable
         var log = new Progress<string>(PackSay);
         try
         {
-            PackSay($"project {System.IO.Path.GetFileName(dlg.FileName)} -> {inst.Id}");
-            await _packs.Project(inst, dlg.FileName, log, CancellationToken.None);
+            var file = dlg.FileName;
+            var profile = ProfileForFacts(inst);
+            // .pinst.zip 是实例快照，仍走 TS import 链；整包（.pack.zip/.pack.json）走 R8 统一装配链：
+            // 投影 + 内容启用 + 确保管理器 + 按 diff 装插件 + 写账本。
+            if (file.EndsWith(".pinst.zip", StringComparison.OrdinalIgnoreCase))
+            {
+                PackSay($"import {System.IO.Path.GetFileName(file)} -> {inst.Id}");
+                await _packs.Import(file, log, CancellationToken.None);
+                _state.Reload();
+                _win.Toast("实例包导入好了：" + System.IO.Path.GetFileName(file));
+            }
+            else
+            {
+                if (profile.Length == 0)
+                {
+                    _win.Toast("这份实例还没有 profile，先建一个再接整合包", bad: true);
+                    return;
+                }
+                PackSay($"apply {System.IO.Path.GetFileName(file)} -> {inst.Id} / {profile}");
+                await ApplyPackToInstanceInteractiveAsync(inst, file, profile);
+                _state.Reload();
+            }
             await LoadPacks();
+            LoadPlugins();
         }
         catch (Exception ex)
         {
@@ -1628,16 +2183,122 @@ public partial class InstanceView : UserControl, IRefreshable
     async void TogglePack_Click(object sender, RoutedEventArgs e)
     {
         var inst = _state.SelectedInstance;
-        if (inst is null || sender is not Button { Tag: string packId } btn) return;
-        if (btn.DataContext is not PackRow row) return;
+        if (inst is null || sender is not Button { Tag: PackListRow row }) return;
+        var profile = ProfileForFacts(inst);
+        if (profile.Length == 0)
+        {
+            _win.Toast("先选一个 profile（插件页的 profile 下拉）", bad: true);
+            return;
+        }
 
         PackBusy(true);
         var log = new Progress<string>(PackSay);
         try
         {
-            if (row.Enabled) await _packs.Deny(inst, packId, log, CancellationToken.None);
-            else await _packs.Allow(inst, packId, log, CancellationToken.None);
+            var active = !row.Enabled;
+            if (row.HasLedgerEntry)
+            {
+                // P2：内容白名单 + dsh.profile.bundles 联动（摘/加 bundle 行，dependencies 保留）。
+                var ledger = LedgerFor(inst);
+                var shared = ledger.SharedFor(profile, row.PackKey);
+                var result = await _packs.SetPackPluginsActive(inst, row.PackKey, profile, active,
+                    log, CancellationToken.None);
+                var lines = new List<string> { result.Text };
+                if (shared.Count > 0)
+                    lines.Add((active ? "这些插件还被其他包要求，已一起加回：" : "这些插件还被其他包要求，只摘了 bundle 行、依赖保留：")
+                              + string.Join("、", shared));
+                foreach (var warning in result.Warnings.Take(3)) lines.Add(warning);
+                _win.Toast(string.Join("；", lines), bad: result.State == PackLedger.StateIncomplete);
+            }
+            else
+            {
+                // 旧实例没有账本：只切内容白名单（P2.6 不炸；装一次包会补写账本）。
+                if (active) await _packs.Allow(inst, row.ContentKey, log, CancellationToken.None);
+                else await _packs.Deny(inst, row.ContentKey, log, CancellationToken.None);
+                _win.Toast($"{(active ? "已启用" : "已停用")} {row.Title}（这个实例还没有装包账本，只切了内容白名单）");
+            }
             await LoadPacks();
+            LoadPlugins();
+        }
+        catch (Exception ex)
+        {
+            PackSay(PadError.Describe(ex));
+            _win.Toast(PadError.Describe(ex), bad: true);
+        }
+        finally
+        {
+            PackBusy(false);
+        }
+    }
+
+    /// <summary>
+    /// P2：卸载整合包（§3.3）：删投影目录 + 只回滚「只被这个包要求」的插件（共享插件保留并提示）
+    /// + 清本地插件目录 + 删账本条目。确认文案先写清删什么。
+    /// </summary>
+    async void UninstallPack_Click(object sender, RoutedEventArgs e)
+    {
+        var inst = _state.SelectedInstance;
+        if (inst is null || sender is not Button { Tag: PackListRow row }) return;
+        var profile = ProfileForFacts(inst);
+        var ledger = LedgerFor(inst);
+        var shared = row.HasLedgerEntry ? ledger.SharedFor(profile, row.PackKey) : [];
+        var exclusive = row.HasLedgerEntry ? ledger.ExclusiveFor(profile, row.PackKey) : [];
+        var lines = new List<string>
+        {
+            $"卸载整合包「{row.Title}」？",
+            row.HasLedgerEntry
+                ? $"会删掉工作区里的投影目录，并回滚 {exclusive.Count} 个只被它要求的插件"
+                  + (exclusive.Count > 0 ? $"（{string.Join("、", exclusive)}）" : "")
+                : "这个实例的账本里没有它：只删投影目录，插件一个都不动",
+        };
+        if (shared.Count > 0) lines.Add("这些插件还被其他包要求，会保留：" + string.Join("、", shared));
+        if (!_win.Ask("卸载整合包", string.Join(Environment.NewLine, lines), warn: true)) return;
+
+        PackBusy(true);
+        var log = new Progress<string>(PackSay);
+        try
+        {
+            var packRef = row.HasLedgerEntry ? row.PackKey : row.ContentKey;
+            var result = await _packs.UninstallPack(inst, packRef, profile, log, CancellationToken.None);
+            var text = result.Text;
+            if (result.SkippedShared.Count > 0)
+                text += "；保留共享插件：" + string.Join("、", result.SkippedShared);
+            foreach (var warning in result.Warnings.Take(3)) text += "；" + warning;
+            _win.Toast(text, bad: result.Warnings.Count > 0);
+            _state.Reload();
+            await LoadPacks();
+            LoadPlugins();
+        }
+        catch (Exception ex)
+        {
+            PackSay(PadError.Describe(ex));
+            _win.Toast(PadError.Describe(ex), bad: true);
+        }
+        finally
+        {
+            PackBusy(false);
+        }
+    }
+
+    /// <summary>P2：按包修复（只在账本判定 incomplete / 有缺件时出现）：照账本补缺失插件。</summary>
+    async void RepairPack_Click(object sender, RoutedEventArgs e)
+    {
+        var inst = _state.SelectedInstance;
+        if (inst is null || sender is not Button { Tag: PackListRow row }) return;
+        if (!row.HasLedgerEntry) return;
+        var profile = ProfileForFacts(inst);
+        PackBusy(true);
+        var log = new Progress<string>(PackSay);
+        try
+        {
+            PackSay($"repair {row.Title} -> {profile}");
+            var result = await _packs.RepairPack(inst, row.PackKey, profile, log, CancellationToken.None);
+            var text = result.Text;
+            foreach (var warning in result.Warnings.Take(3)) text += "；" + warning;
+            _win.Toast(text, bad: result.StillMissing.Count > 0);
+            _state.Reload();
+            await LoadPacks();
+            LoadPlugins();
         }
         catch (Exception ex)
         {
@@ -1716,4 +2377,65 @@ public partial class InstanceView : UserControl, IRefreshable
         Reveal.Path(_state.Launcher.ProjectionDir(inst));
     }
 
+}
+
+/// <summary>
+/// 实例页整合包行：PackRow 外面包一层显示用模型。
+/// P1：副标题「带 N 个插件（M 个不在这个 profile）」；
+/// P2：叠账本事实——有效状态（installed/disabled/incomplete/absent = 未登记）、缺件数、
+/// 「修复」是否出现；装/停用/卸载/修复都走 row 上的 <see cref="PackKey"/>。
+/// </summary>
+public sealed class PackListRow(PackRow row, PackFacts? facts, string? ledgerKey,
+    string ledgerState, int gapCount, int missingCount, IReadOnlyList<string> ledgerTip,
+    string? packPath)
+{
+    public PackRow Row { get; } = row;
+    public string Id => Row.Id;
+    public string Title => Row.Title;
+    public string StateText => Row.StateText;
+    public string VersionText => Row.VersionText;
+    public string DescriptionText => Row.DescriptionText;
+    public bool Enabled => Row.Enabled;
+
+    /// <summary>整合包自己的 icon 文件（PackIcon 缓存/源文件）；空 = 回落「包」pill。</summary>
+    public string IconPath { get; } = PackIcon.Resolve(AppState.Current.Launcher.Root, packPath) ?? "";
+    public bool HasIcon => IconPath.Length > 0;
+
+    /// <summary>allow/deny 的内容 id（投影目录名；旧实例没有账本时用它）。</summary>
+    public string ContentKey => Row.Id;
+
+    /// <summary>账本 packId（包文件 stem）；空 = 这个实例的账本里没有它（未登记）。</summary>
+    public string PackKey => ledgerKey ?? "";
+    public bool HasLedgerEntry => PackKey.Length > 0;
+    public string LedgerState => ledgerState;
+    public int GapCount => gapCount;
+    public int MissingCount => missingCount;
+
+    /// <summary>只有账本判定不完整 / 有缺件时才给「修复」入口。</summary>
+    public bool CanRepair => HasLedgerEntry
+        && (LedgerState == PackLedger.StateIncomplete || MissingCount > 0);
+
+    /// <summary>不该静默的状态才响：不完整 / 投影缺失 / 未登记（正常/停用不占位）。</summary>
+    public string LedgerBadge =>
+        !HasLedgerEntry ? "未登记"
+        : LedgerState == PackLedger.StateIncomplete || MissingCount > 0 ? "不完整"
+        : LedgerState == PackLedger.StateAbsent ? "投影缺失"
+        : "";
+
+    public bool HasLedgerBadge => LedgerBadge.Length > 0;
+
+    public string LedgerStateText => !HasLedgerEntry ? "账本：未登记（老实例；装一次包会补写）"
+        : LedgerState == PackLedger.StateIncomplete ? "账本：不完整（可用「修复」补回）"
+        : LedgerState == PackLedger.StateDisabled ? "账本：已停用（bundle 行已摘，依赖保留）"
+        : LedgerState == PackLedger.StateAbsent ? "账本：投影缺失"
+        : "账本：装好了";
+
+    public string LedgerTip => ledgerTip.Count == 0
+        ? LedgerStateText
+        : LedgerStateText + Environment.NewLine + string.Join(Environment.NewLine, ledgerTip);
+
+    /// <summary>「带 N 个插件（M 个不在这个 profile）」；包里没插件时为空（不占行）。</summary>
+    public string PluginSummaryText => facts?.SummaryText ?? "";
+    public string PluginSummaryTip => facts?.SummaryTip ?? "";
+    public bool HasPluginSummary => PluginSummaryText.Length > 0;
 }

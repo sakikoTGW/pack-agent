@@ -1,6 +1,8 @@
 #!/usr/bin/env bun
 /**
  * pinst：导出剥凭据 PA104；导入新 id、端口清空、凭据不还原。
+ * Q4：账本（instances/<id>/pack-ledger.json）随实例走 —— 导出带上、导入原样恢复、不重算；
+ * 旧 pinst 没带账本 → 导入后保持「未登记」（不生成空账本）。
  */
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -32,6 +34,33 @@ writeFileSync(join(home, '.credentials.yaml'), 'REF: secret-key\n')
 mkdirSync(join(home, 'sessions'), { recursive: true })
 writeFileSync(join(home, 'sessions', 'keep-me.txt'), 'session-body')
 writeFileSync(join(root.path, 'instances', inst.id, 'logs', 'noise.log'), 'log')
+// Q4：账本在实例目录（不是 home）。内容带一条关系，用来断言 pinst 是原样搬运、不是重算。
+const ledgerPath = join(root.path, 'instances', inst.id, 'pack-ledger.json')
+const ledgerBody = `${JSON.stringify(
+  {
+    schema: 'pack-agent.pack-ledger/v1',
+    updated: '2026-11-04T00:00:00.000Z',
+    packs: {
+      'Alpha-0.1.0': {
+        title: 'Alpha',
+        installedVersion: '0.1.0',
+        path: 'library/packs/Alpha-0.1.0.pack.zip',
+        installedAt: '2026-11-04T00:00:00.000Z',
+        content: { dir: '.agent-pack/modpacks/pack-agent-modpack-alpha', allow: true },
+        profiles: {
+          web: {
+            state: 'installed',
+            plugins: [{ spec: 'dsh-context', addedVersion: '0.80.0', origin: 'pack' }],
+          },
+        },
+      },
+    },
+    owners: { web: { 'dsh-context': ['Alpha-0.1.0'] } },
+  },
+  null,
+  2,
+)}\n`
+writeFileSync(ledgerPath, ledgerBody)
 
 const zip = join(tmp, 'alpha.pinst.zip')
 const exported = await exportInstance(root, inst.id, { out: zip })
@@ -49,7 +78,12 @@ if (existsSync(join(stage, 'logs', 'noise.log')) || existsSync(join(stage, 'home
 if (existsSync(join(stage, 'logs'))) fail('zip contains logs/')
 const manifest = JSON.parse(readFileSync(join(stage, 'manifest.json'), 'utf8')) as { schema: string }
 if (manifest.schema !== 'pack-agent.pinst/v1') fail(`schema ${manifest.schema}`)
-console.log('✓ export strips credentials, no logs')
+// Q4：账本随实例导出（zip 根 pack-ledger.json），内容原样。
+if (!existsSync(join(stage, 'pack-ledger.json'))) fail('pinst zip missing pack-ledger.json')
+if (readFileSync(join(stage, 'pack-ledger.json'), 'utf8') !== ledgerBody) {
+  fail('pinst zip pack-ledger.json 被改写了')
+}
+console.log('✓ export strips credentials, no logs, ships pack-ledger.json as-is')
 
 const imported = await importPack(root, zip, { name: 'beta', publishedVersions: ['0.1.0-rc.6'] })
 if (imported.id === inst.id) fail('import reused id')
@@ -59,7 +93,29 @@ const newHome = join(root.path, 'instances', imported.id, 'home')
 if (existsSync(join(newHome, '.credentials.yaml'))) fail('credentials restored')
 if (!existsSync(join(newHome, 'sessions', 'keep-me.txt'))) fail('session file missing')
 if (getInstance(root, imported.id).status !== 'ready') fail('status')
-console.log('✓ import new id, port auto, no credentials')
+// Q4：账本原样恢复到 instances/<newId>/pack-ledger.json（不是 home 里），不重算、不认领。
+const restoredLedger = join(root.path, 'instances', imported.id, 'pack-ledger.json')
+if (!existsSync(restoredLedger)) fail('imported instance missing restored pack-ledger.json')
+if (readFileSync(restoredLedger, 'utf8') !== ledgerBody) fail('imported pack-ledger.json 被重算了')
+if (existsSync(join(newHome, 'pack-ledger.json'))) fail('pack-ledger.json must live in the instance dir, not home')
+console.log('✓ import new id, port auto, no credentials, restores pack-ledger.json verbatim')
+
+// 旧 pinst（P2 之前导出，没带账本）：导入照常成功，但保持「未登记」——
+// 不生成空账本文件（PackLedger.Load 对缺失文件返回空账本 + Exists=false）。
+const legacyInst = createInstance(root, { name: 'gamma', version: '0.1.0-rc.6', profile: 'web', port: 31922 })
+writeFileSync(join(root.path, 'instances', legacyInst.id, 'home', 'sessions', 'old.txt'), 'old')
+const legacyZip = join(tmp, 'gamma-legacy.pinst.zip')
+await exportInstance(root, legacyInst.id, { out: legacyZip })
+if (existsSync(join(root.path, 'instances', legacyInst.id, 'pack-ledger.json'))) fail('gamma should not have a ledger')
+const importedLegacy = await importPack(root, legacyZip, { name: 'delta', publishedVersions: ['0.1.0-rc.6'] })
+if (importedLegacy.id === legacyInst.id) fail('legacy pinst reuse id')
+if (existsSync(join(root.path, 'instances', importedLegacy.id, 'pack-ledger.json'))) {
+  fail('旧 pinst 导入不该生成空账本（保持「未登记」语义）')
+}
+if (!existsSync(join(root.path, 'instances', importedLegacy.id, 'home', 'sessions', 'old.txt'))) {
+  fail('legacy pinst home not restored')
+}
+console.log('✓ legacy pinst without ledger imports fine, keeps 未登记 (no empty ledger file)')
 
 const bad = join(tmp, 'bad.pinst.zip')
 const badDir = join(tmp, 'bad-stage')

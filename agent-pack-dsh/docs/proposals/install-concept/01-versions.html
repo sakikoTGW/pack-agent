@@ -1,0 +1,118 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>方案 A · 版本选择页补「安装」</title>
+<link rel="stylesheet" href="mock.css">
+</head>
+<body>
+<div class="win">
+  <div class="titlebar">
+    <span class="back">←</span><h1>版本选择</h1><span class="tag">sisyphus</span>
+    <span class="spacer"></span><span class="wctl">－ ☐ ✕</span>
+  </div>
+  <div class="body">
+    <div class="side">
+      <div class="hint">实例列表</div>
+      <div class="inst sel"><div class="avatar whale">🐳</div><div><b>sisyphus</b><small>E:\pack-agent\agent-pack-dsh\...</small></div><span class="gear">⚙</span></div>
+      <div class="inst"><div class="avatar">📦</div><div><b>pack-Test</b><small>E:\pack-agent\agent-pack-dsh\...</small></div><span class="gear">⚙</span></div>
+      <div class="inst"><div class="avatar">🧊</div><div><b>pad-op-tmp</b><small>E:\pack-agent\agent-pack-dsh\...</small></div><span class="gear">⚙</span></div>
+      <div class="inst"><div class="avatar">🧊</div><div><b>pad-op-clone</b><small>E:\pack-agent\agent-pack-dsh\...</small></div><span class="gear">⚙</span></div>
+      <div class="grow"></div>
+      <div class="add">
+        <div class="hint2">添加或导入</div>
+        <div class="act"><span class="ico">＋</span>新建实例</div>
+        <div class="act"><span class="ico">↑</span>添加已有文件夹</div>
+        <div class="act"><span class="ico">▣</span>导入整合包</div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="card">
+        <div class="cardhead">
+          <span class="chip">▣</span><h2>整合包</h2>
+          <div class="right"><button class="btn">导出</button><button class="btn">刷新</button></div>
+        </div>
+
+        <div class="packrow">
+          <div class="packicon pink">T</div>
+          <div class="packmeta">
+            <div class="line1"><b>Test</b><span class="ver">0.1.0</span></div>
+            <div class="sub">0.2.1-rc.2 · 插件 10</div>
+          </div>
+          <div class="actions">
+            <button class="btn primary">安装 ▾</button>
+            <div class="menu">
+              <div class="item recommended">
+                <div class="mi">⬇</div>
+                <div class="mt"><b>装到当前实例（sisyphus）</b><small>投影 + 管理器 + 按 diff 装插件，写账本；装完在实例页发光</small></div>
+              </div>
+              <div class="item">
+                <div class="mi">＋</div>
+                <div class="mt"><b>新建实例…</b><small>用这个包派生一个新实例（PCL 式，现有行为）</small></div>
+              </div>
+              <div class="sep"></div>
+              <div class="item">
+                <div class="mi" style="background:#f1f4f6;color:#8b989f">ⓘ</div>
+                <div class="mt"><b>先检查能不能装…</b><small>内核 / 插件下架 / 兼容豁免 / 版本冲突，装之前一次列清</small></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="packrow">
+          <div class="packicon blue">S</div>
+          <div class="packmeta">
+            <div class="line1"><b>Shared B</b><span class="ver">0.1.0</span></div>
+            <div class="sub">0.2.1-rc.2 · 插件 1</div>
+          </div>
+          <div class="actions"><button class="btn primary">安装 ▾</button></div>
+        </div>
+
+        <div class="packrow">
+          <div class="packicon orange">V</div>
+          <div class="packmeta">
+            <div class="line1"><b>Verify Probe</b><span class="ver">0.1.0</span></div>
+            <div class="sub">0.2.1-rc.2 · 插件 1</div>
+          </div>
+          <div class="actions"><button class="btn primary">安装 ▾</button></div>
+        </div>
+
+        <div class="packrow">
+          <div class="packicon grey">▣</div>
+          <div class="packmeta">
+            <div class="line1"><b>Plain Pack</b><span class="ver">0.1.0</span></div>
+            <div class="sub">0.2.1-rc.2 · 插件 1</div>
+          </div>
+          <div class="actions"><button class="btn primary">安装 ▾</button></div>
+        </div>
+
+
+      </div>
+
+      <div class="card">
+        <div class="cardhead"><span class="chip">⬇</span><h2>DSH 版本</h2></div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div style="flex:1;height:46px;border:1px solid var(--line-strong);border-radius:10px;display:flex;align-items:center;padding:0 14px;font-size:16px">0.2.1-rc.2 &nbsp;<span style="color:var(--muted);font-size:14px">PAD 版本库 + 版本库</span><span style="margin-left:auto;color:var(--muted)">⌄</span></div>
+          <button class="btn">改钉</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:0">
+        <div class="cardhead"><span class="chip">▤</span><h2>容器</h2></div>
+        <div class="packrow" style="padding:12px 14px"><div class="packicon blue" style="width:36px;height:36px;font-size:16px">🌐</div><div class="packmeta"><div class="line1"><b>web</b><span class="pill green" style="margin-left:4px">● 在跑</span></div><div class="sub">0.2.1-rc.2</div></div><div class="actions"><span style="color:var(--muted)">⚙</span></div></div>
+        <div class="packrow" style="padding:12px 14px"><div class="packicon grey" style="width:36px;height:36px;font-size:16px">🐳</div><div class="packmeta"><div class="line1"><b>DeepSeek Harness</b><span class="ver">0.2.1-rc.5</span></div><div class="sub">官方 · 本机进程在跑（不是 PAD 启动的）</div></div><div class="actions"><span style="color:var(--muted)">⚙</span></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="notes">
+  <div class="n"><span class="num">①</span><span class="t">每个包都有「安装」动作，不再只有"新建实例"</span></div>
+  <div class="n"><span class="num">②</span><span class="t">默认目标=当前选中实例；菜单里保留 PCL 式「新建实例」</span></div>
+  <div class="n"><span class="num">③</span><span class="t">版本页仍不写"装到哪"（D106 约定），装态由实例页发光/账本药丸表达</span></div>
+</div>
+</body>
+</html>

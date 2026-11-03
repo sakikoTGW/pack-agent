@@ -1,0 +1,22 @@
+﻿DSH_HOME=E:\pack-agent\.tmp\d105-p3\.pack-launcher\instances\p1-full\home
+bin=E:\pack-agent\.tmp\d105-p3\.pack-launcher\versions\0.2.1-rc.2\node_modules\@deepseek-ai\dsh\lib\bin.js
+== 1) allow-version ==
+exit=0 elapsed=0.4s
+  dsh: warning: allowing incompatible plugin versions can break the application or corrupt data. Approval applies only to the exact package and DSH versions.
+  dsh: allowed dsh-find-skill@0.2.1 for DSH 0.2.1-rc.2
+== compatibility.json ==
+{
+  "dsh-find-skill@0.2.1": [
+    "0.2.1-rc.2"
+  ]
+}
+
+== 2) version-exemptions ==
+exit=0
+  {
+    "dsh-find-skill@0.2.1": [
+      "0.2.1-rc.2"
+    ]
+  }
+== 3) dump-config before add (grep) ==
+exit=0; matches=0

@@ -1,0 +1,36 @@
+[F] .credentials.yaml 161
+[D] .pad 
+  [D] logs 
+    [F] tauri.log 269
+  [F] nodes.json 359
+[D] .plugin-backups 
+[D] profiles 
+  [D] desktop 
+    [F] .harness.pid 11
+    [F] .npmrc 26
+    [D] .plugin-manager 
+      [D] logs 
+    [F] cordis.patch.yml 217
+    [F] cordis.yml 223
+    [D] node_modules 
+      [F] .modules.yaml 693
+      [D] .pnpm 
+      [F] .pnpm-workspace-state-v1.json 1051
+      [D] dsh-taiwind 
+      [D] dsh-tauri 
+      [D] dsh-tauri-archive 
+      [D] dsh-tauri-extension 
+      [D] dsh-tauri-mobile-ui 
+      [D] dsh-tauri-model 
+      [D] dsh-tauri-notification 
+      [D] dsh-tauri-pet 
+      [D] dsh-tauri-remote 
+      [D] dsh-tauri-rightclick 
+      [D] dsh-tauri-scheduler 
+      [D] dsh-tauri-ui 
+      [D] dsh-tauri-worktree 
+    [F] package.json 1688
+    [F] pnpm-lock.yaml 2697
+    [F] pnpm-workspace.yaml 177
+[D] storages 
+  [F] workspace.json 227

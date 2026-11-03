@@ -1,0 +1,14 @@
+﻿PAD-WINDOW.TEST.TS PRE-EXISTING RED AT HEAD (pristine worktree)
+captured=2026-11-03T23:18:09.5957503+08:00
+repo=E:\pack-agent
+HEAD=54cf34ca419e918e109a9b0f926011d8570d24aa
+worktree=E:\pack-agent\.tmp\pad-head-worktree
+command: bun run agent-pack-dsh/modpack/pad-window.test.ts
+exit=1
+--- stdout ---
+✓ 窗口策略：网址 / 拖包 / 收编 / 不卡 TUI / 嗅探 home
+--- stderr ---
+✗ 搜索标签还在用关键词
+--- failing assertion at HEAD (line 524) ---
+if (read('Views/DownloadView.xaml').includes('关键词')) fail('搜索标签还在用关键词')
+conclusion: RED is pre-existing at HEAD 54cf34c, caused by stale DownloadView assertion (search placeholder 关键词 / old search-card shape) that no longer matches the intentionally redesigned DownloadView.xaml.

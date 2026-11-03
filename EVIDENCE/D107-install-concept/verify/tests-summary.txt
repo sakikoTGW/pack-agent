@@ -1,0 +1,8 @@
+﻿D107 M5 TESTS @ diff_sha_full=c7a31a3adbd7f25ae49b75b3045d2dbfaa1041a2 diff_sha_product=fec33eefb39ae3c3fb8894771e26195fd0bb2bba stable_full=True stable_product=True
+EXIT=0 time=9.4s dotnet test pad.tests
+EXIT=0 time=8.1s agent-pack-dsh/modpack/pad-window.test.ts
+EXIT=0 time=32.3s agent-pack-dsh/modpack/pad-pack.test.ts
+EXIT=0 time=17.2s agent-pack-dsh/modpack/import-pack.test.ts
+EXIT=0 time=1.1s agent-pack-dsh/modpack/test.ts
+EXIT=0 time=28.2s agent-pack-dsh/modpack/pack-catalog.test.ts
+EXIT=0 time=15.2s agent-pack-dsh/modpack/pinst.test.ts

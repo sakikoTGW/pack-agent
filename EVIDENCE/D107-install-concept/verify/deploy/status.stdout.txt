@@ -1,0 +1,2 @@
+--- 05:22:23 pad cli status --json --out E:\pack-agent\EVIDENCE\D107-install-concept\verify\deploy\status-after-deploy.json
+wrote E:\pack-agent\EVIDENCE\D107-install-concept\verify\deploy\status-after-deploy.json

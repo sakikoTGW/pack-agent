@@ -1,0 +1,84 @@
+--- 04:02:39 pad cli import E:\pack-agent\.tmp\d107-verify\.pack-launcher\library\packs\Verify-Probe-0.1.0.pack.zip
+{
+  "schema": "pack-agent.launcher.instance/v1",
+  "id": "verify-probe",
+  "name": "Verify Probe",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "profile": {
+    "name": "web",
+    "port": "auto"
+  },
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\verify-probe\\workspace"
+  },
+  "status": "ready",
+  "home": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\verify-probe\\home",
+  "display": {
+    "info": "",
+    "logo": null,
+    "star": false,
+    "category": ""
+  },
+  "packs": {
+    "allowSet": "default"
+  },
+  "plugins": {
+    "disabled": []
+  },
+  "credentials": {
+    "kind": "global"
+  },
+  "created": "2026-11-03T20:03:01.478Z",
+  "updated": "2026-11-03T20:03:01.479Z",
+  "source": {
+    "kind": "pack",
+    "packId": "Verify-Probe-0.1.0",
+    "packTitle": "Verify Probe",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\library\\packs\\Verify-Probe-0.1.0.pack.zip"
+  }
+}
+账本：已登记 Verify-Probe-0.1.0 0.1.0 · 1 个插件（profile web）
+  "id": "verify-probe",
+  "name": "Verify Probe",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "profile": {
+    "name": "web",
+    "port": "auto"
+  },
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\verify-probe\\workspace"
+  },
+  "status": "ready",
+  "home": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\verify-probe\\home",
+  "display": {
+    "info": "",
+    "logo": null,
+    "star": false,
+    "category": ""
+  },
+  "packs": {
+    "allowSet": "default"
+  },
+  "plugins": {
+    "disabled": []
+  },
+  "credentials": {
+    "kind": "global"
+  },
+  "created": "2026-11-03T20:03:01.478Z",
+  "updated": "2026-11-03T20:03:01.479Z",
+  "source": {
+    "kind": "pack",
+    "packId": "Verify-Probe-0.1.0",
+    "packTitle": "Verify Probe",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\library\\packs\\Verify-Probe-0.1.0.pack.zip"
+  }
+}

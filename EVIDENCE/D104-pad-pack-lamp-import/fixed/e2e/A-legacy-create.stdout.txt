@@ -1,0 +1,36 @@
+--- 23:30:51 pad cli instance create --pack Test-0.1.0 --name verify-legacy
+{
+  "dir": "E:\\pack-agent\\.tmp\\verify-d104-e2e\\.pack-launcher\\instances\\verify-legacy\\workspace\\.agent-pack\\modpacks\\pack-agent-modpack-test",
+  "id": "pack-agent-modpack-test",
+  "npmName": "pack-agent-modpack-test",
+  "installCommand": "packagent dsh allow pack-agent-modpack-test"
+}
+{
+  "schema": "pack-agent.launcher.instance/v2",
+  "id": "verify-legacy",
+  "name": "verify-legacy",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "home": "E:\\pack-agent\\.tmp\\verify-d104-e2e\\.pack-launcher\\instances\\verify-legacy\\home",
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\verify-d104-e2e\\.pack-launcher\\instances\\verify-legacy\\workspace"
+  },
+  "status": "ready",
+  "lastProfile": "web",
+  "note": null,
+  "display": null,
+  "launch": null,
+  "source": {
+    "kind": "pack",
+    "packId": "Test-0.1.0",
+    "packTitle": "Test",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\pack-agent\\.tmp\\verify-d104-e2e\\.pack-launcher\\library\\packs\\Test-0.1.0.pack.zip"
+  },
+  "adopted": false,
+  "adoptedFingerprint": null,
+  "created": "2026-11-03T15:30:52.5861093\u002B00:00",
+  "updated": "2026-11-03T15:30:52.6123445\u002B00:00"
+}

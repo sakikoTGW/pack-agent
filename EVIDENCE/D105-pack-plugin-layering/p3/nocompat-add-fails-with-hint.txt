@@ -1,0 +1,9 @@
+﻿negative control: 没有 allow-version，直接 dsh plugin add dsh-find-skill
+exit=1 elapsed=1.7s
+---- output ----
+dsh: initialized profile web at E:\pack-agent\.tmp\d105-p3\noallow-home\profiles\web
+System.Management.Automation.RemoteException
+dsh: installation rejected: Plugin dsh-find-skill@0.2.1 is incompatible with dsh 0.2.1-rc.2: requirements {"@deepseek-ai/dsh-commands":"^0.1.0-rc.6","@deepseek-ai/dsh-home-paths":"^0.1.0-rc.6","@deepseek-ai/dsh-skill":"^0.1.0-rc.6","@deepseek-ai/dsh-tools":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-find-skill@0.2.1 on dsh 0.2.1-rc.2 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.
+dsh: nothing was installed.
+dsh: to accept the risk, run: dsh plugin --profile web allow-version dsh-find-skill@0.2.1 --dsh-version 0.2.1-rc.2 --accept-risk
+dsh: plugin command failed; diagnostics: E:\pack-agent\.tmp\d105-p3\noallow-home\profiles\web\.plugin-manager\logs\operation-F1I16a\pnpm.log

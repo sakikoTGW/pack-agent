@@ -1,0 +1,35 @@
+{
+  "schema": "pack-agent.pack-ledger/v1",
+  "updated": "2026-11-03T20:30:36.164Z",
+  "packs": {
+    "Probe-Compat-0.1.0": {
+      "title": "Probe Compat",
+      "installedVersion": "0.1.0",
+      "path": "E:\\pack-agent\\.tmp\\d107-install-e2e\\.pack-launcher\\library\\packs\\Probe-Compat-0.1.0.pack.json",
+      "installedAt": "2026-11-03T20:30:36.158Z",
+      "content": {
+        "dir": ".agent-pack/modpacks/pack-agent-modpack-probe-compat",
+        "allow": true
+      },
+      "profiles": {
+        "web": {
+          "state": "installed",
+          "plugins": [
+            {
+              "spec": "dsh-context",
+              "addedVersion": "0.80.2",
+              "origin": "pack"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "owners": {
+    "web": {
+      "dsh-context": [
+        "Probe-Compat-0.1.0"
+      ]
+    }
+  }
+}

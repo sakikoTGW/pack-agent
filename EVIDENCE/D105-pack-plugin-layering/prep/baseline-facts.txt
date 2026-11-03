@@ -1,0 +1,44 @@
+D105 VERIFIER PREP FACTS
+captured=2026-11-04T01:36+08:00
+repo=E:\pack-agent  HEAD=54cf34ca419e918e109a9b0f926011d8570d24aa (working tree has D104+D105 WIP, uncommitted)
+live PAD pid=78308 ALIVE (exe .tmp\pad-build-z\pack-agent-for DSH.exe, sha256 C47F9830866D1EC418132CC2FE4124CA6CB9EC14A8821AEF2AA13B1CAAA77E55) — NOT restarted/not touched by verifier
+live launcher root = E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher (read-only)
+live root snapshot: prep\live-root-before.txt
+
+SCRATCH ROOT: E:\pack-agent\.tmp\d105-verify\.pack-launcher
+  versions  = junction -> live root versions (0.1.0-rc.7,0.1.1-rc.2,0.2.1-rc.2)
+  library\packs:
+    Verify-Probe-0.1.0.pack.zip sha256=CC287D54C836264AC9414AF7691E148D27817438AB8F6F2274BD6D000390929B (required spec-only dsh-context)
+    Shared-A-0.1.0.pack.zip     sha256=00B365ADAD5903C8A9D7AB5B64BBB0AB6D25D180B3305DEABA24590B25EA2730 (declares dsh-context)
+    Shared-B-0.1.0.pack.zip     sha256=A67ED0A7BE5E552BBC0275A202E5D5F2AB0A13BB43504994C8F41BFDB2A3ADDC (declares dsh-context)
+  instances:
+    p1-full    status=ready source.packId=Verify-Probe-0.1.0 profile=web
+               deps=@sakikotgw/pack-agent-dsh,dsh-context
+               bundles=@deepseek-ai/dsh-base,@deepseek-ai/dsh-web-app,@sakikotgw/pack-agent-dsh,dsh-context
+               projection=pack-agent-modpack-verify-probe mods=1 catalog.json=True
+    p1-missing status=ready source.packId=Verify-Probe-0.1.0 profile=web
+               deps=@sakikotgw/pack-agent-dsh,dsh-context (kept)
+               bundles=@deepseek-ai/dsh-base,@deepseek-ai/dsh-web-app,@sakikotgw/pack-agent-dsh  (dsh-context STRIPPED on purpose)
+               projection=pack-agent-modpack-verify-probe mods=1 catalog.json=True
+  pad.json: lastInstance=p1-full lastProfile=web shotDelayMs=12000 window=1040x820
+  pre-install used CURRENT deployed D104 binary via TS chain: node bin/packagent.js dsh launcher --root <scratch> --json import <zip> --name <inst>
+    p1-full   exit=0  23.3s  (prep\import-p1-full.*)
+    p1-missing exit=0 15.2s  (prep\import-p1-missing.*)
+
+BUILD CMD (validated project evaluation; build pending milestone):
+  dotnet build agent-pack-dsh\pad\pad.csproj -c Debug -o E:\pack-agent\.tmp\pad-build-d105
+  TargetFramework=net9.0-windows AssemblyName="pack-agent-for DSH" OutputType=WinExe
+  .tmp\pad-build-d105 does NOT exist yet (not built during prep)
+
+BASELINE SHOTS with current deployed D104 binary (exe .tmp\pad-build-z, sha C47F9830…):
+  baseline\01-current-instance-packs-unsupported.png  --shot-page instance-packs -> falls back to LAUNCH page
+      (current binary has NO instance-packs shot hook; MainWindow only knows instance/instance-settings/
+       instance-plugins/instance-bundles/plugin-detail; InstanceView OnShown has no "packs" branch)
+  baseline\02-current-instance-overview.png            --shot-page instance        -> instance overview page
+  baseline\03-current-instance-plugins.png             --shot-page instance-plugins-> plugin pane: pack-agent-dsh + dsh-context rows, NO "来自整合包 X" badge
+  baseline\04-current-instance-bundles.png             --shot-page instance-bundles -> same plugin pane (bytes == 03)
+  all shots EXIT=0 time 14.1–16.4s, logical 1040x820 @1.5dpi = 1560x1230 px
+
+CURRENT WORKING TREE (01:32): P1 in progress — new untracked agent-pack-dsh\pad\Core\PackPluginFacts.cs,
+  modified InstanceView.xaml.cs (+17), PluginList.cs (+19); P2 core (task-5) in progress (no PackLedger.cs yet at 01:32);
+  plus D104 uncommitted files. Do NOT run official milestone gate until P1/P2 declared done.

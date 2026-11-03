@@ -1,0 +1,2 @@
+warning[PA104]: export stripped credentials
+ --> instance `alpha`

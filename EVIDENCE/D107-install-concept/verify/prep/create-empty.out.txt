@@ -1,0 +1,24 @@
+--- 04:02:38 pad cli instance create inst-empty 0.2.1-rc.2 --profile web
+{
+  "schema": "pack-agent.launcher.instance/v2",
+  "id": "inst-empty",
+  "name": "inst-empty",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "home": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\inst-empty\\home",
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\inst-empty\\workspace"
+  },
+  "status": "ready",
+  "lastProfile": "web",
+  "note": null,
+  "display": null,
+  "launch": null,
+  "source": null,
+  "adopted": false,
+  "adoptedFingerprint": null,
+  "created": "2026-11-03T20:02:38.8409822\u002B00:00",
+  "updated": "2026-11-03T20:02:38.8414395\u002B00:00"
+}

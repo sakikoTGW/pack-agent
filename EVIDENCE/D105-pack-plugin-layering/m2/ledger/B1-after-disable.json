@@ -1,0 +1,35 @@
+{
+  "schema": "pack-agent.pack-ledger/v1",
+  "updated": "2026-11-03T18:24:40.674Z",
+  "packs": {
+    "Verify-Probe-0.1.0": {
+      "title": "Verify Probe",
+      "installedVersion": "0.1.0",
+      "path": "E:\\pack-agent\\.tmp\\d105-m2\\.pack-launcher\\library\\packs\\Verify-Probe-0.1.0.pack.zip",
+      "installedAt": "2026-11-03T18:23:13.338Z",
+      "content": {
+        "dir": ".agent-pack/modpacks/pack-agent-modpack-verify-probe",
+        "allow": false
+      },
+      "profiles": {
+        "web": {
+          "state": "disabled",
+          "plugins": [
+            {
+              "spec": "dsh-context",
+              "addedVersion": "0.80.0",
+              "origin": "pack"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "owners": {
+    "web": {
+      "dsh-context": [
+        "Verify-Probe-0.1.0"
+      ]
+    }
+  }
+}

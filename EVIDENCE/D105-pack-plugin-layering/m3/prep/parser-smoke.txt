@@ -1,0 +1,20 @@
+﻿D105 M3 PARSER PREP-SMOKE 2026-11-04T02:38:44.2388471+08:00  (against P3 build at E:\pack-agent\.tmp\d105-m3\probe\bin\Debug\net9.0-windows\d105-m3-probe.dll.LastWriteTime)
+== 1) exact prompt line ==
+RESULT compat is_incompatible=True text_len=128
+RESULT compat parsed package_version=dsh-find-skill@0.2.1 dsh_version=0.2.1-rc.2 profile=web name=dsh-find-skill version=0.2.1 text=dsh-find-skill@0.2.1 需要 DSH 0.2.1-rc.2（profile web）
+== 2) full captured stderr file ==
+RESULT compatfile path=E:\pack-agent\EVIDENCE\D105-pack-plugin-layering\m3\prep\raw-add.err.txt len=962
+RESULT compat is_incompatible=True text_len=962
+RESULT compat parsed package_version=dsh-find-skill@0.2.1 dsh_version=0.2.1-rc.2 profile= name=dsh-find-skill version=0.2.1 text=dsh-find-skill@0.2.1 需要 DSH 0.2.1-rc.2
+== 3) truncated prompt (no --dsh-version/--accept-risk) ==
+RESULT compat is_incompatible=True text_len=89
+RESULT compat parsed=<null>
+== 4) equals form ==
+RESULT compat is_incompatible=True text_len=128
+RESULT compat parsed package_version=dsh-find-skill@0.2.1 dsh_version=0.2.1-rc.2 profile=web name=dsh-find-skill version=0.2.1 text=dsh-find-skill@0.2.1 需要 DSH 0.2.1-rc.2（profile web）
+== 5) PAD rendered error with CRLF + ' | ' prefixes ==
+RESULT compat is_incompatible=True text_len=969
+RESULT compat parsed package_version=dsh-find-skill@0.2.1 dsh_version=0.2.1-rc.2 profile= name=dsh-find-skill version=0.2.1 text=dsh-find-skill@0.2.1 需要 DSH 0.2.1-rc.2
+== 6) scoped package ==
+RESULT compat is_incompatible=True text_len=124
+RESULT compat parsed package_version=@scope/pkg@0.9.1 dsh_version=0.2.1-rc.2 profile=web name=@scope/pkg version=0.9.1 text=@scope/pkg@0.9.1 需要 DSH 0.2.1-rc.2（profile web）

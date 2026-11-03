@@ -1,0 +1,6 @@
+﻿M3 P3 SOURCE ASSERTION CORRECTIONS 2026-11-04T02:53:11.9941828+08:00
+PASS  Launcher.AllowVersion call :: InstanceView.xaml.cs:1721 :: await _state.Launcher.AllowVersion(inst, target, fix.PackageVersion, fix.DshVersion,
+ProjectionExists refs in InstanceView: 0
+  Directory.Exists line 666: if (typed.Length > 0 && Directory.Exists(typed))
+  Directory.Exists line 1235: if (row.PackageDir.Length > 0 && Directory.Exists(row.PackageDir))
+  Directory.Exists line 1845: if (packKey is null && !string.IsNullOrWhiteSpace(r.Dir) && !Directory.Exists(r.Dir))

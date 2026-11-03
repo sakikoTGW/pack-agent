@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>PAD 前端规范 v1 · 文字纪律与视觉表达</title>
+<link rel="stylesheet" href="spec.css">
+</head>
+<body>
+  <div class="hd"><span class="badge">PAD UI SPEC v1</span><h1>文字纪律 · 视觉表达</h1></div>
+  <div class="sub">能删就删；有用但吵的文字藏进层级（悬停/展开/详情）；状态用视觉表达，句子是最后手段。一个视区只让人看一件事，禁止一屏堆字。</div>
+
+  <div class="sec">
+    <div class="grid g5">
+      <div class="principle"><div class="k">01</div><b>能删就删</b><p>去不去掉没有任何区别的文字，直接删。删了用户不会做错事，就是噪音。</p></div>
+      <div class="principle"><div class="k">02</div><b>有用但吵 → 藏</b><p>不要常驻。用 Tooltip / 展开详情 / 报告承载；常驻只留此刻要决定的那一句。</p></div>
+      <div class="principle"><div class="k">03</div><b>视觉即语义</b><p>图标 > 颜色 > 药丸 > 短标签 > 句子。不读字也要能看懂发生了什么。</p></div>
+      <div class="principle"><div class="k">04</div><b>一次一件事</b><p>一个视区/弹窗只有一个主信息层级；一屏最多 1 句主提示。</p></div>
+      <div class="principle"><div class="k">05</div><b>同类统一</b><p>同一概念全局同一套 icon/颜色/组件；禁止自创，尤其禁止用大文字当图标。</p></div>
+    </div>
+  </div>
+
+  <h2><span class="n">A</span>每段文字过一遍决策树</h2>
+  <div class="sec">
+    <div class="tree">
+      <div class="node q">这段字删掉，用户会做错事吗？</div>
+      <div class="arrow"></div>
+      <div class="row">
+        <div><div class="lab">不会</div><div class="node a" style="background:#f5f7f9;border-color:var(--line);color:var(--ink2)">删掉</div></div>
+        <div><div class="lab">会</div><div class="node q">它是哪种信息？</div></div>
+      </div>
+      <div class="row" style="margin-top:2px">
+        <div><div class="lab">状态 / 结果</div><div class="node a">药丸 · 颜色 · 统计块（视觉）</div></div>
+        <div><div class="lab">操作说明</div><div class="node a2">按钮文案 / 一行 Tooltip（短）</div></div>
+        <div><div class="lab">技术细节</div><div class="node a2">折叠「展开详情」/ 报告 / Tooltip</div></div>
+      </div>
+    </div>
+  </div>
+
+  <h2><span class="n">B</span>本轮真实反例 → 规范写法</h2>
+  <div class="sec">
+    <table class="tbl">
+      <tr><th style="width:26%">场景</th><th>反例（本轮实际出现）</th><th style="width:38%">规范写法</th></tr>
+      <tr><td>预检弹窗</td><td class="bad">把 peerDependencies 的 5 个包名+版本范围铺在正文里，一屏 8 段字</td><td class="good">行内只写「dsh-find-skill@0.2.1 · 需授权」，原文放进「展开详情」</td></tr>
+      <tr><td>版本页装态</td><td class="bad">「已装到 sisyphus · 已建实例 X」文字药丸常驻</td><td class="good">删掉；装态回实例页（发光 + 账本药丸），版本页只回答"这是什么包"</td></tr>
+      <tr><td>无图标回落</td><td class="bad">用字符「包」做成 pill 当图标</td><td class="good">统一包图标；缺图时用同尺寸 fallback 图标，不用文字</td></tr>
+      <tr><td>计数</td><td class="bad">「本机包库 3 个」当正文显示</td><td class="good">放列表头/搜索框右侧弱化位置，或交给滚动与筛选</td></tr>
+    </table>
+  </div>
+
+  <h2><span class="n">C</span>同一个弹窗：现在 vs 规范后</h2>
+  <div class="ba">
+    <div>
+      <div class="cap"><span class="dot red"></span>现在：文字墙（8 段正文）</div>
+      <div class="mock">
+        <div class="mh"><b>安装前检查</b><small>先算清楚会发生什么，再决定。</small></div>
+        <div class="mb wall">
+          <p><span class="hl">内核匹配</span>：包钉 0.2.1-rc.2 = 实例 0.2.1-rc.2。</p>
+          <p><span class="hl">插件 10 个</span>：8 个可装、1 个需授权、1 个已下架/缺失。下面逐条列出需要你决定的项；其余不会打断安装。</p>
+          <p><span class="hl">版本冲突</span>：实例里已有的插件没有和包声明冲突的版本。</p>
+          <p>这个 profile 没有 @sakikotgw/pack-agent-dsh（安装时会自动补上）。</p>
+          <p><span class="hl">dsh-find-skill@0.2.1 与内核不兼容</span>：它的要求是 peerDependencies: @deepseek-ai/dsh-commands ^0.1.0-rc.6, @deepseek-ai/dsh-home-paths ^0.1.0-rc.6, @deepseek-ai/dsh-skill ^0.1.0-rc.6, @deepseek-ai/dsh-tools ^0.1.0-rc.6（当前内核 0.2.1-rc.2）。可写 DSH 官方 allow-version 豁免（只对当前内核精确版本生效），风险：可能崩/坏数据。</p>
+          <p><span class="hl">@yuxianglin/dsh-bridge-browser 在 npm 上找不到/已下架</span>：跳过它这个包会缺 1 个功能（包标「不完整」，之后可修复/重新导出）。</p>
+          <div class="rt">□ 接受 1 个插件的兼容风险（写 DSH allow-version 豁免）<br>□ 跳过 1 个已下架/缺失插件，包标「不完整」…</div>
+        </div>
+        <div class="mfoot"><button class="btn">取消</button><button class="btn primary">按勾选开始安装</button></div>
+      </div>
+    </div>
+    <div>
+      <div class="cap"><span class="dot green"></span>规范后：4 行视觉 + 1 句决定 + 详情按需展开</div>
+      <div class="mock">
+        <div class="mh"><b>安装前检查</b><small>Test 0.1.0 → sisyphus · web</small></div>
+        <div class="mb">
+          <div class="chk"><span class="st ok">✓</span><div class="t"><b>内核匹配</b><small>0.2.1-rc.2</small></div></div>
+          <div class="chk"><span class="st warn">!</span><div class="t"><b>插件 10 个</b><small>8 可装 · 1 需授权 · 1 已下架</small></div><span class="pill amber">要你决定</span></div>
+          <div class="chk"><span class="st ok">✓</span><div class="t"><b>版本冲突</b><small>无</small></div><span class="pill green">通过</span></div>
+          <div class="chk"><span class="st grey">+</span><div class="t"><b>管理器</b><small>未装 · 安装时自动补</small></div><span class="pill">自动</span></div>
+          <div class="chk"><span class="st warn">!</span><div class="t"><b>dsh-find-skill@0.2.1</b><small>与内核不兼容</small><span class="expand">展开详情 ▾</span></div><span class="pill amber">需授权</span></div>
+          <div class="chk"><span class="st bad">✕</span><div class="t"><b>@yuxianglin/dsh-bridge-browser</b><small>npm 已下架 · 跳过会缺 1 个功能</small></div><span class="pill red">不可装</span></div>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--ink2)">
+            <span class="pill green">接受 1 个风险</span><span class="pill amber">跳过 1 个下架</span><span class="mini">（默认勾选 · 可改）</span>
+          </div>
+        </div>
+        <div class="mfoot"><button class="btn">取消</button><button class="btn primary">开始安装</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">文字常驻上限：一个视区 1 句主提示 · 行内辅助 ≤1 行 · 技术原文一律进「详情」。</div>
+  <div class="pageno">1 / 2</div>
+</body>
+</html>

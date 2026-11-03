@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using Microsoft.Win32;
@@ -68,10 +69,17 @@ public partial class VersionsView : UserControl, IRefreshable
         if (!_containerSync) RebuildContainerRows();
     }
 
+    /// <summary>
+    /// 刷新版本下拉期间不再回刷自己：版本库和本机内核都还空的时候（刚装好的 PAD、
+    /// 还没探测完），<see cref="SyncPinCombo"/> ↔ <see cref="RefreshVersionChoices"/>
+    /// 会互相递归直接栈溢出。
+    /// </summary>
+    bool _refreshingChoices;
+
     void SyncPinCombo()
     {
         if (PinRelease is null) return;
-        if (_versionChoices.Count == 0) RefreshVersionChoices();
+        if (_versionChoices.Count == 0 && !_refreshingChoices) RefreshVersionChoices();
         var v = _state.SelectedInstance?.Dsh.Version ?? "";
         PinRelease.SelectedItem = _versionChoices.FirstOrDefault(c =>
             string.Equals(c.Version, v, StringComparison.OrdinalIgnoreCase));
@@ -212,6 +220,10 @@ public partial class VersionsView : UserControl, IRefreshable
             PackEmptyText.Text = error.Length > 0 ? "整合包读不出来" : "本机没有整合包。";
             PackEmptyText.ToolTip = error.Length > 0 ? error : null;
         }
+        // D105 UX（用户 2026-11-04）：行左列换整合包自己的 icon；不再显示「装到哪个实例」。
+        PackList.ItemsSource = _state.PackCatalog
+            .Select(card => new PackItem(card, PackIcon.Resolve(_state.Launcher.Root, card.Path)))
+            .ToList();
     }
 
     void RefreshPackCatalog_Click(object sender, RoutedEventArgs e) => _ = RefreshPacksAsync();
@@ -222,7 +234,7 @@ public partial class VersionsView : UserControl, IRefreshable
         if (sender is not MenuItem mi) return;
         var menu = mi.Parent as ContextMenu ?? ItemsControl.ItemsControlFromItemContainer(mi) as ContextMenu;
         if (menu?.PlacementTarget is not FrameworkElement row) return;
-        if (row.DataContext is not PackCard card) return;
+        if (row.DataContext is not PackItem { Card: var card }) return;
         if (!File.Exists(card.Path))
         {
             _win.Toast("这个包的文件不见了", bad: true);
@@ -286,7 +298,7 @@ public partial class VersionsView : UserControl, IRefreshable
         if (sender is not MenuItem mi) return;
         var menu = mi.Parent as ContextMenu ?? ItemsControl.ItemsControlFromItemContainer(mi) as ContextMenu;
         if (menu?.PlacementTarget is not FrameworkElement row) return;
-        if (row.DataContext is not PackCard card) return;
+        if (row.DataContext is not PackItem { Card: var card }) return;
         if (string.IsNullOrWhiteSpace(card.Kernel))
         {
             _win.Toast("这个包没写内核，建不了实例，也打不了整合包", bad: true);
@@ -372,7 +384,7 @@ public partial class VersionsView : UserControl, IRefreshable
         if (sender is not MenuItem mi) return;
         var menu = mi.Parent as ContextMenu ?? ItemsControl.ItemsControlFromItemContainer(mi) as ContextMenu;
         if (menu?.PlacementTarget is not FrameworkElement row) return;
-        if (row.DataContext is not PackCard card) return;
+        if (row.DataContext is not PackItem { Card: var card }) return;
         if (string.IsNullOrWhiteSpace(card.Kernel))
         {
             _win.Toast("这个包没写内核，建不了实例，也打不了整合包", bad: true);
@@ -534,44 +546,364 @@ public partial class VersionsView : UserControl, IRefreshable
 
     async void CreateFromPack_Click(object sender, RoutedEventArgs e)
     {
-        if (_creatingFromPack || sender is not Button { Tag: PackCard card }) return;
+        if (_creatingFromPack || sender is not Button { Tag: PackItem item }) return;
+        var card = item.Card;
         // .pinst.zip 是导出的实例，不是包：走 TS 原生 import 链。
-        // .pack.json 与 .pack.zip 都能直接投影（pack-ops 对 zip 读中央目录取根 manifest）。
         var kind = card.Kind ?? "";
         if (kind.Contains("pinst", StringComparison.OrdinalIgnoreCase)
             || (kind.Length == 0 && card.Path.EndsWith(".pinst.zip", StringComparison.OrdinalIgnoreCase)))
         {
-            await ImportPackCardAsync(card);
+            await RunPackActionAsync(item, () => ImportPackCardAsync(card));
             return;
         }
-        if (string.IsNullOrWhiteSpace(card.Kernel))
-        {
-            _win.Toast("这个包没写 dsh.version（内核），不能建实例", bad: true);
-            return;
-        }
-        var name = Prompt("用整合包新建实例", $"实例名（内核 {card.Kernel}）：", card.Title);
+        var name = Prompt("用整合包新建实例", $"实例名（{card.KernelText}）：", card.Title);
         if (string.IsNullOrWhiteSpace(name)) return;
-        _creatingFromPack = true;
+        // .pack.zip / .pack.json：走完整 import 链（建实例 + 投影 + 装 manager + dsh plugin add）。
+        // 旧的只投影路径装不上 dsh.plugins[]：界面显示建好了，插件实际一个都没装。
+        await RunPackActionAsync(item, () => InstallPackAsync(card, name.Trim()));
+    }
+
+    /// <summary>
+    /// D107 安装概念：行右侧「安装 ▾」→ 三项菜单。
+    /// ① 装到当前实例（主推荐）→ Preflight → 授权 → InstallPackToInstance（写账本，装完实例页发光）；
+    /// ② 新建实例… = 现有完整 import 链（D104，保留）；
+    /// ③ 先检查能不能装… = 只预检（DryRun，不装）。
+    /// </summary>
+    void InstallMenu_Click(object sender, RoutedEventArgs e)
+    {
+        if (_creatingFromPack || sender is not Button { Tag: PackItem item } btn) return;
+        var card = item.Card;
+        var target = _state.SelectedInstance;
+
+        var menu = new ContextMenu { PlacementTarget = btn, Placement = PlacementMode.Bottom };
+        var current = new MenuItem
+        {
+            Header = target is null ? "装到当前实例（先在左栏选一个实例）" : $"装到当前实例（{target.Name}）",
+            IsEnabled = target is not null,
+            ToolTip = "投影 + 管理器 + 按 diff 装插件，写账本；装完在实例页发光",
+        };
+        current.Click += async (_, _) => await InstallToCurrentInstanceAsync(item);
+        var create = new MenuItem
+        {
+            Header = "新建实例…",
+            ToolTip = "用这个包派生一个新实例（PCL 式，现有行为）",
+        };
+        create.Click += (_, _) => CreateFromPack_Click(new Button { Tag = item }, new RoutedEventArgs());
+        var check = new MenuItem
+        {
+            Header = "先检查能不能装…",
+            ToolTip = "内核 / 插件下架 / 兼容豁免 / 版本冲突，装之前一次列清",
+        };
+        check.Click += async (_, _) => await CheckOnlyAsync(item);
+        menu.Items.Add(current);
+        menu.Items.Add(new Separator());
+        menu.Items.Add(create);
+        menu.Items.Add(check);
+        menu.IsOpen = true;
+    }
+
+    string FirstProfileName(Instance inst) =>
+        _state.Launcher.Profiles(inst).FirstOrDefault()?.Name ?? "web";
+
+    /// <summary>装到哪个 profile：当前选中实例跟它一致时用 AppState.SelectedProfile，否则 lastProfile/第一个。</summary>
+    string ProfileForInstance(Instance inst)
+    {
+        var selected = _state.SelectedInstance;
+        var same = selected is not null && string.Equals(selected.Id, inst.Id, StringComparison.OrdinalIgnoreCase);
+        return same
+            ? _state.SelectedProfile?.Name ?? inst.LastProfile ?? FirstProfileName(inst)
+            : inst.LastProfile ?? FirstProfileName(inst);
+    }
+
+    async Task InstallToCurrentInstanceAsync(PackItem item)
+    {
+        var inst = _state.SelectedInstance;
+        if (inst is null)
+        {
+            _win.Toast("先在左栏选一个实例，再装到它", bad: true);
+            return;
+        }
+        var profile = ProfileForInstance(inst);
+        var card = item.Card;
+        _win.Toast("正在预检 " + card.Title + "…");
+        _win.Progress($"{card.Title} · 预检 / 安装中…", null, "装整合包");
         try
         {
-            var inst = await CreateInstanceFromPackAsync(card, name!.Trim());
-            if (inst is null) return;
+            await PackPreflightWindow.RunInstallFlowAsync(
+                Window.GetWindow(this), new Packs(_state.Launcher), inst, profile, card,
+                new Progress<string>(Log),
+                afterApplied: () =>
+                {
+                    _state.Reload();
+                    _ = RefreshPacksAsync();
+                },
+                openInstance: () =>
+                {
+                    _state.SelectedInstance = inst;
+                    _win.ShowInner("instance", "版本设置");
+                },
+                reExport: () => ReExportPackAsync(card),
+                toast: (text, bad) => _win.Toast(text, bad));
+        }
+        finally
+        {
+            _win.ProgressDone(0);
+        }
+    }
+
+    /// <summary>「先检查能不能装…」：只预检并展示阶段 1（DryRun，不写盘）。</summary>
+    async Task CheckOnlyAsync(PackItem item)
+    {
+        var inst = _state.SelectedInstance;
+        if (inst is null)
+        {
+            _win.Toast("先在左栏选一个实例，才能检查它装不装得上", bad: true);
+            return;
+        }
+        var profile = ProfileForInstance(inst);
+        var card = item.Card;
+        _win.Progress($"{card.Title} · 检查中（不安装）…", null, "装整合包");
+        try
+        {
+            await PackPreflightWindow.RunInstallFlowAsync(
+                Window.GetWindow(this), new Packs(_state.Launcher), inst, profile, card,
+                new Progress<string>(Log),
+                afterApplied: null,
+                openInstance: null,
+                reExport: () => ReExportPackAsync(card),
+                toast: (text, bad) => _win.Toast(text, bad),
+                checkOnly: true);
+        }
+        finally
+        {
+            _win.ProgressDone(0);
+        }
+    }
+
+    /// <summary>安装报告里的「重新导出这个包」：与右键导出便携包同语义（拷一份文件出去）。</summary>
+    Task ReExportPackAsync(PackCard card)
+    {
+        if (!File.Exists(card.Path))
+        {
+            _win.Toast("这个包的文件不见了", bad: true);
+            return Task.CompletedTask;
+        }
+        var isZip = card.Path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
+        var dlg = new SaveFileDialog
+        {
+            Title = "重新导出这个包",
+            Filter = isZip ? "整合包 (*.zip)|*.zip" : "整合包 (*.pack.json)|*.pack.json",
+            FileName = Path.GetFileName(card.Path),
+            InitialDirectory = ExportHome(),
+        };
+        if (dlg.ShowDialog(_win) != true) return Task.CompletedTask;
+        try
+        {
+            CopyWithRetry(card.Path, dlg.FileName);
+            _win.Toast($"已导出：{Path.GetFileName(dlg.FileName)}");
+        }
+        catch (IOException ex)
+        {
+            _win.Toast("导出失败：" + ex.Message, bad: true);
+        }
+        return Task.CompletedTask;
+    }
+
+    /// <summary>一次「用包建实例」期间：行按钮变「正在装…」并禁用，进度卡给提示（装插件可能要几分钟）。</summary>
+    async Task RunPackActionAsync(PackItem item, Func<Task> action)
+    {
+        _creatingFromPack = true;
+        item.Busy = true;
+        try
+        {
+            await action();
+        }
+        finally
+        {
+            item.Busy = false;
+            _creatingFromPack = false;
+            _win.ProgressDone(0);
+        }
+    }
+
+    /// <summary>
+    /// P3：新建实例装包时撞 DSH 兼容门——不摆死路。找 import 上次留下的 import-failed 实例
+    /// （优先 source.packId == 这个包的），三选一：①接受风险（allow-version 后在这份实例上
+    /// 续装）②换一个本机已装内核重试 ③取消并说明是包内容/版本问题。
+    /// 续装成功：MarkInstanceStatus(ready) → Reload → 选中实例 → 进版本设置页；失败保持
+    /// import-failed 并如实报错（半成品不删）。
+    /// </summary>
+    async Task RecoverIncompatibleImportAsync(PackCard card, PackCompatFix fix)
+    {
+        _state.Reload();
+        var failed = _state.Instances
+            .Where(i => string.Equals(i.Status, "import-failed", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var leftover = failed.FirstOrDefault(i =>
+                           string.Equals(i.Source?.PackId, card.Id, StringComparison.OrdinalIgnoreCase))
+                       ?? failed.OrderByDescending(i => i.Created, StringComparer.Ordinal).FirstOrDefault();
+        if (leftover is null)
+        {
+            _win.Toast($"这个整合包里的插件与它钉的内核不兼容：{fix.Text}。没有找到上次失败的实例可续装；"
+                       + "这是包内容/版本问题：按当前环境重新导出包，或改插件版本/内核后重试", bad: true);
+            return;
+        }
+        var profile = fix.Profile.Length > 0
+            ? fix.Profile
+            : leftover.LastProfile ?? _state.Launcher.Profiles(leftover).FirstOrDefault()?.Name ?? "web";
+        var accept = _win.Ask("插件与内核不兼容 · 接受风险安装",
+            $"这个整合包里的插件与它钉的内核不兼容：{fix.Text}。\n\n"
+            + $"上次导入留下的实例 {leftover.Name} 还在；接受风险会允许 {fix.PackageVersion} 在 DSH "
+            + $"{fix.DshVersion} 上运行（可能崩溃或损坏数据，豁免只对这两个精确版本生效），"
+            + "然后在这个实例上继续把插件装完。\n\n接受风险安装并续装？",
+            warn: true, okText: "接受风险安装", cancelText: "换内核/取消…");
+        var target = leftover;
+        if (accept)
+        {
+            try
+            {
+                await _state.Launcher.AllowVersion(target, profile, fix.PackageVersion, fix.DshVersion,
+                    new Progress<string>(Log), CancellationToken.None);
+                _win.Toast($"已允许 {fix.PackageVersion} 在 DSH {fix.DshVersion} 上运行，续装插件…");
+            }
+            catch (Exception ex)
+            {
+                _win.Toast("接受风险没成功：" + PadError.Describe(ex), bad: true);
+                return;
+            }
+        }
+        else
+        {
+            var switched = SwitchKernelForRecovery(target);
+            if (switched is null) return;   // 取消：提示已给
+            target = switched;
+            if (string.IsNullOrWhiteSpace(fix.Profile))
+                profile = ProfileForRecovery(target);
+        }
+
+        var packs = new Packs(_state.Launcher);
+        PackApplyResult result;
+        try
+        {
+            _win.Progress($"{card.Title} · 正在把上次没装完的插件补齐…", null, "装整合包");
+            result = await packs.ApplyPackToInstance(target, card.Path, profile,
+                new Progress<string>(Log), CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _win.Toast("续装失败：" + PadError.Describe(ex) + "；实例保持 import-failed，可看任务日志", bad: true);
             _state.Reload();
-            _state.SelectedInstance = _state.Instances.FirstOrDefault(i => i.Id == inst.Id);
+            return;
+        }
+        finally
+        {
+            _win.ProgressDone(0);
+        }
+
+        if (result.Ok && result.Conflicts.Count == 0)
+        {
+            _state.Launcher.MarkInstanceStatus(target.Id, "ready");
+            _state.Reload();
+            _state.SelectedInstance = _state.Instances.FirstOrDefault(i => i.Id == target.Id);
             _win.ShowInner("instance", "版本设置");
+            _win.Toast($"装好了：{target.Name}（DSH {target.Dsh.Version}）");
             _ = RefreshPacksAsync();
+            return;
+        }
+        var detail = result.Failures.Select(f => f.Text)
+            .Concat(result.Conflicts.Select(c => c.Text))
+            .Take(4)
+            .ToList();
+        _win.Toast("续装没有完全成功（实例保持 import-failed）：" + result.Text
+                   + (detail.Count > 0 ? "；" + string.Join("；", detail) : ""), bad: true);
+        _state.Reload();
+    }
+
+    string ProfileForRecovery(Instance inst) =>
+        inst.LastProfile ?? _state.Launcher.Profiles(inst).FirstOrDefault()?.Name ?? "web";
+
+    /// <summary>P3 续装路径的「换内核重试」：列本机已装版本 → 输入/选一个 → PinInstance → Reload。</summary>
+    Instance? SwitchKernelForRecovery(Instance inst)
+    {
+        var versions = _state.Releases.Select(r => r.Version)
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (versions.Count == 0)
+        {
+            _win.Toast("本机没有别的已装内核可换。这是包内容/版本问题：按当前内核重新导出包，或改插件版本后重试", bad: true);
+            return null;
+        }
+        var pick = _win.AskInput("插件与内核不兼容 · 换内核重试",
+            "本机已装内核：" + string.Join("、", versions) + Environment.NewLine + Environment.NewLine
+            + "输入要换的版本号（留空取消）：", inst.Dsh.Version, warn: true);
+        if (string.IsNullOrWhiteSpace(pick))
+        {
+            _win.Toast("取消：这是包内容/版本问题——按当前内核重新导出包，或改插件版本后重试", bad: true);
+            return null;
+        }
+        var chosen = versions.FirstOrDefault(v => string.Equals(v, pick.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (chosen is null)
+        {
+            _win.Toast("本机没装这个内核：" + pick.Trim(), bad: true);
+            return null;
+        }
+        try
+        {
+            _state.Launcher.PinInstance(inst.Id, chosen);
+            _state.Reload();
+            var fresh = _state.Launcher.Instance(inst.Id) ?? inst;
+            _state.SelectedInstance = _state.Instances.FirstOrDefault(i => i.Id == fresh.Id) ?? _state.SelectedInstance;
+            _win.Toast($"已改钉到 {chosen}，续装剩下没装完的插件…");
+            return fresh;
         }
         catch (Exception ex)
         {
             _win.Toast(PadError.Describe(ex), bad: true);
-        }
-        finally
-        {
-            _creatingFromPack = false;
+            return null;
         }
     }
 
-    /// <summary>.pack.zip / .pinst.zip：走 import 链（TS 侧原生支持），顺便留库。</summary>
+    /// <summary>
+    /// .pack.zip / .pack.json 的「新建实例」：Packs.ImportPack 跑 TS 完整 import 链
+    /// （--name、内核缺了会自己装、建 home、投影、装 manager、逐个 dsh plugin add）。
+    /// 不再走只投影的 Launcher.CreateFromPack，否则 dsh.plugins[] 一个都装不上。
+    /// </summary>
+    async Task InstallPackAsync(PackCard card, string name)
+    {
+        var packs = new Packs(_state.Launcher);
+        if (packs.Unavailable() is { } missing)
+        {
+            _win.Toast($"{missing.Reason}：{missing.Detail}", bad: true);
+            return;
+        }
+        _win.Toast("正在装 " + card.Title);
+        _win.Progress($"{card.Title} · 正在导入并安装插件（包大、插件多时要几分钟）…", null, "装整合包");
+        try
+        {
+            // 先留一份进整合包库：import 成功后原位置可能不再保留原文件，库里这份让列表
+            // 还能看到它、可再次建实例（和「导入整合包」同一语义）。
+            try { packs.CollectToLibrary(card.Path); } catch { /* 库拷贝失败不挡导入 */ }
+            var inst = await packs.ImportPack(card, name, new Progress<string>(Log), CancellationToken.None);
+            _state.Reload();
+            _state.SelectedInstance = _state.Instances.FirstOrDefault(i => i.Id == inst.Id) ?? inst;
+            _win.ShowInner("instance", "版本设置");
+            _win.Toast($"装好了：{inst.Name}（DSH {inst.Dsh.Version}）");
+            _ = RefreshPacksAsync();
+        }
+        catch (Exception ex)
+        {
+            // P3：兼容门不是死路——找上次失败的实例续装 / 换内核重试；其余照常报原错。
+            if (PackCompat.FromError(ex) is { } fix)
+            {
+                await RecoverIncompatibleImportAsync(card, fix);
+                return;
+            }
+            _win.Toast(PadError.Describe(ex), bad: true);
+        }
+    }
+
+    /// <summary>.pinst.zip：走 import 链（TS 侧原生支持），顺便留库。</summary>
     async Task ImportPackCardAsync(PackCard card)
     {
         var packs = new Packs(_state.Launcher);
@@ -580,46 +912,25 @@ public partial class VersionsView : UserControl, IRefreshable
             _win.Toast($"{missing.Reason}：{missing.Detail}", bad: true);
             return;
         }
-        _creatingFromPack = true;
+        _win.Toast("正在导入 " + card.Title);
+        _win.Progress($"{card.Title} · 正在导入…", null, "装整合包");
         try
         {
-            _win.Toast("正在导入 " + card.Title);
             try { packs.CollectToLibrary(card.Path); } catch { /* 库拷贝失败不挡导入 */ }
             await packs.Import(card.Path, new Progress<string>(Log), CancellationToken.None);
             _state.Reload();
             _win.ShowInner("instance", "版本设置");
+            _win.Toast($"装好了：{card.Title}");
             _ = RefreshPacksAsync();
         }
         catch (Exception ex)
         {
-            _win.Toast(PadError.Describe(ex), bad: true);
-        }
-        finally
-        {
-            _creatingFromPack = false;
-        }
-    }
-
-    /// <summary>内核不在版本库里时跳窗询问，答「是」就下载安装再接着建实例。</summary>
-    async Task<Instance?> CreateInstanceFromPackAsync(PackCard card, string name)
-    {
-        try
-        {
-            return await Task.Run(() =>
-                _state.Launcher.CreateFromPack(card, name, new Progress<string>(Log), CancellationToken.None));
-        }
-        catch (PadError pe) when (pe.Code == "PA001")
-        {
-            var ask = MessageBox.Show(
-                $"这个整合包要内核 {card.Kernel}，它还没装。\n\n现在下载安装，装完继续建实例？",
-                "整合包 · 缺内核", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (ask != MessageBoxResult.Yes) return null;
-            _win.Toast($"正在安装内核 {card.Kernel}…");
-            await Task.Run(() =>
-                _state.Launcher.InstallRelease(card.Kernel!, new Progress<string>(Log), CancellationToken.None));
-            _state.Reload();
-            return await Task.Run(() =>
-                _state.Launcher.CreateFromPack(card, name, new Progress<string>(Log), CancellationToken.None));
+            if (PackCompat.FromError(ex) is { } fix)
+                _win.Toast("这个整合包里的插件与它钉的内核不兼容：" + fix.Text +
+                           "。这是包内容/版本问题：按当前环境重新「导出」一个包，" +
+                           "或改包里的插件版本/内核后重试。", bad: true);
+            else
+                _win.Toast(PadError.Describe(ex), bad: true);
         }
     }
 
@@ -664,7 +975,10 @@ public partial class VersionsView : UserControl, IRefreshable
             "类型：" + vm.Kind,
             "内核：" + (string.IsNullOrWhiteSpace(vm.Instance.Dsh.Version) ? "未知" : vm.Instance.Dsh.Version),
             "home：" + (string.IsNullOrWhiteSpace(vm.Instance.Home) ? "—" : vm.Instance.Home),
-            "状态：" + (vm.Running ? "在跑" : "未跑"),
+            // 绿灯 = PAD 启动的 profile（runtime 账本）；探测到的容器永远不是。
+            "状态：" + (vm.Running ? "在跑（PAD 启动）" : "PAD 没启动它"),
+            // 它自己的进程可能在跑（桌面端开着），这份状态只在提示里说，不点灯。
+            "本机进程：" + (vm.LocalRunning ? "在跑（不是 PAD 启动的）" : "没在跑"),
         };
         lines.Add("");
         lines.Add("这是本机探测到的容器，不是 PAD 实例。PAD 只看它、不往里写；");
@@ -932,7 +1246,9 @@ public partial class VersionsView : UserControl, IRefreshable
         _versionChoices = choices;
         if (PinRelease is null) return;
         PinRelease.ItemsSource = _versionChoices;
-        SyncPinCombo();
+        _refreshingChoices = true;
+        try { SyncPinCombo(); }
+        finally { _refreshingChoices = false; }
     }
 
     /// <summary>版本下拉里给探测来源一个短标签，别把整条 asar 路径塞进下拉。</summary>
@@ -969,7 +1285,8 @@ public partial class VersionsView : UserControl, IRefreshable
                 var home = NormHome(shell.Home);
                 rows.Add(new DetectedShellRow(shell, canAdopt: home.Length > 0 && !instanceHomes.Contains(home))
                 {
-                    Running = shell.Running,
+                    // OS 里这个桌面端活着 ≠ PAD 启动过它：只记 LocalRunning，不点呼吸绿灯。
+                    LocalRunning = shell.Running,
                 });
             }
             foreach (var tui in _detected.Tuis)
@@ -977,7 +1294,7 @@ public partial class VersionsView : UserControl, IRefreshable
                 if (string.IsNullOrWhiteSpace(tui.Package)) continue;
                 var home = NormHome(tui.Home);
                 if (home.Length > 0 && instanceHomes.Contains(home)) continue; // 已收编：实例自己的 profile 已列出
-                rows.Add(new DetectedTuiRow(tui, canAdopt: true) { Running = tui.Running });
+                rows.Add(new DetectedTuiRow(tui, canAdopt: true) { LocalRunning = tui.Running });
             }
         }
         var keepKey = (ContainerList.SelectedItem as ProfileVm)?.InstanceName;
@@ -1006,6 +1323,38 @@ public partial class VersionsView : UserControl, IRefreshable
         public string Source { get; init; } = "";
         public DshRelease? Release { get; init; }
         public bool HasSource => Source.Length > 0;
+    }
+
+    /// <summary>
+    /// 整合包列表的一行：PackCard 的显示包装。行左列 = 整合包自己的 icon（解析不到才回落「包」），
+    /// 装到哪个实例不再显示（D105 UX，用户 2026-11-04：装态改到实例页用发光表达）。
+    /// </summary>
+    public sealed class PackItem(PackCard card, string? iconPath) : Observable
+    {
+        public PackCard Card { get; } = card;
+        public string Title => string.IsNullOrWhiteSpace(Card.Title) ? Card.Id : Card.Title;
+        public string Version => Card.Version;
+        public string SummaryText => Card.SummaryText;
+        public string Path => Card.Path;
+
+        /// <summary>整合包自己的图标文件（缓存 png / json 旁源文件）；空 = 回落「包」pill。</summary>
+        public string IconPath { get; } = iconPath ?? "";
+        public bool HasIcon => IconPath.Length > 0;
+
+        bool _busy;
+        public bool Busy
+        {
+            get => _busy;
+            set
+            {
+                if (!Set(ref _busy, value)) return;
+                Raise(nameof(CanCreate));
+                Raise(nameof(ActionText));
+            }
+        }
+
+        public bool CanCreate => !Busy;
+        public string ActionText => Busy ? "正在装…" : "新建实例";
     }
 
     string? Prompt(string title, string label, string defaultValue = "") =>

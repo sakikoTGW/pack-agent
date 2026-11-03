@@ -80,7 +80,7 @@ public partial class MainWindow : Window
                 if (App.ShotPage == "bundles") ShowInner("bundles", "实例与插件", "manage");
                 if (App.ShotPage == "relations" || App.ShotPage.StartsWith("relations-")) ShowRelations();
                 if (App.ShotPage is "instance" or "instance-settings" or "instance-plugins" or "instance-bundles"
-                    or "plugin-detail")
+                    or "instance-packs" or "plugin-detail")
                     ShowInner("instance", "版本设置");
                 if (App.ShotPage == "tray-hint") ShowTrayHintPreview();
                 if (App.ShotPage is "market" or "market-more" or "market-detail" or "market-ranking" or "market-growth" or "market-collapsed" or "market-all" or "market-search" && Page("download") is DownloadView market)
@@ -102,8 +102,12 @@ public partial class MainWindow : Window
                     if (Page("settings") is SettingsView sv)
                         sv.OpenLayer(App.ShotPage["settings-".Length..]);
                 }
+                // 安装概念（D107）：包库选择器 / 预检两阶段在下方统一走离屏窗口渲染。
             }
-            if (App.ShotPath is not null) ScheduleShot(App.ShotPath);
+            if (App.ShotPath is not null && App.ShotPage is "pack-picker" or "pack-preflight" or "pack-preflight-report")
+                _ = ShotPackConceptWindowAsync(App.ShotPath);
+            else if (App.ShotPath is not null)
+                ScheduleShot(App.ShotPath);
             if (App.ShotPath is null) PrewarmPages();
         };
     }
@@ -378,6 +382,92 @@ public partial class MainWindow : Window
         ChromeBar.Background = Skin.Wash(chrome, ui.ChromeOpacity);
     }
 
+    /// <summary>
+    /// --shot-page pack-picker / pack-preflight / pack-preflight-report：离屏打开安装概念窗口，
+    /// 直接 RenderTo(App.ShotPath)。picker 用真实包库 + 逐行预检；预检两阶段用真实 PreflightPack
+    /// （报告阶段用固定 fixture，保证可复现）。这些页不跑主窗口 ScheduleShot（否则会覆盖截图）。
+    /// </summary>
+    async Task ShotPackConceptWindowAsync(string path)
+    {
+        try
+        {
+            var state = AppState.Current;
+            var inst = state.SelectedInstance;
+            var profile = ProfileForShot(inst);
+            if (App.ShotPage == "pack-picker")
+            {
+                var picker = new PackPickerWindow(inst?.Name ?? "sisyphus", profile)
+                {
+                    Owner = this,
+                    ShowInTaskbar = false,
+                    WindowStartupLocation = WindowStartupLocation.Manual,
+                    Left = -20000,
+                    Top = -20000,
+                };
+                picker.Show();
+                if (inst is not null)
+                    await picker.LoadAsync(new Packs(state.Launcher), inst, profile, state.Launcher.Root);
+                else
+                    picker.ShowDemo();
+                // 让 ItemsControl 把最终行容器生成完再截图（预检回填走 Dispatcher）。
+                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                picker.UpdateLayout();
+                picker.RenderTo(path);
+                picker.Close();
+            }
+            else
+            {
+                var win = new PackPreflightWindow
+                {
+                    Owner = this,
+                    ShowInTaskbar = false,
+                    WindowStartupLocation = WindowStartupLocation.Manual,
+                    Left = -20000,
+                    Top = -20000,
+                };
+                win.Show();
+                if (App.ShotPage == "pack-preflight-report")
+                {
+                    win.ShowReport(PackPreflightWindow.DemoReport("Test", inst?.Name ?? "sisyphus"));
+                }
+                else
+                {
+                    PackPreflight? preflight = null;
+                    if (inst is not null)
+                    {
+                        var packs = new Packs(state.Launcher);
+                        var cards = await packs.Catalog(AppContext.BaseDirectory, null, null, CancellationToken.None);
+                        var card = cards.FirstOrDefault(c =>
+                                       string.Equals(c.Id, "Test-0.1.0", StringComparison.OrdinalIgnoreCase))
+                                   ?? cards.FirstOrDefault(c => c.Title.Contains("Test", StringComparison.OrdinalIgnoreCase))
+                                   ?? cards.FirstOrDefault();
+                        if (card is not null)
+                            preflight = await packs.PreflightPack(inst, profile, card, null, CancellationToken.None);
+                    }
+                    win.ShowPreflight(preflight is not null
+                        ? PackPreflightWindow.ToView(preflight, inst!.Name, profile)
+                        : PackPreflightWindow.DemoPreflight("Test 0.1.0", inst?.Name ?? "sisyphus"));
+                }
+                win.UpdateLayout();
+                win.RenderTo(path);
+                win.Close();
+            }
+        }
+        catch (Exception ex)
+        {
+            try { File.WriteAllText(path + ".txt", ex.ToString()); } catch { /* 截图失败不炸 */ }
+        }
+        finally
+        {
+            if (App.ShotExit) Close();
+        }
+    }
+
+    static string ProfileForShot(Core.Instance? inst)
+    {
+        if (inst is null) return "web";
+        return inst.LastProfile ?? AppState.Current.Launcher.Profiles(inst).FirstOrDefault()?.Name ?? "web";
+    }
     /// <summary>Render the live visual tree to a PNG, at the real device DPI.</summary>
     void ScheduleShot(string path)
     {

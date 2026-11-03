@@ -1,0 +1,3 @@
+RESULT id=verify-importpack status=ready source.packId=Verify-Probe-0.1.0 source.packTitle=Verify Probe elapsedMs=22849
+CAPTURED lines=42 hasSchema=True hasUpdated=True hasId=True
+CAPTURED_LAST=    "packVersion": "0.1.0", |     "packPath": "E:\\pack-agent\\.tmp\\verify-d104-e2e\\.pack-launcher\\library\\packs\\Verify-Probe-0.1.0.pack.zip" |   } | }

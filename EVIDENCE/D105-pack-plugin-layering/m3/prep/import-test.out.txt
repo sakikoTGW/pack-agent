@@ -1,0 +1,54 @@
+--- 02:30:27 pad cli import E:\pack-agent\.tmp\d105-m3\.pack-launcher\library\packs\Test-0.1.0.pack.zip
+error[PA014]: import failed: required dsh plugin add failed for dsh-find-skill
+ --> instance `test` / dsh.plugins
+  |
+  | 
+dsh: installation rejected: Plugin dsh-find-skill@0.2.1 is incompatible with dsh 0.2.1-rc.2: requirements {"@deepseek-ai/dsh-commands":"^0.1.0-rc.6","@deepseek-ai/dsh-home-paths":"^0.1.0-rc.6","@deepseek-ai/dsh-skill":"^0.1.0-rc.6","@deepseek-ai/dsh-tools":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To 
+  |
+  = note: instance `test` is still on disk with status import-failed; already-added plugins were not rolled back
+  = help: packagent dsh launcher instance remove test
+{
+  "ok": false,
+  "error": {
+    "code": "PA014",
+    "level": "error",
+    "message": "import failed: required dsh plugin add failed for dsh-find-skill",
+    "location": "instance `test` / dsh.plugins",
+    "context": [
+      "\ndsh: installation rejected: Plugin dsh-find-skill@0.2.1 is incompatible with dsh 0.2.1-rc.2: requirements {\"@deepseek-ai/dsh-commands\":\"^0.1.0-rc.6\",\"@deepseek-ai/dsh-home-paths\":\"^0.1.0-rc.6\",\"@deepseek-ai/dsh-skill\":\"^0.1.0-rc.6\",\"@deepseek-ai/dsh-tools\":\"^0.1.0-rc.6\"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To "
+    ],
+    "note": "instance `test` is still on disk with status import-failed; already-added plugins were not rolled back",
+    "help": [
+      "packagent dsh launcher instance remove test"
+    ]
+  }
+}
+error[PA028]: the projection command failed
+ --> packagent dsh launcher import "E:\pack-agent\.tmp\d105-m3\.pack-launcher\library\packs\Test-0.1.0.pack.zip"
+  |
+  | error[PA014]: import failed: required dsh plugin add failed for dsh-find-skill
+  |  --> instance `test` / dsh.plugins
+  |   |
+  |   | 
+  | dsh: installation rejected: Plugin dsh-find-skill@0.2.1 is incompatible with dsh 0.2.1-rc.2: requirements {"@deepseek-ai/dsh-commands":"^0.1.0-rc.6","@deepseek-ai/dsh-home-paths":"^0.1.0-rc.6","@deepseek-ai/dsh-skill":"^0.1.0-rc.6","@deepseek-ai/dsh-tools":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To 
+  |   |
+  |   = note: instance `test` is still on disk with status import-failed; already-added plugins were not rolled back
+  |   = help: packagent dsh launcher instance remove test
+  | {
+  |   "ok": false,
+  |   "error": {
+  |     "code": "PA014",
+  |     "level": "error",
+  |     "message": "import failed: required dsh plugin add failed for dsh-find-skill",
+  |     "location": "instance `test` / dsh.plugins",
+  |     "context": [
+  |       "\ndsh: installation rejected: Plugin dsh-find-skill@0.2.1 is incompatible with dsh 0.2.1-rc.2: requirements {\"@deepseek-ai/dsh-commands\":\"^0.1.0-rc.6\",\"@deepseek-ai/dsh-home-paths\":\"^0.1.0-rc.6\",\"@deepseek-ai/dsh-skill\":\"^0.1.0-rc.6\",\"@deepseek-ai/dsh-tools\":\"^0.1.0-rc.6\"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To "
+  |     ],
+  |     "note": "instance `test` is still on disk with status import-failed; already-added plugins were not rolled back",
+  |     "help": [
+  |       "packagent dsh launcher instance remove test"
+  |     ]
+  |   }
+  | }
+  |
+  = help: 看上面的输出

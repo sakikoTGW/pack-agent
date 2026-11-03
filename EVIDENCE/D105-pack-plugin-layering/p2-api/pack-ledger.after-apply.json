@@ -1,0 +1,35 @@
+{
+  "schema": "pack-agent.pack-ledger/v1",
+  "updated": "2026-11-03T18:15:04.587Z",
+  "packs": {
+    "Probe-Specs-0.1.0": {
+      "title": "Probe Specs",
+      "installedVersion": "0.1.0",
+      "path": "E:\\pack-agent\\.tmp\\p2-ledger-e2e\\.pack-launcher\\library\\packs\\Probe-Specs-0.1.0.pack.zip",
+      "installedAt": "2026-11-03T18:12:46.116Z",
+      "content": {
+        "dir": ".agent-pack/modpacks/pack-agent-modpack-probe-specs",
+        "allow": true
+      },
+      "profiles": {
+        "web": {
+          "state": "installed",
+          "plugins": [
+            {
+              "spec": "dsh-context",
+              "addedVersion": "0.80.0",
+              "origin": "pack"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "owners": {
+    "web": {
+      "dsh-context": [
+        "Probe-Specs-0.1.0"
+      ]
+    }
+  }
+}

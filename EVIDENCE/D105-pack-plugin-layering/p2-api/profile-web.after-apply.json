@@ -1,0 +1,18 @@
+{
+  "name": "dsh-profile-web",
+  "private": true,
+  "dependencies": {
+    "@sakikotgw/pack-agent-dsh": "^0.4.3",
+    "dsh-context": "^0.80.0"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "@sakikotgw/pack-agent-dsh",
+        "dsh-context"
+      ]
+    }
+  }
+}

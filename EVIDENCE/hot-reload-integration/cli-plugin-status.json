@@ -1,0 +1,12 @@
+﻿--- 05:27:11 pad cli plugin status ev-hot --json --refresh
+{
+  "schema": "pad.hot-capability/v1",
+  "instance": "ev-hot",
+  "profile": "web",
+  "launchSource": "pad",
+  "hmr": "on",
+  "manager": "none",
+  "hotAllowed": true,
+  "reason": "hot",
+  "checkedAt": "2026-11-03T21:27:11.8732680\u002B00:00"
+}

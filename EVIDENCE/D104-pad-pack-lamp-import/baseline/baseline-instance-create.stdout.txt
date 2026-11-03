@@ -1,0 +1,8 @@
+--- 23:12:47 pad cli instance create --pack Test-0.1.0 --name verify-baseline
+pack Test has no mods; a modpack must ship at least one skill, MCP, plugin, rule, command, or hook
+error[PA028]: the projection command failed
+ --> packagent dsh launcher pack project verify-baseline "E:\pack-agent\.tmp\verify-d104\.pack-launcher\library\packs\Test-0.1.0.pack.zip"
+  |
+  | pack Test has no mods; a modpack must ship at least one skill, MCP, plugin, rule, command, or hook
+  |
+  = help: 看上面的输出

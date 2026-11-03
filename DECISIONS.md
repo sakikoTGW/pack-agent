@@ -1218,3 +1218,96 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
   「退出 PAD 时停止所有正在运行的实例」（other.stopInstancesOnExit，默认关）。
 - 退出路径统一走 ExitGracefully：X/Alt+F4（OnClosing）、托盘退出；勾了停实例先 Runner.Stop 再退。
 - 验证：EVIDENCE/D99（05 退出停实例、06 设置落盘、07 卡片交互、03/04 截图）。
+
+## D104 · 2026-11-03 · 版本选择两处真问题：容器绿灯只认 PAD 账本 + 整合包「新建实例」走完整 import 链
+用户两张截图原话："为啥这三个都显示启动，明明只有 web 启动了 sisyphus"；"整合包这里看不出装没装。而且也装不了。没起到整合包的功能"。
+1. **容器绿灯语义**：`RunLamp` 只表示「PAD 启动过这个实例的 profile」——判据是 `runtime.json` 账本（`AppState.MarkRunning`）。本机探测到的桌面端 / TUI 的 OS 进程活着 ≠ PAD 启动，改记 `ProfileVm.LocalRunning`，只进 tooltip / 设置卡（"本机进程在跑（不是 PAD 启动的）"），不再点灯。实测本机官方壳（当前会话宿主）和第三方壳确实都在跑，旧代码把 OS 状态画成灯，才出现三个绿灯。导出整合包页的容器选择同样按这条走（去掉那儿的灯）。
+2. **整合包装没装 / 装不了**：卡片行加装态药丸——`已装到 <实例名>`（绿）/ `未安装`（灰）/ `import-failed` 的实例只写「已建实例（上次没装完）」且不点绿。`新建实例` 不再走只投影的 `Launcher.CreateFromPack`，改走 TS 完整 import 链 `Packs.ImportPack`（`--name` → 建 home → 投影+allow → 装 manager → 逐个 `dsh plugin add`）；`compile.ts` 把老 ccui-pack 只有 spec 的 `dsh.plugins[]` 编成 `mods/<id>/plugin.json`（kind=plugin，供检索，不生成 cordis.patch insert），投影不再报 `pack X has no mods`；import 把 `source.packId` 写入 instance.json（与目录行 id 同源 `packIdFromPath`），"装没装"才对得上。
+3. **兼容门照实说**：包内插件被 DSH 自己的 gate 拒（PA014 / `incompatible with dsh`）时，toast 说明「包内容/版本问题」，不再让用户读成 PAD 装不了。用户手上的 Test-0.1.0 正属此类：10 个插件声明 ^0.1.0-rc.6，包却钉 0.2.1-rc.2 → 到 add-plugins 才失败，不再有误导性的 "has no mods"；同机按当前环境做的兼容包实测 `status=ready`。
+4. **顺手修**：版本库 / 探测内核都为空时 `SyncPinCombo ↔ RefreshVersionChoices` 互递归 → 栈溢出（`--shot-page versions` 首次打开崩 0xC00000FD），加 `_refreshingChoices` 守卫。`pad-window.test.ts` 两条过期 DownloadView 断言（HEAD 本来就红：fa8b6a2/d845499/466b7ee 重构过下载页）按新意图收窄，并独立用干净 worktree 复现证明是过期期望而非回归。
+边界：`pad cli instance create --pack` 仍是投影-only（导出临时实例用，pad-pack 有断言）；`pinst.zip` 不写 source；catalog 的 installed 把 import-failed 实例也算进（source 在建实例时就写），所以由 UI 把「装完」和「上次没装完」分开说。
+验证（EVIDENCE/D104-pad-pack-lamp-import/）：修前镜像图 3 灯 → 修后同图 **1 灯（web）**、live root 探测行 0 灯、导出页 2 灯 → 0 灯；整合包三态（已装到 / 未安装 / 上次没装完）实拍；Test 包投影 10 个 plugin mod + source 落盘；兼容包真 npm 安装后 `status=ready`、profile bundles 含插件；5 个 bun 套件 + `dotnet test` 67 全绿；PAD build 0 警告 0 错误。
+
+## D105 · 2026-11-04 · 整合包 × 插件：包=原子装配清单、账本 + diff 先行，停用≠卸载（设计先行，未落码）
+用户："包是可以装卸的。但是插件也可以装卸到一个实例……会有冲突吧"；"如果整合包里已经有这个插件了怎么办，整合包再导入。或导入后再卸，怎么办呢"。
+现状是**两套真相、零账本**：包=投影目录+allow 表（`catalogDeny` 只写 DB、文件不删）；插件=profile 的 `package.json` dependencies + `dsh.profile.bundles`。唯一重叠是 `pack.dsh.plugins[]`，import 链 `addPlugins()` **无条件** `dsh plugin add`。于是：包里插件实例里已有 → 再导入被 pnpm 按 spec 静默改版本（DSH `reconcile()` 只对 bundles 去重，不挡版本变化）；导入后停用/删包 → 插件留在 profile 继续生效（单向残留）；插件页 remove/update 包声明过的插件 → 包仍显示启用、缺件无提示；卸管理器插件无守卫；`plugin disable` 只是 PAD 侧 `pa-disabled.json` 记账、启动路径不读（假停用）。另：C# `Instance` 模型没有 `packs`/`plugins`/`credentials`/`profile` 字段，任何 C# `SaveInstance()` 会抹掉 TS 字段 → 账本必须放独立文件。
+决定（设计稿：[agent-pack-dsh/docs/pack-plugin-layering.md](agent-pack-dsh/docs/pack-plugin-layering.md)，本轮**不动代码**）：
+1. **包 = 原子装配清单**：装/再装/停用/卸载都是"先算 diff 再执行"；再导入=按差异修补，不盲 add；版本不同 → 冲突让用户选（升/留/取消），不静默升降级。
+2. **账本**：独立 `instances/<id>/pack-ledger.json`（`packs{}` + 反向 `owners{}` 引用计数），读时以投影/allow 与 profile 为真相，账本只记归属与"当初加过哪些插件"。
+3. **停用≠卸载**：停用 = 内容不可见 + 该包插件移出 `dsh.profile.bundles`（保留 dependencies，复用 `Trial.cs` 的 `WriteBundles` 机制，可逆不重下载）；卸载 = 删投影 + 回滚"该包独占"插件，共享插件保留并写明。
+4. **插件页反向检查**：remove/update 被启用包声明的插件 → 二次确认 + 包标 `incomplete` + 「按包修复」；管理器插件 remove/disable 都走 PA110。
+5. **入口统一**：实例页「装整合包…」与版本页「新建实例」同一条完整链（现在实例页只投影、不装组合包）。
+6. **不兼容有正门**：利用 DSH 官方 `dsh plugin allow-version <pkg@ver> --dsh-version <exact> --accept-risk` 给"接受风险安装"，不再只有换内核/重做包两条路。
+分期：P1 提示层（双向标注+冲突确认，不改数据）→ P2 账本+停用联动+卸载回滚+入口统一 → P3 冲突选择与 allow-version 体验。非目标：全投影（需 DSH 运行期加载插件）、自动修历史半成品、多包原子事务、接管 pnpm lockfile。
+边界与拍板（2026-11-04 补，完整表见设计稿 §7）：
+① 停用"摘 bundles 留 deps"可行且会保持——`reconcile()` 只给**本次新增依赖**补 bundle，已有依赖不会加回；boot 只按 `dsh.profile.bundles` compose。P2 实装前在 scratch 实例复测一次作门槛。
+② 账本混合：投影按实例、插件按 profile（条目里 `profiles{<p>:{state,plugins}}`，owners 也按 profile）。
+③ 同一 pack id 只保留一个版本；版本变化走"升级/降级"diff，不并排。
+④ pinst 是整实例快照：账本随实例导出/导入、不重算不认领；旧 pinst 空账本 + 「未登记」+ 只读扫描重建。
+⑤ `source.packId` = **来源包**（"已建实例"），账本 = **已装包**（"已装到"），两词两字段；`import-failed` 不算已装；P1 过渡期沿用旧判定但文案改「已建实例：X」。
+⑥ 本地插件先复制到 `<instance>/home/local-plugins/<packId>/<name>/` 再 `file:` 装，账本记 `localDir`，卸包删目录；两个包同名本地插件按依赖名冲突处理。
+判据：**"装"的粒度按包整体，插件的归属能查；任何 add/remove/update 前必须先有 diff，不许盲装盲卸。**
+
+落地补（2026-11-04，P1/P2/P3 全部实现，未 commit；实现索引见设计稿 §9、证据 `EVIDENCE/D105-pack-plugin-layering/`）：
+- **代码**：新 `pad/Core/PackPluginFacts.cs`（P1 只读事实）、`pad/Core/PackLedger.cs`（独立 `instances/<id>/pack-ledger.json`，不进 instance.json——C# `Instance` 模型不认识的字段会被下次保存抹掉）、`pad/Core/PackCompat.cs`（P3 解析 DSH allow-version 提示）；改 `pad/Core/Packs.cs`（import 写账本 + ApplyPackToInstance/SetPackPluginsActive/UninstallPack/RepairPack + 结果类型）、`pad/Core/Launcher.cs`（AllowVersion/MarkInstanceStatus）、`Views/InstanceView.*`（账本药丸、修复/卸载、装包入口统一、兼容/冲突三选一、残留行过滤）、`Views/VersionsView.xaml.cs`（账本「已装到」三段、续装遗留 import-failed）、TS `import-pack.ts`（Q6 本地插件先复制再 file: 装）、`pinst.ts`（Q4 账本随快照走）。
+- **语义按键**：停用/启用只调 `SetPackPluginsActive`（内部 allow/deny + 摘/加 `dsh.profile.bundles`，deps 保留、不重下载）；卸载按 owners==1 回滚独占插件、共享保留；插件页 remove/update 后标包 `incomplete` 并给「按包修复」；`ApplyPackToInstance` 版本冲突收集进 `Conflicts` 不静默覆盖；不兼容走 DSH 官方 `allow-version --accept-risk` 正门（或换内核重试），不再只有死路。
+- **测试门（每条完成即测）**：Q1 机制复测 PASS（15/15，`q1/`）；P1 独立 M1 PASS（`m1/`）；P2 独立 M2 PASS（`m2/`：停用→dump-config 层消失/启用零下载/共享插件卸载保留/`import-failed`→修复 105.5s）；P3 真实 DSH allow-version→`dsh plugin add` 成功（`p3/`）；`dotnet test pad.tests` **114/114**、6 个 bun 套件全绿、build 0 警告 0 错误。
+- **已记 follow-up**：catalog DB 残留行 TS 侧 prune（当前 UI 最小过滤）、`UninstallPack` 逐插件 remove 可批量化、Q1 依赖 `reconcile()` 语义（DSH 升级回归项）、可选插件重试日志噪音。
+
+## D106 · 2026-11-04 · 版本页整合包改「包自己的图标」、去掉"装到哪"、实例页已启用包发光
+用户截图（三行包：Shared A「已建实例：Shared A」/ Shared B「已装到 Shared A」/ Verify Probe「已装到 Verify Probe」）原话："把这些换成整合包的icon。然后我觉得不用显示他装在那里了。而是装他的实例整合包那一块装的包会发光"。
+1. **版本选择页整合包行换自己的图标**：新 `pad/Core/PackIcon.cs` `Resolve(launcherRoot, packPath)`——`.pack.zip/.pinst.zip` 读 zip 根/唯一一级目录的 `icon.*/logo.*/pack.png`，缓存到 `<root>/library/icons/packs/<sha16(path|mtime|size)>.<ext>`；SVG 复用 `BundleIcon.TryRasterizeSvg`；`.pack.json` 走同目录候选 + `icon`/`logo` 相对字段；≤2MB、坏包/不支持格式（webp）→ null；无图标回落原「包」pill。实例页包行同样显示该图标。
+2. **版本页不再显示"装到哪"**：删可见装态药丸（`InstallStateText/IsInstalled`、`PackStatePill` 样式、`InstallState()/LedgerInstalledNames()` 死代码）；「新建实例」与右键导出保留。装态语义移到实例页（账本药丸「不完整/未登记」+ 下面的发光）。
+3. **实例页「整合包」块：已启用（Enabled=true）的包行发光**——accent `DropShadowEffect`（ShadowDepth=0，BlurRadius 14→24、Opacity 0.35→0.7）1.6s AutoReverse Forever 呼吸；停用行无光并 Opacity 0.85；账本药丸/修复/卸载/停用按钮全部保留。口径：**发光 = 启用中**（装了但停用不发光，这样发光有含义）。
+判据：**包目录只回答"这是什么包"（图标+名字+版本+组件）；"装到哪/是否生效"属于实例视角，放在实例页用状态与发光表达。**
+验证（`EVIDENCE/D105-pack-plugin-layering/ux-icon-glow/`，独立 verifier M4）：build 0 警告 0 错误；`dotnet test` **126/126**（114→126，+12 PackIconTests）；6 个 bun 套件全绿；像素证据——自定义图标 orange 1251px（基线 0）、D106 两次截图差异 40800px 只在 enabled 行上下沿（disabled 行 0）、旧 build 对照两次截图 0 差异（静态）；live root 部署后 `--shot-page versions` 实测 Test 包显示自己的 icon、无装态文字；已部署新 pid **75696**（`pad-crash.log` 无 delta、settings 哈希未变、sisyphus web 未停）。边界：无 icon 的包回落「包」pill；`.pinst.zip` 图标按根/一级目录找；图标解析打开 zip 中央目录（包行数量小，未做异步预热）。
+
+## D107 · 2026-11-04 · dsh-tauri 桌面端 = 第 4 个 surface（不单独为它做 UI）
+用户原话："他就是一个 surface 啊。"
+1. **形态**：新 `Surface.Tauri`（`tauri`，"Tauri 桌面端窗口"，`Exclusive=true`、`NeedsEndpoint=false`）。拉起的是 dsh-tauri 桌面端 exe：`pad cli node open <home> --surface tauri --exe <deepseek-harness-desktop.exe>`；PAD 用 `DSH_HOME=<实例 home>` 把项目实例指给它，停止 = 杀进程树；`pad cli surfaces` 与 `--json` 自动带上新面。
+2. **不单独为 Tauri 设计前端**：不新增页面/窗口样式，只复用现有 surface、账本、CLI、jump 命令面。项目 `window.kind = "shell"` 仍按 PA126 拒绝（要不要在项目页暴露 Tauri 窗，等用户给设计再动）。
+3. **单实例边界**：上游 dsh-tauri（Tauri 2 壳 + Electron Runtime，其 AGENTS.md 已禁非 Electron 架构）按 app identifier 抢单实例锁（Windows 自研 mutex）；第二次启动只把激活转发给已有窗口后退出，所以同一时间只有一扇 Tauri 窗。`OpenTauri` 用 PA149 点名「先关掉已在跑的桌面端」，不假装多开。它读 `DSH_HOME`（release 构建）——这是 PAD 能指到项目 home 的唯一开关。
+4. **跳转**：上游 deep link 只处理 `dshtauri://open`（聚焦窗口），没有会话级入口；`pad-tauri` 描述符只声明 R3 `focus-clipboard`，不假装能深链会话。
+上游依据（浅克隆 `github.com/dsh-tauri/deepseek-harness-desktop` @ `b74b63b`）：`apps/desktop/src-tauri/src/config/runtime.rs:558-576`（DSH_HOME 解析）、`src/lib.rs:61`（`single_instance::claim(identifier)`）、`src/desktop/deep_link.rs:6-12`（只认 open）。
+代码：`pad/Core/Surface.cs`、`pad/Core/Nodes.cs`（`OpenTauri` + PA146–149）、`pad/Core/Cli.cs`（`--surface tauri --exe`、window 文案）、`pad/Core/Jump/JumpModels.cs`（`pad-tauri`）、`registries/pa-codes.json`、`docs/SURFACE.md`（第 4 形态）、新 `modpack/pad-tauri.test.ts`。
+验证：build 0 警告 0 错误；`dotnet test` 203/203；`pad-tauri.test.ts` 源码契约 + 实跑（surfaces 里 `tauri exclusive=true needsEndpoint=false`；PA146/147/149）；相关 bun 套件 pad-window / pad-project / pad-depth 全绿。证据 `EVIDENCE/D107-tauri-surface/`。
+边界：PAD 不接管该壳的内核/依赖/更新（它自己管，见其 README「运行时管理」）；`--exe` 指向用户已装好的桌面端，PAD 版本库仍只管 dsh CLI release（web/tui 面）。
+
+**真机验收补（2026-11-04，dsh-tauri v0.30.2）**：装到 `E:\DSH-Tauri`；壳的 app data（`%APPDATA%\dsh-tauri`、`%LOCALAPPDATA%\dsh-tauri`）整目录搬到 `E:\DSH-Tauri-data` / `E:\DSH-Tauri-localdata` 后建 junction——**C 盘不留实体**。闭环实测：`node open` **6.1s** 成功、账本记 tauri、`DSH_HOME` 生效（scratch home 里出现壳自己的 `profiles/desktop`、`storages/workspace.json`）、同 home 重复→PA099、另一 home→PA149（单实例激活转发后退出）、`node close` 杀进程树且账本清空。真机顺带修了两处启动实现：普通 `Process.Start` 会让 GUI 继承 PAD 的 stdio，脚本化 `pad cli node open` 挂 120s → 改 `UseShellExecute=true` 启动、`DSH_HOME` 在调用期间临时写进 PAD 环境；`cmd > log` 重定向独占日志导致 PAD 追加失败 → 日志只写一行启动记录。证据 `EVIDENCE/D107-tauri-surface/real-shell/`。
+
+## D108 · 2026-11-04 · 「装整合包」概念落地：安装=装到实例（预检/一次授权/报告 + CLI）
+用户原话："有问题因为现在没法装整合包。或者说，整合包那里根本没有装的概念"。先出原型（`agent-pack-dsh/docs/proposals/install-concept/`，三张 HTML+PNG）获批后落地；实现期间证据目录先用 `EVIDENCE/D107-install-concept/`，与并行会话的 D107（tauri surface）撞号，故本决策记为 **D108**，证据目录名保留不改。
+1. **语义**：安装整合包 = 把包内容 + 组合包装配进**一个已有实例**（投影 + 管理器 + 按 diff 装插件 + 写账本）；「新建实例」= 用包派生实例（保留 D104 完整 import 链）；「导入」= 只入本机包库。版本页每行主按钮改「安装 ▾」→ 装到当前实例 / 新建实例… / 先检查能不能装…（checkOnly）；实例页「装整合包…」改包库选择器（`PackPickerWindow`，图标 + 预检徽标 + 已装缺件→修复 + 从文件…兜底）。
+2. **后端**：`Packs.PreflightPack`（npm 元数据并发≤4/15s 超时/缓存；npm 404→missing、网络→unknown；兼容按 DSH 规则 engines.dsh 否则全部 @deepseek-ai/dsh-* peers，includePrerelease；版本冲突/内核/Manager 分类）、`Packs.InstallPackToInstance(inst, profile, pack|path, PackInstallOptions{AcceptRisk,SkipMissing,DryRun})`、`Launcher.AllowVersions` 批量豁免；状态 installed/incomplete/needs-decision/dry-run；CLI `pad cli pack preflight|install`（exit 0 已应用 / 2 需要决策 / 1 错误；`--json --out`）。`PackPreflightWindow` 两阶段：安装前检查（视觉清单 + 两个授权勾选）→ 安装报告（统计/逐条/修复入口），失败与跳过原样不静默。
+3. **真实 perf bug 修复（根因）**：`AddBundles`/`AllowVersion` 每次 `dsh plugin add` 前都跑 `PnpmHeal.Relink`——0.2.1-rc.2 release node_modules 11810 目录/569 个 .pnpm 包，单次 65–70s；Test 包 10 次 ≈ 650–700s 全记在 PAD 进程 CPU（曾表现为"卡死 840s/无输出"）。改为批量路径只 relink 一次（`heal` 可选参数，默认行为不变）+ 阶段日志；Test 包装完 **213–221s**。
+4. **验证（独立 verifier M5 PASS）**：build 0/0；`dotnet test` **203/203**（PackSemver/PackPreflight 新增）；6/6 bun（pad-pack 加「install 不挂起」90s 超时回归）；CLI E2E：preflight Test **8 ok / 1 needs-exemption / 1 missing**；无 flag install **exit2 不落盘**；dry-run **不落盘**；`--accept-risk --skip-missing` → **exit0 / State=incomplete / Added=9 / Exempted=dsh-find-skill@0.2.1 / Skipped=@yuxianglin/dsh-bridge-browser / Failures=0**；兼容包 installed；dump-config 插件层 10；人类可读输出 + list 回归；UI 五类截图全部 EXIT0。已部署上线：**pid 77272**（2026-11-04 05:22；crash-log 无 delta、settings 哈希未变、sisyphus web 未停；live 版本页可见「安装 ▾」）。
+5. **后续**：一次 relink 仍 60–127s（可改多条 `dsh plugin add` 一次批量，需回归 DSH add/reconcile 语义）；预检依赖 npm registry（离线 unknown 不阻塞）；被 skip 的必装插件仍按 required 记账 → 包长期 incomplete（设计内，可修复）。
+
+## D109 · 2026-11-04 · 前端规范 v1（文字纪律 / 视觉表达 / 一次一件事 / 同类统一）
+用户原话："一套文字，如果他可以去掉也可以不去掉，没有任何区别那就去掉，如果有点用，但一堆字会让 ui 很丑，那就用层级方法隐藏，在交互的时候展示或者做成 ui，一个好的前端，凭借视觉就可以表达含义。然后，不能一次展示一堆文字。前端交互的设计以顺手为主。然后要有动感和反馈。然后同类的，走统一的设计，不准出现别的地方走 icon，自己莫名其妙用用大文字做图标之类的操作。"
+落成硬规范：`agent-pack-dsh/docs/frontend-spec.md`（决策树、Tokens、组件/动效规范、迁移清单、**PR 10 条检查清单**）+ 配图手册 `agent-pack-dsh/docs/frontend-spec/index.html`（两张渲染图 `01-text-discipline.png` / `02-system.png`）。要点：常驻文字 ≤1 句主提示 + 行内辅助 ≤1 行，技术原文进 Tooltip/展开/报告；状态一律药丸/颜色/图标；每操作必有反馈（按下→进度→结果→失败可重试），动效 120–200ms、呼吸 1.6s 只表示"运行中/启用中"；同类概念全局同一 icon/颜色/组件，禁止文字作图。AGENTS.md 已加：改 UI 前先读规范并过清单。
+落地证据：本轮预检窗口「现在 vs 规范后」对照已写进手册第 1 页（规范后 = 4 行视觉 + 1 句决定 + 展开详情）。迁移清单待办：预检/包库窗口按规范收敛文字；「包」文字 fallback 换统一图标；样式源收敛到 Icons/Tokens 单一源。
+
+## D110 · 2026-11-04 · 热重载：默认冷、场景化热，驱动官方 dsh-hmr（已落码 + 219 测试）
+
+用户（2026-11-04）："装/升级不能把环境搞坏、坏了能原样退回、不许偷偷删备份——这就是开发者需要测试环境。需要回退、试验、验证的场所。" 随后确认"默认冷、场景化热"，并要求实现。
+
+实测前提（`EVIDENCE/hot-reload-spike/`）：
+1. 官方 `@deepseek-ai/dsh-hmr` 在普通 `dsh` CLI 实例里就是激活的（探针读 `hmr/profileContext/appReady/loader/pluginPackages` 全 true）。
+2. live 写 `cordis.patch.yml` 的 `insert` → 插件热挂（≈2.9 s）、删行 → 热卸；PID 不变。
+3. 往运行中 profile 的 `dsh.profile.bundles` 增删**真 bundle**（声明 `dsh.bundle.patch`）→ 热组合，PID 不变。
+4. 边界：apply 抛错静默（stdout/stderr 无输出）；同一 patch 里 good+bad 非原子（good 会挂上）；替换失败旧版本不恢复。
+
+决定：
+- PAD 不实现热重载，只做"驱动 + 验证 + 兜底"。
+- 默认冷：`plugin add/remove/update` 走写盘 + `restart-required`（可预测、和第三方管理器零冲突）；冷路径重启仍不自动（`--restart` 留到后续决策）。
+- 场景化热：只有 `--hot`（以及后续 lab）走热路径；热能力由**读盘纯函数**判定（`pad.hot-capability/v1`：launchSource / hmr / manager / hotAllowed），不做运行时探针。
+- 单一 writer：读到 mygo/其它管理器 → `Manager != none` → 热关闭，默认只读（PA202）。
+- 热路径 = checkpoint → 安装（官方队列外）→ manifest/patch 原子写 → settle（3 s 起、最多 15 s）→ V1–V4 验证（dump-config / bundle-row / tools-inventory / runtime-pid）→ 通过 commit，失败自动 restore checkpoint，再失败标 rollback-failed。
+- `plugin undo` 跳过 `pre-restore` 快照（否则会把刚回滚的状态又装回去）。
+
+落码：`pad/Core/HotCapability.cs`、`Checkpoints.cs`、`PluginVerify.cs`、`HotReload.cs`；`Launcher.PluginOp(..., hot)`；`Cli.cs` 增 `plugin status|verify|undo` 与 `--hot`；`pa-codes.json` PA201–PA205；`pad.tests/HotReloadTests.cs`。
+
+验证：build 0 警告 0 错误；`dotnet test` 219/219；真机 E2E（独立 dsh web 3126）验证 `pad/on/hotAllowed=true`、热 add 失败自动回滚且进程存活、直接 add 后 verify pass、undo 回到变更前。证据 `EVIDENCE/hot-reload-integration/`。
+
+未做/待决策：`--hot` 成功装官方 npm bundle 的样本；冷路径是否自动重启；lab 的 `--hot` 默认开；窗口插件行"热/待重启/已撤回"三态（属 UI，需按 frontend-spec 出预览）。

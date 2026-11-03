@@ -10,13 +10,14 @@ status: draft
 现在 PAD 把它们混在 `Recipe(kind)` 里：`"tui"` 既表示装 `dsh-tui`，也表示开终端。
 `TerminalKind` 更进一步假设所有启动都进终端。这就是加 web / 桌面端时会别扭的原因。
 
-## 三种形态
+## 四种形态
 
 | 形态 | 名字 | 怎么显示 | 依赖 | 能同时开几个 |
 |---|---|---|---|---|
 | 终端 | `tui` | Windows Terminal / conhost / 自定义 | `dsh-tui` + gateway | 多开，一个实例一个窗口 |
 | 浏览器 | `web` | 浏览器窗口（推荐 Edge `--app=`） | `dsh-web-app` | 多开，一个实例一个端口 |
 | 桌面壳 | `app` | DSH Desktop 窗口 | 官方 Electron 壳 | **只有一个** |
+| 桌面端（Tauri） | `tauri` | dsh-tauri 桌面端窗口 | `dsh-tauri/deepseek-harness-desktop` | **只有一个**（单实例；按 `DSH_HOME` 指定 home） |
 
 最后一列是形态的本质差别，不是实现细节：
 
@@ -24,6 +25,13 @@ status: draft
 - 桌面壳是**有状态容器**——它自己持有 `lockfile`（独占）和固定端口 43129
 
 所以 `Exclusive` 必须是形态的属性，不能靠调用方记着。
+
+`tauri` 和 `app` 同属「有状态容器」，差别只在隔离方式：`tauri` 读 `DSH_HOME` 环境变量（release 构建），
+所以 PAD 能把一个项目的实例 home 指给它；但它是单实例（按 app identifier 抢锁，第二次启动只把激活转发给
+已有窗口后退出），因此同一时间只能有一个 Tauri 桌面窗。端点也不外露（harness 在壳里面），`NeedsEndpoint = false`，
+`Stop` 杀进程树即可。`pad cli surfaces` 输出里有 `needsEndpoint` 和 `exclusive` 两列可核对。
+
+真机验证（2026-11-04，dsh-tauri v0.30.2 装到 `E:\DSH-Tauri`）：`DSH_HOME` 生效（壳在指定 home 里初始化自己的 profile/storages）、单实例跨 home 启动报 PA149、`node close` 杀树后账本清空。注意该壳自己管内核/更新（它在 `%APPDATA%\dsh-tauri` 下装了 149 MB 内核包），与 PAD 版本库是两套系统；PAD 只负责拉起/收回。
 
 ## 形态的四个契约
 
@@ -41,7 +49,7 @@ status: draft
 - 换形态不影响装了什么
 - 换整合包不影响窗口长什么样
 
-所以兼容性天然成立：只要该 profile 里有 `pack-agent` 插件，投影就跟着走，与 `tui` / `web` / `app` 无关。
+所以兼容性天然成立：只要该 profile 里有 `pack-agent` 插件，投影就跟着走，与 `tui` / `web` / `app` / `tauri` 无关。
 
 需要验证的一点：web profile 里装 `pack-agent` 时，投影是否和 TUI 一样生效（PRODUCT 已说明"投影不进插件名单"，说明机制在，但要实测）。
 
@@ -50,11 +58,11 @@ status: draft
 ```
 Instance          一份 DSH_HOME + 一个版本 + 一个工作区
   ├── Profile     装什么（bundle set）      → 决定能力
-  ├── Surface     怎么显示（tui/web/app）   → 决定窗口
+  ├── Surface     怎么显示（tui/web/app/tauri） → 决定窗口
   └── Modpack     注入什么内容（投影）      → 决定素材
 ```
 
-三轴正交。任意两轴组合都合法，除了 `Surface.Exclusive` 限制 `app` 只能有一个实例在用。
+三轴正交。任意两轴组合都合法，除了 `Surface.Exclusive` 限制 `app` / `tauri` 只能有一个实例在用。
 
 ## 未决
 

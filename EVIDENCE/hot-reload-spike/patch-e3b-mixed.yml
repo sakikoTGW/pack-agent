@@ -1,0 +1,5 @@
+- insert:
+    - id: hot-e2e
+      name: hot-e2e
+    - id: hot-e2e-bad
+      name: hot-e2e-bad

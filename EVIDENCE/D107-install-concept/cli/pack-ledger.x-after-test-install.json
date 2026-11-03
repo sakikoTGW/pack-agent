@@ -1,0 +1,106 @@
+{
+  "schema": "pack-agent.pack-ledger/v1",
+  "updated": "2026-11-03T20:48:35.257Z",
+  "packs": {
+    "Test-0.1.0": {
+      "title": "Test",
+      "installedVersion": "0.1.0",
+      "path": "E:\\pack-agent\\.tmp\\d107-install-e2e\\.pack-launcher\\library\\packs\\Test-0.1.0.pack.zip",
+      "installedAt": "2026-11-03T20:48:35.234Z",
+      "content": {
+        "dir": ".agent-pack/modpacks/pack-agent-modpack-test",
+        "allow": true
+      },
+      "profiles": {
+        "web": {
+          "state": "incomplete",
+          "plugins": [
+            {
+              "spec": "dsh-find-skill",
+              "addedVersion": "0.2.1",
+              "origin": "pack"
+            },
+            {
+              "spec": "dsh-better-sidebar",
+              "addedVersion": "0.28.2",
+              "origin": "pack"
+            },
+            {
+              "spec": "dsh-cost-meter",
+              "addedVersion": "1.9.50",
+              "origin": "pack"
+            },
+            {
+              "spec": "@michengai/dsh-skills-manager",
+              "addedVersion": "1.2.26",
+              "origin": "pack"
+            },
+            {
+              "spec": "@yuxianglin/dsh-bridge-browser",
+              "origin": "pack"
+            },
+            {
+              "spec": "dsh-plugin-resolver",
+              "addedVersion": "0.1.3",
+              "origin": "pack"
+            },
+            {
+              "spec": "dshmarket",
+              "addedVersion": "1.73.9",
+              "origin": "pack"
+            },
+            {
+              "spec": "dsh-context",
+              "addedVersion": "0.80.2",
+              "origin": "pack"
+            },
+            {
+              "spec": "dsh-element-picker",
+              "addedVersion": "0.2.2",
+              "origin": "pack"
+            },
+            {
+              "spec": "dsh-i-have-adhd",
+              "addedVersion": "1.0.2",
+              "origin": "pack"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "owners": {
+    "web": {
+      "dsh-find-skill": [
+        "Test-0.1.0"
+      ],
+      "dsh-better-sidebar": [
+        "Test-0.1.0"
+      ],
+      "dsh-cost-meter": [
+        "Test-0.1.0"
+      ],
+      "@michengai/dsh-skills-manager": [
+        "Test-0.1.0"
+      ],
+      "@yuxianglin/dsh-bridge-browser": [
+        "Test-0.1.0"
+      ],
+      "dsh-plugin-resolver": [
+        "Test-0.1.0"
+      ],
+      "dshmarket": [
+        "Test-0.1.0"
+      ],
+      "dsh-context": [
+        "Test-0.1.0"
+      ],
+      "dsh-element-picker": [
+        "Test-0.1.0"
+      ],
+      "dsh-i-have-adhd": [
+        "Test-0.1.0"
+      ]
+    }
+  }
+}

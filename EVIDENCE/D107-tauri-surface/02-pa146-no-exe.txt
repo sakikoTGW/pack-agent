@@ -1,0 +1,9 @@
+exit=1
+--- stdout ---
+--- 04:44:20 pad cli node open E:\pack-agent\.tmp\d107-tauri-surface\instances\t1\dsh-home --surface tauri
+error[PA146]: the tauri surface needs --exe
+ --> E:\pack-agent\.tmp\d107-tauri-surface\instances\t1\dsh-home
+  = help: pad cli node open <home> --surface tauri --exe <deepseek-harness-desktop.exe>
+
+--- stderr ---
+

@@ -1,0 +1,2 @@
+--- 23:12:10 pad cli discover --json --out E:\pack-agent\EVIDENCE\D104-pad-pack-lamp-import\baseline\discover-baseline.json
+wrote E:\pack-agent\EVIDENCE\D104-pad-pack-lamp-import\baseline\discover-baseline.json

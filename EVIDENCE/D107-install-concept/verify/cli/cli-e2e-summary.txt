@@ -1,0 +1,37 @@
+﻿D107 M5 CLI E2E @ 2026-11-04T05:10:58.5855381+08:00
+exe=E:\pack-agent\.tmp\pad-build-d107\pack-agent-for DSH.exe
+root=E:\pack-agent\.tmp\d107-verify\.pack-launcher
+exe sha256=C47F9830866D1EC418132CC2FE4124CA6CB9EC14A8821AEF2AA13B1CAAA77E55
+--- A) preflight Test-0.1.0 -> expect ok=8 exemption=1 missing=1 ---
+  exit=0
+  KernelMatches=True NeedsDecision=True OkCount=8 ExemptionCount=1 MissingCount=1
+  needs_exemption_plugins=[dsh-find-skill@ req=peerDependencies: @deepseek-ai/dsh-commands ^0.1.0-rc.6, @deepseek-ai/dsh-home-paths ^0.1.0-rc.6, @deepseek-ai/dsh-skill ^0.1.0-rc.6, @deepseek-ai/dsh-tools ^0.1.0-rc.6（当前内核 0.2.1-rc.2）]
+  missing_plugins=[@yuxianglin/dsh-bridge-browser]
+  PASS_A=True
+  preflight_left_no_trace=True
+--- B) install --dry-run -> exit 0, no disk writes ---
+  exit=0 no_disk_writes=True
+  dryrun_state=needs-decision
+--- C) install without flags -> expect exit 2, no partial writes ---
+  exit=2 expected=2 no_disk_writes=True
+  stdout_tail=
+--- D) install --accept-risk --skip-missing -> expect exit 0 / incomplete / added=9 / skipped / exempted ---
+  exit=0 time=213.6s
+  State=incomplete Added=9 Skipped=[@yuxianglin/dsh-bridge-browser] Exempted=[dsh-find-skill@0.2.1] Ok=True
+  PASS_D=True
+  ledger_exists=True
+  ledger_packs=[Test-0.1.0] owners_dsh-context=[Test-0.1.0]
+  ledger_state=incomplete
+--- D2) dump-config contains installed plugin layers ---
+  dump exit=0 size=45648
+  dump_plugin_layer_hits=10
+--- E) compatible pack install -> expect State=installed ---
+  exit=0
+  State=installed Added=1 Ok=True
+  PASS_E=True
+--- F) human-readable output (no --json) ---
+  exit=0 human_tail=包 Verify Probe → profile web |   包 Verify Probe → profile web：installed · 新增 1 · 保留 0 · 豁免 0 · 跳过 0 · 失败 0 |   状态 installed · 新增 1 · 保留 0 · 豁免 0 · 跳过 0 · 失败 0 |   ! 这个 profile 没有 @sakikotgw/pack-agent-dsh（安装时会自动补上）
+--- G) regression: pack list / instance list ---
+  pack list exit=0
+  instance list exit=0
+DONE 2026-11-04T05:21:00.0180513+08:00

@@ -1,0 +1,8 @@
+$ pad cli cli node close E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --profile tauri
+exit=0 elapsed=0.6s
+--- stdout ---
+--- 05:31:47 pad cli node close E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --profile tauri
+closed tauri port 0 pid 72444 (was alive)
+
+--- stderr ---
+

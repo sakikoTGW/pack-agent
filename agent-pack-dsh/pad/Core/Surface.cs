@@ -17,8 +17,9 @@ public sealed record Surface(
     public static readonly Surface Tui = new("tui", "终端窗口", false, false, "dsh-tui + gateway");
     public static readonly Surface Web = new("web", "浏览器窗口", false, true, "dsh-web-app");
     public static readonly Surface App = new("app", "桌面端窗口", true, false, "DSH Desktop（Electron 壳，单实例）");
+    public static readonly Surface Tauri = new("tauri", "Tauri 桌面端窗口", true, false, "dsh-tauri 桌面端（读 DSH_HOME，单实例）");
 
-    public static IReadOnlyList<Surface> All { get; } = [Tui, Web, App];
+    public static IReadOnlyList<Surface> All { get; } = [Tui, Web, App, Tauri];
 
     public static Surface? For(string name) =>
         All.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));

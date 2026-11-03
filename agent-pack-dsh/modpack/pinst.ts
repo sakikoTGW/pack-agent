@@ -54,6 +54,11 @@ export async function exportInstance(
     })
   }
   writeFileSync(join(stage, 'instance.json'), JSON.stringify(inst, null, 2))
+  // Q4：pinst 是整实例快照，账本随实例走 —— 原样带进 zip，导入端原样恢复、不重算。
+  // 旧实例（P2 之前）没有账本就不带包，导入后保持「未登记」（缺失文件 = 空账本 + Exists=false），
+  // 不在这里补空账本，否则会把「没登记」伪装成「登记过但没包」。
+  const ledgerPath = join(root.path, 'instances', id, 'pack-ledger.json')
+  if (existsSync(ledgerPath)) cpSync(ledgerPath, join(stage, 'pack-ledger.json'))
   const packDir = join(inst.workspace.path, '.agent-pack')
   if (existsSync(packDir)) {
     cpSync(packDir, join(stage, 'workspace', '.agent-pack'), { recursive: true })
@@ -113,7 +118,12 @@ export function readPinstZip(zipPath: string): {
   return { root: dest, manifest, instance }
 }
 
-export function restorePinstHome(pinstRoot: string, destHome: string, destWorkspace: string): void {
+export function restorePinstHome(
+  pinstRoot: string,
+  destHome: string,
+  destWorkspace: string,
+  destInstanceDir?: string,
+): void {
   const srcHome = join(pinstRoot, 'home')
   if (existsSync(srcHome)) {
     mkdirSync(destHome, { recursive: true })
@@ -132,5 +142,11 @@ export function restorePinstHome(pinstRoot: string, destHome: string, destWorksp
     for (const name of readdirSync(srcPack)) {
       cpSync(join(srcPack, name), join(destPack, name), { recursive: true })
     }
+  }
+  // Q4：账本原样恢复、不重算；旧 pinst 没带账本就不建文件（保持「未登记」语义）。
+  const srcLedger = join(pinstRoot, 'pack-ledger.json')
+  if (destInstanceDir && existsSync(srcLedger)) {
+    mkdirSync(destInstanceDir, { recursive: true })
+    cpSync(srcLedger, join(destInstanceDir, 'pack-ledger.json'))
   }
 }

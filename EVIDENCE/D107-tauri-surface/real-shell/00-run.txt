@@ -1,0 +1,123 @@
+tauri desktop exe = E:\DSH-Tauri\deepseek-harness-desktop.exe
+scratch home = E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home
+proc name = deepseek-harness-desktop
+
+### 01-open exit=0 6.1s
+--- 05:31:30 pad cli node open E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --surface tauri --exe E:\DSH-Tauri\deepseek-harness-desktop.exe
+opened  tauri  surface tauri  port 0  pid 72444
+url     (none)
+window  tauri desktop window
+log     E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home\.pad\logs\tauri.log
+
+
+### ledger
+{
+  "version": 1,
+  "nodes": [
+    {
+      "profile": "tauri",
+      "surface": "tauri",
+      "port": 0,
+      "url": "",
+      "pid": 72444,
+      "startedAt": "2026-11-04T05:31:35.3964978\u002B08:00",
+      "logPath": "E:\\pack-agent\\.tmp\\d107-tauri-real\\instances\\t1\\dsh-home\\.pad\\logs\\tauri.log",
+      "verified": false
+    }
+  ]
+}
+
+### deepseek-harness-desktop processes: 72444
+
+### home tree (first 40/dir)
+[F] .credentials.yaml 161
+[D] .pad 
+  [D] logs 
+    [F] tauri.log 269
+  [F] nodes.json 359
+[D] .plugin-backups 
+[D] profiles 
+  [D] desktop 
+    [F] .harness.pid 11
+    [F] .npmrc 26
+    [D] .plugin-manager 
+      [D] logs 
+    [F] cordis.patch.yml 217
+    [F] cordis.yml 223
+    [D] node_modules 
+      [F] .modules.yaml 693
+      [D] .pnpm 
+      [F] .pnpm-workspace-state-v1.json 1051
+      [D] dsh-taiwind 
+      [D] dsh-tauri 
+      [D] dsh-tauri-archive 
+      [D] dsh-tauri-extension 
+      [D] dsh-tauri-mobile-ui 
+      [D] dsh-tauri-model 
+      [D] dsh-tauri-notification 
+      [D] dsh-tauri-pet 
+      [D] dsh-tauri-remote 
+      [D] dsh-tauri-rightclick 
+      [D] dsh-tauri-scheduler 
+      [D] dsh-tauri-ui 
+      [D] dsh-tauri-worktree 
+    [F] package.json 1688
+    [F] pnpm-lock.yaml 2697
+    [F] pnpm-workspace.yaml 177
+[D] storages 
+  [F] workspace.json 227
+
+### 05-open-second exit=1 0.5s
+--- 05:31:45 pad cli node open E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --surface tauri --exe E:\DSH-Tauri\deepseek-harness-desktop.exe
+error[PA099]: that profile is already running in this home
+ --> E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home
+  |
+  | profile tauri · port 0 · pid 72444
+  |
+  = help: pad cli node close E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --profile tauri
+  = help: pad cli node list E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home
+
+
+### 06-list exit=0 0.5s
+--- 05:31:46 pad cli node list E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --json
+{
+  "home": "E:\\pack-agent\\.tmp\\d107-tauri-real\\instances\\t1\\dsh-home",
+  "nodes": [
+    {
+      "Profile": "tauri",
+      "Surface": "tauri",
+      "Port": 0,
+      "Pid": 72444,
+      "StartedAt": "2026-11-04T05:31:35.3964978\u002B08:00",
+      "Url": "",
+      "alive": true
+    }
+  ]
+}
+
+
+### 06b-open-other-home exit=1 0.9s
+--- 05:31:46 pad cli node open E:\pack-agent\.tmp\d107-tauri-real\instances\t2\dsh-home --surface tauri --exe E:\DSH-Tauri\deepseek-harness-desktop.exe
+error[PA149]: the tauri desktop exited instead of opening a window
+ --> E:\DSH-Tauri\deepseek-harness-desktop.exe
+  |
+  | exit code 0 — 单实例壳在已有窗口时会把激活转发给已有窗口后退出；也可能是它不接受 DSH_HOME
+  |
+  = help: 关掉已经在跑的 Tauri 桌面端，再开这个项目
+  = help: 确认这个 exe 是桌面端本体，不是安装器 / 更新器
+
+
+### 07-close exit=0 0.6s
+--- 05:31:47 pad cli node close E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --profile tauri
+closed tauri port 0 pid 72444 (was alive)
+
+
+### after close: (none)
+
+### 09-list-after exit=0 0.4s
+--- 05:31:52 pad cli node list E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --json
+{
+  "home": "E:\\pack-agent\\.tmp\\d107-tauri-real\\instances\\t1\\dsh-home",
+  "nodes": []
+}
+

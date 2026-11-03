@@ -1,0 +1,17 @@
+{
+  "PackId": "Test-0.1.0",
+  "Title": "Test",
+  "Profile": "web",
+  "State": "dry-run",
+  "Added": [],
+  "Kept": [],
+  "BundlesRestored": [],
+  "Exempted": [],
+  "Skipped": [],
+  "Failures": [],
+  "Warnings": [
+    "\u8FD9\u4E2A profile \u6CA1\u6709 @sakikotgw/pack-agent-dsh\uFF08\u5B89\u88C5\u65F6\u4F1A\u81EA\u52A8\u8865\u4E0A\uFF09"
+  ],
+  "Ok": true,
+  "Text": "\u9884\u68C0\uFF08\u672A\u5B89\u88C5\uFF09\uFF1A\u5185\u6838\u5339\u914D \u00B7 \u63D2\u4EF6 10 \u4E2A\uFF1A8 \u53EF\u88C5 \u00B7 1 \u9700\u6388\u6743 \u00B7 1 \u5DF2\u4E0B\u67B6/\u7F3A\u5305"
+}

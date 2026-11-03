@@ -1,0 +1,9 @@
+✓ PA012 no instance
+✓ import success
+✓ legacy pack: dsh.plugins[] specs are installed through plugin add
+✓ legacy pack: instance.json source.packId matches pack-catalog row id
+✓ legacy pack: projection records spec-only 组合包 as plugin mods (unique ids)
+✓ legacy pack: no duplicate cordis.patch insert for spec-only plugins
+✓ Q6: in-pack local plugin copied under <instance>/home/local-plugins/<packId>/<name> and added via file:
+✓ PA014 leftover + remind
+✓ import-pack

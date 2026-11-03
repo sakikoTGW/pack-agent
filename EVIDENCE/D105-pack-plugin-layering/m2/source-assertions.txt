@@ -1,0 +1,30 @@
+﻿M2 P2 UI SOURCE ASSERTIONS 2026-11-04T02:29:07.8234574+08:00
+PASS  TogglePack_Click -> SetPackPluginsActive :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1841
+PASS  UninstallPack_Click :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1875
+PASS  RepairPack_Click :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1921
+PASS  Import_Click -> ApplyPackToInstance :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1774
+PASS  RecordPluginRemoved wiring :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1619
+PASS  VersionsView ledger 已装到 :: agent-pack-dsh\pad\Views\VersionsView.xaml.cs:234
+PASS  VersionsView LedgerInstalledNames :: agent-pack-dsh\pad\Views\VersionsView.xaml.cs:240
+PASS  Pad UI 未登记 badge :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1660
+PASS  Pad UI 不完整 badge+repair gating :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1379
+PASS  Import_Click no direct Project :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs:1733
+
+pad-window.test.ts P2 added assertion markers:
+  +    fail('import-failed 的实例被当成「已装到」：用户会以为上次装成功了')
+  +// 实例页「装整合包…」= ApplyPackToInstance（R8 统一入口，不再只 Project）。
+  +  if (!instCs2.includes('PackLedger.Load'))
+  +  const toggleFn2 = instCs2.split('void TogglePack_Click')[1]?.split('void UninstallPack_Click')[0] ?? ''
+  +  if (!toggleFn2.includes('SetPackPluginsActive'))
+  +  if (!instCs2.includes('void UninstallPack_Click') || !instCs2.includes('UninstallPack('))
+  +  if (!instCs2.includes('void RepairPack_Click') || !instCs2.includes('RepairPack('))
+  +  if (!instXaml2.includes('UninstallPack_Click') || !instXaml2.includes('RepairPack_Click'))
+  +    fail('「修复」不是只在不完整时出现')
+  +    fail('包行没显示账本状态（不完整/未登记）')
+  +  if (!importFn2.includes('ApplyPackToInstance'))
+  +  if (!verCs2.includes('PackLedger.Load'))
+  +  if (!verCs2.includes('已装到 '))
+  +    fail('版本页没有账本判定的「已装到 X」')
+  +    fail('版本页账本装态没校验投影还在（删了目录还显示已装到）')
+
+live PAD pid 78308 alive=True

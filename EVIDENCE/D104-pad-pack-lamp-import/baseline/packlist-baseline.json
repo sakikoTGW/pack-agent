@@ -1,0 +1,184 @@
+[
+  {
+    "id": "cos-best-llm",
+    "title": "cos-best-llm",
+    "version": "0.3.0",
+    "path": "E:\\pack-agent\\.agent-pack\\exports\\cos-best-llm.pack.json",
+    "kind": "pack.json",
+    "kernel": null,
+    "profile": null,
+    "description": null,
+    "source": "drive: E:\\",
+    "installed": [],
+    "components": {
+      "skill": 3,
+      "mcp": 1,
+      "plugin": 0,
+      "rule": 5,
+      "command": 0,
+      "hook": 0
+    }
+  },
+  {
+    "id": "cos-best-llm",
+    "title": "cos-best-llm",
+    "version": "0.3.0",
+    "path": "E:\\pack-agent\\.agent-pack\\exports\\cos-best-llm.pack.zip",
+    "kind": "pack.zip",
+    "kernel": null,
+    "profile": null,
+    "description": null,
+    "source": "drive: E:\\",
+    "installed": [],
+    "components": {
+      "skill": 3,
+      "mcp": 1,
+      "plugin": 0,
+      "rule": 5,
+      "command": 0,
+      "hook": 0
+    }
+  },
+  {
+    "id": "demo",
+    "title": "demo",
+    "version": "0.1.0",
+    "path": "E:\\pack-agent\\test\\fixtures\\demo.pack.json",
+    "kind": "pack.json",
+    "kernel": null,
+    "profile": null,
+    "description": null,
+    "source": "drive: E:\\",
+    "installed": [],
+    "components": {
+      "skill": 1,
+      "mcp": 0,
+      "plugin": 0,
+      "rule": 0,
+      "command": 0,
+      "hook": 0
+    }
+  },
+  {
+    "id": "harness-engineer",
+    "title": "harness-engineer",
+    "version": "0.3.0",
+    "path": "E:\\pack-agent\\.agent-pack\\exports\\harness-engineer.pack.json",
+    "kind": "pack.json",
+    "kernel": null,
+    "profile": null,
+    "description": "Harness engineering role \u2014 Superpowers workflow \u002B agent-pack. Design/adapt adapters, packs, experience hooks across Claude/Cursor/Codex.",
+    "source": "drive: E:\\",
+    "installed": [],
+    "components": {
+      "skill": 8,
+      "mcp": 0,
+      "plugin": 0,
+      "rule": 1,
+      "command": 0,
+      "hook": 0
+    }
+  },
+  {
+    "id": "packer",
+    "title": "packer",
+    "version": "0.3.0",
+    "path": "E:\\pack-agent\\.agent-pack\\exports\\packer.pack.json",
+    "kind": "pack.json",
+    "kernel": null,
+    "profile": null,
+    "description": "Agent Modpack packer \u2014 export/install portable modpacks",
+    "source": "drive: E:\\",
+    "installed": [],
+    "components": {
+      "skill": 1,
+      "mcp": 0,
+      "plugin": 0,
+      "rule": 0,
+      "command": 1,
+      "hook": 0
+    }
+  },
+  {
+    "id": "packer",
+    "title": "packer",
+    "version": "0.3.0",
+    "path": "E:\\pack-agent\\.agent-pack\\exports\\packer.pack.zip",
+    "kind": "pack.zip",
+    "kernel": null,
+    "profile": null,
+    "description": "Agent Modpack packer \u2014 export/install portable modpacks",
+    "source": "drive: E:\\",
+    "installed": [],
+    "components": {
+      "skill": 1,
+      "mcp": 0,
+      "plugin": 0,
+      "rule": 0,
+      "command": 1,
+      "hook": 0
+    }
+  },
+  {
+    "id": "packer-mcp",
+    "title": "packer-mcp",
+    "version": "0.3.0",
+    "path": "E:\\pack-agent\\.agent-pack\\exports\\packer-mcp.pack.json",
+    "kind": "pack.json",
+    "kernel": null,
+    "profile": null,
+    "description": null,
+    "source": "drive: E:\\",
+    "installed": [],
+    "components": {
+      "skill": 1,
+      "mcp": 1,
+      "plugin": 0,
+      "rule": 0,
+      "command": 0,
+      "hook": 0
+    }
+  },
+  {
+    "id": "Test",
+    "title": "Test",
+    "version": "0.1.0",
+    "path": "E:\\pack-agent\\.tmp\\pack-core-inspect\\Test.pack.zip",
+    "kind": "pack.zip",
+    "kernel": "0.2.1-rc.2",
+    "profile": "web",
+    "description": "\u7B2C\u4E00\u4E2Apackage",
+    "source": "drive: E:\\",
+    "installed": [],
+    "components": {
+      "skill": 0,
+      "mcp": 0,
+      "plugin": 10,
+      "rule": 0,
+      "command": 0,
+      "hook": 0
+    }
+  },
+  {
+    "id": "Test-0.1.0",
+    "title": "Test",
+    "version": "0.1.0",
+    "path": "E:\\pack-agent\\agent-pack-dsh\\pad\\bin\\Debug\\net9.0-windows\\.pack-launcher\\library\\packs\\Test-0.1.0.pack.zip",
+    "kind": "pack.zip",
+    "kernel": "0.2.1-rc.2",
+    "profile": "web",
+    "description": "\u7B2C\u4E00\u4E2Apackage",
+    "source": "library",
+    "installed": [
+      "pack-test"
+    ],
+    "components": {
+      "skill": 0,
+      "mcp": 0,
+      "plugin": 10,
+      "rule": 0,
+      "command": 0,
+      "hook": 0
+    }
+  }
+]

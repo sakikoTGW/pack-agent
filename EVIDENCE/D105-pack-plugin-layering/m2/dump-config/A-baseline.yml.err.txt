@@ -1,0 +1,16 @@
+<anonymous_script>:1
+﻿{
+^
+
+SyntaxError: Unexpected token '﻿', "﻿{
+    "n"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at readProfileManifest (file:///E:/pack-agent/agent-pack-dsh/pad/bin/Debug/net9.0-windows/.pack-launcher/versions/0.2.1-rc.2/node_modules/.pnpm/@deepseek-ai+dsh-app-boot@0_35e6d6a110c743604c34b32ddb5d907b/node_modules/@deepseek-ai/dsh-app-boot/lib/index.js:913:22)
+    at loadProfile (file:///E:/pack-agent/agent-pack-dsh/pad/bin/Debug/net9.0-windows/.pack-launcher/versions/0.2.1-rc.2/node_modules/.pnpm/@deepseek-ai+dsh-app-boot@0_35e6d6a110c743604c34b32ddb5d907b/node_modules/@deepseek-ai/dsh-app-boot/lib/index.js:1073:37)
+    at prepareProfile (file:///E:/pack-agent/agent-pack-dsh/pad/bin/Debug/net9.0-windows/.pack-launcher/versions/0.2.1-rc.2/node_modules/.pnpm/@deepseek-ai+dsh@0.2.1-rc.2_3e91f9a35967dbe9e0b747cd6f11659f/node_modules/@deepseek-ai/dsh/lib/profile-boot-C14i-8IN.js:218:18)
+    at runDumpConfig (file:///E:/pack-agent/agent-pack-dsh/pad/bin/Debug/net9.0-windows/.pack-launcher/versions/0.2.1-rc.2/node_modules/.pnpm/@deepseek-ai+dsh@0.2.1-rc.2_3e91f9a35967dbe9e0b747cd6f11659f/node_modules/@deepseek-ai/dsh/lib/dump-config-CWs_HdOc.js:25:17)
+    at runCli (file:///E:/pack-agent/agent-pack-dsh/pad/bin/Debug/net9.0-windows/.pack-launcher/versions/0.2.1-rc.2/node_modules/.pnpm/@deepseek-ai+dsh@0.2.1-rc.2_3e91f9a35967dbe9e0b747cd6f11659f/node_modules/@deepseek-ai/dsh/lib/bin.js:241:4)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///E:/pack-agent/agent-pack-dsh/pad/bin/Debug/net9.0-windows/.pack-launcher/versions/0.2.1-rc.2/node_modules/.pnpm/@deepseek-ai+dsh@0.2.1-rc.2_3e91f9a35967dbe9e0b747cd6f11659f/node_modules/@deepseek-ai/dsh/lib/bin.js:252:23
+
+Node.js v24.12.0

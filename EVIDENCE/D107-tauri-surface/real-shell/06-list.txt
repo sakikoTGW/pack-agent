@@ -1,0 +1,21 @@
+$ pad cli cli node list E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --json
+exit=0 elapsed=0.5s
+--- stdout ---
+--- 05:31:46 pad cli node list E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --json
+{
+  "home": "E:\\pack-agent\\.tmp\\d107-tauri-real\\instances\\t1\\dsh-home",
+  "nodes": [
+    {
+      "Profile": "tauri",
+      "Surface": "tauri",
+      "Port": 0,
+      "Pid": 72444,
+      "StartedAt": "2026-11-04T05:31:35.3964978\u002B08:00",
+      "Url": "",
+      "alive": true
+    }
+  ]
+}
+
+--- stderr ---
+

@@ -1,0 +1,24 @@
+--- 05:18:05 pad cli instance create inst-human 0.2.1-rc.2 --profile web
+{
+  "schema": "pack-agent.launcher.instance/v2",
+  "id": "inst-human",
+  "name": "inst-human",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "home": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\inst-human\\home",
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\d107-verify\\.pack-launcher\\instances\\inst-human\\workspace"
+  },
+  "status": "ready",
+  "lastProfile": "web",
+  "note": null,
+  "display": null,
+  "launch": null,
+  "source": null,
+  "adopted": false,
+  "adoptedFingerprint": null,
+  "created": "2026-11-03T21:18:05.3085258\u002B00:00",
+  "updated": "2026-11-03T21:18:05.3090869\u002B00:00"
+}

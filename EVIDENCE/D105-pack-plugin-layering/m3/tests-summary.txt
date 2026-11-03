@@ -1,0 +1,8 @@
+﻿M3 TESTS @ diff_sha_full=4ee5c643641304965bad25bbb8ad436f4a17eae1 diff_sha_product=65751b9892af7048441a5f93256058a73cd289b9 stable_full=True stable_product=True
+EXIT=0 agent-pack-dsh/modpack/pad-window.test.ts
+EXIT=0 agent-pack-dsh/modpack/pad-pack.test.ts
+EXIT=0 agent-pack-dsh/modpack/import-pack.test.ts
+EXIT=0 agent-pack-dsh/modpack/test.ts
+EXIT=0 agent-pack-dsh/modpack/pack-catalog.test.ts
+EXIT=0 agent-pack-dsh/modpack/pinst.test.ts
+EXIT=0 dotnet test pad.tests

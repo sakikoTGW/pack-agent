@@ -126,12 +126,14 @@ public partial class MakePackView : UserControl
         _containers = [];
         if (_inventory is not null)
         {
+            // 绿灯只属于 PAD 账本启动的实例（D104）；导出页列的是本机探测到的容器，
+            // OS 进程活不活着只在 tooltip 里说，不点灯，免得又读成「这个已经启动了」。
             foreach (var shell in _inventory.Shells)
-                _containers.Add(new DetectedShellRow(shell, canAdopt: false) { Running = shell.Running });
+                _containers.Add(new DetectedShellRow(shell, canAdopt: false) { LocalRunning = shell.Running });
             foreach (var tui in _inventory.Tuis)
             {
                 if (string.IsNullOrWhiteSpace(tui.Package)) continue;
-                _containers.Add(new DetectedTuiRow(tui, canAdopt: false) { Running = tui.Running });
+                _containers.Add(new DetectedTuiRow(tui, canAdopt: false) { LocalRunning = tui.Running });
             }
         }
 
@@ -184,14 +186,6 @@ public partial class MakePackView : UserControl
                 FontWeight = FontWeights.SemiBold,
                 Foreground = (Brush)Application.Current.Resources["TextPrimary"],
                 VerticalAlignment = VerticalAlignment.Center,
-            });
-            line.Children.Add(new RunLamp
-            {
-                Width = 12,
-                Height = 12,
-                Margin = new Thickness(8, 0, 0, 0),
-                VerticalAlignment = VerticalAlignment.Center,
-                Running = vm.Running,
             });
             Grid.SetColumn(line, 2);
             grid.Children.Add(line);

@@ -1,0 +1,57 @@
+﻿M1 SOURCE-LEVEL P1 ASSERTIONS 2026-11-04T01:40:17.0373811+08:00
+SOURCE: agent-pack-dsh\pad\Core\PackPluginFacts.cs exists=True size=17529
+PASS  PackPluginFacts class :: agent-pack-dsh\pad\Core\PackPluginFacts.cs : 76 : public sealed class PackPluginFacts
+PASS  PackFacts type :: agent-pack-dsh\pad\Core\PackPluginFacts.cs : 25 : public sealed class PackFacts
+PASS  PluginOrigin type :: agent-pack-dsh\pad\Core\PackPluginFacts.cs : 53 : public sealed class PluginOrigin
+PASS  PluginSummary 带N个插件文案 :: agent-pack-dsh\pad\Core\PackPluginFacts.cs : 46 : ? $"带 {DeclaredCount} 个插件（都在这个 profile）"
+PASS  OriginText 来自整合包文案 :: agent-pack-dsh\pad\Core\PackPluginFacts.cs : 63 : /// <summary>插件行小标：「来自整合包 X」（多个包用顿号）。</summary>
+PASS  IsManagerSpec PA110 :: agent-pack-dsh\pad\Core\PackPluginFacts.cs : 170 : public static bool IsManagerSpec(string? spec) =>
+PASS  PA110 warning text :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs : 1358 : lines.Add("PA110：pack-agent 是整合包管理器，移除后所有已装整合包的投影内容都不可见，要重新装回管理器才能恢复。");
+PASS  update confirm (来自包/残缺) :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs : 1274 : win.UpdateRequested += r => InvokePluginHandler(PluginUpdate_Click, r);
+PASS  remove confirm (来自包/残缺) :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs : 1275 : win.RemoveRequested += r => InvokePluginHandler(PluginRemove_Click, r);
+PASS  PackListRow model :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs : 1562 : .Select(r => new PackListRow(r, facts.PackOf(r.Id) ?? facts.PackOf(r.Title)))
+PASS  PackOriginText binding :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs : 981 : r.PackOriginText = origin?.OriginText ?? "";
+PASS  VersionsView 已建实例 pill :: agent-pack-dsh\pad\Views\VersionsView.xaml.cs : 233 : /// 「已建实例：X」/「未安装」：catalog 的 installed 是实例 id，界面说实例名。
+PASS  instance-packs shot hook (MainWindow) :: agent-pack-dsh\pad\MainWindow.xaml.cs : 83 : or "instance-packs" or "plugin-detail")
+PASS  instance-packs shot hook (InstanceView) :: agent-pack-dsh\pad\Views\InstanceView.xaml.cs : 54 : // --shot-page instance-packs：实例页「整合包」面板没有导航项（D 系列砍掉了），
+
+pad-window.test.ts P1 assertions (added lines):
+  +// ---- 整合包行写清「装没装」+ 新建实例走完整 import 链（D104；D105 P1 起文案过渡为「已建实例：」）----
+  +// 契约：行模型带 InstallStateText（P1 起「已建实例：<实例名>」/「未安装」）；建实例走
+  +    fail('整合包行没有安装态文案（已建实例：<实例> / 未安装）')
+  +  if (!versionsPackCs.includes('已建实例：') || !versionsPackCs.includes('未安装'))
+  +    fail('整合包行没写出「已建实例：<实例名>」/「未安装」（D105 P1 的 Q5 文案过渡）')
+  +// ---- D105 P1 提示层：包↔插件双向标注 + 卸/更新冲突确认 + 管理器 PA110（只读，不写数据）----
+  +// ① 插件行「来自整合包 X」 ② 包行「带 N 个插件（M 个不在这个 profile）」
+  +// ③ 卸/更新包声明的插件先确认（包会残缺） ④ pack-agent 管理器 remove 也走 PA110
+  +// ⑤ 版本页药丸过渡到「已建实例：X」。P1 不写账本、不改配置。
+  +  if (!existsSync(join(pad, 'Core/PackPluginFacts.cs')))
+  +    fail('缺 Core/PackPluginFacts.cs：包/插件双向事实没有只读收集器')
+  +  const facts = read('Core/PackPluginFacts.cs')
+  +  if (!facts.includes('class PackPluginFacts') || !facts.includes('class PackFacts')
+  +    fail('PackPluginFacts 没有 PackFacts / PluginOrigin 两类事实')
+  +    fail('PackPluginFacts 没有 Packs / Plugins 两个 IReadOnlyList API')
+  +    fail('PackPluginFacts 不读投影 catalog.json / mods/*/plugin.json，包声明从哪来')
+  +    fail('PackPluginFacts 不读 profile package.json 的 dependencies / dsh.profile.bundles')
+  +    fail('PackPluginFacts 不读 node_modules 实装情况')
+  +  if (!facts.includes('带 ') || !facts.includes('不在这个 profile') || !facts.includes('都在这个 profile'))
+  +    fail('包行没有「带 N 个插件（M 个不在这个 profile）」文案')
+  +  if (!facts.includes('来自整合包'))
+  +    fail('PackPluginFacts 没给出「来自整合包 X」小标文案')
+  +  if (!facts.includes('IsManagerSpec'))
+  +    fail('PackPluginFacts 没有 pack-agent 管理器判定（PA110 用）')
+  +    fail('P1 只提示不写数据，PackPluginFacts 却在写文件')
+  +    fail('实例页整合包行没绑「带 N 个插件」副标题')
+  +  if (!instXaml.includes('PackOriginText'))
+  +    fail('实例页插件行没绑「来自整合包 X」小标')
+  +  if (!instCs.includes('PackPluginFacts.Collect'))
+  +    fail('实例页没接 PackPluginFacts（事实收集器没被调用）')
+  +  if (!loadPacksFn.includes('PackListRow') || !loadPacksFn.includes('PackPluginFacts'))
+  +    fail('整合包行没换成带插件计数的显示模型（PackListRow）')
+  +  if (!removeFn.includes('PA110') || !removeFn.includes('IsManagerSpec'))
+  +    fail('卸 pack-agent 管理器没有 PA110 警告（plugin-ops 的 disable 有，remove 缺守卫）')
+
+LEDGER NOT WRITTEN BY P1 (expected False):
+  p1-full pack-ledger.json exists=False
+  p1-missing pack-ledger.json exists=False
+live PAD pid 78308 alive=True

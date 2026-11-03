@@ -1,0 +1,31 @@
+﻿BASELINE (current binary E:\pack-agent\.tmp\pad-build-z\pack-agent-for DSH.exe, sha256 F1ACF2FB0DB92C255BA108795A7067C2FD8462AAE6707C42028760AC712B9BC2, mtime 2026-11-03 17:15:01)
+captured=2026-11-03T23:19:16.2482661+08:00
+
+== discover --json: Shells (2) ==
+  Exe=E:\DSH-App\DeepSeek Harness.exe Version=0.2.1-rc.5 Home=E:\DSH-Home Running=True Found=running process Pid=71052
+  Exe=E:\新建文件夹 (5)\DSH Desktop\DSH Desktop.exe Version=0.11.1 Home=C:\Users\Brs\AppData\Roaming\dsh-desktop\harness Running=True Found=running process Pid=32280
+== Tuis (4) Running values ==
+  Package=@deepseek-harness-tui/dsh-tui Version=0.8.3 Profile=dsh-tui Home=E:\dsh-tui\dsh-home Running=False
+  Package=@deepseek-harness-tui/dsh-tui Version=0.9.3 Profile=dsh-tui Home=E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\123\home Running=False
+  Package=@deepseek-harness-tui/dsh-tui Version=0.9.3 Profile=pad-op-tui Home=E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\pad-op-clone\home Running=False
+  Package=@deepseek-harness-tui/dsh-tui Version=0.9.3 Profile=pad-op-tui Home=E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\instances\pad-op-tmp\home Running=False
+== pack list: Test rows ==
+  id=Test title=Test version=0.1.0 source=drive: E:\ installed=[] components={"skill":0,"mcp":0,"plugin":10,"rule":0,"command":0,"hook":0} path=E:\pack-agent\.tmp\pack-core-inspect\Test.pack.zip
+  id=Test-0.1.0 title=Test version=0.1.0 source=library installed=[pack-test] components={"skill":0,"mcp":0,"plugin":10,"rule":0,"command":0,"hook":0} path=E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher\library\packs\Test-0.1.0.pack.zip
+== pack list count = 9 ==
+== runtime ledger (live root) ==
+  instance=sisyphus profile=web version=0.2.1-rc.2 pid=67008
+== reproduced Bug B command ==
+  PACK_LAUNCHER_ROOT=E:\pack-agent\.tmp\verify-d104\.pack-launcher PACK_AGENT_REPO=E:\pack-agent <exe> cli instance create --pack Test-0.1.0 --name verify-baseline
+  exit=1
+  stdout: pack Test has no mods; a modpack must ship at least one skill, MCP, plugin, rule, command, or hook
+  stdout: error[PA028]: the projection command failed
+  resulting instance.json: source.packId=Test-0.1.0, source.packVersion=0.1.0, source.packPath=...verify-d104...\library\packs\Test-0.1.0.pack.zip
+  resulting workspace projection: only .agent-pack\modpacks\pack-agent-modpack-test\preset.yml (41 bytes); no mods/ dir, no plugin-*.json
+  pack zip contents: pack.json + icon.png; pack.json schema=ccui-pack/v0.2 with only dsh.plugins[10] specs (no skills/mcp/rules/commands/hooks)
+== baseline offscreen shots (lamp blob count via lamp-analyze.py) ==
+  00-baseline-versions.png: 0 lamps - live root shot, discovery raced 3.2s shot delay so no detected shell rows
+  01-baseline-versions-lamps.png: 2 lamps - live-root-state mirror (first instance 123 selected): 官方 shell lamp + 第三方 shell lamp
+  02-baseline-lamp-web-plus-shells.png: 3 lamps - focused mirror, sisyphus selected: web (PAD-started) + 官方 shell + 第三方 shell all lit => Bug A baseline
+== HEAD pad-window.test.ts ==
+  pristine worktree E:\pack-agent\.tmp\pad-head-worktree @ HEAD 54cf34ca419e918e109a9b0f926011d8570d24aa -> exit 1, stale assertion line 524: read('Views/DownloadView.xaml').includes('关键词')

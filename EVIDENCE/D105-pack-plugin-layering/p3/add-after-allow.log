@@ -1,0 +1,17 @@
+﻿[ERR_PNPM_UNEXPECTED_VIRTUAL_STORE] Unexpected virtual store location
+
+The dependencies at "E:\pack-agent\.tmp\d105-p3\.pack-launcher\instances\p1-full\home\profiles\web\node_modules" are currently symlinked from the virtual store directory at "E:\pack-agent\.tmp\d105-verify\.pack-launcher\instances\p1-full\home\profiles\web\node_modules\.pnpm".
+
+pnpm now wants to use the virtual store at "E:\pack-agent\.tmp\d105-p3\.pack-launcher\instances\p1-full\home\profiles\web\node_modules\.pnpm" to link dependencies from the store.
+
+If you want to use the new virtual store location, reinstall your dependencies with "pnpm install".
+
+You may change the virtual store location by changing the value of the virtual-store-dir config.
+node : dsh: plugin command failed; diagnostics: E:\pack-agent\.tmp\d105-p3\.pack-launcher\instances\p1-full\home\profil
+es\web\.plugin-manager\logs\operation-jXfPSb\pnpm.log
+所在位置 行:9 字符: 1
++ node $bin plugin --profile web add dsh-find-skill 2>&1 | ForEach-Obje ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (dsh: plugin com...jXfPSb\pnpm.log:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

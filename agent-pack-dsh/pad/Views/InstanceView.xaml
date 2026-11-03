@@ -332,6 +332,10 @@
                         </Border>
                       </StackPanel>
                       <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                        <!-- P1：插件行的小标（这个插件由哪个已装包要求；只读事实，不改安装行为）。 -->
+                        <ContentControl Style="{StaticResource PillAccent}" Content="{Binding PackOriginText}"
+                                        ToolTip="{Binding PackOriginTip}" Margin="0,0,6,0"
+                                        Visibility="{Binding HasPackOrigin, Converter={StaticResource B2V}}" />
                         <ItemsControl ItemsSource="{Binding Tags}">
                           <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -464,7 +468,7 @@
 
           <StackPanel Orientation="Horizontal" Margin="0,4,0,14">
             <Button x:Name="ImportBtn" Style="{StaticResource BtnPrimary}" Content="装整合包…"
-                    Click="Import_Click" v:Ico.Of="{StaticResource I.Pack}" />
+                    Click="OpenPackPicker_Click" v:Ico.Of="{StaticResource I.Pack}" />
             <Button x:Name="ScanBtn" Style="{StaticResource Btn}" Content="扫启动器目录" Margin="8,0,0,0"
                     Click="Scan_Click" v:Ico.Of="{StaticResource I.Search}"
                     ToolTip="把丢在启动器根目录里的包捡进来" />
@@ -487,15 +491,29 @@
           <ItemsControl x:Name="PackList">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Border local:Fx.Enter="row" Background="{StaticResource BgCard}" BorderThickness="3,1,1,1"
+                <Border x:Name="PackRowCard" local:Fx.Enter="row" Loaded="PackRow_Loaded"
+                        Background="{StaticResource BgCard}" BorderThickness="3,1,1,1"
                         BorderBrush="{StaticResource Accent}" CornerRadius="{StaticResource RadRow}"
                         Padding="14,12,14,13" Margin="0,0,0,8">
                   <Grid>
                     <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                    <!-- D105 UX：包行左侧 = 整合包自己的 icon；解析不到才回落「包」pill。 -->
+                    <Grid Grid.Column="0" Width="30" Height="30" VerticalAlignment="Top"
+                          Margin="0,2,11,0">
+                      <Border CornerRadius="6" ClipToBounds="True"
+                              Visibility="{Binding HasIcon, Converter={StaticResource B2V}}">
+                        <Image Source="{Binding IconPath, Converter={StaticResource PathBmp}}"
+                               Stretch="UniformToFill" />
+                      </Border>
+                      <ContentControl Style="{StaticResource QuantMono}" Content="包"
+                                      v:Ico.Of="{StaticResource I.Pack}" VerticalAlignment="Center"
+                                      Visibility="{Binding HasIcon, Converter={StaticResource B2VNot}}" />
+                    </Grid>
+                    <StackPanel Grid.Column="1" Margin="0,0,14,0">
                       <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding Title}" FontSize="{StaticResource FsBody}"
                                    FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
@@ -506,13 +524,36 @@
                         <ContentControl Style="{StaticResource QuantMono}" Margin="6,1,0,0"
                                         v:Ico.Of="{StaticResource I.Gear}"
                                         Content="{Binding VersionText}" />
+                        <!-- P2：账本有效状态（不完整 / 投影缺失 / 未登记 才出现）。 -->
+                        <ContentControl Style="{StaticResource PillWarn}" Margin="7,1,0,0"
+                                        Content="{Binding LedgerBadge}" ToolTip="{Binding LedgerTip}"
+                                        Visibility="{Binding HasLedgerBadge, Converter={StaticResource B2V}}" />
                       </StackPanel>
                       <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,0"
                                  Text="{Binding DescriptionText}" TextTrimming="CharacterEllipsis" />
+                      <!-- P1：这个包带几个插件、几个不在当前 profile（只读事实，不改安装）。 -->
+                      <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0"
+                                 Foreground="{StaticResource TextSecondary}"
+                                 Text="{Binding PluginSummaryText}" TextTrimming="CharacterEllipsis"
+                                 ToolTip="{Binding PluginSummaryTip}"
+                                 Visibility="{Binding HasPluginSummary, Converter={StaticResource B2V}}" />
                     </StackPanel>
-                    <Button Grid.Column="1" VerticalAlignment="Center" Tag="{Binding Id}"
-                            Click="TogglePack_Click" Style="{StaticResource Btn}" Width="64"
-                            Content="{Binding Enabled, Converter={StaticResource PackAction}}" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                      <!-- P2：「修复」只在账本判定不完整 / 有缺件时出现。 -->
+                      <Button Style="{StaticResource IcoBtn}" Tag="{Binding}" Click="RepairPack_Click"
+                              ToolTip="按包修复（补回缺的插件；版本偏差不算缺件）"
+                              Visibility="{Binding CanRepair, Converter={StaticResource B2V}}">
+                        <v:Ico Glyph="{StaticResource I.Refresh}" Height="12" />
+                      </Button>
+                      <Button Style="{StaticResource IcoBtn}" Tag="{Binding}" Click="UninstallPack_Click"
+                              Margin="2,0,0,0" ToolTip="卸载整合包（删投影；只回滚独占插件，共享的保留）">
+                        <v:Ico Glyph="{StaticResource I.Trash}" Height="12" />
+                      </Button>
+                      <Button Style="{StaticResource Btn}" Tag="{Binding}" Click="TogglePack_Click"
+                              Width="64" Margin="8,0,0,0"
+                              Content="{Binding Enabled, Converter={StaticResource PackAction}}"
+                              ToolTip="{Binding LedgerTip}" />
+                    </StackPanel>
                   </Grid>
                 </Border>
               </DataTemplate>

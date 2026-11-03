@@ -1,0 +1,7 @@
+﻿M2 TESTS @ diff_sha=d933536385a5146e3f1a29b70f641f700db4193e stable=True
+EXIT=0 agent-pack-dsh/modpack/pad-window.test.ts
+EXIT=0 agent-pack-dsh/modpack/pad-pack.test.ts
+EXIT=0 agent-pack-dsh/modpack/import-pack.test.ts
+EXIT=0 agent-pack-dsh/modpack/test.ts
+EXIT=0 agent-pack-dsh/modpack/pack-catalog.test.ts
+EXIT=0 dotnet test pad.tests

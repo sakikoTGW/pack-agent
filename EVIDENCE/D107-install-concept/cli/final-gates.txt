@@ -1,0 +1,31 @@
+﻿== 2026-11-04T04:54:08.6759866+08:00  final gates (canonical, repo E:\pack-agent)
+
+### dotnet build agent-pack-dsh/pad/pad.csproj -c Debug
+已成功生成。
+0 个警告
+0 个错误
+
+### dotnet test agent-pack-dsh/pad.tests/Pad.Tests.csproj
+总共 1 个测试文件与指定模式相匹配。
+
+已通过! - 失败:     0，通过:   203，已跳过:     0，总计:   203，持续时间: 919 ms - Pad.Tests.dll (net9.0)
+
+### bun run agent-pack-dsh/modpack/import-pack.test.ts
+✓ PA012 no instance
+✓ import success
+✓ legacy pack: dsh.plugins[] specs are installed through plugin add
+✓ legacy pack: instance.json source.packId matches pack-catalog row id
+✓ legacy pack: projection records spec-only 组合包 as plugin mods (unique ids)
+✓ legacy pack: no duplicate cordis.patch insert for spec-only plugins
+✓ Q6: in-pack local plugin copied under <instance>/home/local-plugins/<packId>/<name> and added via file:
+✓ PA014 leftover + remind
+✓ import-pack
+
+### bun run agent-pack-dsh/modpack/pad-pack.test.ts
+✓ 源码回归：Models/Packs/Launcher/Cli/AppState/VersionsView 关键实现都在
+✓ 源码回归：D107 安装概念（PreflightPack / InstallPackToInstance / allow-version / CLI）都在
+install 入口：29512ms 完成（假内核、无插件包）→ State=installed，账本已写
+✓ pad-pack（pack list --json --out 目录行 kernel/source/components/path；缺内核 PA001 不建目录；找不到包 PA012；源码回归，35353ms）
+
+### exec summary
+build 0/0; dotnet test 203/203; import-pack 9/9; pad-pack includes D107 install no-hang regression

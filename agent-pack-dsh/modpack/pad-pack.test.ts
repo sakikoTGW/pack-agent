@@ -45,7 +45,9 @@ const repoRoot = join(import.meta.dirname, '../..') // 仓库根（PACK_AGENT_RE
 const exampleSrc = join(pad, '../portable/example-pack/pack.json')
 const exe = join(pad, 'bin/Debug/net9.0-windows/pack-agent-for DSH.exe')
 const SPAWN_TIMEOUT = 45_000
-const TEST_BUDGET = 40_000
+// 目录/失败链 ~10s + D107 install 入口回归（repo 子进程 + 一次 install 链路，20–35s）：
+// 总预算留出一倍余量，避免并发构建时假红。
+const TEST_BUDGET = 75_000
 
 // ---- 源码回归：实现还在、关键路径没被删 ----
 //
@@ -59,6 +61,8 @@ for (const rel of [
   'Core/Cli.cs',
   'Core/AppState.cs',
   'Core/PackMaker.cs',
+  'Core/PackSemver.cs',
+  'Core/NpmMeta.cs',
   'Views/VersionsView.xaml',
 ]) {
   const abs = join(pad, rel)
@@ -105,7 +109,24 @@ must('Core/PackMaker.cs', 'packmaker.exe', '制作整合包没有走 Go 的 pack
 must('Core/AppState.cs', 'ReloadPackCatalog', '没有 ReloadPackCatalog（界面没法刷新包目录）')
 must('Core/AppState.cs', 'PackCatalog', '没有 PackCatalog 可观察集合（界面绑不到包目录）')
 
+// 安装概念（D107 / docs/proposals/install-concept）：预检 + 一次授权安装的后端与 CLI 入口。
+must('Core/Packs.cs', 'PreflightPack(', '没有安装预检 PreflightPack')
+must('Core/Packs.cs', 'InstallPackToInstance(', '没有 InstallPackToInstance（预检 → 授权 → 应用）')
+must('Core/Packs.cs', 'class PackPreflight', '没有 PackPreflight 结果类型')
+must('Core/Packs.cs', 'class PackInstallReport', '没有 PackInstallReport 报告类型')
+must('Core/Packs.cs', 'class PackInstallOptions', '没有 PackInstallOptions（accept-risk / skip-missing / dry-run）')
+must('Core/Packs.cs', 'PackPluginStatus.NeedsExemption', '没有 needs-exemption 状态')
+must('Core/Launcher.cs', 'AllowVersions(', '没有批量精确版本豁免 AllowVersions')
+must('Core/Cli.cs', 'case "pack" when cmd == "preflight"', '没有 `pad cli pack preflight` 命令分派')
+must('Core/Cli.cs', 'case "pack" when cmd == "install"', '没有 `pad cli pack install` 命令分派')
+must('Core/Cli.cs', '--accept-risk', 'pack install 没接 --accept-risk')
+must('Core/Cli.cs', '--skip-missing', 'pack install 没接 --skip-missing')
+must('Core/Cli.cs', '--dry-run', 'pack install 没接 --dry-run')
+must('Core/PackSemver.cs', 'Satisfies(', '没有 semver range 判定（DSH includePrerelease 语义）')
+must('Core/NpmMeta.cs', 'INpmMetaSource', '没有可注入的 npm 元数据源（单测不能打网络）')
+
 console.log('✓ 源码回归：Models/Packs/Launcher/Cli/AppState/VersionsView 关键实现都在')
+console.log('✓ 源码回归：D107 安装概念（PreflightPack / InstallPackToInstance / allow-version / CLI）都在')
 
 // ---- 实跑前置：PACK_AGENT_REPO 指向仓库根（C# 用 <repo>/bin/packagent.js 跑 TS） ----
 if (!existsSync(join(repoRoot, 'bin', 'packagent.js')))
@@ -237,6 +258,113 @@ try {
   }
   if (existsSync(instY)) fail(`PA012 失败后不该建出实例目录 ${instY}\n${noPack.text}`)
   console.log(`  找不到包：退出 ${noPack.status} + error[PA012] "no such pack"，help 指向 pad cli pack list`)
+
+  // ---- 4) D107 install / preflight 入口不挂起（带硬超时；假内核 + 无插件包，不碰网络）----
+  //
+  // 真机 9 插件安装会跑 pnpm + 一次 PnpmHeal.Relink（release node_modules 一次 60–70s），
+  // 但命令必须**会结束**并写出报告/账本。这里给 example 包装一个假 dsh 内核（只回 version 和
+  // plugin add 成功），让 install 走完整 CLI 路径；超过 INSTALL_TIMEOUT_MS 没结束就算挂起回归。
+  const INSTALL_TIMEOUT_MS = 90_000
+  const runCliWithin = (
+    args: string[],
+    timeoutMs: number,
+  ): { status: number | null; text: string; error: Error | undefined } => {
+    const before = logText().length
+    const run = spawnSync(exe, args, { env, encoding: 'utf8', timeout: timeoutMs })
+    const logDelta = logText().slice(before)
+    const text = [run.stdout ?? '', run.stderr ?? '', logDelta].filter((s) => s.length > 0).join('\n')
+    return { status: run.status, text, error: run.error }
+  }
+  const fakeKernelDir = join(root, 'versions', wantKernel)
+  mkdirSync(join(fakeKernelDir, 'node_modules', '@deepseek-ai', 'dsh', 'lib'), { recursive: true })
+  writeFileSync(
+    join(fakeKernelDir, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js'),
+    `const fs=require('fs'),path=require('path')
+const args=process.argv.slice(2)
+const home=process.env.DSH_HOME||''
+if(args.includes('--version')||args.includes('-V')){process.stdout.write('${wantKernel}\\n');process.exit(0)}
+if(args[0]==='plugin'&&args.includes('add')){try{fs.appendFileSync(path.join(home,'pa-added.json'),JSON.stringify(args[args.length-1])+'\\n')}catch{};process.exit(0)}
+process.exit(0)
+`,
+  )
+  writeFileSync(
+    join(fakeKernelDir, 'package.json'),
+    JSON.stringify({ name: `dsh-pin-${wantKernel}`, private: true }),
+  )
+  writeFileSync(
+    join(fakeKernelDir, 'version.json'),
+    JSON.stringify({
+      schema: 'pack-agent.launcher.version/v1',
+      version: wantKernel,
+      verified: true,
+      verifyOutput: wantKernel,
+      installedAt: new Date().toISOString(),
+    }),
+  )
+  const instDir = join(root, 'instances', 'inst')
+  mkdirSync(join(instDir, 'home', 'profiles', 'web'), { recursive: true })
+  mkdirSync(join(instDir, 'workspace'), { recursive: true })
+  writeFileSync(
+    join(instDir, 'instance.json'),
+    JSON.stringify({
+      schema: 'pack-agent.launcher.instance/v1',
+      id: 'inst',
+      name: 'inst',
+      dsh: { version: wantKernel },
+      profile: { name: 'web', port: 'auto' },
+      workspace: { kind: 'owned', path: join(instDir, 'workspace') },
+      status: 'ready',
+      home: join(instDir, 'home'),
+    }),
+  )
+  const preflightOut = join(tmp, 'preflight.json')
+  const preflight = runCliWithin(
+    ['cli', 'pack', 'preflight', 'inst', '--pack', 'example', '--json', '--out', preflightOut],
+    INSTALL_TIMEOUT_MS,
+  )
+  if (preflight.error)
+    fail(`pad cli pack preflight 起不来/超时（>${INSTALL_TIMEOUT_MS / 1000}s）：${preflight.error.message}\n${preflight.text}`)
+  if (preflight.status !== 0)
+    fail(`pad cli pack preflight 应退出 0，实际 ${preflight.status}\n${preflight.text}`)
+  if (!existsSync(preflightOut)) fail(`pack preflight 没写 --out（进程结束但没产出？）\n${preflight.text}`)
+  const preflightJson = JSON.parse(readFileSync(preflightOut, 'utf8')) as {
+    PackId?: string
+    CanInstall?: boolean
+    NeedsDecision?: boolean
+  }
+  if (preflightJson.PackId !== 'example')
+    fail(`preflight PackId 应是 example，实际 ${JSON.stringify(preflightJson.PackId)}\n${preflight.text}`)
+  if (preflightJson.CanInstall !== true || preflightJson.NeedsDecision === true)
+    fail(`example（无 dsh.plugins）应可直接安装，实际 ${JSON.stringify(preflightJson)}\n${preflight.text}`)
+
+  const installOut = join(tmp, 'install.json')
+  const installStarted = Date.now()
+  const install = runCliWithin(
+    ['cli', 'pack', 'install', 'inst', '--pack', 'example', '--json', '--out', installOut],
+    INSTALL_TIMEOUT_MS,
+  )
+  const installElapsed = Date.now() - installStarted
+  if (install.error)
+    fail(
+      `pad cli pack install 挂起/超时（>${INSTALL_TIMEOUT_MS / 1000}s，已跑 ${installElapsed}ms）：` +
+        `${install.error.message}\n${install.text}`,
+    )
+  if (install.status !== 0)
+    fail(`pad cli pack install 应退出 0，实际 ${install.status}（${installElapsed}ms）\n${install.text}`)
+  if (!existsSync(installOut)) fail(`pack install 没写 --out（进程结束但没产出？）\n${install.text}`)
+  const installJson = JSON.parse(readFileSync(installOut, 'utf8')) as {
+    State?: string
+    Ok?: boolean
+    Added?: unknown[]
+  }
+  if (installJson.State !== 'installed')
+    fail(`example 安装后状态应是 installed，实际 ${JSON.stringify(installJson.State)}（${installElapsed}ms）\n${install.text}`)
+  if (!Array.isArray(installJson.Added) || installJson.Added.length !== 0)
+    fail(`example 没有 dsh.plugins，Added 应为 0，实际 ${JSON.stringify(installJson.Added)}\n${install.text}`)
+  const ledgerFile = join(instDir, 'pack-ledger.json')
+  if (!existsSync(ledgerFile)) fail(`install 成功但账本没写：${ledgerFile}\n${install.text}`)
+  if (installElapsed >= INSTALL_TIMEOUT_MS) fail(`pack install 用了 ${installElapsed}ms，超出预算`)
+  console.log(`  install 入口：${installElapsed}ms 完成（假内核、无插件包）→ State=${installJson.State}，账本已写`)
 } finally {
   try {
     rmSync(tmp, { recursive: true, force: true })

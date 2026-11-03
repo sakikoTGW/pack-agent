@@ -1,0 +1,58 @@
+{
+  "schema": "pack-agent.pack-ledger/v1",
+  "updated": "2026-11-03T18:25:44.413Z",
+  "packs": {
+    "Shared-A-0.1.0": {
+      "title": "Shared A",
+      "installedVersion": "0.1.0",
+      "path": "E:\\pack-agent\\.tmp\\d105-m2\\.pack-launcher\\library\\packs\\Shared-A-0.1.0.pack.zip",
+      "installedAt": "2026-11-03T18:25:21.998Z",
+      "content": {
+        "dir": ".agent-pack/modpacks/pack-agent-modpack-shared-a",
+        "allow": true
+      },
+      "profiles": {
+        "web": {
+          "state": "installed",
+          "plugins": [
+            {
+              "spec": "dsh-context",
+              "addedVersion": "0.80.1",
+              "origin": "pack"
+            }
+          ]
+        }
+      }
+    },
+    "Shared-B-0.1.0": {
+      "title": "Shared B",
+      "installedVersion": "0.1.0",
+      "path": "E:\\pack-agent\\.tmp\\d105-m2\\.pack-launcher\\library\\packs\\Shared-B-0.1.0.pack.zip",
+      "installedAt": "2026-11-03T18:25:44.402Z",
+      "content": {
+        "dir": ".agent-pack/modpacks/pack-agent-modpack-shared-b",
+        "allow": true
+      },
+      "profiles": {
+        "web": {
+          "state": "installed",
+          "plugins": [
+            {
+              "spec": "dsh-context",
+              "addedVersion": "0.80.1",
+              "origin": "pack"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "owners": {
+    "web": {
+      "dsh-context": [
+        "Shared-A-0.1.0",
+        "Shared-B-0.1.0"
+      ]
+    }
+  }
+}

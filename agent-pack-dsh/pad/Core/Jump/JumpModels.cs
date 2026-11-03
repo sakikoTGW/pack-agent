@@ -87,6 +87,7 @@ public static class SurfaceRegistry
         SurfaceDescriptor.Builtin("pad-web", "Web（浏览器 / Edge app 窗）", "web", "gateway-event", "url-query", "focus-clipboard"),
         SurfaceDescriptor.Builtin("pad-tui", "TUI（终端）", "tui", "launch-env", "launch-args", "focus-clipboard"),
         SurfaceDescriptor.Builtin("pad-app", "官方桌面端", "app", "focus-clipboard"),
+        SurfaceDescriptor.Builtin("pad-tauri", "Tauri 桌面端（单实例壳）", "tauri", "focus-clipboard"),
     ];
 
     /// <summary>Descriptor list with per-file parse errors kept for <c>surface validate</c>.</summary>

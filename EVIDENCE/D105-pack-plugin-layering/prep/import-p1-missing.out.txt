@@ -1,0 +1,42 @@
+{
+  "schema": "pack-agent.launcher.instance/v1",
+  "id": "p1-missing",
+  "name": "p1-missing",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "profile": {
+    "name": "web",
+    "port": "auto"
+  },
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\d105-verify\\.pack-launcher\\instances\\p1-missing\\workspace"
+  },
+  "status": "ready",
+  "home": "E:\\pack-agent\\.tmp\\d105-verify\\.pack-launcher\\instances\\p1-missing\\home",
+  "display": {
+    "info": "",
+    "logo": null,
+    "star": false,
+    "category": ""
+  },
+  "packs": {
+    "allowSet": "default"
+  },
+  "plugins": {
+    "disabled": []
+  },
+  "credentials": {
+    "kind": "global"
+  },
+  "created": "2026-11-03T17:32:24.840Z",
+  "updated": "2026-11-03T17:32:24.846Z",
+  "source": {
+    "kind": "pack",
+    "packId": "Verify-Probe-0.1.0",
+    "packTitle": "Verify Probe",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\pack-agent\\.tmp\\d105-verify\\.pack-launcher\\library\\packs\\Verify-Probe-0.1.0.pack.zip"
+  }
+}

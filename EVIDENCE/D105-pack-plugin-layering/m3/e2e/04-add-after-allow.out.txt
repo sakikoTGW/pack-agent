@@ -1,0 +1,11 @@
+✓ Lockfile passes supply-chain policies (verified 2m ago)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+[WARN] Issues with peer dependencies found. Run "pnpm peers check" to list them.
+
+dependencies:
++ dsh-find-skill ^0.2.1
+
+Packages: +5
++++++
+Progress: resolved 6, reused 5, downloaded 0, added 5, done
+Done in 928ms using pnpm v11.7.0

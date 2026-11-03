@@ -1,0 +1,32 @@
+{
+  "PackId": "Test-0.1.0",
+  "Title": "Test",
+  "Profile": "web",
+  "State": "incomplete",
+  "Added": [
+    "dsh-find-skill",
+    "dsh-better-sidebar",
+    "dsh-cost-meter",
+    "@michengai/dsh-skills-manager",
+    "dsh-plugin-resolver",
+    "dshmarket",
+    "dsh-context",
+    "dsh-element-picker",
+    "dsh-i-have-adhd"
+  ],
+  "Kept": [],
+  "BundlesRestored": [],
+  "Exempted": [
+    "dsh-find-skill@0.2.1"
+  ],
+  "Skipped": [
+    "@yuxianglin/dsh-bridge-browser"
+  ],
+  "Failures": [],
+  "Warnings": [
+    "\u8FD9\u4E2A profile \u6CA1\u6709 @sakikotgw/pack-agent-dsh\uFF08\u5B89\u88C5\u65F6\u4F1A\u81EA\u52A8\u8865\u4E0A\uFF09",
+    "\u5DF2\u8DF3\u8FC7\u63D2\u4EF6\uFF1A@yuxianglin/dsh-bridge-browser"
+  ],
+  "Ok": true,
+  "Text": "\u5305 Test \u2192 profile web\uFF1Aincomplete\uFF08\u4E0D\u5B8C\u6574\uFF0C\u53EF\u4FEE\u590D\uFF09 \u00B7 \u65B0\u589E 9 \u00B7 \u4FDD\u7559 0 \u00B7 \u8C41\u514D 1 \u00B7 \u8DF3\u8FC7 1 \u00B7 \u5931\u8D25 0"
+}

@@ -521,7 +521,12 @@ if (read('Views/DownloadView.xaml').includes('货架')) fail('下载页还在用
 if (read('Views/DownloadView.xaml').includes('装一个 DSH')) fail('下载页标题不是 PCL 下载游戏句式')
 if (!read('Views/DownloadView.xaml').includes('下载 DSH')) fail('下载页没有对照 PCL 下载游戏')
 if (!read('Views/DownloadView.xaml').includes('重置条件')) fail('搜索没有对照 PCL 重置条件')
-if (read('Views/DownloadView.xaml').includes('关键词')) fail('搜索标签还在用关键词')
+// D104（2026-11-03）：d845499 把下载页搜索改成了 Hero + 搜索条，占位符是
+// 「搜索插件、作者、关键词…」；旧断言按字面禁「关键词」，和现在的产品意图冲突。
+// 收窄成原意：搜索的「标签」不能叫关键词，占位符里出现关键词是设计。
+if (/Text="关键词"/.test(read('Views/DownloadView.xaml'))) fail('搜索标签还在用关键词')
+if (!read('Views/DownloadView.xaml').includes('搜索插件、作者、关键词'))
+  fail('下载页搜索占位符丢了，对照 PCL 搜 Mod 名称 / 描述 / 标签')
 if (read('Views/DownloadView.xaml').includes('里的 --profile')) fail('下载页还在写实例里的 --profile')
 // 版本选择右栏：学 PCL 不分组、点击选中；行类型写在 Kind 标签上（容器列表）。
 if (!read('Views/VersionsView.xaml').includes('x:Name="ContainerList"'))
@@ -547,6 +552,33 @@ if (read('Views/VersionsView.xaml').includes('收编'))
   fail('容器列表还在出现「收编」这种门槛')
 if (!read('Core/AppState.cs').includes('GroupOrder'))
   fail('profile 行没有可排序的类型信息')
+// ---- 容器绿灯 = PAD 启动过的实例（D104）----
+// 用户 2026-11-03：只有 sisyphus/web 是 PAD 起的，容器列表却三盏绿灯全亮。
+// 灯只认 runtime 账本（AppState.MarkRunning → Running）；探测到的桌面端 / TUI 的进程活着是
+// OS 事实，只进 LocalRunning / tooltip / 设置卡，不点灯（D39：探测行仍列出）。
+{
+  const stateSrc = read('Core/AppState.cs')
+  if (!stateSrc.includes('LocalRunning'))
+    fail('AppState 没有 LocalRunning：探测容器的 OS 状态和 PAD 启动混在一起')
+  const versionsSrc = read('Views/VersionsView.xaml.cs')
+  const rebuild = versionsSrc.split('void RebuildContainerRows')[1]?.split('\n    static string NormHome')[0] ?? ''
+  if (!rebuild) fail('缺 RebuildContainerRows')
+  if (/(?<![A-Za-z])Running\s*=\s*(shell|tui)\.Running/.test(rebuild))
+    fail('探测容器行还把 OS 进程状态当 PAD 在跑（三盏绿灯全是假的）')
+  if (!rebuild.includes('LocalRunning = shell.Running') || !rebuild.includes('LocalRunning = tui.Running'))
+    fail('探测容器的 OS 状态没写进 LocalRunning')
+  if (!versionsSrc.includes('vm.LocalRunning'))
+    fail('容器设置卡没读 LocalRunning，探测容器在跑不显示')
+  if (!stateSrc.includes('本机进程在跑'))
+    fail('探测行 tooltip 没写本机进程状态（OS 在跑/PAD 启动分开说）')
+}
+{
+  // 回归：版本库和本机内核都还空时（刚装好的 PAD / 探测未完成），版本下拉的
+  // SyncPinCombo ↔ RefreshVersionChoices 会互相递归，--shot-page versions 直接
+  // 栈溢出（0xC00000FD）。D104 修灯时顺带发现，加个递归保护。
+  if (!read('Views/VersionsView.xaml.cs').includes('_refreshingChoices'))
+    fail('版本下拉刷新没有递归保护（空版本库时版本页栈溢出）')
+}
 if (read('Views/SettingsView.xaml').includes('社区货架')) fail('设置下载层还在用货架')
 
 // 制作整合包：Go 写的 packmaker + PAD 的「制作」接线。用户 2026-10-28：
@@ -563,6 +595,14 @@ for (const part of ['核心', '容器', '插件']) {
 }
 if (!read('Views/MakePackView.xaml.cs').includes('Discover.Run')) fail('制作整合包页没有嗅探本机核心/容器')
 if (!read('Views/MakePackView.xaml.cs').includes('Carriers.Bundles')) fail('制作整合包页没有把容器的插件配置带进来')
+// D104：绿灯 = PAD 账本启动的实例。导出页列的是本机探测到的容器，OS 在跑只进 tooltip，不许点灯。
+{
+  const makePack = read('Views/MakePackView.xaml.cs')
+  if (/(?<!Local)Running\s*=\s*(shell|tui)\.Running/.test(makePack))
+    fail('导出整合包页又把探测容器的 OS 在跑状态当成 PAD 启动绿灯')
+  if (!makePack.includes('LocalRunning = shell.Running'))
+    fail('导出整合包页没有把探测容器的 OS 在跑状态记到 LocalRunning')
+}
 // 这个页面的用途是导出：必须弹出保存位置，并把 zip 落盘到用户选的地方。
 if (!read('Views/MakePackView.xaml.cs').includes('SaveFileDialog')) fail('导出没有让用户选保存位置')
 if (!read('Views/MakePackView.xaml.cs').includes('File.Copy')) fail('导出没有把 zip 拷到目标路径')
@@ -590,6 +630,334 @@ if (!read('Views/PortableExport.cs').includes('Task<JobRecord> ExportAsync')) fa
 if (!read('Views/PortableExport.cs').includes('-t7z')) fail('便携包没用 7z 容器（ZIP64 会让 Windows 解压报无效）')
 if (!read('Views/VersionsView.xaml.cs').includes('PackAsync')) fail('右键便携包没走 PackAsync')
 if (!read('Views/PortableExport.cs').includes('public static async Task PackAsync')) fail('便携包压缩没有进度')
+// ---- 整合包行：自己的 icon + 新建实例走完整 import 链（D104；D105 UX 2026-11-04 改）----
+// 用户新反馈：「把这些换成整合包的icon，不用显示装在哪里了（装态改到实例页发光）」。
+// 契约：PackItem 带 IconPath/HasIcon（PackIcon.Resolve）；版本页不再有「已装到/已建实例」药丸；
+// 新建实例仍走 Packs.ImportPack（TS import 链），右键导出保留。
+{
+  const versionsPackCs = read('Views/VersionsView.xaml.cs')
+  if (!versionsPackCs.includes('PackItem'))
+    fail('整合包行没有行模型（PackItem）')
+  // D105 UX：行左列换整合包自己的 icon（解析不到才回落「包」）。
+  if (!versionsPackCs.includes('PackIcon.Resolve') || !versionsPackCs.includes('IconPath'))
+    fail('整合包行没解析/携带自己的 icon（PackIcon.Resolve / IconPath）')
+  if (!versions.includes('x:Key="PathBmp"') || !versions.includes('{Binding IconPath'))
+    fail('整合包行 xaml 没把 IconPath 画成图标')
+  if (!versions.includes('CornerRadius="6"') || !versions.includes('Stretch="UniformToFill"'))
+    fail('整合包 icon 不是 26×26 圆角裁切图')
+  // D105 UX：不再显示「装到哪个实例」（不是删测试，是验证它不再出现）。
+  if (versions.includes('InstallStateText') || versions.includes('PackStatePill'))
+    fail('版本页还在显示「装到哪个实例」药丸（用户要求删掉可见装态）')
+  if (versionsPackCs.includes('InstallStateText') || versionsPackCs.includes('InstallState(')
+      || versionsPackCs.includes('LedgerInstalledNames') || versionsPackCs.includes('IsInstalled'))
+    fail('版本页还留着「已装到/已建实例」装态计算（死代码）')
+  if (versionsPackCs.includes('已建实例：') || versionsPackCs.includes('已装到 '))
+    fail('版本页还在写「已建实例/已装到」文案')
+  if (!versions.includes('新建实例'))
+    fail('版本页整合包行丢了「新建实例」入口')
+  // P3 起兼容门解析搬进 Core/PackCompat.cs（VersionsView 只调它，不再自己扫字面量）。
+  const compatSrcD104 = existsSync(join(pad, 'Core/PackCompat.cs')) ? read('Core/PackCompat.cs') : ''
+  if (!compatSrcD104.includes('incompatible with dsh') || !compatSrcD104.includes('to accept the risk'))
+    fail('插件与内核不兼容（incompatible with dsh / to accept the risk）没翻成人话，用户会读成 PAD 装不了')
+  if (!versionsPackCs.includes('packs.ImportPack('))
+    fail('用整合包新建实例没走 Packs.ImportPack（只投影装不上 dsh.plugins）')
+  const installFn = versionsPackCs.split('Task InstallPackAsync(')[1]?.split('\n    /// <summary>')[0] ?? ''
+  if (!installFn) fail('缺 InstallPackAsync：新建实例没接完整 import 链')
+  if (!installFn.includes('ImportPack(')) fail('InstallPackAsync 没调 Packs.ImportPack')
+  if (installFn.includes('Launcher.CreateFromPack'))
+    fail('新建实例还在走只投影的 Launcher.CreateFromPack')
+  const createPackFn = versionsPackCs.split('void CreateFromPack_Click')[1]?.split('\n    /// <summary>')[0] ?? ''
+  if (!createPackFn.includes('InstallPackAsync'))
+    fail('「新建实例」按钮没接 InstallPackAsync（点了还是旧投影路径）')
+  if (createPackFn.includes('Launcher.CreateFromPack'))
+    fail('「新建实例」按钮还在投影路径')
+  if (versionsPackCs.includes('CreateInstanceFromPackAsync'))
+    fail('旧的投影-only CreateInstanceFromPackAsync 还在')
+  if (!versionsPackCs.includes('_creatingFromPack'))
+    fail('新建实例的双击保护没了')
+  const exportPackFn = versionsPackCs.split('void ExportPack_Click')[1]?.split('\n    /// <summary>')[0] ?? ''
+  if (!exportPackFn.includes('PackItem'))
+    fail('右键导出没跟着行模型改，点右键直接 return（导出失效）')
+}
+// ---- D105 P1 提示层：包↔插件双向标注 + 卸/更新冲突确认 + 管理器 PA110（只读，不写数据）----
+// 设计稿 agent-pack-dsh/docs/pack-plugin-layering.md §6 P1：
+// ① 插件行「来自整合包 X」 ② 包行「带 N 个插件（M 个不在这个 profile）」
+// ③ 卸/更新包声明的插件先确认（包会残缺） ④ pack-agent 管理器 remove 也走 PA110
+// ⑤（已由 D105 UX 2026-11-04 取代：版本页不再显示装到哪，装态改实例页发光）。P1 不写账本、不改配置。
+{
+  if (!existsSync(join(pad, 'Core/PackPluginFacts.cs')))
+    fail('缺 Core/PackPluginFacts.cs：包/插件双向事实没有只读收集器')
+  const facts = read('Core/PackPluginFacts.cs')
+  if (!facts.includes('class PackPluginFacts') || !facts.includes('class PackFacts')
+      || !facts.includes('class PluginOrigin'))
+    fail('PackPluginFacts 没有 PackFacts / PluginOrigin 两类事实')
+  if (!facts.includes('IReadOnlyList<PackFacts>') || !facts.includes('IReadOnlyList<PluginOrigin>'))
+    fail('PackPluginFacts 没有 Packs / Plugins 两个 IReadOnlyList API')
+  if (!facts.includes('catalog.json') || !facts.includes('plugin.json'))
+    fail('PackPluginFacts 不读投影 catalog.json / mods/*/plugin.json，包声明从哪来')
+  if (!facts.includes('dependencies') || !facts.includes('bundles') || !facts.includes('package.json'))
+    fail('PackPluginFacts 不读 profile package.json 的 dependencies / dsh.profile.bundles')
+  if (!facts.includes('node_modules'))
+    fail('PackPluginFacts 不读 node_modules 实装情况')
+  if (!facts.includes('带 ') || !facts.includes('不在这个 profile') || !facts.includes('都在这个 profile'))
+    fail('包行没有「带 N 个插件（M 个不在这个 profile）」文案')
+  if (!facts.includes('来自整合包'))
+    fail('PackPluginFacts 没给出「来自整合包 X」小标文案')
+  if (!facts.includes('IsManagerSpec'))
+    fail('PackPluginFacts 没有 pack-agent 管理器判定（PA110 用）')
+  if (facts.includes('File.WriteAll') || facts.includes('WriteAllText'))
+    fail('P1 只提示不写数据，PackPluginFacts 却在写文件')
+  const instXaml = read('Views/InstanceView.xaml')
+  const instCs = read('Views/InstanceView.xaml.cs')
+  if (!instXaml.includes('PluginSummaryText'))
+    fail('实例页整合包行没绑「带 N 个插件」副标题')
+  if (!instXaml.includes('PackOriginText'))
+    fail('实例页插件行没绑「来自整合包 X」小标')
+  if (!instCs.includes('PackPluginFacts.Collect'))
+    fail('实例页没接 PackPluginFacts（事实收集器没被调用）')
+  const loadPacksFn = instCs.split('async Task LoadPacks()')[1]?.split('void PackRefresh_Click')[0] ?? ''
+  if (!loadPacksFn.includes('PackListRow') || !loadPacksFn.includes('PackPluginFacts'))
+    fail('整合包行没换成带插件计数的显示模型（PackListRow）')
+  const removeFn = instCs.split('void PluginRemove_Click')[1]?.split('void PluginUpdate_Click')[0] ?? ''
+  if (!removeFn.includes('_win.Ask'))
+    fail('卸包声明的插件没有二次确认')
+  if (!removeFn.includes('包会残缺'))
+    fail('卸插件确认没写清「这个插件由整合包要求，包会残缺」')
+  if (!removeFn.includes('PA110') || !removeFn.includes('IsManagerSpec'))
+    fail('卸 pack-agent 管理器没有 PA110 警告（plugin-ops 的 disable 有，remove 缺守卫）')
+  const updateFn = instCs.split('void PluginUpdate_Click')[1]?.split('void PluginUpdateSel_Click')[0] ?? ''
+  if (!updateFn.includes('包会残缺'))
+    fail('更新包声明的插件没有「包会残缺」二次确认')
+  if (!instCs.includes('App.ShotPage == "instance-packs"'))
+    fail('实例页没有 --shot-page instance-packs 分支（P1 截图证据页）')
+  if (!read('MainWindow.xaml.cs').includes('instance-packs'))
+    fail('--shot-page instance-packs 没路由到实例页')
+}
+// ---- D105 P2 UI：账本联动（停用联动插件栈 / 卸载回滚 / 按包修复 / 入口统一 / 版本页账本装态）----
+// 设计稿 §6 P2 + 动作矩阵 §3.3：停用 = allow/deny + 摘 dsh.profile.bundles（留 deps）；
+// 卸载 = 删投影 + 只回滚独占插件（共享保留）；修复 = 账本 incomplete 时出现；
+// 实例页「装整合包…」= ApplyPackToInstance（R8 统一入口，不再只 Project）。
+{
+  const instCs2 = read('Views/InstanceView.xaml.cs')
+  const instXaml2 = read('Views/InstanceView.xaml')
+  if (!instCs2.includes('PackLedger.Load'))
+    fail('实例页没读 pack-ledger.json（P2 账本装态/修复入口没有数据）')
+  const loadPacksFn2 = instCs2.split('async Task LoadPacks()')[1]?.split('void PackRefresh_Click')[0] ?? ''
+  if (!loadPacksFn2.includes('EffectiveState') || !loadPacksFn2.includes('MissingFor'))
+    fail('包行没按账本算有效状态 / 缺件（「修复」判断会错）')
+  if (!loadPacksFn2.includes('LedgerPackKeyFor'))
+    fail('包行没把投影 id 对回账本 packId（停用/卸载会找错包）')
+  const toggleFn2 = instCs2.split('void TogglePack_Click')[1]?.split('void UninstallPack_Click')[0] ?? ''
+  if (!toggleFn2.includes('SetPackPluginsActive'))
+    fail('停用/启用只切 allow，没联动 dsh.profile.bundles（P2 R3）')
+  if (!toggleFn2.includes('SharedFor'))
+    fail('停用共享插件没有提示（R4）')
+  if (!toggleFn2.includes('Allow(') || !toggleFn2.includes('Deny('))
+    fail('老实例（无账本）的 allow/deny 回退没了（P2.6）')
+  if (!instCs2.includes('void UninstallPack_Click') || !instCs2.includes('UninstallPack('))
+    fail('包行没有「卸载整合包」（P2 回滚独占插件）')
+  if (!instCs2.includes('void RepairPack_Click') || !instCs2.includes('RepairPack('))
+    fail('包行没有「修复」（账本 incomplete 补件）')
+  if (!instXaml2.includes('UninstallPack_Click') || !instXaml2.includes('RepairPack_Click'))
+    fail('包行动作没接到 xaml')
+  if (!instXaml2.includes('CanRepair'))
+    fail('「修复」不是只在不完整时出现')
+  if (!instXaml2.includes('LedgerBadge'))
+    fail('包行没显示账本状态（不完整/未登记）')
+  const importFn2 = instCs2.split('void Import_Click')[1]?.split('void Scan_Click')[0] ?? ''
+  if (!importFn2.includes('ApplyPackToInstance'))
+    fail('实例页装包还在只投影（P2 R8 入口统一）')
+  if (importFn2.includes('_packs.Project('))
+    fail('实例页装包还直调 Project（只投影、不装插件）')
+  if (!importFn2.includes('_packs.Import('))
+    fail('.pinst.zip 没走 import 链')
+  if (!importFn2.includes('ApplyPackToInstanceInteractiveAsync'))
+    fail('装包冲突/失败没有回显（不许静默）')
+  if (!instCs2.includes('result.Conflicts') || !instCs2.includes('result.Failures'))
+    fail('装包结果没把冲突/失败列出来')
+  const removeFn2 = instCs2.split('void PluginRemove_Click')[1]?.split('void PluginUpdate_Click')[0] ?? ''
+  if (!instCs2.includes('RecordPluginRemoved'))
+    fail('卸插件成功后没按账本登记（包不会标 incomplete）')
+  if (!removeFn2.includes('MarkPacksIncomplete'))
+    fail('卸插件成功后没更新账本（包不会标 incomplete）')
+  if (!removeFn2.includes('PackOwnersOf'))
+    fail('卸插件的确认没升级成账本 owners 判断')
+  const updateFn2 = instCs2.split('void PluginUpdate_Click')[1]?.split('void PluginUpdateSel_Click')[0] ?? ''
+  if (!updateFn2.includes('MarkPacksIncomplete'))
+    fail('更新包声明插件后没把包标 incomplete')
+  const verCs2 = read('Views/VersionsView.xaml.cs')
+  // D105 UX（2026-11-04 用户新反馈）：账本判定装态不再显示在版本页——不是丢功能，
+  // 装态改由实例页「整合包」块的已启用发光表达（见 task-9 断言）。
+  if (verCs2.includes('PackLedger.Load') || verCs2.includes('InstallState')
+      || verCs2.includes('已装到 ') || verCs2.includes('已建实例'))
+    fail('版本页还在显示「已装到/已建实例」装态（用户要求删掉可见装态）')
+}
+// ---- D105 P3：DSH allow-version 允许通道 + 冲突三选一 + 换内核重试（§6 P3）----
+// 不兼容不再只有死路：解析 DSH 的 allow-version 提示 → 三选一（接受风险/换内核/取消）；
+// 版本冲突三选一（升到包版本/保留现有/取消）。不静默、不死循环。
+{
+  if (!existsSync(join(pad, 'Core/PackCompat.cs')))
+    fail('缺 Core/PackCompat.cs：DSH allow-version 提示没有 parser')
+  const compat = read('Core/PackCompat.cs')
+  if (!compat.includes('allow-version') || !compat.includes('--dsh-version') || !compat.includes('--accept-risk'))
+    fail('PackCompat 不认 DSH 的 allow-version 提示（精确 pkg@version + --dsh-version + --accept-risk）')
+  if (!compat.includes('incompatible with dsh') || !compat.includes('to accept the risk'))
+    fail('PackCompat 没有 incompatible / to accept the risk 兜底解析')
+  if (!compat.includes('class PackCompatFix') || !compat.includes('FromApplyResult') || !compat.includes('FromError'))
+    fail('PackCompat 没有 PackCompatFix / FromApplyResult / FromError API')
+  const launcherSrc = read('Core/Launcher.cs')
+  if (!launcherSrc.includes('public async Task AllowVersion('))
+    fail('Launcher 没有 AllowVersion（DSH 官方 allow-version 通道）')
+  if (!launcherSrc.includes('AllowVersionArgs') || !launcherSrc.includes('--accept-risk'))
+    fail('AllowVersion 没拼 DSH 的 allow-version 参数（缺 --accept-risk）')
+  if (!launcherSrc.includes('MarkInstanceStatus'))
+    fail('缺 MarkInstanceStatus：续装成功后 import-failed 实例恢复不了 ready')
+  const instCs3 = read('Views/InstanceView.xaml.cs')
+  if (!instCs3.includes('AskAndApplyCompatAsync') || !instCs3.includes('AllowVersion'))
+    fail('实例页装包撞兼容门没有「接受风险安装」路径')
+  if (!instCs3.includes('接受风险安装') || !instCs3.includes('换内核') || !instCs3.includes('取消'))
+    fail('兼容三选一没写全（接受风险安装 / 换内核重试 / 取消）')
+  if (!instCs3.includes('ResolveConflictsAsync') || !instCs3.includes('升到包版本') || !instCs3.includes('保留现有'))
+    fail('版本冲突没有三选一（升到包版本 / 保留现有 / 取消）')
+  if (!instCs3.includes('PinInstance') || !instCs3.includes('_win.AskInput'))
+    fail('换内核重试没列本机已装版本并 PinInstance')
+  if (!instCs3.includes('ApplyPackToInstanceInteractiveAsync'))
+    fail('实例页装包没走带选择的交互装包')
+  if (!instCs3.includes('result.Failures') || !instCs3.includes('PackCompat.FromApplyResult'))
+    fail('兼容门没优先用完整 Failures[].Reason 解析（TS import 400 字截断问题）')
+  // P3 add-on：catalog DB 残留（投影目录已不在且账本无条目）不能显示假「未登记」行。
+  if (!instCs3.includes('!Directory.Exists(r.Dir)') || !instCs3.includes('packKey is null'))
+    fail('catalog 残留行没过滤（目录已不在、账本无条目还显示「未登记」）')
+  const verCs3 = read('Views/VersionsView.xaml.cs')
+  if (!verCs3.includes('PackCompat.FromError') || !verCs3.includes('RecoverIncompatibleImportAsync'))
+    fail('版本页新建实例撞兼容门没有续装/换内核恢复路径')
+  if (!verCs3.includes('AllowVersion') || !verCs3.includes('MarkInstanceStatus'))
+    fail('版本页恢复路径没走 allow-version + 续装成功恢复 ready')
+  if (!verCs3.includes('Source?.PackId'))
+    fail('版本页找 import 遗留实例没优先 source.packId')
+  if (verCs3.includes('PackCompatLine'))
+    fail('旧的 PackCompatLine 死路提示还在（P3 应换成三选一恢复）')
+  if (!verCs3.includes('ApplyPackToInstance'))
+    fail('版本页兼容恢复没走「续装遗留实例」（避免重跑 import 撞名）')
+}
+// ---- D105 UX（用户 2026-11-04 截图反馈）：整合包自己的 icon + 不再显示装到哪 + 实例页已启用包发光 ----
+// ① 版本页行左列 = 包自己的 icon（PackIcon 解析） ② 删掉「已装到/已建实例」药丸
+// ③ 实例页整合包块：Enabled=true 的包行 accent 呼吸光，停用不发光（可调暗）；账本药丸/修复/卸载保留。
+{
+  if (!existsSync(join(pad, 'Core/PackIcon.cs')))
+    fail('缺 Core/PackIcon.cs：整合包自己的 icon 没解析器')
+  const packIcon = read('Core/PackIcon.cs')
+  if (!packIcon.includes('public static string? Resolve('))
+    fail('PackIcon 没有 Resolve(launcherRoot, packPath)')
+  if (!packIcon.includes('"library"') || !packIcon.includes('"icons"') || !packIcon.includes('"packs"'))
+    fail('PackIcon 没缓存到 <root>/library/icons/packs（复用缓存）')
+  if (!packIcon.includes('TryRasterizeSvg') || !packIcon.includes('.svg'))
+    fail('PackIcon 不复用 BundleIcon.TryRasterizeSvg 光栅化 svg')
+  if (!packIcon.includes('ZipFile') || !packIcon.includes('icon.png') || !packIcon.includes('logo.'))
+    fail('PackIcon 不读 .pack.zip/.pinst.zip 根 icon（icon/logo/pack.png）')
+  if (!packIcon.includes('"icon"') || !packIcon.includes('"logo"'))
+    fail('PackIcon 不认 .pack.json 的 icon/logo 字段')
+  if (!packIcon.includes('MaxBytes') || !packIcon.includes('2 * 1024 * 1024'))
+    fail('PackIcon 没有单图标 2MB 上限')
+  const versionsXaml = read('Views/VersionsView.xaml')
+  const versionsIconCs = read('Views/VersionsView.xaml.cs')
+  if (!versionsXaml.includes('{Binding IconPath') || !versionsXaml.includes('HasIcon'))
+    fail('版本页行左列没绑整合包自己的 icon / HasIcon 回落')
+  if (!versionsIconCs.includes('PackIcon.Resolve'))
+    fail('版本页没解析整合包 icon（PackIcon.Resolve）')
+  if (versionsXaml.includes('InstallStateText') || versionsIconCs.includes('InstallStateText'))
+    fail('版本页还绑着「装到哪」药丸（应删除）')
+  const instXaml2 = read('Views/InstanceView.xaml')
+  const instCs2 = read('Views/InstanceView.xaml.cs')
+  if (!instXaml2.includes('{Binding IconPath') || !instXaml2.includes('HasIcon'))
+    fail('实例页整合包行没显示整合包自己的 icon')
+  if (!instCs2.includes('PackIcon.Resolve') || !instCs2.includes('PackFileForRow'))
+    fail('实例页包行没解析 icon（账本 Path → Source.PackPath 回落）')
+  if (!instXaml2.includes('PackRow_Loaded') || !instCs2.includes('void PackRow_Loaded'))
+    fail('实例页包行没有发光加载钩子（PackRow_Loaded）')
+  if (!instCs2.includes('DropShadowEffect') || !instCs2.includes('BlurRadius')
+      || !instCs2.includes('RepeatBehavior.Forever'))
+    fail('已启用包行没有 DropShadowEffect + 呼吸动画')
+  if (!instCs2.includes('row.Enabled') || !instCs2.includes('card.Opacity = 0.85'))
+    fail('发光没有和 Enabled 联动（停用的包不发光/调暗）')
+  if (!read('Core/PackIcon.cs').includes('TrimCache'))
+    fail('PackIcon 没有旧缓存清理（14 天可选）')
+}
+// ---- D107 安装概念 UI（用户 2026-11-04 批准原型）：安装▾ / 包库选择器 / 预检两阶段 / shot ----
+// 原型 docs/proposals/install-concept 01-03：版本页行「安装 ▾」三项；实例页「装整合包」开包库
+// 选择器（Catalog + 逐行 Preflight 徽标）；预检窗口两阶段（授权→报告，失败/跳过不静默）。
+{
+  // ① 版本页「安装 ▾」三项菜单。
+  const verXaml4 = read('Views/VersionsView.xaml')
+  const verCs4 = read('Views/VersionsView.xaml.cs')
+  if (!verXaml4.includes('Content="安装 ▾"') || !verXaml4.includes('InstallMenu_Click'))
+    fail('版本页整合包行没有「安装 ▾」菜单入口（还是旧的单按钮）')
+  const menuFn4 = verCs4.split('void InstallMenu_Click')[1]?.split('\n    string FirstProfileName')[0] ?? ''
+  if (!menuFn4) fail('缺 InstallMenu_Click：安装▾没有菜单逻辑')
+  for (const item of ['装到当前实例', '新建实例…', '先检查能不能装…'])
+    if (!menuFn4.includes(item)) fail(`「安装 ▾」菜单缺少「${item}」`)
+  if (!verCs4.includes('RunInstallFlowAsync') || !verCs4.includes('new Packs('))
+    fail('「装到当前实例」没走 Preflight → Install 流程（直接裸装）')
+  if (!verCs4.includes('checkOnly: true'))
+    fail('「先检查能不能装…」不是 dry-run（checkOnly）')
+  if (!verCs4.includes('InstallPackAsync'))
+    fail('「新建实例…」丢了 D104 的完整 import 链（InstallPackAsync）')
+  if (!verCs4.includes('void CreateFromPack_Click'))
+    fail('旧的新建实例入口方法被删了（右键/新建实例仍有引用）')
+  // ② 实例页「装整合包」→ 包库选择器（Catalog + 后台逐行预检），从文件仍走旧 Import 路径。
+  const instXaml4 = read('Views/InstanceView.xaml')
+  const instCs4 = read('Views/InstanceView.xaml.cs')
+  if (!instXaml4.includes('Click="OpenPackPicker_Click"'))
+    fail('实例页「装整合包」按钮没开包库选择器')
+  if (!instCs4.includes('new PackPickerWindow'))
+    fail('实例页没有 PackPickerWindow（还在直接弹文件框）')
+  if (!instCs4.includes('ResolveCard'))
+    fail('选择器行动作没按包引用找回 PackCard（点安装会断）')
+  const importFn4 = instCs4.split('async void Import_Click')[1]?.split('void Scan_Click')[0] ?? ''
+  if (!importFn4.includes('ApplyPackToInstance'))
+    fail('「从文件…」旧路径丢了（Import_Click 不再走 ApplyPackToInstance）')
+  // ③ PackPickerWindow：标题/目标实例/搜索/Catalog/Preflight 徽标/从文件/取消。
+  if (!existsSync(join(pad, 'Views/PackPickerWindow.xaml')) || !existsSync(join(pad, 'Views/PackPickerWindow.xaml.cs')))
+    fail('缺 PackPickerWindow（包库选择器）')
+  const pickerXaml4 = read('Views/PackPickerWindow.xaml')
+  const pickerCs4 = read('Views/PackPickerWindow.xaml.cs')
+  for (const needle of ['装整合包', '目标实例', '搜索本机包库', '从文件…', '取消'])
+    if (!pickerXaml4.includes(needle)) fail(`包库选择器缺「${needle}」`)
+  if (!pickerCs4.includes('Catalog(') || !pickerCs4.includes('PreflightPack('))
+    fail('包库选择器没加载本机包库 / 没跑逐行预检徽标')
+  if (!pickerCs4.includes('LoadAsync') || !pickerCs4.includes('UpdateRow'))
+    fail('包库选择器的预检徽标不能异步回填（LoadAsync/UpdateRow）')
+  if (!pickerCs4.includes('PackIcon.Resolve'))
+    fail('包库选择器行没显示整合包自己的 icon')
+  if (!pickerCs4.includes('FromFileRequested') || !pickerCs4.includes('RowActionRequested'))
+    fail('包库选择器没有「从文件…」/ 行动作回调')
+  // ④ PackPreflightWindow：两阶段同窗 + 授权勾选 + 报告不静默 + 报告动作。
+  if (!existsSync(join(pad, 'Views/PackPreflightWindow.xaml')) || !existsSync(join(pad, 'Views/PackPreflightWindow.xaml.cs')))
+    fail('缺 PackPreflightWindow（预检/授权/报告窗口）')
+  const preXaml4 = read('Views/PackPreflightWindow.xaml')
+  const preCs4 = read('Views/PackPreflightWindow.xaml.cs')
+  for (const needle of ['安装前检查', '安装报告', 'AcceptRiskBox', 'SkipMissingBox', '开始安装',
+    '取消', '知道了', '去修复缺少项', '打开实例', '重新导出这个包'])
+    if (!preXaml4.includes(needle)) fail(`预检窗口缺「${needle}」`)
+  if (!preCs4.includes('packs.PreflightPack') || !preCs4.includes('packs.InstallPackToInstance'))
+    fail('预检窗口没接 PreflightPack / InstallPackToInstance API')
+  if (!preCs4.includes('PackInstallOptions') || !preCs4.includes('AcceptRisk =') || !preCs4.includes('SkipMissing ='))
+    fail('授权勾选没映射进 PackInstallOptions（AcceptRisk / SkipMissing）')
+  if (!preCs4.includes('report.Failures') || !preCs4.includes('report.Skipped'))
+    fail('安装报告会把失败/跳过吞掉（不静默要求）')
+  if (!preCs4.includes('RepairPack') || !preCs4.includes('RunInstallFlowAsync'))
+    fail('报告「去修复缺少项」没接 RepairPack / 共用安装流程缺失')
+  if (!preCs4.includes('ShowPreflight') || !preCs4.includes('ShowReport'))
+    fail('预检/报告不是两阶段同窗（ShowPreflight/ShowReport）')
+  // ⑤ shot hook：两个新窗口都能离屏渲染，且这些页不覆盖主窗口截图。
+  const mw4 = read('MainWindow.xaml.cs')
+  for (const page of ['pack-picker', 'pack-preflight', 'pack-preflight-report'])
+    if (!mw4.includes(`"${page}"`)) fail(`缺 --shot-page ${page} 分支`)
+  if (!mw4.includes('ShotPackConceptWindowAsync') || !mw4.includes('picker.LoadAsync'))
+    fail('pack-picker 截图没加载真实包库/预检数据')
+  if (!mw4.includes('RenderTo(path)'))
+    fail('安装概念窗口没有离屏 RenderTo 截图')
+}
 if (!read('Views/PortableExport.cs').includes('MB/s')) fail('便携包进度没有速度')
 if (!read('Views/MakePackView.xaml').includes('整合包（文件夹）')) fail('导出页没有「整合包（文件夹）」选项')
 // 导出/安装要有右下角长方形进度卡（logo+进度条+速度+剩余），并能跳下载任务；同时进 jobs.json。
@@ -1660,18 +2028,21 @@ if (!addFn.includes('ShowInner("versions"'))
 if (!addFn.includes('ShowInner("instance"'))
   fail('没 profile 时装组合包不切到版本设置')
 {
-  const searchCard = downloadXaml.split('x:Name="ShelfTitle"')[1]?.split('搜索')[0] ?? downloadXaml
-  const aroundName = downloadXaml.split('Text="名称"')[1]?.slice(0, 2500) ?? ''
-  if (!aroundName.includes('Text="版本"') || !aroundName.includes('x:Name="TargetRelease"'))
-    fail('搜索卡没有「版本」发行号，对照 PCL 下载 Mod 的 1.20.1')
-  if (!aroundName.includes('Text="装到"') || !aroundName.includes('x:Name="TargetInstance"'))
-    fail('搜索卡「装到」不是实例名单')
-  if (!aroundName.includes('ItemsSource="{Binding Instances}"'))
+  // D104（2026-11-03）：fa8b6a2 / d845499 / 466b7ee 把下载页的「搜索卡」改成 Hero + 筛选面板，
+  // 「版本 / 装到」搬进了 StoreMore；旧块按 Text="名称" 找卡找不到就红，属过期期望，不是回归。
+  // 产品意图不变：装之前要显式选发行号 + 实例，不能拿「实例 · profile」拼。
+  const target = downloadXaml.split('x:Name="StoreMore"')[1]?.split('x:Name="ClearBtn"')[0] ?? ''
+  if (!target) fail('下载页筛选面板（StoreMore）没有「装到哪」的选择')
+  if (!target.includes('Text="版本"') || !target.includes('x:Name="TargetRelease"'))
+    fail('筛选面板没有「版本」发行号，对照 PCL 下载 Mod 的 1.20.1')
+  if (!target.includes('Text="装到"') || !target.includes('x:Name="TargetInstance"'))
+    fail('「装到」不是实例名单')
+  if (!target.includes('ItemsSource="{Binding Instances}"'))
     fail('「装到」没绑 Instances')
-  if (aroundName.includes('TargetLaunch') || aroundName.includes('TargetText'))
+  if (target.includes('TargetLaunch') || target.includes('TargetText'))
     fail('「装到」还在拼 实例 · profile，对照 PCL 应对上版本号和实例')
   if (downloadXaml.includes('Text="--profile"'))
-    fail('搜索卡把 --profile 旗标画给人看')
+    fail('下载页把 --profile 旗标画给人看')
   if (!downloadCs.includes('TargetInstance_Changed'))
     fail('换装到的实例不刷新这份实例的发行号')
   if (!addFn.includes('TargetInstance'))

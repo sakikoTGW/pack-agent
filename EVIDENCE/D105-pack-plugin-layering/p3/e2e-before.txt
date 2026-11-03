@@ -1,0 +1,4 @@
+﻿-- compatibility.json before: False
+exit=0 elapsed=0.4s
+dsh: warning: allowing incompatible plugin versions can break the application or corrupt data. Approval applies only to the exact package and DSH versions.
+dsh: allowed dsh-find-skill@0.2.1 for DSH 0.2.1-rc.2

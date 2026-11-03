@@ -1,0 +1,5 @@
+[hot-e2e] apply called -> E:\pack-agent\.tmp\lab-e2e\hot-marker.txt
+dsh web: http://127.0.0.1:3099/?token=y3IKTqIfrHq01lQpyVV3YI2KbmYkpm5TWbAU2F7CAAg
+[hot-e2e] services: hmr=true profileContext=true appReady=true loader=true pluginPackages=true
+[hot-bundle-probe] mounted via bundle layer
+[hot-bundle-probe] mounted (with disposer)

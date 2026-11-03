@@ -1,0 +1,123 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>方案 B · 实例页从包库装</title>
+<link rel="stylesheet" href="mock.css">
+<style>
+  .nav { width: 260px; background: #fff; border-right: 1px solid var(--line); padding: 18px 12px; }
+  .nav .item { display:flex; align-items:center; gap:12px; font-size:17px; color:var(--ink-2); padding:12px 16px; border-radius:10px; }
+  .nav .item.on { background: var(--accent-wash); color: var(--accent); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="titlebar">
+    <span class="back">←</span><h1>版本设置</h1><span class="tag">sisyphus</span>
+    <span class="spacer"></span><span class="wctl">－ ☐ ✕</span>
+  </div>
+  <div class="body">
+    <div class="nav">
+      <div class="item on">▤ 概览</div>
+      <div class="item">⚙ 设置</div>
+      <div class="item">⊞ 插件</div>
+      <div class="item">▭ session</div>
+      <div class="item">✧ agent-preset</div>
+    </div>
+
+    <div class="main" style="padding-left:34px">
+      <div class="card" style="filter:saturate(.92)">
+        <div class="cardhead"><span class="chip">▣</span><h2>整合包</h2>
+          <div class="right"><button class="btn primary">装整合包</button><button class="btn">扫启动器目录</button><button class="btn">导出 .dspack</button><button class="btn">刷新</button></div>
+        </div>
+
+        <div class="packrow glowing">
+          <div class="packicon pink">T</div>
+          <div class="packmeta">
+            <div class="line1"><b>Test</b><span class="pill green">已启用</span><span class="pill amber">不完整 · 缺 1 个</span></div>
+            <div class="sub">带 10 个插件（9 个在这个 profile）· 内核 0.2.1-rc.2</div>
+          </div>
+          <div class="actions"><span style="color:var(--muted)">↻</span><span style="color:var(--muted)">🗑</span><button class="btn sm">停用</button></div>
+        </div>
+
+        <div class="packrow">
+          <div class="packicon orange">V</div>
+          <div class="packmeta">
+            <div class="line1"><b>Verify Probe</b><span class="pill">已停用</span></div>
+            <div class="sub">带 1 个插件（都在这个 profile）· 内核 0.2.1-rc.2</div>
+          </div>
+          <div class="actions"><span style="color:var(--muted)">🗑</span><button class="btn sm">启用</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scrim"></div>
+  <div class="dialog">
+    <div class="dhead">
+      <span class="chip" style="width:38px;height:38px;border-radius:10px;background:var(--accent-wash);color:var(--accent);display:grid;place-items:center;font-size:19px">▣</span>
+      <h3>装整合包</h3>
+      <div class="target">目标实例：<b>sisyphus</b><span class="pill" style="margin-left:6px">当前选中</span></div>
+    </div>
+    <div class="dbody">
+      <div class="search">🔍 搜索本机包库：名字 / 版本 / 内核…<span style="margin-left:auto">本机包库 4 个</span></div>
+
+      <div class="pickrow sel">
+        <div class="packicon pink">T</div>
+        <div class="info">
+          <b>Test</b> <span class="ver" style="color:var(--ink-2);font-size:14px">0.1.0</span>
+          <div class="sub">内核 0.2.1-rc.2 · 插件 10 · library/packs/Test-0.1.0.pack.zip</div>
+          <div class="badges"><span class="pill red">⛔ 1 个插件已下架</span><span class="pill amber">⚠ 1 个需授权</span><span class="pill green">✅ 8 个可装</span></div>
+        </div>
+        <div class="go"><button class="btn primary">检查并安装</button></div>
+
+
+      </div>
+
+      <div class="pickrow">
+        <div class="packicon orange">V</div>
+        <div class="info">
+          <b>Verify Probe</b> <span style="color:var(--ink-2);font-size:14px">0.1.0</span>
+          <div class="sub">内核 0.2.1-rc.2 · 插件 1 · library/packs/Verify-Probe-0.1.0.pack.zip</div>
+          <div class="badges"><span class="pill green">✅ 可装</span></div>
+        </div>
+        <div class="go"><button class="btn">安装</button></div>
+      </div>
+
+      <div class="pickrow">
+        <div class="packicon blue">S</div>
+        <div class="info">
+          <b>Shared B</b> <span style="color:var(--ink-2);font-size:14px">0.1.0</span>
+          <div class="sub">内核 0.2.1-rc.2 · 插件 1 · 已装到当前实例，缺 1 个插件</div>
+          <div class="badges"><span class="pill amber">⚠ 当前实例缺 1 个 · 可修复</span></div>
+        </div>
+        <div class="go"><button class="btn">修复</button></div>
+      </div>
+
+      <div class="pickrow">
+        <div class="packicon grey">▣</div>
+        <div class="info">
+          <b>Plain Pack</b> <span style="color:var(--ink-2);font-size:14px">0.1.0</span>
+          <div class="sub">内核 0.2.1-rc.2 · 插件 1 · 包内没有图标</div>
+          <div class="badges"><span class="pill green">✅ 可装</span></div>
+        </div>
+        <div class="go"><button class="btn">安装</button></div>
+      </div>
+    </div>
+    <div class="dfoot">
+      <span class="muted" style="font-size:14px;color:var(--muted)">预检会先跑：内核匹配 / 插件下架 / 兼容豁免 / 版本冲突，不会盲目装</span>
+      <span class="grow"></span>
+      <button class="btn">从文件…</button>
+      <button class="btn">取消</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="notes">
+  <div class="n"><span class="num">①</span><span class="t">从包库直接选（不用再找文件），目标实例写在标题上</span></div>
+  <div class="n"><span class="num">②</span><span class="t">预检徽标提前告诉你：几个能装 / 几个要授权 / 几个已下架</span></div>
+  <div class="n"><span class="num">③</span><span class="t">已装到当前实例的包就地显示「缺 N 个 · 修复」</span></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,5 @@
+✓ export strips credentials, no logs, ships pack-ledger.json as-is
+✓ import new id, port auto, no credentials, restores pack-ledger.json verbatim
+✓ legacy pinst without ledger imports fine, keeps 未登记 (no empty ledger file)
+✓ bad pinst PA009
+✓ pinst

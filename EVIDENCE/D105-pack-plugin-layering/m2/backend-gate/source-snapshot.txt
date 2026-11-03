@@ -1,0 +1,28 @@
+﻿P2 BACKEND GATE (UI task-6 still in progress) captured=2026-11-04T02:18:38.4390347+08:00
+HEAD=54cf34ca419e918e109a9b0f926011d8570d24aa
+diff_sha_before=d933536385a5146e3f1a29b70f641f700db4193e
+status:
+ M DECISIONS.md
+ M agent-pack-dsh/docs/README.md
+ M agent-pack-dsh/modpack/compile.ts
+ M agent-pack-dsh/modpack/import-pack.test.ts
+ M agent-pack-dsh/modpack/import-pack.ts
+ M agent-pack-dsh/modpack/pack-catalog.ts
+ M agent-pack-dsh/modpack/pad-window.test.ts
+ M agent-pack-dsh/modpack/pinst.test.ts
+ M agent-pack-dsh/modpack/pinst.ts
+ M agent-pack-dsh/pad/Core/AppState.cs
+ M agent-pack-dsh/pad/Core/Packs.cs
+ M agent-pack-dsh/pad/Core/PluginList.cs
+ M agent-pack-dsh/pad/MainWindow.xaml.cs
+ M agent-pack-dsh/pad/Views/InstanceView.xaml
+ M agent-pack-dsh/pad/Views/InstanceView.xaml.cs
+ M agent-pack-dsh/pad/Views/MakePackView.xaml.cs
+ M agent-pack-dsh/pad/Views/VersionsView.xaml
+ M agent-pack-dsh/pad/Views/VersionsView.xaml.cs
+?? EVIDENCE/D104-pad-pack-lamp-import/
+?? EVIDENCE/D105-pack-plugin-layering/
+?? agent-pack-dsh/docs/pack-plugin-layering.md
+?? agent-pack-dsh/pad.tests/PackLedgerTests.cs
+?? agent-pack-dsh/pad/Core/PackLedger.cs
+?? agent-pack-dsh/pad/Core/PackPluginFacts.cs

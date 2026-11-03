@@ -1,0 +1,2 @@
+--- 03:37:11 pad cli status --json --out E:\pack-agent\EVIDENCE\D105-pack-plugin-layering\ux-icon-glow\deploy\status-after-deploy.json
+wrote E:\pack-agent\EVIDENCE\D105-pack-plugin-layering\ux-icon-glow\deploy\status-after-deploy.json

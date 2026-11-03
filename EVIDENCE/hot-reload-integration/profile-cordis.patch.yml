@@ -1,0 +1,4 @@
+- id: hmr
+  disabled: false
+  config:
+    root: ['.']

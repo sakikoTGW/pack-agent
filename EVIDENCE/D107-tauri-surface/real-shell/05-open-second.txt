@@ -1,0 +1,14 @@
+$ pad cli cli node open E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --surface tauri --exe E:\DSH-Tauri\deepseek-harness-desktop.exe
+exit=1 elapsed=0.5s
+--- stdout ---
+--- 05:31:45 pad cli node open E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --surface tauri --exe E:\DSH-Tauri\deepseek-harness-desktop.exe
+error[PA099]: that profile is already running in this home
+ --> E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home
+  |
+  | profile tauri · port 0 · pid 72444
+  |
+  = help: pad cli node close E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home --profile tauri
+  = help: pad cli node list E:\pack-agent\.tmp\d107-tauri-real\instances\t1\dsh-home
+
+--- stderr ---
+

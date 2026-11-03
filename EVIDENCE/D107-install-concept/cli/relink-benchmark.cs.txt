@@ -1,0 +1,17 @@
+using System.Diagnostics;
+using System.IO;
+// 娑撯偓濞嗏剝鈧冪唨閸戝棴绱皅uantify PnpmHeal.Relink 閸?0.2.1-rc.2 release node_modules 娑撳﹦娈戦懓妤佹閿?// 閻劍娼电拠浣规 batch install 閹便垹婀垾婊勭槨娑擃亝褰冩禒鍫曞厴 Relink 娑撯偓闁秮鈧縿鈧倷绗夐崘娆庢崲娴ｆ洑绗㈢憲鍖＄礄Relink 閸欘亪鍣稿?junction閿涘鈧?using System.Diagnostics;
+using Pad.Core;
+
+var live = args.Length > 0 ? args[0]
+    : @"E:\pack-agent\agent-pack-dsh\pad\bin\Debug\net9.0-windows\.pack-launcher";
+var version = args.Length > 1 ? args[1] : "0.2.1-rc.2";
+var nm = Path.Combine(live, "versions", version, "node_modules");
+
+for (var i = 1; i <= 2; i++)
+{
+    var sw = Stopwatch.StartNew();
+    var links = PnpmHeal.Relink(nm);
+    sw.Stop();
+    Console.WriteLine($"Relink #{i}: {sw.ElapsedMilliseconds} ms, linked={links}");
+}

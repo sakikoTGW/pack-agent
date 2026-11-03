@@ -1,0 +1,12 @@
+﻿DSH_HOME=E:\pack-agent\.tmp\d105-p3\fresh-home (fresh, DSH 自己 initProfile，避免拷贝 node_modules 的 virtualStore 漂移)
+== allow-version (fresh profile) ==
+exit=0
+  dsh: warning: allowing incompatible plugin versions can break the application or corrupt data. Approval applies only to the exact package and DSH versions.
+  dsh: allowed dsh-find-skill@0.2.1 for DSH 0.2.1-rc.2
+== compatibility.json ==
+{
+  "dsh-find-skill@0.2.1": [
+    "0.2.1-rc.2"
+  ]
+}
+

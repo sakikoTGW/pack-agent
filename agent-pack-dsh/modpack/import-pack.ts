@@ -3,7 +3,7 @@
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
-import { basename, dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve, sep } from 'node:path'
 import type { PackDoc } from '../../src/types.js'
 import { isPackZipPath, readPackZip } from '../../src/pack-archive.js'
 import { catalogSetSave, projectPack } from './catalog.js'
@@ -22,10 +22,12 @@ import {
   renderDiag,
   slugify,
   verifyVersion,
+  writeInstance,
   type Diagnostic,
   type InstanceRecord,
   type LauncherRoot,
 } from './launcher.js'
+import { packIdFromPath } from './pack-catalog.js'
 import { readPinstZip, restorePinstHome } from './pinst.js'
 import { builtinRegistryDir, loadRegistryStore, RegistryError, type RegistryStore } from './registry-store.js'
 
@@ -217,6 +219,20 @@ function createInst(ctx: ImportCtx): void {
     profile: ctx.pack.dsh?.profile || 'web',
     port: ctx.kind === 'pinst' ? 'auto' : undefined,
   })
+  if (ctx.kind === 'pinst') return
+  // 目录行 id 与实例来源都从文件名算（Test-0.1.0.pack.zip → Test-0.1.0），PAD 的
+  // 「这个包装到哪几个实例」和 Instance.Source 才对得上。import-failed 的实例也保留来源：
+  // 人还能看出它是从哪个包装坏的。
+  const packId = packIdFromPath(ctx.packPath)
+  const source = {
+    kind: 'pack',
+    packId,
+    packTitle: String(ctx.pack.name || '').trim() || packId,
+    packVersion: String(ctx.pack.version || '').trim(),
+    packPath: resolve(ctx.packPath),
+  }
+  ctx.instance = { ...ctx.instance, source } as InstanceRecord
+  writeInstance(ctx.root, ctx.instance)
 }
 
 function slugFromPath(p: string): string {
@@ -272,13 +288,20 @@ function installManager(ctx: ImportCtx): void {
 
 function addPlugins(ctx: ImportCtx): void {
   const inst = ctx.instance!
+  // Q6：包内本地插件（dsh.plugins[].local）先复制到实例目录再以 file: 装。
+  // 原来直接 file:<import 临时解压目录>，import 结束临时目录就删了，路径天然脆弱；
+  // 复制进 <instance>/home/local-plugins/<packId>/<name>/ 后路径稳定、可归属、卸包可回滚。
+  const packId = ctx.kind === 'pinst' ? '' : packIdFromPath(ctx.packPath)
   for (const plug of ctx.pack.dsh?.plugins || []) {
     const spec = String(plug.spec || plug.name || '').trim()
     if (!spec) continue
     const required = plug.required !== false
     // 包里自带的插件（没上架 npm）：从解出来的 plugins/<safe>/ 目录装，pnpm add file:…
     const local = String((plug as { local?: string }).local || '').trim()
-    const target = local ? `file:${resolve(ctx.packRoot, local)}` : spec
+    let target = spec
+    if (local) {
+      target = `file:${stageLocalPlugin(ctx, packId, local)}`
+    }
     const r = pluginAdd(ctx.root, inst.id, target)
     if (r.status === 0) continue
     if (!required) {
@@ -296,6 +319,29 @@ function addPlugins(ctx: ImportCtx): void {
       },
     )
   }
+}
+
+/**
+ * 把包内本地插件目录复制到 `<instance>/home/local-plugins/<packId>/<name>/`，返回实例里的绝对路径。
+ * 每次都先删再复制：再次导入同一包时不会留下上一版的残留文件。
+ */
+function stageLocalPlugin(ctx: ImportCtx, packId: string, local: string): string {
+  const inst = ctx.instance!
+  const rel = local.replace(/\\/g, '/').replace(/^\.?\//, '').replace(/\/+$/, '')
+  const name = basename(resolve(ctx.packRoot, rel))
+  if (!rel || !name) throw pa('PA009', 'pack local plugin dir is empty', local)
+  const src = resolve(ctx.packRoot, rel)
+  const rootAbs = resolve(ctx.packRoot)
+  // 不让 local 逃出包根（zip 解压目录 / pack.json 所在目录）。
+  if (src !== rootAbs && !src.startsWith(`${rootAbs}${sep}`)) {
+    throw pa('PA009', `local plugin escapes the pack root: ${local}`, local)
+  }
+  if (!existsSync(src)) throw pa('PA009', `local plugin dir is not in the pack: ${local}`, local)
+  const dest = join(instanceHome(ctx.root, inst.id), 'local-plugins', packId || 'pack', name)
+  rmSync(dest, { recursive: true, force: true })
+  mkdirSync(dirname(dest), { recursive: true })
+  cpSync(src, dest, { recursive: true })
+  return dest
 }
 
 function readPinst(ctx: ImportCtx): void {
@@ -327,7 +373,14 @@ function readPinst(ctx: ImportCtx): void {
 function restorePinst(ctx: ImportCtx): void {
   const inst = ctx.instance!
   if (!ctx.pinstRoot) throw pa('PA009', 'pinst root missing', ctx.packPath)
-  restorePinstHome(ctx.pinstRoot, instanceHome(ctx.root, inst.id), inst.workspace.path)
+  // 第 4 个参数 = 实例目录：让 pinst 里带的 pack-ledger.json 原样落回
+  // instances/<id>/pack-ledger.json（Q4：整实例快照，不重算；旧 pinst 没账本就保持「未登记」）。
+  restorePinstHome(
+    ctx.pinstRoot,
+    instanceHome(ctx.root, inst.id),
+    inst.workspace.path,
+    join(ctx.root.path, 'instances', inst.id),
+  )
   const home = instanceHome(ctx.root, inst.id)
   const sessionsRoot = join(home, 'sessions')
   mkdirSync(sessionsRoot, { recursive: true })

@@ -56,13 +56,60 @@ function pluginId(prefix: string, name: string): string {
   return `${prefix}-${slug(name)}`
 }
 
+function isSafeModId(id: string): boolean {
+  const value = id.trim()
+  return Boolean(value)
+    && !value.includes('/')
+    && !value.includes('\\')
+    && !value.startsWith('.')
+    && !value.includes('.agent-pack-origin.json')
+}
+
+/** 同一份投影里 mod 目录不能重名：重了就加 -2、-3（顺序稳定，不靠时间戳）。 */
+function uniqueModId(wanted: string, used: Set<string>): string {
+  const base = wanted || 'plugin'
+  let id = base
+  for (let n = 2; used.has(id); n++) id = `${base}-${n}`
+  used.add(id)
+  return id
+}
+
+/**
+ * `pack.dsh.plugins[]` 只有安装源 spec、没有 id/name 时，从 spec 拆出 npm 包名和版本/范围，
+ * 投影目录与展示名才有稳定来源。`@scope/pkg@^1.2.0` 的版本分隔符是第二个 `@`；
+ * `file:` / 路径类安装源不是「包名@版本」，整串保留。
+ */
+export function splitPluginSpec(spec: string): { name: string; selector: string } {
+  const raw = spec.trim()
+  if (!raw) return { name: '', selector: '' }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(raw) || raw.startsWith('.') || raw.startsWith('/') || raw.startsWith('~')) {
+    return { name: raw, selector: '' }
+  }
+  if (raw.startsWith('@')) {
+    const slash = raw.indexOf('/')
+    if (slash < 0) return { name: raw, selector: '' }
+    const at = raw.indexOf('@', slash)
+    return at < 0 ? { name: raw, selector: '' } : { name: raw.slice(0, at), selector: raw.slice(at + 1) }
+  }
+  const at = raw.indexOf('@')
+  return at > 0 ? { name: raw.slice(0, at), selector: raw.slice(at + 1) } : { name: raw, selector: '' }
+}
+
+/** 组合包 spec → 投影目录前缀：去 scope、去版本，只剩包名 slug。 */
+function pluginSpecId(spec: string): string {
+  const { name } = splitPluginSpec(spec)
+  const slash = name.indexOf('/')
+  const bare = name.startsWith('@') && slash > 0 ? name.slice(slash + 1) : name
+  return `plugin-${slug(bare) || 'pkg'}`
+}
+
 async function writeShippedMod(
   dir: string,
   manifest: PackModManifest,
   files: Record<string, string>,
 ): Promise<void> {
   const id = String(manifest.id || '').trim()
-  if (!id || id.includes('/') || id.includes('\\') || id.startsWith('.') || id.includes('.agent-pack-origin.json')) {
+  if (!isSafeModId(id)) {
     throw new Error(`invalid mod id: ${manifest.id}`)
   }
   const modDir = join(dir, 'mods', id)
@@ -236,6 +283,8 @@ export async function compilePackToDshBundle(pack: PackDoc, outDir: string): Pro
   }
 
   const mods: PackModManifest[] = []
+  /** mods/ 下的目录 id，用于给 spec-only 组合包派生不重名的投影 id。 */
+  const usedModIds = new Set<string>()
   for (const [skillName, body] of skillBodies) {
     const entry = pack.knowledge?.skills?.find(s => String(s.name || '') === skillName)
     const id = String(entry?.id || skillName).trim() || skillName
@@ -250,6 +299,7 @@ export async function compilePackToDshBundle(pack: PackDoc, outDir: string): Pro
       path: `mods/${id}/SKILL.md`,
     }
     await writeShippedMod(dir, manifest, { 'SKILL.md': body })
+    usedModIds.add(id)
     mods.push(manifest)
     units.push({ kind: 'mod', name: id, path: manifest.path })
   }
@@ -275,6 +325,7 @@ export async function compilePackToDshBundle(pack: PackDoc, outDir: string): Pro
       path: `mods/${id}/mcp.json`,
     }
     await writeShippedMod(dir, manifest, { 'mcp.json': payload })
+    usedModIds.add(id)
     mods.push(manifest)
     units.push({ kind: 'mod', name: id, path: manifest.path })
   }
@@ -294,8 +345,45 @@ export async function compilePackToDshBundle(pack: PackDoc, outDir: string): Pro
       path: `mods/${id}/plugin.json`,
     }
     await writeShippedMod(dir, manifest, { 'plugin.json': payload })
+    usedModIds.add(id)
     mods.push(manifest)
     units.push({ kind: 'mod', name: id, path: manifest.path })
+  }
+  // 老 ccui-pack 的 `dsh.plugins[]` 只有 spec、没有 id/name：这些是「组合包」，
+  // 装它们靠 import 链的 `dsh plugin add`（docs/modpack.md §3.4），投影只负责让包里
+  // 有可检索的 mod 并让 mods.length > 0；不能再生成 cordis.patch insert 重复加载。
+  for (const p of pack.dsh?.plugins ?? []) {
+    const rawSpec = String(p.spec || '').trim()
+    if (!rawSpec) continue
+    const id = String(p.id || '').trim()
+    const pluginName = String(p.name || '').trim()
+    if (id && pluginName) continue
+    const parsed = splitPluginSpec(rawSpec)
+    const display = pluginName || parsed.name || rawSpec
+    const wanted = isSafeModId(id) ? id : pluginSpecId(rawSpec)
+    const modId = uniqueModId(wanted, usedModIds)
+    const payload = JSON.stringify({
+      id: modId,
+      name: display,
+      spec: rawSpec,
+      selector: parsed.selector,
+      required: p.required !== false,
+      config: p.config ?? {},
+      inject: p.inject ?? [],
+    }, null, 2) + '\n'
+    const manifest: PackModManifest = {
+      schema: PACK_MOD_SCHEMA,
+      id: modId,
+      kind: 'plugin',
+      name: display,
+      publisher: String(pack.author || ''),
+      version: String(pack.version || ''),
+      spec: rawSpec,
+      path: `mods/${modId}/plugin.json`,
+    }
+    await writeShippedMod(dir, manifest, { 'plugin.json': payload })
+    mods.push(manifest)
+    units.push({ kind: 'mod', name: modId, path: manifest.path })
   }
   for (const extra of extraFileMods) {
     const base = slug(extra.name.replace(/\.(mdc|md|json|yml|yaml)$/i, ''))

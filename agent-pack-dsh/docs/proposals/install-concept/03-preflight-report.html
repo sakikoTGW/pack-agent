@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>方案 C · 预检 / 一次授权 / 安装报告</title>
+<link rel="stylesheet" href="mock.css">
+<style>
+  .two { display: flex; gap: 24px; position: absolute; left: 50%; top: 104px; transform: translateX(-50%); z-index: 60; }
+  .two .dialog { position: relative; left: auto; top: auto; transform: none; width: 686px; border-radius: 18px; max-height: 726px; }
+  .two .dhead { padding: 20px 24px 10px; }
+  .two .dbody { padding: 4px 24px 12px; }
+  .two .dfoot { padding: 14px 24px 18px; }
+  .two h3 { font-size: 20px; }
+  .two .checkrow { padding: 10px 2px; }
+  .two .stats { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .two .stat b { font-size: 21px; }
+  .two .stat { padding: 9px 10px; }
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="titlebar">
+    <span class="back">←</span><h1>版本设置</h1><span class="tag">sisyphus</span>
+    <span class="spacer"></span><span class="wctl">－ ☐ ✕</span>
+  </div>
+  <div class="body">
+    <div class="side" style="width:260px;padding:18px 12px">
+      <div class="inst sel" style="margin-bottom:12px"><div class="avatar whale">🐳</div><div><b>sisyphus</b><small>0.2.1-rc.2 · web</small></div></div>
+      <div class="inst"><div class="avatar">📦</div><div><b>Test</b><small>已启用 · 不完整</small></div></div>
+    </div>
+    <div class="main"></div>
+  </div>
+
+  <div class="scrim"></div>
+  <div class="two">
+    <!-- 左：预检 + 一次授权 -->
+    <div class="dialog">
+      <div class="dhead">
+        <span style="width:34px;height:34px;border-radius:9px;background:var(--accent-wash);color:var(--accent);display:grid;place-items:center;font-size:17px">✓</span>
+        <h3>安装前检查</h3>
+        <div class="target">Test 0.1.0 → <b>sisyphus</b></div>
+      </div>
+      <div class="dbody">
+        <div class="checkrow"><span class="st ok">✓</span><div class="txt"><b>内核匹配</b><div class="sub">包钉 0.2.1-rc.2 = 实例 0.2.1-rc.2</div></div><span class="pill green">通过</span></div>
+        <div class="checkrow"><span class="st ok">✓</span><div class="txt"><b>插件 10 个：8 个可装 · 1 个需授权 · 1 个已下架</b><div class="sub">下面两条需要你决定，其余的不会打断安装</div></div></div>
+        <div class="checkrow"><span class="st warn">!</span><div class="txt"><b>dsh-find-skill@0.2.1 与内核不兼容</b><div class="sub">它的 peers 要求 @deepseek-ai/dsh-* ^0.1.0-rc.6，当前内核 0.2.1-rc.2。可写 DSH 官方 allow-version 豁免，风险：可能崩/坏数据</div></div><span class="pill amber">需授权</span></div>
+        <div class="checkrow"><span class="st bad">✕</span><div class="txt"><b>@yuxianglin/dsh-bridge-browser 已从 npm 下架</b><div class="sub">npm registry 404，装不上。跳过它这个包会缺 1 个功能，但其余 9 个可用</div></div><span class="pill red">不可装</span></div>
+        <div class="checkrow"><span class="st ok">✓</span><div class="txt"><b>版本冲突</b><div class="sub">实例里已有的插件没有和包声明冲突的版本</div></div><span class="pill green">无</span></div>
+
+        <div class="opts">
+          <div class="opt"><span class="cbox on">✓</span>接受 1 个插件的兼容风险（写 allow-version 豁免）</div>
+          <div class="opt"><span class="cbox on">✓</span>跳过 1 个已下架插件，包标「不完整」（之后可修复/重新导出）</div>
+        </div>
+      </div>
+      <div class="dfoot">
+        <span style="font-size:13px;color:var(--muted)">只取消这一个包，不动实例其它内容</span>
+        <span class="grow"></span>
+        <button class="btn">取消</button>
+        <button class="btn primary">开始安装</button>
+      </div>
+
+    </div>
+
+    <!-- 右：安装报告 -->
+    <div class="dialog">
+      <div class="dhead">
+        <span style="width:34px;height:34px;border-radius:9px;background:var(--green-wash);color:var(--green-text);display:grid;place-items:center;font-size:17px">✓</span>
+        <h3>安装报告</h3>
+        <div class="target">Test → <b>sisyphus</b></div>
+      </div>
+      <div class="dbody">
+        <div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px">
+          <span class="pill green" style="font-size:15px;padding:6px 13px">已装到 sisyphus</span>
+          <span class="pill amber" style="font-size:15px;padding:6px 13px">不完整 · 缺 1 个</span>
+          <span style="font-size:13px;color:var(--muted)">账本已写入 pack-ledger.json</span>
+        </div>
+        <div class="stats">
+          <div class="stat g"><b>9</b><span>新增插件</span></div>
+          <div class="stat"><b>0</b><span>保留</span></div>
+          <div class="stat a"><b>1</b><span>风险豁免</span></div>
+          <div class="stat a"><b>1</b><span>跳过</span></div>
+          <div class="stat"><b>0</b><span>失败</span></div>
+        </div>
+        <div class="checkrow"><span class="st ok">✓</span><div class="txt"><b>9 个插件已装进 web profile</b><div class="sub">含 dsh-find-skill（已接受风险，豁免只对 0.2.1-rc.2 生效）；投影 + 管理器 + 内容白名单均已就绪</div></div></div>
+        <div class="checkrow"><span class="st bad">✕</span><div class="txt"><b>跳过 @yuxianglin/dsh-bridge-browser</b><div class="sub">npm 上已下架。包标记「不完整」，以后包作者重新发布或你重新导出后可以「修复」补上</div></div></div>
+        <div class="checkrow"><span class="st ok">✓</span><div class="txt"><b>实例里其它内容没有被动过</b><div class="sub">只写这个实例的投影/账本/profile 插件，settings、其它实例不受影响</div></div></div>
+      </div>
+      <div class="dfoot">
+        <span class="grow"></span>
+        <button class="btn">重新导出这个包</button>
+        <button class="btn">打开实例</button>
+        <button class="btn primary">去修复缺少项</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="notes">
+  <div class="n"><span class="num">①</span><span class="t">预检把「内核 / 下架 / 需要授权的插件 / 版本冲突」一次列清</span></div>
+  <div class="n"><span class="num">②</span><span class="t">结果写账本、标不完整，随时可修复/重新导出；不会整包中止装不了</span></div>
+  <div class="n"><span class="num">③</span><span class="t">Test 包实测：8 个可直接装、1 个需豁免（dsh-find-skill）、1 个已下架（dsh-bridge-browser）</span></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,89 @@
+﻿# D104 修复后验证 · 机器可核对摘要（pre-deploy）
+
+captured=2026-11-03T23:40+08:00
+SOURCE: HEAD=54cf34ca419e918e109a9b0f926011d8570d24aa  diff_sha=e9b4752c4198d3cbe8cffb33603089416ced1953 (10 modified files, working tree; no commit)
+NEW BUILD: E:\pack-agent\.tmp\pad-build-d104\pack-agent-for DSH.exe
+  sha256=C47F9830866D1EC418132CC2FE4124CA6CB9EC14A8821AEF2AA13B1CAAA77E55 size=336384
+  dotnet build agent-pack-dsh/pad/pad.csproj -c Debug -o E:\pack-agent\.tmp\pad-build-d104 -> exit 0, 0 warnings, 0 errors
+
+## TESTS
+bun run agent-pack-dsh/modpack/import-pack.test.ts   -> exit 0 (6.1s)
+bun run agent-pack-dsh/modpack/pack-catalog.test.ts  -> exit 0 (20.3s)
+bun run agent-pack-dsh/modpack/test.ts               -> exit 0 (1.1s)
+bun run agent-pack-dsh/modpack/pad-window.test.ts    -> exit 0 (5.1s)
+bun run agent-pack-dsh/modpack/pad-pack.test.ts      -> exit 0 (4.1s)
+dotnet test agent-pack-dsh/pad.tests/Pad.Tests.csproj -> exit 0, 67 passed / 0 failed / 0 skipped (194ms)
+
+## BUG A — lamps (objective blob count, .tmp/lamp-analyze.py, green family of #3FBF73)
+baseline\03-baseline-ui-mirror.png   -> 3 lamps (web + 官方 + 第三方)       [pre-fix binary]
+fixed\shots\11-fixed-ui-mirror-tall.png -> 1 lamp  (web only; 4 rows fully visible: web/官方/第三方/TUI)
+fixed\shots\14-fixed-live-root.png   -> 0 lamps  (live root, detected rows 终端/官方/第三方 rendered, none lit)
+fixed\shots\13c-new-makepack-retry.png -> 0 lamps (导出整合包 page; baseline 13b = 2 lamps)
+=> PASS: only PAD-ledger profile keeps the breathing lamp.
+
+## BUG B1 — install-state pill (versions page)
+fixed\shots\11 ... 整合包 row Test 0.1.0 pill = "已装到 pack-Test" (green)      [live-state mirror]
+fixed\shots\14 ... live root same row = "已装到 pack-Test" (green)
+fixed\shots\12-fixed-scratch-pills.png:
+  Test 0.1.0            -> "已装到 verify-legacy；已建实例（上次没装完）Test"
+  Verify Probe 0.1.0    -> "已装到 verify-importpack、Verify Probe"
+  Verify Uninstalled 0.1.1 -> "未安装" (grey)
+=> PASS: 已装到 / 未安装 / import-failed distinct; failed instance not shown as installed.
+
+## BUG B2 — installability matrix (scratch root E:\pack-agent\.tmp\verify-d104-e2e\.pack-launcher)
+A) PAD CLI legacy projection path:
+   cli instance create --pack Test-0.1.0 --name verify-legacy -> exit 0 (10.4s), no "has no mods"
+   instance status=ready source.packId=Test-0.1.0; projection 10 mods x {mod.json,plugin.json}=20 files
+B) TS full import chain on real Test pack:
+   cli import Test-0.1.0.pack.zip -> exit 1 (21.3s), NO "has no mods";
+   projection 10 plugin.json; instance id=test status=import-failed source.packId=Test-0.1.0;
+   honest error[PA014] "required dsh plugin add failed for dsh-find-skill"
+   ("Plugin dsh-find-skill@0.2.1 is incompatible with dsh 0.2.1-rc.2 ... requirements ^0.1.0-rc.6")
+   => pack-content incompatibility (previously masked by bogus "has no mods"); NOT a fix FAIL.
+C) compatible probe pack (verifier-made Verify-Probe-0.1.0: required spec-only dsh-context, kernel 0.2.1-rc.2):
+   cli import Verify-Probe -> exit 0 (23.3s), instance id=verify-probe status=ready source.packId=Verify-Probe-0.1.0
+   profile home\profiles\web\package.json dependencies dsh-context ^0.79.0, bundles contains dsh-context,
+   node_modules\dsh-context\package.json version 0.79.0 (real npm install); projection 1 plugin.json
+D) UI path Packs.ImportPack via probe exe built from final source (E:\pack-agent\.tmp\verify-d104-probe):
+   RESULT id=verify-importpack status=ready source.packId=Verify-Probe-0.1.0 elapsedMs=22849
+   CAPTURED lines=42 hasSchema/hasUpdated/hasId=True; profile bundles contains dsh-context
+E) catalog `cli pack list --json --out` (scratch root):
+   Test-0.1.0         installed=[test,verify-legacy]          kernel=0.2.1-rc.2 source=library
+   Verify-Probe-0.1.0 installed=[verify-importpack,verify-probe] source=library
+   Verify-Uninstalled installed=[]                              source=library
+=> PASS per adjusted acceptance.
+
+## HEAD PRE-EXISTING RED (Lead request)
+pristine worktree .tmp\pad-head-worktree @54cf34c: pad-window.test.ts exit=1, stale DownloadView assertion
+line 524 `read('Views/DownloadView.xaml').includes('关键词')`; current tree after rebase -> exit 0.
+=> pre-existing stale assertions, not product regression.
+
+## LIVE PAD INTEGRITY (deploy NOT done yet)
+pid 19264 ALIVE (start 2026-11-03 17:15:11), pad-build-z unchanged, pad-crash.log unchanged
+(mtime 2026-11-02 16:42:25, 21267 bytes). Live launcher root only read; all writes under .tmp.
+Note: an exited zombie process object pid 49748 remains (HandleCount=0, Threads={}), does not hold
+live pad.lock (content=19264) — harmless, left untouched.
+
+## RISKS / NOTES
+- Test-0.1.0 full install will always fail PA014 until the pack's plugins are made compatible with
+  0.2.1-rc.2 — pack data, flagged to user by new compat-aware toast (VersionsView.PackCompatLine).
+- --shot on live root uses 3.2s delay and can race async discover; rigorous lamp proof uses read-only
+  mirror root (same instances/runtime ledger/library) with shotDelayMs=12000.
+- First makepack shot (13) rendered blank once; immediate retry (13c) rendered correctly and old binary
+  also renders — transient shot timing, not reproducible product regression.
+- Pre-existing UI quirk kept (not in scope): versions page ListBox syncs selection to first instance,
+  so a live-root --shot selects 123; the web-lamp proof uses the mirror whose sisyphus row sorts first.
+
+## DEPLOY (executed by verifier after Lead deploy-go)
+time=2026-11-03T23:40:13+08:00 .. 23:41
+copied: .tmp\pad-build-d104\* -> .tmp\pad-build-z\ (preserved .pack-launcher, pad-crash.log, packmaker.exe)
+deployed_exe_sha256=C47F9830866D1EC418132CC2FE4124CA6CB9EC14A8821AEF2AA13B1CAAA77E55 (match expected=True; dll matches d104 too)
+old_pid=19264 stopped after 0.3s; relaunch cmd=E:\pack-agent\.tmp\run-pad-new.cmd
+new_pid=78308 started=2026-11-03T23:40:27+08:00 exe=E:\pack-agent\.tmp\pad-build-z\pack-agent-for DSH.exe window_title=PAD
+pad.lock content=78308 target=.tmp\pad-build-z\pack-agent-for DSH.exe
+pad-crash.log BEFORE size=21267 mtime=2026-11-02T16:42:25.1943346 sha256=721F99515961A790C3DCE4413D8C12A5EAD67BB6BE7EBFDBE8DDC21C2170D3B3
+pad-crash.log AFTER  size=21267 mtime=2026-11-02T16:42:25.1943346 sha256=721F99515961A790C3DCE4413D8C12A5EAD67BB6BE7EBFDBE8DDC21C2170D3B3 => NO NEW ENTRIES
+pad.json/ui-state.json/runtime.json sha256 unchanged after relaunch
+sisyphus web: runtime ledger entry pid=67008 ALIVE; cli status Phase=Running (dsh adopted instance also Running via OS detection, pre-existing)
+post-deploy live shot: fixed\shots\15-deployed-live-versions.png EXIT=0 lamps=0, pill 已装到 pack-Test; crash log still unchanged after shot; pid 78308 still ALIVE title=PAD
+evidence: fixed\deploy\before-state.txt, deploy-result.txt, after-state.txt, status-after-deploy.json

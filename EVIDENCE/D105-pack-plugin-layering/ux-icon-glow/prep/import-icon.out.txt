@@ -1,0 +1,84 @@
+--- 03:20:57 pad cli import E:\pack-agent\.tmp\d106-ux\.pack-launcher\library\packs\Icon-Probe-0.1.0.pack.zip
+{
+  "schema": "pack-agent.launcher.instance/v1",
+  "id": "icon-probe",
+  "name": "Icon Probe",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "profile": {
+    "name": "web",
+    "port": "auto"
+  },
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\d106-ux\\.pack-launcher\\instances\\icon-probe\\workspace"
+  },
+  "status": "ready",
+  "home": "E:\\pack-agent\\.tmp\\d106-ux\\.pack-launcher\\instances\\icon-probe\\home",
+  "display": {
+    "info": "",
+    "logo": null,
+    "star": false,
+    "category": ""
+  },
+  "packs": {
+    "allowSet": "default"
+  },
+  "plugins": {
+    "disabled": []
+  },
+    "kind": "pack",
+  "credentials": {
+    "kind": "global"
+  },
+  "created": "2026-11-03T19:21:07.045Z",
+  "updated": "2026-11-03T19:21:07.050Z",
+  "source": {
+    "packId": "Icon-Probe-0.1.0",
+    "packTitle": "Icon Probe",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\pack-agent\\.tmp\\d106-ux\\.pack-launcher\\library\\packs\\Icon-Probe-0.1.0.pack.zip"
+  }
+}
+账本：已登记 Icon-Probe-0.1.0 0.1.0 · 1 个插件（profile web）
+  "id": "icon-probe",
+  "name": "Icon Probe",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "profile": {
+    "name": "web",
+    "port": "auto"
+  },
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\d106-ux\\.pack-launcher\\instances\\icon-probe\\workspace"
+  },
+  "status": "ready",
+  "home": "E:\\pack-agent\\.tmp\\d106-ux\\.pack-launcher\\instances\\icon-probe\\home",
+  "display": {
+    "info": "",
+    "logo": null,
+    "star": false,
+    "category": ""
+  },
+  "packs": {
+    "allowSet": "default"
+  },
+  "plugins": {
+    "disabled": []
+  },
+  "credentials": {
+    "kind": "global"
+  },
+  "created": "2026-11-03T19:21:07.045Z",
+  "updated": "2026-11-03T19:21:07.050Z",
+  "source": {
+    "kind": "pack",
+    "packId": "Icon-Probe-0.1.0",
+    "packTitle": "Icon Probe",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\pack-agent\\.tmp\\d106-ux\\.pack-launcher\\library\\packs\\Icon-Probe-0.1.0.pack.zip"
+  }
+}

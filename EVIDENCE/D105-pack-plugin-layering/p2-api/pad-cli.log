@@ -1,0 +1,85 @@
+--- 02:03:18 pad cli import E:\pack-agent\.tmp\p2-ledger-e2e\.pack-launcher\library\packs\Probe-Specs-0.1.0.pack.zip
+optional plugin skipped: dsh-find-skill
+{
+  "schema": "pack-agent.launcher.instance/v1",
+  "id": "probe-specs",
+  "name": "Probe Specs",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "profile": {
+    "name": "web",
+    "port": "auto"
+  },
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\p2-ledger-e2e\\.pack-launcher\\instances\\probe-specs\\workspace"
+  },
+  "status": "ready",
+  "home": "E:\\pack-agent\\.tmp\\p2-ledger-e2e\\.pack-launcher\\instances\\probe-specs\\home",
+  "display": {
+    "info": "",
+    "logo": null,
+    "star": false,
+    "category": ""
+  },
+  "packs": {
+    "allowSet": "default"
+  },
+  "plugins": {
+    "disabled": []
+  },
+  "credentials": {
+    "kind": "global"
+  },
+  "created": "2026-11-03T18:03:26.720Z",
+  "updated": "2026-11-03T18:03:26.726Z",
+  "source": {
+    "kind": "pack",
+    "packId": "Probe-Specs-0.1.0",
+    "packTitle": "Probe Specs",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\pack-agent\\.tmp\\p2-ledger-e2e\\.pack-launcher\\library\\packs\\Probe-Specs-0.1.0.pack.zip"
+  }
+}
+账本：已登记 Probe-Specs-0.1.0 0.1.0 · 1 个插件（profile web）
+  "id": "probe-specs",
+  "name": "Probe Specs",
+  "dsh": {
+    "version": "0.2.1-rc.2"
+  },
+  "profile": {
+    "name": "web",
+    "port": "auto"
+  },
+  "workspace": {
+    "kind": "owned",
+    "path": "E:\\pack-agent\\.tmp\\p2-ledger-e2e\\.pack-launcher\\instances\\probe-specs\\workspace"
+  },
+  "status": "ready",
+  "home": "E:\\pack-agent\\.tmp\\p2-ledger-e2e\\.pack-launcher\\instances\\probe-specs\\home",
+  "display": {
+    "info": "",
+    "logo": null,
+    "star": false,
+    "category": ""
+  },
+  "packs": {
+    "allowSet": "default"
+  },
+  "plugins": {
+    "disabled": []
+  },
+  "credentials": {
+    "kind": "global"
+  },
+  "created": "2026-11-03T18:03:26.720Z",
+  "updated": "2026-11-03T18:03:26.726Z",
+  "source": {
+    "kind": "pack",
+    "packId": "Probe-Specs-0.1.0",
+    "packTitle": "Probe Specs",
+    "packVersion": "0.1.0",
+    "packPath": "E:\\pack-agent\\.tmp\\p2-ledger-e2e\\.pack-launcher\\library\\packs\\Probe-Specs-0.1.0.pack.zip"
+  }
+}

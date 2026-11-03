@@ -1,0 +1,22 @@
+{
+  "schema": "pad.checkpoint/v1",
+  "id": "20261103-212522-490",
+  "instance": "ev-hot",
+  "profile": "web",
+  "trigger": "plugin add file:E:\\pack-agent\\.tmp\\lab-e2e\\plugins\\hot-bundle",
+  "createdAt": "2026-11-03T21:25:22.5040745\u002B00:00",
+  "files": [
+    {
+      "path": "instance.json",
+      "name": "00-instance.json"
+    },
+    {
+      "path": "home/profiles/web/package.json",
+      "name": "01-package.json"
+    },
+    {
+      "path": "home/profiles/web/cordis.patch.yml",
+      "name": "02-cordis.patch.yml"
+    }
+  ]
+}

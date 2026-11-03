@@ -1,0 +1,27 @@
+--- 03:21:54 pad cli pack list icon-probe --json --out E:\pack-agent\EVIDENCE\D105-pack-plugin-layering\ux-icon-glow\prep\instance-packs.json
+[
+  {
+    "Id": "pack-agent-modpack-icon-probe",
+    "Name": "Icon Probe",
+    "Version": "0.1.0",
+    "Description": "D106 verifier fixture: pack zip WITH root icon.png",
+    "Dir": "E:\\pack-agent\\.tmp\\d106-ux\\.pack-launcher\\instances\\icon-probe\\workspace\\.agent-pack\\modpacks\\pack-agent-modpack-icon-probe",
+    "Enabled": true,
+    "Title": "Icon Probe",
+    "VersionText": "v0.1.0",
+    "StateText": "\u5DF2\u542F\u7528",
+    "DescriptionText": "D106 verifier fixture: pack zip WITH root icon.png"
+  },
+  {
+    "Id": "pack-agent-modpack-noicon-probe",
+    "Name": "NoIcon Probe",
+    "Version": "0.1.0",
+    "Description": "D106 verifier fixture: pack zip WITHOUT icon.png",
+    "Dir": "E:\\pack-agent\\.tmp\\d106-ux\\.pack-launcher\\instances\\icon-probe\\workspace\\.agent-pack\\modpacks\\pack-agent-modpack-noicon-probe",
+    "Enabled": true,
+    "Title": "NoIcon Probe",
+    "VersionText": "v0.1.0",
+    "StateText": "\u5DF2\u542F\u7528",
+    "DescriptionText": "D106 verifier fixture: pack zip WITHOUT icon.png"
+  }
+]

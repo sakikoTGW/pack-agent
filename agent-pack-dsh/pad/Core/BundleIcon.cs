@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -185,69 +186,47 @@ public static class BundleIcon
     {
         try
         {
-            var paths = new List<(Color Fill, string D)>();
-            Color inherited = Colors.Black;
-            var gFill = Regex.Match(svg, "<g\\b[^>]*fill=[\"']([^\"']+)[\"']", RegexOptions.IgnoreCase);
-            if (gFill.Success)
-            {
-                try { inherited = (Color)ColorConverter.ConvertFromString(gFill.Groups[1].Value)!; }
-                catch { /* keep black */ }
-            }
-            foreach (Match tag in Regex.Matches(svg, "<path\\b[^>]*/?>", RegexOptions.IgnoreCase))
-            {
-                var fill = Regex.Match(tag.Value, "fill=[\"']([^\"']+)[\"']", RegexOptions.IgnoreCase);
-                var d = Regex.Match(tag.Value, "\\bd=[\"']([^\"']+)[\"']", RegexOptions.IgnoreCase);
-                if (!d.Success) continue;
-                Color c = inherited;
-                if (fill.Success)
-                {
-                    if (fill.Groups[1].Value.Equals("none", StringComparison.OrdinalIgnoreCase)) continue;
-                    try { c = (Color)ColorConverter.ConvertFromString(fill.Groups[1].Value)!; }
-                    catch { continue; }
-                }
-                paths.Add((c, d.Groups[1].Value));
-            }
-            if (paths.Count == 0) return false;
+            var root = XDocument.Parse(svg).Root;
+            if (root is null) return false;
 
-            double vw = 32, vh = 32;
-            var vb = Regex.Match(svg,
-                "viewBox=[\"']([0-9.]+)\\s+[0-9.]+\\s+([0-9.]+)\\s+([0-9.]+)[\"']");
-            if (vb.Success)
+            double minX = 0, minY = 0, vw = 128, vh = 128;
+            var parts = ((string?)root.Attribute("viewBox"))?.Split(
+                [' ', ','], StringSplitOptions.RemoveEmptyEntries);
+            if (parts is { Length: 4 } &&
+                double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out minX) &&
+                double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out minY) &&
+                double.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out vw) &&
+                double.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out vh) &&
+                vw > 0 && vh > 0)
             {
-                vw = double.Parse(vb.Groups[2].Value, CultureInfo.InvariantCulture);
-                vh = double.Parse(vb.Groups[3].Value, CultureInfo.InvariantCulture);
+                // ok
             }
-            var side = Math.Max(1, Math.Min(vw, vh));
+            else
+            {
+                minX = minY = 0;
+                vw = vh = 128;
+                if (double.TryParse((string?)root.Attribute("width"),
+                        NumberStyles.Float, CultureInfo.InvariantCulture, out var w) && w > 0)
+                    vw = w;
+                if (double.TryParse((string?)root.Attribute("height"),
+                        NumberStyles.Float, CultureInfo.InvariantCulture, out var h) && h > 0)
+                    vh = h;
+            }
 
-            var inner = new DrawingGroup();
-            var tr = Regex.Match(svg,
-                "transform=[\"']translate\\(([0-9.]+)\\s+([0-9.]+)\\)[\"']");
-            if (tr.Success)
+            var drawing = new DrawingGroup
             {
-                inner.Transform = new TranslateTransform(
-                    double.Parse(tr.Groups[1].Value, CultureInfo.InvariantCulture),
-                    double.Parse(tr.Groups[2].Value, CultureInfo.InvariantCulture));
-            }
-            foreach (var (fill, d) in paths)
-            {
-                try
-                {
-                    inner.Children.Add(new GeometryDrawing(new SolidColorBrush(fill), null,
-                        Geometry.Parse(d)));
-                }
-                catch { /* skip a bad path */ }
-            }
-            var outer = new DrawingGroup
-            {
-                ClipGeometry = new RectangleGeometry(new Rect(0, 0, side, side)),
+                ClipGeometry = new RectangleGeometry(new Rect(minX, minY, vw, vh)),
             };
-            outer.Children.Add(inner);
+            drawing.Children.Add(WalkSvg(root, Colors.Black));
 
+            var side = Math.Max(vw, vh);
             var visual = new DrawingVisual();
             using (var dc = visual.RenderOpen())
             {
+                dc.PushTransform(new TranslateTransform(-minX, -minY));
                 dc.PushTransform(new ScaleTransform(size / side, size / side));
-                dc.DrawDrawing(outer);
+                dc.DrawDrawing(drawing);
+                dc.Pop();
                 dc.Pop();
             }
             var rtb = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);
@@ -264,5 +243,210 @@ public static class BundleIcon
         {
             return false;
         }
+    }
+
+    static DrawingGroup WalkSvg(XElement element, Color inherited)
+    {
+        var group = new DrawingGroup();
+        if (SvgTransform((string?)element.Attribute("transform")) is { } transform)
+            group.Transform = transform;
+
+        var fillText = (string?)element.Attribute("fill") ?? SvgStyle((string?)element.Attribute("style"), "fill");
+        var fill = fillText switch
+        {
+            null => inherited,
+            var t when t.Equals("none", StringComparison.OrdinalIgnoreCase) => Colors.Transparent,
+            var t when SvgColor(t) is { } c => c,
+            _ => inherited,
+        };
+        if (fillText is not null && fillText.Equals("none", StringComparison.OrdinalIgnoreCase))
+            return group; // 子树全部不画
+
+        foreach (var child in element.Elements())
+        {
+            var name = child.Name.LocalName;
+            if (name is "g" or "svg")
+            {
+                group.Children.Add(WalkSvg(child, fill));
+                continue;
+            }
+
+            var geometry = SvgGeometry(child);
+            if (geometry is null) continue;
+
+            var shapeFillText = (string?)child.Attribute("fill")
+                                ?? SvgStyle((string?)child.Attribute("style"), "fill");
+            var shapeFill = shapeFillText is null
+                ? fill
+                : shapeFillText.Equals("none", StringComparison.OrdinalIgnoreCase)
+                    ? Colors.Transparent
+                    : SvgColor(shapeFillText) ?? fill;
+            if (shapeFill == Colors.Transparent) continue;
+
+            var shape = new DrawingGroup();
+            if (SvgTransform((string?)child.Attribute("transform")) is { } st) shape.Transform = st;
+            shape.Children.Add(new GeometryDrawing(new SolidColorBrush(shapeFill), null, geometry));
+            group.Children.Add(shape);
+        }
+        return group;
+    }
+
+    static Geometry? SvgGeometry(XElement el) => el.Name.LocalName switch
+    {
+        "rect" => RectGeometry(el),
+        "circle" => CircleGeometry(el),
+        "ellipse" => EllipseShape(el),
+        "line" => LineGeometry(el),
+        "polygon" or "polyline" => PolyGeometry(el, el.Name.LocalName == "polygon"),
+        "path" => PathGeometry(el),
+        _ => null,
+    };
+
+    static Geometry? RectGeometry(XElement el)
+    {
+        var x = SvgNum(el, "x");
+        var y = SvgNum(el, "y");
+        var w = SvgNum(el, "width");
+        var h = SvgNum(el, "height");
+        if (w <= 0 || h <= 0) return null;
+        var rx = SvgNum(el, "rx");
+        var ry = SvgNum(el, "ry");
+        if (rx <= 0 && ry > 0) rx = ry;
+        if (ry <= 0 && rx > 0) ry = rx;
+        return rx > 0 || ry > 0
+            ? new RectangleGeometry(new Rect(x, y, w, h), rx, ry)
+            : new RectangleGeometry(new Rect(x, y, w, h));
+    }
+
+    static Geometry? CircleGeometry(XElement el)
+    {
+        var r = SvgNum(el, "r");
+        return r <= 0 ? null : new EllipseGeometry(new Point(SvgNum(el, "cx"), SvgNum(el, "cy")), r, r);
+    }
+
+    static Geometry? EllipseShape(XElement el)
+    {
+        var rx = SvgNum(el, "rx");
+        var ry = SvgNum(el, "ry");
+        return rx <= 0 || ry <= 0
+            ? null
+            : new System.Windows.Media.EllipseGeometry(new Point(SvgNum(el, "cx"), SvgNum(el, "cy")), rx, ry);
+    }
+
+    static Geometry? LineGeometry(XElement el)
+    {
+        var x1 = SvgNum(el, "x1");
+        var y1 = SvgNum(el, "y1");
+        var x2 = SvgNum(el, "x2");
+        var y2 = SvgNum(el, "y2");
+        return Math.Abs(x2 - x1) + Math.Abs(y2 - y1) < 0.001
+            ? null
+            : new LineGeometry(new Point(x1, y1), new Point(x2, y2));
+    }
+
+    static Geometry? PolyGeometry(XElement el, bool close)
+    {
+        var numbers = Regex.Matches((string?)el.Attribute("points") ?? "", @"-?[0-9.]+(?:e[-+]?[0-9]+)?",
+                RegexOptions.IgnoreCase)
+            .Select(m => double.Parse(m.Value, CultureInfo.InvariantCulture))
+            .ToList();
+        if (numbers.Count < 4) return null;
+        var geometry = new StreamGeometry();
+        using (var c = geometry.Open())
+        {
+            c.BeginFigure(new Point(numbers[0], numbers[1]), true, close);
+            for (var i = 2; i + 1 < numbers.Count; i += 2)
+                c.LineTo(new Point(numbers[i], numbers[i + 1]), true, false);
+        }
+        geometry.Freeze();
+        return geometry;
+    }
+
+    static Geometry? PathGeometry(XElement el)
+    {
+        var d = (string?)el.Attribute("d");
+        if (string.IsNullOrWhiteSpace(d)) return null;
+        try { return Geometry.Parse(d); }
+        catch { return null; }
+    }
+
+    static double SvgNum(XElement el, string name, double fallback = 0) =>
+        double.TryParse((string?)el.Attribute(name), NumberStyles.Float, CultureInfo.InvariantCulture,
+            out var value) ? value : fallback;
+
+    static Color? SvgColor(string text)
+    {
+        var t = text.Trim();
+        if (t.StartsWith("rgb(", StringComparison.OrdinalIgnoreCase) && t.EndsWith(')'))
+        {
+            var nums = t[4..^1].Split([',', ' '], StringSplitOptions.RemoveEmptyEntries);
+            if (nums.Length >= 3 &&
+                byte.TryParse(nums[0], out var r) && byte.TryParse(nums[1], out var g) &&
+                byte.TryParse(nums[2], out var b))
+                return Color.FromRgb(r, g, b);
+            return null;
+        }
+        if (t.StartsWith('#') && (t.Length == 4 || t.Length == 7 || t.Length == 9))
+        {
+            if (t.Length == 4)
+                t = $"#{t[1]}{t[1]}{t[2]}{t[2]}{t[3]}{t[3]}";
+            if (t.Length == 9) t = t[..7];
+            try { return (Color)ColorConverter.ConvertFromString(t)!; }
+            catch { return null; }
+        }
+        try { return (Color)ColorConverter.ConvertFromString(t)!; }
+        catch { return null; }
+    }
+
+    static string? SvgStyle(string? style, string key)
+    {
+        if (string.IsNullOrWhiteSpace(style)) return null;
+        foreach (var part in style.Split(';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var pair = part.Split(':', 2, StringSplitOptions.TrimEntries);
+            if (pair.Length == 2 && pair[0].Equals(key, StringComparison.OrdinalIgnoreCase))
+                return pair[1];
+        }
+        return null;
+    }
+
+    static Transform? SvgTransform(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        var matches = Regex.Matches(text, @"(matrix|translate|scale|rotate|skewX|skewY)\s*\(([^)]*)\)",
+            RegexOptions.IgnoreCase);
+        var transforms = new List<Transform>();
+        foreach (Match match in matches)
+        {
+            var name = match.Groups[1].Value.ToLowerInvariant();
+            var args = match.Groups[2].Value.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries)
+                .Select(v => double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : 0)
+                .ToArray();
+            Transform? t = name switch
+            {
+                "translate" => args.Length >= 1
+                    ? new TranslateTransform(args[0], args.Length > 1 ? args[1] : 0)
+                    : null,
+                "scale" => args.Length >= 1
+                    ? new ScaleTransform(args[0], args.Length > 1 ? args[1] : args[0])
+                    : null,
+                "rotate" => args.Length >= 3
+                    ? new RotateTransform(args[0], args[1], args[2])
+                    : args.Length >= 1 ? new RotateTransform(args[0]) : null,
+                "matrix" => args.Length >= 6
+                    ? new MatrixTransform(args[0], args[1], args[2], args[3], args[4], args[5])
+                    : null,
+                "skewx" => args.Length >= 1 ? new SkewTransform(args[0], 0) : null,
+                "skewy" => args.Length >= 1 ? new SkewTransform(0, args[0]) : null,
+                _ => null,
+            };
+            if (t is not null) transforms.Add(t);
+        }
+        if (transforms.Count == 0) return null;
+        // SVG 的 transform 列表是“从右往左”作用到点上；WPF TransformGroup 是顺序作用。
+        transforms.Reverse();
+        var group = new TransformGroup();
+        foreach (var t in transforms) group.Children.Add(t);
+        return group;
     }
 }

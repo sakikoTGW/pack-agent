@@ -291,6 +291,13 @@ public static class Cli
                         WriteOrOut(rest, JsonSerializer.Serialize(boards, Pretty));
                         return 0;
                     }
+                    if (cmd == "icon")
+                    {
+                        var name = string.Join(' ', rest);
+                        var path = await NpmPackageIcon.EnsureAsync(launcher.Root, name, "", CancellationToken.None);
+                        Say(path ?? "没有 npm 自定义 icon");
+                        return 0;
+                    }
                     if (cmd == "pinyin")
                     {
                         var text = string.Join(' ', rest);

@@ -1098,8 +1098,12 @@ public partial class DownloadView : UserControl, IRefreshable
             await gate.WaitAsync();
             try
             {
-                var icon = await BundleIcon.EnsureFromRepo(_state.Launcher.Root, row.Name,
-                    row.Repository.Length > 0 ? row.Repository : row.Homepage, CancellationToken.None);
+                // 官方 package icon 优先；没有自定义 icon 再退回仓库 logo。
+                var icon = await NpmPackageIcon.EnsureAsync(_state.Launcher.Root, row.Name, row.Version,
+                                CancellationToken.None)
+                           ?? await BundleIcon.EnsureFromRepo(_state.Launcher.Root, row.Name,
+                               row.Repository.Length > 0 ? row.Repository : row.Homepage,
+                               CancellationToken.None);
                 if (icon is not null) row.IconPath = icon;
             }
             catch { /* 网络/仓库不可达就用占位字形 */ }

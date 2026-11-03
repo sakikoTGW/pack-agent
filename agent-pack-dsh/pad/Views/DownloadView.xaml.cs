@@ -695,6 +695,7 @@ public partial class DownloadView : UserControl, IRefreshable
             }
             Paint(page);
             PrefetchNext(page);
+            MarketPinyinIndex.Prewarm(_state.Launcher);
             if (App.ShotPage == "market-more")
             {
                 StoreMore.Visibility = Visibility.Visible;
@@ -1011,6 +1012,7 @@ public partial class DownloadView : UserControl, IRefreshable
     {
         if (_growthBusy) return;
         _growthBusy = true;
+        MarketPinyinIndex.Prewarm(_state.Launcher);
         MarketError.Visibility = Visibility.Collapsed;
         EmptyCard.Visibility = Visibility.Collapsed;
         ResultCard.Visibility = Visibility.Visible;

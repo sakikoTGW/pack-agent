@@ -43,14 +43,44 @@ public static class MarketPinyinIndex
     static bool Fresh => _entries is not null &&
                          (DateTimeOffset.UtcNow - _at).TotalHours < TtlHours;
 
-    /// <summary>确保索引可用；首次会抓 12 页 npm 搜索结果（几秒），之后 24h 内直接读缓存。</summary>
-    public static async Task<bool> EnsureAsync(Launcher launcher, IProgress<string>? progress,
+    static Task<bool>? _building;
+    static int _warmStarted;
+
+    /// <summary>商店打开后在后台预建索引，用户第一次输拼音时就不用等。</summary>
+    public static void Prewarm(Launcher launcher)
+    {
+        if (Interlocked.Exchange(ref _warmStarted, 1) != 0) return;
+        _ = Task.Run(async () =>
+        {
+            try { await EnsureAsync(launcher, null, CancellationToken.None).ConfigureAwait(false); }
+            catch { /* 后台预热，失败不影响搜索 */ }
+        });
+    }
+
+    /// <summary>确保索引可用；首次会抓 12 页 npm 搜索结果（几秒），之后 24h 内直接读缓存。
+    /// 并发调用共享同一次构建。</summary>
+    public static Task<bool> EnsureAsync(Launcher launcher, IProgress<string>? progress,
         CancellationToken ct)
     {
         lock (Gate)
         {
-            if (Fresh) return true;
+            if (Fresh) return Task.FromResult(true);
+            if (_building is not null) return _building.WaitAsync(ct);
         }
+        var task = BuildAsync(launcher, progress, ct);
+        lock (Gate) _building = task;
+        return AwaitAndClear(task);
+
+        static async Task<bool> AwaitAndClear(Task<bool> task)
+        {
+            try { return await task.ConfigureAwait(false); }
+            finally { lock (Gate) _building = null; }
+        }
+    }
+
+    static async Task<bool> BuildAsync(Launcher launcher, IProgress<string>? progress,
+        CancellationToken ct)
+    {
 
         var file = CachePath(launcher);
         try

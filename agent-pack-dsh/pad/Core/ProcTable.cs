@@ -55,6 +55,26 @@ public static class ProcTable
     public static IReadOnlyList<ProcInfo> Snapshot(int cap = 900, CancellationToken ct = default)
     {
         var found = new List<ProcInfo>();
+
+        // 非 Windows：没有 PEB/WMI，用平台进程表（ps -eo pid=,command=）。
+        // 环境变量读不到，DshHome 留空；--profile / --user-data-dir 仍从命令行解析。
+        if (!Platform.Current.IsWindows)
+        {
+            foreach (var row in Platform.Current.Processes(cap))
+            {
+                ct.ThrowIfCancellationRequested();
+                found.Add(new ProcInfo(
+                    Pid: row.Pid,
+                    ParentPid: 0,
+                    Exe: null,
+                    CommandLine: row.CommandLine,
+                    DshHome: null,
+                    DshProfile: ArgValue(row.CommandLine, "--profile"),
+                    UserDataDir: ArgValue(row.CommandLine, "--user-data-dir"),
+                    ProfileArg: ArgValue(row.CommandLine, "--profile")));
+            }
+            return found;
+        }
         Process[] all;
         try { all = Process.GetProcesses(); }
         catch { return found; }

@@ -1,0 +1,6 @@
+--- 16:49:24 pad cli dev discard ev-hot --json
+dsh plugin --profile web remove file:E:/pack-agent/.tmp/lab-e2e/plugins/hot-bundle
+[ERR_PNPM_CANNOT_REMOVE_MISSING_DEPS] Cannot remove 'file:E:/pack-agent/.tmp/lab-e2e/plugins/hot-bundle': no such dependency found
+
+Available dependencies: hot-bundle
+dsh: plugin command failed; diagnostics: E:\pack-agent\.tmp\pad-hot-e2e\.pack-launcher\instances\ev-hot\home\profiles\web\.plugin-manager\logs\operation-XnFirC\pnpm.log

@@ -1327,3 +1327,23 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 ## 修复 · 2026-11-04 · 插件行读官方 icon.svg
 
 官方插件图标在包根 `icon.svg`：`BundleIconFiles` 补 `icon.svg`；SVG 光栅器支持根 `fill="none"`、渐变 fill、stroke，并修掉“未关流读长度判失败”的 bug；光栅结果进 `library/plugins-meta` 缓存，不写 node_modules。回归 `BundleIconTests`（2 例），全量 221/221。证据 `EVIDENCE/hot-reload-integration/ui/05-*`。
+## D111 · 2026-11-04 · 开发模式 = 开发会话（取代 lab 复制实例）
+
+用户口径：试验应该是**一种启动方式**（开发模式），不是复制一份实例。方案落 `docs/dev-mode.md`：
+- 不建 lab 副本；开发模式启动 = DSH 带 `--patch` 覆盖层启动（复用现有 `Trials`），改动只落覆盖层并走 D110 热生效，真 profile 不动。
+- 会话是一等资产：`session.json` + `changes.jsonl` + `verdicts/`；可逐项撤销、选择性固化（checkpoint → 写 profile → 验证 → 报告）。
+- 固化/丢弃边界：开发会话不改内核；同一实例同一 profile 只允许一个会话；普通启动不参与覆盖层；实例被外部改动时拒绝固化。
+- 用户选定命名：对外叫**复现包**，代码里 `fixture`（`pad.fixture/v1`，`.zip` 含 `fixture.json` + `evidence/`），命令 `dev repro export|apply`。
+- 分期 P0（CLI run --dev + status/verify/commit/discard + 固化打点 + 停止自动删备份）→ P1（逐项撤销/选择性固化/更多判据）→ P2（窗口：启动方式、会话抽屉、试验历史；replay/复现包）。
+- `docs/lab.md` 标记为被本方案取代（保留作历史）。
+## D111 补 · 2026-11-04 · 开发会话 P0 已落码（AI-first）
+
+CLI + MCP 是第一版交付，窗口留给 P2：
+- `pad cli dev start/status/apply/verify/commit/discard/list`（`--json` 时 stdout 纯 JSON、日志转 stderr、退出码 0/2/3）。
+- `pad cli mcp serve`（stdio MCP，7 个工具：dev_start/status/apply/verify/commit/discard/list）。
+- `run --dev` 开开发会话；apply 走现有 trial `--patch` overlay（不动真 profile）；commit 先 checkpoint 再写 profile；discard 清 overlay + 依赖。
+- 验证判据落地 3 条（config-compiles / plugins-resolve / source-untouched），boots/stays-up/tools 显式 `skip` 留给 P1。
+- `source-untouched` 指纹只看 `dsh.profile.bundles` + patch（trial 只加依赖）。
+- **备份不再自动删**：`Checkpoints.Create` 去掉 Prune；`checkpoint prune` 默认 dry-run、`--yes` 才删。
+- 修复 `file:` 依赖 discard 删不掉（pnpm by name 失败 → 摘 dependencies + 删 node_modules）。
+- 真机闭环证据 `EVIDENCE/dev-mode-p0/`；测试 230/230。

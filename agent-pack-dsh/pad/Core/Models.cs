@@ -240,8 +240,11 @@ public sealed class Instance
 }
 
 /// <summary>
-/// One <c>profiles/&lt;name&gt;</c> directory: the launchable unit, counterpart of a
-/// PCL version folder. <see cref="Bundles"/> mirrors <c>dsh.profile.bundles</c>.
+/// 一个 <c>profiles/&lt;name&gt;</c> 目录：**一棵配置树**（bundle patch 层按顺序叠加，
+/// 再叠 profile 自己的 <c>cordis.patch.yml</c> 和 home 级 patch）。
+///
+/// 它不是实例（实例 = 一份 DSH_HOME）、不是游戏版本（那是内核 <c>@deepseek-ai/dsh</c> 的版本）、
+/// 也不是整合包（整合包是内容投影）。同一份实例里可以有很多棵这样的树。
 /// </summary>
 public sealed class DshProfile
 {
@@ -256,16 +259,34 @@ public sealed class DshProfile
 
     public bool HasTui => Bundles.Any(b => b.Contains("dsh-tui", StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>Web is the only shipped profile that binds a port and a browser URL.</summary>
-    public bool IsWeb => Name == "web"
-        || Bundles.Any(b => b.Contains("web-app", StringComparison.OrdinalIgnoreCase));
+    /// <summary>Web surface 由 bundle 决定，不是由 profile 名字决定（官方只保留 <c>desktop</c> 一个名字）。
+    /// 叫 <c>web</c> 但没装 <c>dsh-web-app</c> 的树，就是一棵没有浏览器的树。</summary>
+    public bool IsWeb => Bundles.Any(b => b.Contains("web-app", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// 这个 profile 装了哪些「看得见的界面」bundle。DSH 的 surface 本身就是 bundle：
+    /// <c>@deepseek-ai/dsh-web-app</c> 是浏览器界面（官方描述就叫 browser-surface bundle），
+    /// <c>@deepseek-harness-tui/dsh-tui</c> 是终端界面。桌面端（官方 Electron / Tauri）
+    /// 只是显示 web 界面的壳，不构成第三种 bundle。
+    /// 两个同时装 = 一个 profile 里塞了两个 front door，启动时谁先挂上谁说话。
+    /// </summary>
+    public IReadOnlyList<string> UiSurfaces
+    {
+        get
+        {
+            var list = new List<string>(2);
+            if (Bundles.Any(b => b.Contains("web-app", StringComparison.OrdinalIgnoreCase))) list.Add("web");
+            if (Bundles.Any(b => b.Contains("dsh-tui", StringComparison.OrdinalIgnoreCase))) list.Add("tui");
+            return list;
+        }
+    }
 }
 
 /// <summary>
 /// One row of <c>dsh.profile.bundles</c> plus the version sitting in that
 /// profile's <c>node_modules</c>. The manage page updates these without a management port.
 /// </summary>
-public sealed class BundleRow
+public sealed class ProfileBundleRow
 {
     public string Profile { get; init; } = "";
     public string Spec { get; init; } = "";

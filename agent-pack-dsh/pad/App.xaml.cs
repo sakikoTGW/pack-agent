@@ -94,8 +94,33 @@ public partial class App : Application
             _instance = SingleInstance.TryAcquire(root);
             if (_instance is null)
             {
-                SingleInstance.SignalExisting(root);
-                Shutdown(0);
+                // 第二个实例：把老窗口叫出来。叫不出来 / 叫出来是别的 exe，都要告诉用户，
+                // 否则只会得到「双击桌面没反应」或「一直是旧版本」。
+                var shown = SingleInstance.SignalExisting(root);
+                var (pid, exe) = SingleInstance.LockOwner(root);
+                var other = string.IsNullOrEmpty(exe) ? "（未知路径）" : exe;
+                if (!shown)
+                {
+                    System.Windows.MessageBox.Show(
+                        "已经有一个 PAD 在跑，但这次没能把它叫出来（可能卡住了，或被管理员权限的进程占用）。\n\n"
+                        + "它来自：" + other + "\nPID：" + (pid?.ToString() ?? "?") + "\n\n"
+                        + "用任务管理器结束 `pack-agent-for DSH.exe` 再启动。",
+                        "PAD 已在运行", System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Warning);
+                    Shutdown(1);
+                }
+                else if (!string.IsNullOrEmpty(exe)
+                         && !string.Equals(exe, Environment.ProcessPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    System.Windows.MessageBox.Show(
+                        "已经有一个 PAD 在跑，但它是另一个位置的可执行文件：\n" + other + "\n\n"
+                        + "这次启动的是：\n" + Environment.ProcessPath + "\n\n"
+                        + "关掉旧的 PAD（托盘里也要退出）再从桌面启动，否则你看到的一直是旧版本。",
+                        "PAD 已在运行", System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Warning);
+                    Shutdown(0);
+                }
+                else Shutdown(0);
                 return;
             }
         }

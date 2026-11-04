@@ -920,12 +920,16 @@ public sealed class Launcher
     public JobRecord? CancelJob(string jobId)
     {
         if (!File.Exists(JobsPath)) return null;
-        var file = ReadJson<JobsFile>(JobsPath) ?? new JobsFile();
-        var row = file.Jobs.FirstOrDefault(j => j.Id == jobId);
-        if (row is null) return null;
-        row.Status = "cancelled";
-        row.UpdatedAt = NowIso();
-        WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        JobRecord? row;
+        lock (_jobsGate)
+        {
+            var file = ReadJson<JobsFile>(JobsPath) ?? new JobsFile();
+            row = file.Jobs.FirstOrDefault(j => j.Id == jobId);
+            if (row is null) return null;
+            row.Status = "cancelled";
+            row.UpdatedAt = NowIso();
+            WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        }
         if (_activeJobs.TryGetValue(jobId, out var cts)) cts.Cancel();
         return row;
     }
@@ -1057,39 +1061,141 @@ public sealed class Launcher
             inner?.Report(line);
         });
 
+    /// <summary>jobs.json 是读-改-写：进度回调来自 pnpm 的输出线程，图标来自网络任务，
+    /// 和用户点取消可能同时发生；这把锁保证三者不互相覆盖。</summary>
+    readonly object _jobsGate = new();
+    readonly Dictionary<string, (int Done, int Total, DateTimeOffset At)> _meterLast = [];
+
     void UpsertJob(JobRecord rec)
     {
-        var file = ReadJson<JobsFile>(JobsPath) ?? new JobsFile();
-        file.Jobs.RemoveAll(j => j.Id == rec.Id);
-        file.Jobs.Add(rec);
-        WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        lock (_jobsGate)
+        {
+            var file = ReadJson<JobsFile>(JobsPath) ?? new JobsFile();
+            file.Jobs.RemoveAll(j => j.Id == rec.Id);
+            file.Jobs.Add(rec);
+            WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        }
     }
 
     public void UpdateLeaf(string jobId, string leafId, int done, int total)
     {
-        var file = ReadJson<JobsFile>(JobsPath);
-        if (file is null) return;
-        var row = file.Jobs.FirstOrDefault(j => j.Id == jobId);
-        if (row is null) return;
-        row.Leaves ??= [];
-        var leaf = row.Leaves.FirstOrDefault(l => l.Id == leafId);
-        if (leaf is null) { leaf = new JobLeaf { Id = leafId, Weight = 1 }; row.Leaves.Add(leaf); }
-        leaf.Done = done;
-        leaf.Total = total;
-        row.UpdatedAt = NowIso();
-        WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        lock (_jobsGate)
+        {
+            var file = ReadJson<JobsFile>(JobsPath);
+            if (file is null) return;
+            var row = file.Jobs.FirstOrDefault(j => j.Id == jobId);
+            if (row is null) return;
+            row.Leaves ??= [];
+            var leaf = row.Leaves.FirstOrDefault(l => l.Id == leafId);
+            if (leaf is null) { leaf = new JobLeaf { Id = leafId, Weight = 1 }; row.Leaves.Add(leaf); }
+            leaf.Done = done;
+            leaf.Total = total;
+            row.UpdatedAt = NowIso();
+            WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        }
+    }
+
+    /// <summary>任务行图标（插件包自己的 icon）。null/空 = 不动，保留原来的实例标。</summary>
+    public void SetJobIcon(string jobId, string? iconPath)
+    {
+        if (string.IsNullOrWhiteSpace(iconPath)) return;
+        lock (_jobsGate)
+        {
+            var file = ReadJson<JobsFile>(JobsPath);
+            if (file is null) return;
+            var row = file.Jobs.FirstOrDefault(j => j.Id == jobId);
+            if (row is null || string.Equals(row.Icon, iconPath, StringComparison.OrdinalIgnoreCase)) return;
+            row.Icon = iconPath;
+            row.UpdatedAt = NowIso();
+            WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        }
+    }
+
+    static readonly Regex PnpmProgress = new(
+        @"^Progress:\s*resolved\s+(?<resolved>\d+),\s*reused\s+(?<reused>\d+),\s*downloaded\s+(?<downloaded>\d+),\s*added\s+(?<added>\d+)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// pnpm 的一行进度 →（done, total）。done 用 added（真装进 node_modules 的数量），
+    /// total 用 resolved（这轮解析到的目标数）；解析不到返回 null。
+    /// </summary>
+    public static (int Done, int Total)? ParsePnpmProgress(string? line)
+    {
+        var m = PnpmProgress.Match(line ?? "");
+        if (!m.Success) return null;
+        if (!int.TryParse(m.Groups["resolved"].Value, out var resolved) || resolved <= 0) return null;
+        if (!int.TryParse(m.Groups["added"].Value, out var added)) return null;
+        return (Math.Clamp(added, 0, resolved), resolved);
+    }
+
+    /// <summary>
+    /// pnpm 的 "Progress: resolved N, …, added N" 行 → 任务的单个 leaf（done=added,
+    /// total=resolved）。装了它，下载卡片的百分比/进度条才有数据；解析不到的行原样透传。
+    /// 同一个 job 最多每 200ms 落一次盘，免得每行输出都重写 jobs.json。
+    /// </summary>
+    public IProgress<string> MeterInstall(string jobId, IProgress<string>? inner) =>
+        new RelayProgress(line =>
+        {
+            try { ObservePnpm(jobId, line); } catch { /* 进度只是装饰，不能拖垮安装 */ }
+            inner?.Report(line);
+        });
+
+    void ObservePnpm(string jobId, string? line)
+    {
+        if (ParsePnpmProgress(line) is not { } parsed) return;
+        var (done, resolved) = parsed;
+        var now = DateTimeOffset.UtcNow;
+        if (_meterLast.TryGetValue(jobId, out var last))
+        {
+            if (done == last.Done && resolved == last.Total) return;
+            if (done < resolved && (now - last.At).TotalMilliseconds < 200) return;
+        }
+        _meterLast[jobId] = (done, resolved, now);
+        UpdateLeaf(jobId, "pnpm", done, resolved);
+    }
+
+    /// <summary>
+    /// 插件任务的图标：先用包名查 npm 的 package.json `icon`（和商店页同一套缓存），
+    /// 查到就换成包自己的标；查不到保留 StartJob 兜底的实例标。
+    /// </summary>
+    void KickIconLookup(string jobId, string? spec)
+    {
+        var (name, version) = SplitSpec(spec);
+        if (name.Length == 0) return;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var icon = await NpmPackageIcon.EnsureAsync(Root, name, version, CancellationToken.None);
+                SetJobIcon(jobId, icon);
+            }
+            catch { /* 图标只是装饰 */ }
+        });
+    }
+
+    /// <summary>`@scope/pkg@1.2.3` → (name, version)；无版本时 version 为空。</summary>
+    public static (string Name, string Version) SplitSpec(string? spec)
+    {
+        var s = (spec ?? "").Trim();
+        if (s.Length == 0) return ("", "");
+        var at = s.LastIndexOf('@');
+        return at > 0 ? (s[..at], s[(at + 1)..]) : (s, "");
     }
 
     public void FinishJob(string jobId, string status)
     {
-        var file = ReadJson<JobsFile>(JobsPath);
-        if (file is null) return;
-        var row = file.Jobs.FirstOrDefault(j => j.Id == jobId);
-        if (row is null) return;
-        if (row.Status == "cancelled") return; // a user cancel already flipped it; don't clobber
-        row.Status = status;
-        row.UpdatedAt = NowIso();
-        WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        lock (_jobsGate)
+        {
+            _meterLast.Remove(jobId);
+            var file = ReadJson<JobsFile>(JobsPath);
+            if (file is null) return;
+            var row = file.Jobs.FirstOrDefault(j => j.Id == jobId);
+            if (row is null) return;
+            if (row.Status == "cancelled") return; // a user cancel already flipped it; don't clobber
+            row.Status = status;
+            row.UpdatedAt = NowIso();
+            WriteAtomic(JobsPath, JsonSerializer.Serialize(file, Json));
+        }
         _activeJobs.Remove(jobId);
     }
 
@@ -1690,12 +1796,14 @@ public sealed class Launcher
         var job = StartJob($"plugin-{action}", id);
         var token = TrackCancel(job.Id, ct);
         log = TeeJob(job.Id, log);
+        log = MeterInstall(job.Id, log);
+        KickIconLookup(job.Id, spec);
         try
         {
             await Task.Run(() =>
             {
-                PnpmHeal.Relink(Path.Combine(VersionDir(inst.Dsh.Version), "node_modules"));
-                PnpmHeal.Relink(Path.Combine(inst.Home, "profiles", profile, "node_modules"));
+                PnpmHeal.RelinkIfNeeded(Path.Combine(VersionDir(inst.Dsh.Version), "node_modules"));
+                PnpmHeal.RelinkIfNeeded(Path.Combine(inst.Home, "profiles", profile, "node_modules"));
             }, token);
             await Pnpm.EnsureAsync(log, token);
             log?.Report($"dsh plugin --profile {profile} {action} {spec}");
@@ -2319,9 +2427,9 @@ public sealed class Launcher
     /// Roster for the manage page: every <c>dsh.profile.bundles</c> row plus the
     /// version in that profile's <c>node_modules</c>. Does not talk to pad-gateway.
     /// </summary>
-    public List<BundleRow> ListBundles(Instance inst)
+    public List<ProfileBundleRow> ListBundles(Instance inst)
     {
-        var rows = new List<BundleRow>();
+        var rows = new List<ProfileBundleRow>();
         foreach (var p in Profiles(inst))
         {
             foreach (var spec in p.Bundles)
@@ -2336,7 +2444,7 @@ public sealed class Launcher
                     if (fromRelease is not null) { dir = fromRelease; pkg = Path.Combine(dir, "package.json"); provided = true; }
                 }
                 var meta = PluginList.ReadMeta(pkg);
-                rows.Add(new BundleRow
+                rows.Add(new ProfileBundleRow
                 {
                     Profile = p.Name,
                     Spec = spec,
@@ -2446,18 +2554,23 @@ public sealed class Launcher
         var job = StartJob("plugin-add", inst.Id, null, specList.FirstOrDefault());
         var token = TrackCancel(job.Id, ct);
         log = TeeJob(job.Id, log);
+        log = MeterInstall(job.Id, log);
+        KickIconLookup(job.Id, specList.FirstOrDefault());
         try
         {
             if (heal)
             {
                 var healStarted = DateTime.UtcNow;
-                log?.Report($"检查 pnpm junction（relink node_modules，可能要几十秒）…");
-                await Task.Run(() =>
+                log?.Report("检查 pnpm junction（坏链才全量重链，可能要几十秒）…");
+                var relinked = await Task.Run(() =>
                 {
-                    PnpmHeal.Relink(Path.Combine(VersionDir(inst.Dsh.Version), "node_modules"));
-                    PnpmHeal.Relink(Path.Combine(inst.Home, "profiles", profile, "node_modules"));
+                    var n = PnpmHeal.RelinkIfNeeded(Path.Combine(VersionDir(inst.Dsh.Version), "node_modules"));
+                    n += PnpmHeal.RelinkIfNeeded(Path.Combine(inst.Home, "profiles", profile, "node_modules"));
+                    return n;
                 }, token);
-                log?.Report($"relink 完成（{Math.Round((DateTime.UtcNow - healStarted).TotalSeconds)}s）");
+                log?.Report(relinked == 0
+                    ? "junction 健康，跳过 relink"
+                    : $"relink 完成（{Math.Round((DateTime.UtcNow - healStarted).TotalSeconds)}s，修了 {relinked} 个）");
             }
             else
             {

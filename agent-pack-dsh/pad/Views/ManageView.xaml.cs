@@ -382,7 +382,7 @@ public partial class ManageView : UserControl, IRefreshable
     async void BundleUpdate_Click(object sender, RoutedEventArgs e)
     {
         if (_bundleBusy) return;
-        if (sender is not FrameworkElement { Tag: BundleRow row }) return;
+        if (sender is not FrameworkElement { Tag: ProfileBundleRow row }) return;
         BundleBusy(true);
         try
         {
@@ -400,7 +400,7 @@ public partial class ManageView : UserControl, IRefreshable
     async void BundleRemove_Click(object sender, RoutedEventArgs e)
     {
         if (_bundleBusy) return;
-        if (sender is not FrameworkElement { Tag: BundleRow row }) return;
+        if (sender is not FrameworkElement { Tag: ProfileBundleRow row }) return;
         var ask = MessageBox.Show(
             $"从 {row.Profile} 移除 {row.Spec}？",
             "PAD", MessageBoxButton.OKCancel, MessageBoxImage.Question);

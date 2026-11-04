@@ -47,6 +47,8 @@ public static class PackMaker
 
         var spec = new
         {
+            // 新规范：manifest + overrides（docs/PACK_SPEC.md）。
+            schema = "pack-agent.pack/v3",
             name = req.Name,
             version = req.Version,
             description = req.Description,

@@ -1,0 +1,1 @@
+--- 16:44:37 pad cli checkpoint prune ev-hot --keep 200 --json

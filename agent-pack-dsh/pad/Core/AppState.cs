@@ -4,21 +4,31 @@ using System.Windows.Threading;
 
 namespace Pad.Core;
 
-/// <summary>One launchable row: an instance's profile, the counterpart of a PCL version.</summary>
+/// <summary>
+/// 列表里的一行 = 某份实例的一棵配置树（profile），以及它这次用哪种 surface 看。
+/// profile 只回答「装了什么」；surface 由它里面的 UI bundle 决定，不是另一种 profile。
+/// </summary>
 public class ProfileVm(Instance inst, DshProfile profile) : Observable
 {
     public Instance Instance { get; } = inst;
     public DshProfile Profile { get; } = profile;
 
     public string Name => Profile.Name;
+
+    /// <summary>列表里显示的标题。默认就是 profile 名；同一 profile 拆成多种 surface 时，
+    /// 标题要写「哪个 surface 的实现」，否则两行都叫 web。</summary>
+    public virtual string DisplayName => Name;
     public string InstanceName => Instance.Name;
     public string TargetText => $"{InstanceName} · {Name}";
     public string Release => Instance.Dsh.Version;
 
-    public virtual string Kind => Profile.HasTui ? "终端" : Profile.IsWeb ? "网页" : "自定义";
+    /// <summary>启动页只显示「这次实际会用哪种 bundle」；都装了按 web 优先的启动规则写一个。</summary>
+    public virtual string Kind => Profile.IsWeb ? "网页"
+        : Profile.HasTui ? "终端"
+        : "自定义";
 
     /// <summary>Sort key so 终端 sits above 网页, like PCL cards.</summary>
-    public virtual int GroupOrder => Profile.HasTui ? 0 : Profile.IsWeb ? 1 : 2;
+    public virtual int GroupOrder => Profile.IsWeb ? 1 : Profile.HasTui ? 0 : 2;
 
     /// <summary>列表里只留最关键的一行（版本）；其余都进 <see cref="DetailText"/>（tooltip / 设置）。</summary>
     public virtual string Summary => Release;
@@ -29,6 +39,9 @@ public class ProfileVm(Instance inst, DshProfile profile) : Observable
             $"{Kind} · {Release}",
             $"实例 {InstanceName}",
             string.IsNullOrWhiteSpace(Instance.Home) ? "" : $"home {Instance.Home}",
+            Profile.UiSurfaces.Count > 1
+                ? "这个 profile 同时提供 " + string.Join(" / ", Profile.UiSurfaces) + " 两种 bundle：启动时选一个"
+                : "",
             StateText);
 
     /// <summary>
@@ -55,6 +68,12 @@ public class ProfileVm(Instance inst, DshProfile profile) : Observable
 
     /// <summary>探测行自带图标（桌面端的 resources\icon.png 等）；null = 走 InstMark 原来的载体图标链。</summary>
     public virtual string? IconPath => null;
+
+    /// <summary>
+    /// 这一行代表哪个 UI bundle（surface 的实现）。有值就先用**这个包自己的图标**，
+    /// 而不是「profile 里第一个有图标的 bundle」—— 后者会让 dsh-tui 的行显示 dsh-base 的鲸鱼。
+    /// </summary>
+    public virtual (string Spec, string Dir)? IconBundle => null;
 
     /// <summary>桌面端自己的应用图标：&lt;exe 目录&gt;\resources\icon.png / tray.ico。</summary>
     public static string? ShellIconPath(string? exe)
@@ -128,8 +147,65 @@ public class ProfileVm(Instance inst, DshProfile profile) : Observable
 /// 本机探测到的 TUI（不是 PAD 实例的 profile）：出现在版本选择页的「容器」列表里，
 /// 点一下/点收编就把它所在的 home 收编成实例。渲染复用 ProfileVm + 合成 Instance/Profile。
 /// </summary>
+/// <summary>
+/// 一个 profile 拆出来的一种 surface：profile 决定「装了什么」，surface 决定「怎么看见」。
+/// 同一个 profile 装了 web-app + dsh-tui 时，容器列表就应该出现两行 —— 它们是两种
+/// surface（浏览器窗口 / 终端窗口），不是一个「混合」的第三种东西。
+/// </summary>
+public sealed class BundleRow(Instance inst, DshProfile profile, string surfaceKind) : ProfileVm(inst, profile)
+{
+    /// <summary>"tui" 或 "web"；对应 <see cref="DshProfile.UiSurfaces"/> 里的一项。</summary>
+    public string BundleKind { get; } = surfaceKind;
+
+    public override string Kind => BundleKind == "tui" ? "终端" : "网页";
+
+    /// <summary>标题写 surface 的实现（dsh-tui / dsh-web-app），小字写 profile。</summary>
+    public override string DisplayName => BundleKind == "tui" ? "dsh-tui" : "dsh-web-app";
+
+    /// <summary>标题已经是实现名（dsh-tui / dsh-web-app），小字只写它来自哪个 profile。</summary>
+    public override string Summary => Profile.Name;
+
+    public override string Badge => BundleKind == "tui" ? "TUI" : "WEB";
+
+    /// <summary>surface 自己的 bundle：网页行用 dsh-web-app，终端行用 dsh-tui。</summary>
+    public override (string Spec, string Dir)? IconBundle
+    {
+        get
+        {
+            var hint = BundleKind == "tui" ? "dsh-tui" : "web-app";
+            var spec = Profile.Bundles.FirstOrDefault(b => b.Contains(hint, StringComparison.OrdinalIgnoreCase));
+            return spec is null ? null : (spec, LaunchPolicy.BundlePackageDir(Profile.Dir, spec));
+        }
+    }
+
+    public override string DetailText =>
+        string.Join(Environment.NewLine,
+            $"{Kind} · {Release}",
+            $"profile {Profile.Name}",
+            $"实例 {InstanceName}",
+            string.IsNullOrWhiteSpace(Instance.Home) ? "" : $"home {Instance.Home}",
+            StateText);
+}
+
 public sealed class DetectedTuiRow(Tui tui, bool canAdopt) : ProfileVm(Synthetic(tui), SyntheticProfile(tui))
 {
+    /// <summary>探测到的原始事实（启动脚本 / home / profile）——「启动这个容器」要用。</summary>
+    public Tui Source => tui;
+
+    /// <summary>TUI 包自己的图标：优先用探测到的包目录，退回家里的 profile node_modules。</summary>
+    public override (string Spec, string Dir)? IconBundle
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(tui.Package)) return null;
+            var dir = tui.PackageDir;
+            if (string.IsNullOrWhiteSpace(dir) && !string.IsNullOrWhiteSpace(tui.Home))
+                dir = Path.Combine(tui.Home!, "profiles", tui.Profile ?? "dsh-tui",
+                    tui.Package!.Replace('/', Path.DirectorySeparatorChar));
+            return string.IsNullOrWhiteSpace(dir) ? null : (tui.Package!, dir!);
+        }
+    }
+
     public override bool IsDetected => true;
 
     public override bool CanAdopt => canAdopt && !string.IsNullOrWhiteSpace(tui.Home);
@@ -169,6 +245,9 @@ public sealed class DetectedTuiRow(Tui tui, bool canAdopt) : ProfileVm(Synthetic
 /// <summary>本机探测到的桌面端（官方/非官方 Electron 壳）：出现在「容器」列表里，可收编其 home。</summary>
 public sealed class DetectedShellRow(Shell shell, bool canAdopt) : ProfileVm(Synthetic(shell), SyntheticProfile(shell))
 {
+    /// <summary>探测到的原始事实（exe / home）——「启动这个桌面端」要用。</summary>
+    public Shell Source => shell;
+
     public override bool IsDetected => true;
 
     public override bool CanAdopt => canAdopt && !string.IsNullOrWhiteSpace(shell.Home);
@@ -340,12 +419,38 @@ public sealed class AppState : Observable
             PackRows.Clear();
             RaisePackMatch();
             RebuildLaunchables();
+            // 换了实例，上一个实例选中的容器就不再做数（探测到的行尤其不能跨实例）。
+            if (_selectedContainer is not null && !ReferenceEquals(_selectedContainer.Instance, value))
+                SelectedContainer = null;
             Raise(nameof(HasSelection));
             Raise(nameof(SelectionTitle));
             Raise(nameof(SelectionDetail));
             RaiseStep();
         }
     }
+
+    ProfileVm? _selectedContainer;
+
+    /// <summary>
+    /// 「容器」列表里点中的那一行 —— 启动页按它启动。它可能是 PAD 的 profile（网页 / 终端），
+    /// 也可能是本机探测到的 TUI / 桌面端；<see cref="SelectedProfile"/> 仍然只放 PAD 的
+    /// profile（插件页、下载页要用），两者不混。
+    /// </summary>
+    public ProfileVm? SelectedContainer
+    {
+        get => _selectedContainer;
+        set
+        {
+            if (!Set(ref _selectedContainer, value)) return;
+            Raise(nameof(CanLaunch));
+            Raise(nameof(CurrentPick));
+            Raise(nameof(SelectionTitle));
+            Raise(nameof(SelectionDetail));
+        }
+    }
+
+    /// <summary>启动页卡片显示用：优先是你点中的那行 bundle，没有才退回配置树。</summary>
+    public ProfileVm? CurrentPick => SelectedContainer ?? SelectedProfile;
 
     ProfileVm? _selectedProfile;
     public ProfileVm? SelectedProfile
@@ -355,6 +460,7 @@ public sealed class AppState : Observable
         {
             if (!Set(ref _selectedProfile, value)) return;
             Raise(nameof(CanLaunch));
+            Raise(nameof(CurrentPick));
             Raise(nameof(SelectionTitle));
             Raise(nameof(SelectionDetail));
             RaiseStep();
@@ -362,7 +468,8 @@ public sealed class AppState : Observable
     }
 
     public bool HasSelection => SelectedInstance is not null;
-    public bool CanLaunch => SelectedInstance is not null && SelectedProfile is not null;
+    public bool CanLaunch => SelectedContainer is not null
+        || (SelectedInstance is not null && SelectedProfile is not null);
     public bool NeedsSetup => Instances.Count == 0;
     public bool HasInstanceNoProfile => SelectedInstance is not null && SelectedProfile is null;
 
@@ -392,15 +499,17 @@ public sealed class AppState : Observable
     }
 
     /// <summary>The line under the launch button — PCL puts the version name there.</summary>
-    public string SelectionTitle => SelectedProfile is null
-        ? (SelectedInstance?.Name ?? "还没有实例")
-        : $"{SelectedProfile.InstanceName} · {SelectedProfile.Name}";
+    public string SelectionTitle => (SelectedContainer ?? SelectedProfile) is { } pick
+        ? $"{pick.InstanceName} · {pick.DisplayName}"
+        : (SelectedInstance?.Name ?? "还没有实例");
 
-    public string SelectionDetail => SelectedInstance is null
-        ? "到版本选择里新建一个"
-        : SelectedProfile is null
-            ? $"{SelectedInstance.Dsh.Version} · 未找到可用的版本"
-            : SelectedProfile.Summary;
+    public string SelectionDetail => SelectedContainer is { } pick
+        ? pick.Summary
+        : SelectedInstance is null
+            ? "到版本选择里新建一个"
+            : SelectedProfile is null
+                ? $"{SelectedInstance.Dsh.Version} · 未找到可用的版本"
+                : SelectedProfile.Summary;
 
     public void ReloadReleases()
     {

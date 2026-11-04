@@ -1,0 +1,16 @@
+{
+  "schema": "pad.hot-apply/v1",
+  "action": "remove",
+  "instance": "ev-hot",
+  "profile": "web",
+  "spec": "hot-bundle",
+  "mode": "cold",
+  "ok": true,
+  "restartRequired": true,
+  "restartReason": "cold-default",
+  "hotAllowed": false,
+  "hotReason": "launchSource=none",
+  "checkpoint": "20261104-084811-036",
+  "verify": null,
+  "message": "\u5DF2\u5199\u5165\uFF0C\u91CD\u542F\u540E\u751F\u6548"
+}

@@ -18,6 +18,103 @@ public static class PnpmHeal
 {
     static Dictionary<string, string?>? _physCache;
 
+    /// <summary>
+    /// 启动路径的便宜预检：抽样看这份 <c>node_modules</c> 到底坏没坏。
+    /// 真目录（复制出来的拷贝）或指向已失效/本机之外的 junction 都算需要重链。
+    /// 抽 64 个顶层入口 + 48 个嵌套入口，通常几毫秒 —— 比全量 <see cref="Relink"/>
+    /// 的几十秒便宜两个数量级，所以每次启动都可以先问一句而不是闷头重链。
+    /// </summary>
+    public static bool NeedsHeal(string nodeModules, int topSample = 64, int nestedSample = 48)
+    {
+        if (!Directory.Exists(nodeModules)) return false;
+        var pnpm = Path.Combine(nodeModules, ".pnpm");
+        if (!Directory.Exists(pnpm)) return false;
+        try
+        {
+            var seen = 0;
+            foreach (var scoped in Directory.EnumerateDirectories(nodeModules))
+            {
+                var name = Path.GetFileName(scoped);
+                if (name.StartsWith('.')) continue;
+                if (name.StartsWith('@'))
+                {
+                    foreach (var pkg in Directory.EnumerateDirectories(scoped))
+                    {
+                        if (UnhealthyLink(pkg, pnpm)) return true;
+                        if (++seen >= topSample) return NestedUnhealthy(pnpm, nestedSample);
+                    }
+                }
+                else
+                {
+                    if (UnhealthyLink(scoped, pnpm)) return true;
+                    if (++seen >= topSample) return NestedUnhealthy(pnpm, nestedSample);
+                }
+            }
+            return NestedUnhealthy(pnpm, nestedSample);
+        }
+        catch
+        {
+            // 读不动就当坏了：宁可多跑一次全量重链，也不要把坏链接带进启动。
+            return true;
+        }
+    }
+
+    /// <summary>需要重链才重链：启动路径用它代替无条件 <see cref="Relink"/>。</summary>
+    public static int RelinkIfNeeded(string nodeModules) =>
+        NeedsHeal(nodeModules) ? Relink(nodeModules) : 0;
+
+    static bool UnhealthyLink(string link, string pnpm)
+    {
+        FileAttributes attr;
+        try { attr = File.GetAttributes(link); }
+        catch { return true; }
+        // 顶层正常是 junction；真目录 = 从别处拷来的拷贝（D22 的病根）。
+        if ((attr & FileAttributes.ReparsePoint) == 0) return true;
+        return !LinkHealthy(link, pnpm);
+    }
+
+    /// <summary>抽样 <c>.pnpm/&lt;pkg&gt;/node_modules</c> 里的链接：嵌套缓存里的**真目录**
+    /// 是包自己的内容（合法），只有断掉的/指向本机之外的 junction 才是病。</summary>
+    static bool NestedUnhealthy(string pnpm, int sample)
+    {
+        try
+        {
+            var seen = 0;
+            foreach (var dir in Directory.EnumerateDirectories(pnpm))
+            {
+                var nested = Path.Combine(dir, "node_modules");
+                if (!Directory.Exists(nested)) continue;
+                foreach (var entry in Directory.EnumerateDirectories(nested))
+                {
+                    var name = Path.GetFileName(entry);
+                    if (name.StartsWith('.')) continue;
+                    if (name.StartsWith('@'))
+                    {
+                        foreach (var pkg in Directory.EnumerateDirectories(entry))
+                            if (BrokenLink(pkg, pnpm)) return true;
+                    }
+                    else if (BrokenLink(entry, pnpm)) return true;
+                    if (++seen >= sample) return false;
+                }
+            }
+            return false;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    /// <summary>真目录在嵌套缓存里合法；只有「是链接但指向坏目标/本机外」才算病。</summary>
+    static bool BrokenLink(string entry, string pnpm)
+    {
+        FileAttributes attr;
+        try { attr = File.GetAttributes(entry); }
+        catch { return true; }
+        if ((attr & FileAttributes.ReparsePoint) == 0) return false;
+        return !LinkHealthy(entry, pnpm);
+    }
+
     public static int Relink(string nodeModules)
     {
         if (!Directory.Exists(nodeModules)) return 0;
@@ -47,6 +144,13 @@ public static class PnpmHeal
         if (string.IsNullOrWhiteSpace(home)) return;
         var dir = Path.Combine(home, "profiles", "node_modules");
         if (!Directory.Exists(dir)) return;
+        // 正常状态是 DSH 自己建的 junction（指向版本库）。每次都删 = 每次启动都逼 DSH
+        // 重建 fallback，白等一轮启动时间；只有真目录（复制品）才需要清掉。
+        try
+        {
+            if ((File.GetAttributes(dir) & FileAttributes.ReparsePoint) != 0) return;
+        }
+        catch { return; }
         try
         {
             DeleteNoFollow(dir);
@@ -626,39 +730,36 @@ public static class PnpmHeal
         File.Delete(path);
     }
 
+    /// <summary>
+    /// 从 <c>.pnpm</c> 存储重建顶层 junction（打包时 ZIP 存不了链接，安装后必须重建）。
+    /// Relink 只修已有链接；这个函数在「顶层一个都没有」时把 <c>.pnpm/&lt;pkg@ver&gt;/node_modules/&lt;pkg&gt;</c>
+    /// 链回顶层，等价于 pnpm 自己铺的布局。
+    /// </summary>
+    public static int RestoreTopLevel(string nodeModules)
+    {
+        var pnpm = Path.Combine(nodeModules, ".pnpm");
+        if (!Directory.Exists(pnpm)) return 0;
+        var n = 0;
+        foreach (var dir in Directory.EnumerateDirectories(pnpm))
+        {
+            var name = Path.GetFileName(dir);
+            if (name.StartsWith('.')) continue;
+            var at = name.IndexOf('@', name.StartsWith('@') ? 1 : 0);
+            var pkg = (at > 0 ? name[..at] : name).Replace('+', '/');
+            var target = Path.Combine(dir, "node_modules", pkg.Replace('/', Path.DirectorySeparatorChar));
+            if (!Directory.Exists(target)) continue;
+            var link = Path.Combine(nodeModules, pkg.Replace('/', Path.DirectorySeparatorChar));
+            if (Directory.Exists(link) || File.Exists(link)) continue;
+            try { Junction(link, target, isDir: true); n++; }
+            catch { /* 单个失败不影响其它包 */ }
+        }
+        return n;
+    }
     public static void Junction(string link, string target, bool isDir)
     {
-        var parent = Path.GetDirectoryName(link);
-        if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
-        if (!isDir)
-        {
-            File.CreateSymbolicLink(link, Path.GetRelativePath(parent!, target));
-            return;
-        }
-        // 快路径：原生 junction（3 万个链接几秒；cmd mklink 每个要 ~17ms，导出会卡 8 分钟）。
-        if (Reparse.TryCreateJunction(link, target)) return;
-        try
-        {
-            Directory.CreateSymbolicLink(link, Path.GetRelativePath(parent!, target));
-            return;
-        }
-        catch
-        {
-            // junctions do not need developer mode
-        }
-        var psi = new ProcessStartInfo
-        {
-            FileName = Environment.GetEnvironmentVariable("COMSPEC") ?? "cmd.exe",
-            Arguments = "/c mklink /J \"" + link + "\" \"" + target + "\"",
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-        using var p = Process.Start(psi);
-        p?.WaitForExit(15_000);
-        if (!Directory.Exists(link))
-            throw new IOException("mklink /J failed for " + link);
+        // 平台差异只有这一处：Windows junction / Unix symlink。
+        if (isDir) Platform.Current.CreateDirectoryLink(link, target);
+        else Platform.Current.CreateFileLink(link, target);
     }
 
     static void RewriteModulesYaml(string nodeModules)

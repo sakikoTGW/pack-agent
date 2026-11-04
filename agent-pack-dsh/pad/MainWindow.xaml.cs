@@ -1371,7 +1371,7 @@ public partial class MainWindow : Window
         if (!string.IsNullOrWhiteSpace(linkText)) MsgLinkButton.Inlines.Add(new Run(linkText));
         MsgLink.Visibility = string.IsNullOrWhiteSpace(linkText) ? Visibility.Collapsed : Visibility.Visible;
         MsgOk.Style = (Style)FindResource(warn ? "BtnDanger" : "BtnPrimary");
-        MsgOk.IsDefault = !warn;
+        // 输入框里不能让 Enter 直接提交：中文输入法组合中的回车会先把旧文本交出去（改名看起来像没生效）。\r\n        MsgOk.IsDefault = !warn && !input;
         MsgCancel.IsDefault = warn;
         _msgAccepted = false;
         _msgCheckResult = false;
@@ -1413,6 +1413,14 @@ public partial class MainWindow : Window
         return input ? MsgInput.Text.Trim() : "";
     }
 
+    /// <summary>输入框里的 Enter/Esc：输入法正在组合时让输入法先吃，组合结束后才提交。</summary>
+    void MsgInput_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (_msgFrame is null) return;
+        if (e.Key == Key.ImeProcessed) return;
+        if (e.Key == Key.Enter) { e.Handled = true; EndMsg(true); }
+        else if (e.Key == Key.Escape) { e.Handled = true; EndMsg(false); }
+    }
     void MsgOk_Click(object sender, RoutedEventArgs e) => EndMsg(true);
 
     void MsgCancel_Click(object sender, RoutedEventArgs e) => EndMsg(false);
@@ -1656,6 +1664,19 @@ public partial class MainWindow : Window
         {
             foreach (var path in paths)
             {
+                // v3 包走新窗口；其余格式保持原 import/project 链路。
+                var spec = PackSpec.Load(path);
+                if (spec.Valid && spec.Schema == PackSpec.SchemaV3)
+                {
+                    var win = new PackImportWindow(state.Launcher, path, spec, state.SelectedInstance) { Owner = this };
+                    if (win.ShowDialog() == true && win.Installed is not null)
+                    {
+                        state.Reload();
+                        Toast($"已导入 {spec.Name} {spec.Version}：{win.Summary}");
+                    }
+                    continue;
+                }
+
                 if (import || state.SelectedInstance is null)
                 {
                     Toast("正在装 " + System.IO.Path.GetFileName(path));

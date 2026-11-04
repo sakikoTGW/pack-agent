@@ -77,7 +77,9 @@ public sealed class Runner(Launcher launcher)
         var credSrc = CredentialSource(inst, settings);
         if (heal)
         {
-            PnpmHeal.Relink(Path.Combine(_l.VersionDir(inst.Dsh.Version), "node_modules"));
+            // 全量 Relink 一次要走几万个 junction（实测 30s 上下），不能每次启动都做：
+            // 先抽样预检，只在真坏（拷贝品/失效链接）时重链。
+            PnpmHeal.RelinkIfNeeded(Path.Combine(_l.VersionDir(inst.Dsh.Version), "node_modules"));
             PnpmHeal.ClearProfilesFallback(inst.Home);
             var profiles = Path.Combine(inst.Home, "profiles");
             if (Directory.Exists(profiles))
@@ -85,7 +87,7 @@ public sealed class Runner(Launcher launcher)
                 {
                     if (string.Equals(Path.GetFileName(dir), "node_modules", StringComparison.OrdinalIgnoreCase))
                         continue;
-                    PnpmHeal.Relink(Path.Combine(dir, "node_modules"));
+                    PnpmHeal.RelinkIfNeeded(Path.Combine(dir, "node_modules"));
                 }
         }
         if (credSrc is not null && File.Exists(credSrc))

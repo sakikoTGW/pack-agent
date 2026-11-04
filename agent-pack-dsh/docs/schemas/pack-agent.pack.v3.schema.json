@@ -1,0 +1,322 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pack-agent.dev/schema/pack-agent.pack.v3.json",
+  "title": "pack-agent modpack manifest",
+  "description": "整合包清单：声明「用什么跑」，文件本体在 overrides/ 里。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "name", "version", "kernel", "profiles", "integrity"],
+  "properties": {
+    "schema": { "const": "pack-agent.pack/v3" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([-+][0-9A-Za-z.-]+)?$"
+    },
+    "description": { "type": "string", "maxLength": 2000 },
+    "icon": { "$ref": "#/$defs/relativePath" },
+    "meta": { "$ref": "#/$defs/meta" },
+    "kernel": { "$ref": "#/$defs/kernel" },
+    "runtime": { "$ref": "#/$defs/runtime" },
+    "home": { "$ref": "#/$defs/home" },
+    "workspace": { "$ref": "#/$defs/workspace" },
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/profile" }
+    },
+    "agents": { "type": "array", "items": { "$ref": "#/$defs/agent" } },
+    "data": { "type": "array", "items": { "$ref": "#/$defs/dataEntry" } },
+    "requires": { "$ref": "#/$defs/requires" },
+    "integrity": { "$ref": "#/$defs/integrity" }
+  },
+
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$",
+      "description": "相对 pack 根的路径；禁止绝对路径与 .. 逃逸"
+    },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "semverRange": {
+      "type": "string",
+      "minLength": 1,
+      "description": "npm 语义化版本区间，如 >=0.2.1-rc.2 <0.3.0"
+    },
+    "platform": {
+      "enum": ["win32-x64", "win32-arm64", "darwin-x64", "darwin-arm64", "linux-x64", "linux-arm64"]
+    },
+
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "author": { "type": "string" },
+        "homepage": { "type": "string", "format": "uri" },
+        "license": { "type": "string" },
+        "exportedAt": { "type": "string", "format": "date-time" },
+        "portable": { "type": "boolean", "default": false },
+        "fidelity": { "type": "string", "enum": ["L1", "L2", "L3"] },
+        "source": { "type": "string", "description": "从哪个实例/host 导出" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "kernel": {
+      "description": "内核：inherit / pin / bundled（单平台，或一个包带多平台）。bundles = 这个内核版本自带的官方 bundle 清单；profile 里 source=official 的条目必须在这张表里。",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode"],
+          "properties": {
+            "mode": { "const": "inherit" },
+            "version": { "type": "string" },
+            "bundles": { "$ref": "#/$defs/bundleNames" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "version"],
+          "properties": {
+            "mode": { "const": "pin" },
+            "version": { "type": "string", "minLength": 1 },
+            "bundles": { "$ref": "#/$defs/bundleNames" },
+            "onMismatch": { "$ref": "#/$defs/onMismatch" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "version", "platform", "bundled", "sha256"],
+          "properties": {
+            "mode": { "const": "bundled" },
+            "version": { "type": "string", "minLength": 1 },
+            "platform": { "$ref": "#/$defs/platform" },
+            "bundled": { "$ref": "#/$defs/relativePath" },
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "files": { "type": "integer", "minimum": 1 },
+            "bundles": { "$ref": "#/$defs/bundleNames" },
+            "onMismatch": { "$ref": "#/$defs/onMismatch" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "version", "platforms"],
+          "properties": {
+            "mode": { "const": "bundled" },
+            "version": { "type": "string", "minLength": 1 },
+            "platforms": {
+              "type": "object",
+              "minProperties": 1,
+              "propertyNames": { "$ref": "#/$defs/platform" },
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["bundled", "sha256"],
+                "properties": {
+                  "bundled": { "$ref": "#/$defs/relativePath" },
+                  "sha256": { "$ref": "#/$defs/sha256" },
+                  "files": { "type": "integer", "minimum": 1 }
+                }
+              }
+            },
+            "bundles": { "$ref": "#/$defs/bundleNames" },
+            "onMismatch": { "$ref": "#/$defs/onMismatch" }
+          }
+        }
+      ]
+    },
+
+    "onMismatch": {
+      "enum": ["refuse", "pin", "any"],
+      "default": "refuse",
+      "description": "bundled 内核与当前平台不匹配时：refuse 拒绝安装 / pin 回退下载对应平台 / any 强行装并警告"
+    },
+
+    "bundleNames": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "官方 bundle 名称（如 @deepseek-ai/dsh-web-app）"
+    },
+
+    "runtime": {
+      "description": "Node 运行时（类比 MC 包带 Java），可选",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["node"],
+          "properties": { "node": { "const": "inherit" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["node", "version", "bundled", "sha256"],
+          "properties": {
+            "node": { "const": "bundled" },
+            "version": { "type": "string" },
+            "platform": { "$ref": "#/$defs/platform" },
+            "bundled": { "$ref": "#/$defs/relativePath" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      ]
+    },
+
+    "home": {
+      "description": "DSH_HOME：inherit 用本机；snapshot 带一份选定的数据快照。credentials 默认 false —— 默认不把 API Key 打进包里。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["inherit", "snapshot"] },
+        "snapshot": { "$ref": "#/$defs/relativePath" },
+        "include": {
+          "type": "array",
+          "items": { "enum": ["storages", "skills", "sessions", "cache"] },
+          "description": "snapshot 时带哪些子目录；空 = 不带任何数据"
+        },
+        "credentials": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否把 .credentials.yaml 打进快照；默认 false"
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "snapshot" } } },
+          "then": { "required": ["snapshot"] }
+        }
+      ]
+    },
+
+    "workspace": {
+      "description": "工作区（cwd）：bundled 包内 / copy 复制实例目录 / user 用户目录",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["bundled", "copy", "user"] },
+        "template": { "$ref": "#/$defs/relativePath" },
+        "path": { "type": "string", "description": "mode=user 时的目标目录；不可移植，仅本机" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "bundled" } } },
+          "then": { "required": ["template"] }
+        },
+        {
+          "if": { "properties": { "mode": { "const": "user" } } },
+          "then": { "required": ["path"] }
+        }
+      ]
+    },
+
+    "bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spec", "source"],
+      "properties": {
+        "spec": { "type": "string", "minLength": 1, "description": "name 或 name@version" },
+        "source": { "enum": ["official", "registry", "bundled"] },
+        "required": { "type": "boolean", "default": true }
+      }
+    },
+
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "bundles": { "type": "array", "items": { "$ref": "#/$defs/bundle" } },
+        "patch": { "$ref": "#/$defs/relativePath" },
+        "agents": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "只在这个 profile 生效的 preset id（如 standard / ptc / minimal / cordis）"
+        }
+      }
+    },
+
+    "agent": {
+      "description": "agent preset：官方内置 standard/ptc/minimal/cordis 是 patch 行；自定义 preset 以 patch 文件随包（source=bundled，需 patch）。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "source": { "enum": ["official", "bundled"] },
+        "patch": { "$ref": "#/$defs/relativePath" },
+        "profiles": { "type": "array", "items": { "type": "string" } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "source": { "const": "bundled" } } },
+          "then": { "required": ["patch"] }
+        }
+      ]
+    },
+
+    "dataEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "scope"],
+      "properties": {
+        "path": { "$ref": "#/$defs/relativePath" },
+        "scope": { "enum": ["workspace", "home"] },
+        "profiles": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dsh": { "$ref": "#/$defs/semverRange" },
+        "node": { "$ref": "#/$defs/semverRange" },
+        "os": { "type": "array", "items": { "enum": ["win32", "darwin", "linux"] } },
+        "arch": { "type": "array", "items": { "enum": ["x64", "arm64"] } },
+        "platforms": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/platform" },
+          "description": "多平台包声明支持的平台集合；单平台包可省略（由 kernel.platform 推出）"
+        }
+      }
+    },
+
+    "integrity": {
+      "description": "整包完整性 + overrides 账本。root = 对所有条目按 path 排序后拼接 'path\\0sha256\\n' 再做 sha256（不含 pack.json 本身）。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "root", "files"],
+      "properties": {
+        "algorithm": { "const": "sha256" },
+        "check": {
+          "enum": ["off", "report", "strict"],
+          "default": "report",
+          "description": "安装后/启动前如何对待被修改的包内文件：off 不查；report 只报告；strict 拒绝启动并提示恢复"
+        },
+        "root": { "$ref": "#/$defs/sha256" },
+        "signature": { "type": "string", "description": "可选：对 root 的签名" },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": { "$ref": "#/$defs/relativePath" },
+              "sha256": { "$ref": "#/$defs/sha256" },
+              "bytes": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

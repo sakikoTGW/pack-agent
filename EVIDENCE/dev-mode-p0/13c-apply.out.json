@@ -1,0 +1,22 @@
+{
+  "schema": "pad.dev-session/v1",
+  "id": "dev-20261104-164734",
+  "instance": "ev-hot",
+  "profile": "web",
+  "state": "running",
+  "startedAt": "2026-11-04T08:47:34.2331246\u002B00:00",
+  "endedAt": null,
+  "verifiedAt": null,
+  "lastResult": null,
+  "checkpoint": null,
+  "sourceHash": "06aca5fd95c2a259",
+  "changes": [
+    {
+      "at": "2026-11-04T08:47:37.0540975\u002B00:00",
+      "op": "add",
+      "spec": "file:E:/pack-agent/.tmp/lab-e2e/plugins/hot-bundle",
+      "trial": "file:E:/pack-agent/.tmp/lab-e2e/plugins/hot-bundle",
+      "detail": "\u672C\u6B21\u8FD0\u884C\u751F\u6548 \u00B7 \u672A\u5199\u5B9E\u4F8B"
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+--- 16:47:45 pad cli dev commit ev-hot --json
+固化 hot-bundle 进 dsh.profile.bundles，下次启动生效

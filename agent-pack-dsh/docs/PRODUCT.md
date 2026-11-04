@@ -6,9 +6,9 @@ product: **pack-agent**
 代码：仓库根 + `agent-pack-dsh/`
 入口：`packagent`；当前实例面 `packagent dsh`
 
-本文件是产品定义。功能细则见 [launcher-design.md](launcher-design.md)，装包链见 [modpack.md](modpack.md)，引擎见 [launcher-architecture.md](launcher-architecture.md)。
+本文件是产品定义。功能细则见 [launcher-design.md](archive/launcher-design.md)，装包链见 [modpack.md](archive/modpack.md)，引擎见 [launcher-architecture.md](launcher-architecture.md)。
 
-pack-agent 是类似 PCL 的三件事叠在一个产品里：启动器、整合包装卸器、管理器。当前只管理 DeepSeek Harness。DSH 相当于 Forge，「游戏版本」= DSH 发行号。`docs/PACK_SPEC.md` §0、`docs/NORTH_STAR.md` 里的跨壳句子是旧仓级故事，本产品不按那条做多 harness 启动器。
+pack-agent 是类似 PCL 的三件事叠在一个产品里：启动器、整合包装卸器、管理器。当前只管理 DeepSeek Harness。DSH 相当于 Forge。**名次按官方叫法**：一份 `DSH_HOME` = 实例；`@deepseek-ai/dsh` 的版本 = DSH 发行号（对照 PCL 的「游戏版本」）；`profiles/<name>` = **配置树**（bundle 层 + 用户 patch），不是实例、不是版本、不是整合包；**surface = bundle**（`dsh-web-app` = 浏览器界面，`dsh-tui` = 终端界面），窗口只是它的宿主。`docs/PACK_SPEC.md` §0、`docs/NORTH_STAR.md` 里的跨壳句子是旧仓级故事，本产品不按那条做多 harness 启动器。
 
 ## 1. 人拿到什么
 
@@ -180,10 +180,10 @@ PCL 窗口 `FormMain.xaml` 设 `AllowDrop="True"`。`FormMain.xaml.vb` 的 `File
 ## 10. 稿怎么读
 
 1. 本文件 — 产品是什么
-2. [modpack.md](modpack.md) — 对照 PCL 的装包链
-3. [launcher-design.md](launcher-design.md) — 启动器功能
+2. [modpack.md](archive/modpack.md) — 对照 PCL 的装包链
+3. [launcher-design.md](archive/launcher-design.md) — 启动器功能
 4. [launcher-architecture.md](launcher-architecture.md) — 引擎、数据、命令、硬事实
-5. [launcher-p0.md](launcher-p0.md) — P0 计划（已落地）
+5. [launcher-p0.md](archive/launcher-p0.md) — P0 计划（已落地）
 
 看板指针：`.collab/board/architecture/01-dsh-launcher.md`。
 

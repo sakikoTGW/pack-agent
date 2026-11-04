@@ -50,6 +50,19 @@ public partial class InstMark : UserControl
 
     void OnBundleIcon() => Dispatcher.BeginInvoke(Paint);
 
+    static readonly HashSet<string> Warming = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>缓存里没有就后台抓一次；抓完 <see cref="BundleIcon.Changed"/> 会让所有 tile 重画。</summary>
+    static void WarmBundle(string root, (string Spec, string Dir) bundle)
+    {
+        if (string.IsNullOrWhiteSpace(bundle.Dir) || !Warming.Add(bundle.Spec + "|" + bundle.Dir)) return;
+        _ = Task.Run(async () =>
+        {
+            try { await BundleIcon.Ensure(root, bundle.Dir, bundle.Spec, CancellationToken.None); }
+            catch { /* 图标只是装饰 */ }
+        });
+    }
+
     /// <summary>临时诊断：PAD_ICON_DEBUG=&lt;file&gt; 时记录每个 tile 走了哪条分支。</summary>
     static void Dbg(string line)
     {
@@ -92,6 +105,25 @@ public partial class InstMark : UserControl
                     Pic.Visibility = Visibility.Visible;
                     Glyph.Visibility = Visibility.Collapsed;
                     Dbg($"  -> ROW image {rowIcon}");
+                    return;
+                }
+            }
+
+            // 这一行代表某个 UI bundle（surface）：先找它自己的图标。
+            // 以前这里直接跳到 BundleIcon.First(profiles)，拿的是 profile 里第一个有图标的
+            // bundle（dsh-base），于是 dsh-tui 的行显示鲸鱼，而商店里同一个包是它自己的 logo。
+            if (DataContext is ProfileVm { IconBundle: { } bundleRef })
+            {
+                var root = AppState.Current.Launcher.Root;
+                var hit = BundleIcon.Resolve(root, bundleRef.Dir, bundleRef.Spec);
+                if (hit is null) WarmBundle(root, bundleRef);
+                if (hit is not null && Skin.LoadBitmap(hit) is { } bmp)
+                {
+                    Pic.Stretch = Stretch.Uniform;
+                    Pic.Source = bmp;
+                    Pic.Visibility = Visibility.Visible;
+                    Glyph.Visibility = Visibility.Collapsed;
+                    Dbg($"  -> BUNDLE(surface) {hit}");
                     return;
                 }
             }

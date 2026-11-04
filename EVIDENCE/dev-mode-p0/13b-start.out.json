@@ -1,0 +1,14 @@
+{
+  "schema": "pad.dev-session/v1",
+  "id": "dev-20261104-164734",
+  "instance": "ev-hot",
+  "profile": "web",
+  "state": "running",
+  "startedAt": "2026-11-04T08:47:34.2331246\u002B00:00",
+  "endedAt": null,
+  "verifiedAt": null,
+  "lastResult": null,
+  "checkpoint": null,
+  "sourceHash": "06aca5fd95c2a259",
+  "changes": []
+}

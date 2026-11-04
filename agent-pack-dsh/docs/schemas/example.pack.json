@@ -1,0 +1,106 @@
+{
+  "schema": "pack-agent.pack/v3",
+  "name": "Sisyphus 工作台",
+  "version": "1.2.0",
+  "description": "带内核与 Node 运行时、两棵配置树（web / dsh-tui）、内置与自定义 agent preset 的完整包示例。",
+  "icon": "icon.png",
+
+  "meta": {
+    "author": "Brs",
+    "homepage": "https://github.com/sakikoTGW/pack-agent",
+    "license": "MIT",
+    "exportedAt": "2026-11-04T15:08:00.000Z",
+    "portable": true,
+    "fidelity": "L2",
+    "source": "instances/sisyphus",
+    "tags": ["workstation", "web", "tui"]
+  },
+
+  "kernel": {
+    "mode": "bundled",
+    "version": "0.2.1-rc.2",
+    "platform": "win32-x64",
+    "bundled": "kernel/",
+    "sha256": "3f1c9d2a7b8e4f5061728394a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e",
+    "files": 30636,
+    "bundles": [
+      "@deepseek-ai/dsh-base",
+      "@deepseek-ai/dsh-web-app",
+      "@deepseek-ai/dsh-headless",
+      "@deepseek-ai/dsh-sdk-app",
+      "@deepseek-ai/dsh-acp-app"
+    ]
+  },
+
+  "runtime": {
+    "node": "bundled",
+    "version": "24.12.0",
+    "bundled": "runtime/node/",
+    "sha256": "9a8b7c6d5e4f3021a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60710"
+  },
+
+  "home": {
+    "mode": "snapshot",
+    "snapshot": "overrides/home/",
+    "include": ["storages", "skills"],
+    "credentials": false
+  },
+
+  "workspace": {
+    "mode": "copy",
+    "template": "overrides/workspace/"
+  },
+
+  "profiles": [
+    {
+      "name": "web",
+      "bundles": [
+        { "spec": "@deepseek-ai/dsh-base", "source": "official", "required": true },
+        { "spec": "@deepseek-ai/dsh-web-app", "source": "official", "required": true },
+        { "spec": "@deepseek-harness-tui/dsh-tui@0.18.0", "source": "bundled", "required": false },
+        { "spec": "dsh-better-sidebar@0.28.0", "source": "bundled", "required": true }
+      ],
+      "patch": "overrides/profiles/web/cordis.patch.yml",
+      "agents": ["standard", "ptc"]
+    },
+    {
+      "name": "dsh-tui",
+      "bundles": [
+        { "spec": "@deepseek-ai/dsh-base", "source": "official", "required": true },
+        { "spec": "@deepseek-harness-tui/dsh-tui@0.18.0", "source": "bundled", "required": true }
+      ],
+      "patch": "overrides/profiles/dsh-tui/cordis.patch.yml",
+      "agents": ["standard"]
+    }
+  ],
+
+  "agents": [
+    { "id": "standard", "source": "official", "profiles": ["web", "dsh-tui"] },
+    { "id": "ptc", "source": "official", "profiles": ["web"] },
+    { "id": "reviewer", "source": "bundled", "patch": "overrides/presets/reviewer.patch.yml", "profiles": ["web"] }
+  ],
+
+  "data": [
+    { "path": "overrides/.agent-pack/", "scope": "workspace", "profiles": ["web", "dsh-tui"] },
+    { "path": "overrides/skills/", "scope": "home" }
+  ],
+
+  "requires": {
+    "dsh": ">=0.2.1-rc.2 <0.3.0",
+    "node": ">=22.19.0",
+    "os": ["win32"],
+    "arch": ["x64"]
+  },
+
+  "integrity": {
+    "algorithm": "sha256",
+    "check": "report",
+    "root": "5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+    "files": [
+      { "path": "profiles/web/cordis.patch.yml", "sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809", "bytes": 812 },
+      { "path": "profiles/web/node_modules/dsh-better-sidebar/package.json", "sha256": "2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a", "bytes": 1204 },
+      { "path": "presets/reviewer.patch.yml", "sha256": "3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b", "bytes": 640 },
+      { "path": "workspace/README.md", "sha256": "4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c", "bytes": 96 }
+    ]
+  }
+}

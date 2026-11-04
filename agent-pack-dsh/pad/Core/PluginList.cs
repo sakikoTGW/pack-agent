@@ -250,7 +250,7 @@ public static class PluginList
         catch { return new("", "", []); }
     }
 
-    public static PluginRow FromBundle(BundleRow b) => new()
+    public static PluginRow FromBundle(ProfileBundleRow b) => new()
     {
         Profile = b.Profile,
         Spec = b.Spec,

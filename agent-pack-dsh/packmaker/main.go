@@ -44,6 +44,8 @@ type Spec struct {
 	Plugins     []string  `json:"plugins"`
 	Structure   Structure `json:"structure"`
 	Icon        string    `json:"icon"`
+	// 空 = 旧 ccui-pack/v0.2（兼容旧导入器）；"pack-agent.pack/v3" = 新规范。
+	Schema      string    `json:"schema"`
 	// 没上架 npm 的插件：目录也塞进包（plugins/<safe>/），清单里带 local 指路。
 	LocalPlugins []LocalPlugin `json:"localPlugins"`
 }
@@ -58,6 +60,18 @@ type LocalPlugin struct {
 type ValidationError struct{ Msg string }
 
 func (e *ValidationError) Error() string { return e.Msg }
+
+const (
+	schemaV3     = "pack-agent.pack/v3"
+	schemaLegacy = "ccui-pack/v0.2"
+)
+
+func (s *Spec) normalizedSchema() string {
+	if strings.TrimSpace(s.Schema) == schemaV3 {
+		return schemaV3
+	}
+	return schemaLegacy
+}
 
 func (s *Spec) normalize() {
 	s.Name = strings.TrimSpace(s.Name)
@@ -111,7 +125,51 @@ func (s *Spec) validate() error {
 	return nil
 }
 
+func (s *Spec) infoDoc() string {
+	const infoSkill = "pack-info"
+	return fmt.Sprintf("---\\nname: %s\\ndescription: 整合包 %s %s\\n---\\n\\n# %s\\n\\n%s\\n",
+		infoSkill, s.Name, s.Version, s.Name, s.Description)
+}
+
+// packJSON 出 manifest。schema=v3 时按 docs/PACK_SPEC.md 写新结构；
+// 空/旧值时保持 ccui-pack/v0.2（旧导入器仍能读）。
 func (s *Spec) packJSON() ([]byte, error) {
+	if s.normalizedSchema() == schemaV3 {
+		bundles := make([]any, 0, len(s.Plugins)+len(s.LocalPlugins))
+		for _, p := range s.Plugins {
+			bundles = append(bundles, map[string]any{"spec": p, "source": "registry", "required": true})
+		}
+		for _, local := range s.LocalPlugins {
+			spec := strings.TrimSpace(local.Spec)
+			if spec == "" {
+				spec = filepath.Base(strings.TrimSpace(local.Dir))
+			}
+			bundles = append(bundles, map[string]any{"spec": spec, "source": "bundled", "required": true})
+		}
+		doc := map[string]any{
+			"schema":      schemaV3,
+			"name":        s.Name,
+			"version":     s.Version,
+			"description": s.Description,
+			"kernel":      map[string]any{"mode": "pin", "version": s.Kernel},
+			"runtime":     map[string]any{"node": "inherit"},
+			"home":        map[string]any{"mode": "inherit"},
+			"workspace":   map[string]any{"mode": "copy", "template": "workspace"},
+			"profiles": []any{map[string]any{
+				"name":    s.Profile,
+				"bundles": bundles,
+			}},
+			"data": []any{"skills"},
+			"meta": map[string]any{
+				"author":     "PAD",
+				"exportedAt": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
+				"fidelity":   "L1",
+				"portable":   true,
+			},
+		}
+		return json.MarshalIndent(doc, "", "  ")
+	}
+
 	plugins := make([]map[string]any, 0, len(s.Plugins)+len(s.LocalPlugins))
 	for _, p := range s.Plugins {
 		plugins = append(plugins, map[string]any{"spec": p, "required": true})
@@ -230,18 +288,41 @@ func Make(spec Spec, outDir, iconOverride string) (string, error) {
 			return "", err
 		}
 	}
-	// 没上架 npm 的插件目录：整个塞进 plugins/<safe>/。
-	for _, local := range spec.LocalPlugins {
-		dir := strings.TrimSpace(local.Dir)
-		if dir == "" {
-			continue
-		}
-		name := strings.TrimSpace(local.Spec)
-		if name == "" {
-			name = filepath.Base(dir)
-		}
-		if err := addDir(zw, dir, "plugins/"+safeFileName(name)+"/"); err != nil {
+	if spec.normalizedSchema() == schemaV3 {
+		// v3：文件都走 overrides/（docs/PACK_SPEC.md §2）。
+		// 自动带的 pack-info skill 以文件形式落在这里，manifest 里只写 data:["skills"]。
+		if err := addBytes(zw, "overrides/skills/pack-info/SKILL.md", []byte(spec.infoDoc())); err != nil {
 			return "", err
+		}
+		for _, local := range spec.LocalPlugins {
+			dir := strings.TrimSpace(local.Dir)
+			if dir == "" {
+				continue
+			}
+			name := strings.TrimSpace(local.Spec)
+			if name == "" {
+				name = filepath.Base(dir)
+			}
+			prefix := "overrides/profiles/" + safeFileName(spec.Profile) + "/node_modules/" +
+				strings.Trim(name, "/\\") + "/"
+			if err := addDir(zw, dir, prefix); err != nil {
+				return "", err
+			}
+		}
+	} else {
+		// 旧包：没上架 npm 的插件目录整个塞进 plugins/<safe>/。
+		for _, local := range spec.LocalPlugins {
+			dir := strings.TrimSpace(local.Dir)
+			if dir == "" {
+				continue
+			}
+			name := strings.TrimSpace(local.Spec)
+			if name == "" {
+				name = filepath.Base(dir)
+			}
+			if err := addDir(zw, dir, "plugins/"+safeFileName(name)+"/"); err != nil {
+				return "", err
+			}
 		}
 	}
 	if err := zw.Close(); err != nil {

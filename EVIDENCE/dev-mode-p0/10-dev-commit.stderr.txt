@@ -1,0 +1,7 @@
+--- 16:45:37 pad cli dev commit ev-hot --json
+error[PA242]: verification failed; refusing to commit
+ --> instances/ev-hot
+  |
+  | 先修复，或用 --force 仍然固化（会留记录）
+  |
+  = help: pad cli dev verify <instance> --json

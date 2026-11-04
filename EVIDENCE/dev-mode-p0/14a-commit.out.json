@@ -1,0 +1,29 @@
+{
+  "schema": "pad.dev-session/v1",
+  "id": "dev-20261104-164734",
+  "instance": "ev-hot",
+  "profile": "web",
+  "state": "committed",
+  "startedAt": "2026-11-04T08:47:34.2331246\u002B00:00",
+  "endedAt": "2026-11-04T08:47:45.9953767\u002B00:00",
+  "verifiedAt": "2026-11-04T08:47:39.0906766\u002B00:00",
+  "lastResult": "pass",
+  "checkpoint": "20261104-084745-972",
+  "sourceHash": "06aca5fd95c2a259",
+  "changes": [
+    {
+      "at": "2026-11-04T08:47:37.0540975\u002B00:00",
+      "op": "add",
+      "spec": "file:E:/pack-agent/.tmp/lab-e2e/plugins/hot-bundle",
+      "trial": "file:E:/pack-agent/.tmp/lab-e2e/plugins/hot-bundle",
+      "detail": "\u672C\u6B21\u8FD0\u884C\u751F\u6548 \u00B7 \u672A\u5199\u5B9E\u4F8B"
+    },
+    {
+      "at": "2026-11-04T08:47:45.9953679\u002B00:00",
+      "op": "commit",
+      "spec": "file:E:/pack-agent/.tmp/lab-e2e/plugins/hot-bundle",
+      "trial": "file:E:/pack-agent/.tmp/lab-e2e/plugins/hot-bundle",
+      "detail": "\u5DF2\u5199\u5165 profile \u00B7 \u6253\u70B9 20261104-084745-972"
+    }
+  ]
+}

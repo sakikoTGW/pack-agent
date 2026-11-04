@@ -60,6 +60,12 @@
     { "id": "PA202", "level": "error", "message": "the plugin tree is owned by another manager (e.g. mygo)", "help": ["install from that manager's own UI", "PAD stays read-only here on purpose"] },
     { "id": "PA203", "level": "error", "message": "checkpoint not found", "help": ["pad cli plugin undo <instance> restores the newest one"] },
     { "id": "PA204", "level": "error", "message": "checkpoint restore failed; the instance needs manual repair", "note": "the pre-restore checkpoint is kept so nothing was lost" },
-    { "id": "PA205", "level": "error", "message": "hot verify failed; the change was rolled back", "help": ["pad cli plugin verify <instance> <spec>", "check the install log"] }
+    { "id": "PA205", "level": "error", "message": "hot verify failed; the change was rolled back", "help": ["pad cli plugin verify <instance> <spec>", "check the install log"] },
+    { "id": "PA240", "level": "error", "message": "no development session (or the instance has no profile)", "help": ["pad cli dev start <instance> [--profile p]"] },
+    { "id": "PA241", "level": "error", "message": "nothing to commit: the development session has no pending changes" },
+    { "id": "PA242", "level": "error", "message": "verification failed; refusing to commit", "help": ["pad cli dev verify <instance> --json", "pad cli dev commit <instance> --force"] },
+    { "id": "PA243", "level": "error", "message": "development session is already closed" },
+    { "id": "PA244", "level": "error", "message": "invalid development command or missing spec" },
+    { "id": "PA245", "level": "error", "message": "no pending trial matches that spec" }
   ]
 }

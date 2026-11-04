@@ -67,23 +67,72 @@ public partial class LaunchView : UserControl, IRefreshable
         else _win.ShowInner("versions", "版本选择");
     }
 
-    void Run_Click(object sender, RoutedEventArgs e)
+    async void Run_Click(object sender, RoutedEventArgs e)
     {
-        var profile = _state.SelectedProfile;
-        if (profile is null)
+        try
         {
-            GoToStep();
-            return;
+            // 容器列表里点的是探测到的 TUI / 桌面端：按它自己的入口启动（PAD 只是拉起它）。
+            switch (_state.SelectedContainer)
+            {
+                case DetectedTuiRow tui when !tui.LocalRunning:
+                {
+                    var opened = await BundleLaunch.OpenTuiAsync(_state.Launcher, tui.Source, CancellationToken.None);
+                    _win.Toast($"已启动 {tui.Name}（终端窗口，pid {opened.Pid}）");
+                    _state.RefreshRunning();
+                    return;
+                }
+                case DetectedTuiRow tui:
+                    _win.Toast($"{tui.Name} 已经在跑（不是 PAD 启动的）");
+                    return;
+                case DetectedShellRow shell when !shell.LocalRunning:
+                {
+                    var opened = BundleLaunch.OpenShell(_state.Launcher, shell.Source);
+                    _win.Toast($"已启动 {shell.Name}（桌面端窗口，pid {opened.Pid}）");
+                    _state.RefreshRunning();
+                    return;
+                }
+                case DetectedShellRow shell:
+                    _win.Toast($"{shell.Name} 已经在跑");
+                    return;
+            }
+
+            // profile 拆出来的 surface 行：这次要用哪种「怎么看见」是行自己带的。
+            if (_state.SelectedContainer is BundleRow surfaceRow)
+            {
+                var surface = Bundle.For(surfaceRow.BundleKind);
+                if (surface is null) return;
+                var opened = await BundleLaunch.OpenAsync(_state.Launcher, surfaceRow.Instance,
+                    surfaceRow.Profile.Name, surface, _state.Settings, CancellationToken.None);
+                _win.Toast($"已启动 {surfaceRow.InstanceName} · {surfaceRow.Profile.Name}（{surface.Shows}，pid {opened.Pid}）");
+                _state.RefreshRunning();
+                return;
+            }
+
+            var profile = _state.SelectedProfile ?? _state.SelectedContainer;
+            if (profile is null)
+            {
+                GoToStep();
+                return;
+            }
+            var key = CredentialsGate.Inspect(_state.Launcher, profile.Instance, _state.Settings);
+            if (!key.Configured)
+            {
+                _win.OpenSettingsApi();
+                _win.LaunchFailed(CredentialsFile.MissingError(key.Location).Render(), profile.Instance);
+                return;
+            }
+            // 一个 profile 同时提供两种 surface 是合法的（profile 决定装什么）；
+            // 只是启动时要挑一个。这里先说明这次按哪个开，选择器是下一步。
+            if (profile.Profile.UiSurfaces.Count > 1)
+                _win.Toast($"{profile.Name} 提供 " + string.Join(" / ", profile.Profile.UiSurfaces) +
+                           $" 两种 surface，这次按 {(profile.Profile.IsWeb ? "web" : "tui")} 启动");
+            _win.ShowTab("manage");
+            LaunchFloat.Open(_win, profile);
         }
-        var key = CredentialsGate.Inspect(_state.Launcher, profile.Instance, _state.Settings);
-        if (!key.Configured)
+        catch (Exception ex)
         {
-            _win.OpenSettingsApi();
-            _win.LaunchFailed(CredentialsFile.MissingError(key.Location).Render(), profile.Instance);
-            return;
+            _win.Toast(PadError.Describe(ex), bad: true);
         }
-        _win.ShowTab("manage");
-        LaunchFloat.Open(_win, profile);
     }
 
     void Manage_Click(object sender, RoutedEventArgs e) => _win.ShowTab("manage");

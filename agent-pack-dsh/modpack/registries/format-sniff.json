@@ -7,7 +7,7 @@
       "id": "ccui-pack",
       "match": {
         "file": "pack.json",
-        "schemaPrefix": ["ccui-pack/", "agent-pack-ir/"]
+        "schemaPrefix": ["ccui-pack/", "agent-pack-ir/", "pack-agent.pack/"]
       },
       "kind": "pack",
       "handler": "import-pack"

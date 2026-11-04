@@ -188,3 +188,44 @@ func TestPluginDedupAndTrim(t *testing.T) {
 		t.Fatalf("重复/空白插件没清干净: %#v", spec.Plugins)
 	}
 }
+
+func TestMakeV3Layout(t *testing.T) {
+	spec := baseSpec()
+	spec.Schema = schemaV3
+	zipPath, err := Make(spec, t.TempDir(), "")
+	if err != nil {
+		t.Fatalf("make: %v", err)
+	}
+	doc := readZipJSON(t, zipPath, "pack.json")
+	if doc["schema"] != schemaV3 {
+		t.Fatalf("schema 不是 v3: %#v", doc["schema"])
+	}
+	kernel := doc["kernel"].(map[string]any)
+	if kernel["mode"] != "pin" || kernel["version"] != "0.1.0-rc.7" {
+		t.Fatalf("kernel 不对: %#v", kernel)
+	}
+	profiles := doc["profiles"].([]any)
+	p0 := profiles[0].(map[string]any)
+	if p0["name"] != "web" {
+		t.Fatalf("profile 名不对: %#v", p0)
+	}
+	bundles := p0["bundles"].([]any)
+	b0 := bundles[0].(map[string]any)
+	if b0["source"] != "registry" {
+		t.Fatalf("bundle source 不对: %#v", b0)
+	}
+	zr, err := zip.OpenReader(zipPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer zr.Close()
+	found := false
+	for _, f := range zr.File {
+		if f.Name == "overrides/skills/pack-info/SKILL.md" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("v3 包应该把 pack-info 放在 overrides/skills/ 下")
+	}
+}

@@ -76,7 +76,8 @@ public static class Checkpoints
             Files = files,
         };
         WriteJson(Path.Combine(dir, "checkpoint.json"), ck);
-        Prune(launcher, inst.Id);
+        // 不自动删旧存档：用户明确要求“不许偷偷删备份”。清理只走显式
+        // `pad cli checkpoint prune`（先列后删，需 --yes）。
         return ck;
     }
 
@@ -136,22 +137,30 @@ public static class Checkpoints
         return ck;
     }
 
-    public static void Prune(Launcher launcher, string instanceId)
+    /// <summary>Explicit, visible cleanup: returns the checkpoint ids it deleted.
+    /// Nothing calls this automatically; the CLI lists first and requires --yes.</summary>
+    public static List<string> Prune(Launcher launcher, string instanceId, int keep = Keep)
     {
+        var removed = new List<string>();
         try
         {
             var root = Root(launcher, instanceId);
-            if (!Directory.Exists(root)) return;
+            if (!Directory.Exists(root)) return removed;
             var ordered = Directory.EnumerateDirectories(root)
                 .OrderByDescending(d => Path.GetFileName(d), StringComparer.OrdinalIgnoreCase)
                 .ToList();
-            foreach (var stale in ordered.Skip(Keep))
+            foreach (var stale in ordered.Skip(Math.Max(0, keep)))
             {
-                try { Directory.Delete(stale, recursive: true); }
+                try
+                {
+                    Directory.Delete(stale, recursive: true);
+                    removed.Add(Path.GetFileName(stale));
+                }
                 catch { /* a stale checkpoint is not worth failing the caller */ }
             }
         }
         catch { /* pruning is opportunistic */ }
+        return removed;
     }
 
     static void WriteAtomic(string path, byte[] bytes)

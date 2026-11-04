@@ -35,7 +35,7 @@ public partial class WorkbenchView : UserControl
     (string Tool, int Calls, long Tokens)[] _scopeTools = [];
     Inspect.Report? _scopeInspect;
     List<SessionRow> _scopeSessions = [];
-    List<BundleRow> _scopeBundles = [];
+    List<ProfileBundleRow> _scopeBundles = [];
     List<DshProfile> _scopeProfiles = [];
     List<PackRow> _scopePacks = [];
     string _scopePacksNote = "";
@@ -372,7 +372,7 @@ public partial class WorkbenchView : UserControl
             try { inspect = Inspect.Measure(home); } catch { /* home 不在了：卡片给空态 */ }
             List<SessionRow> sessions = [];
             try { sessions = launcher.Sessions(inst); } catch { }
-            List<BundleRow> bundles = [];
+            List<ProfileBundleRow> bundles = [];
             try { bundles = launcher.ListBundles(inst); } catch { }
             List<DshProfile> profiles = [];
             try { profiles = launcher.Profiles(inst); } catch { }

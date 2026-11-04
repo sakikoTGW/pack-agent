@@ -161,6 +161,20 @@ public partial class VersionsView : UserControl, IRefreshable
         };
         if (dlg.ShowDialog(_win) != true) return;
 
+        // v3 包：走新窗口（PackInstall），其余格式继续走旧 import 链路。
+        var v3 = PackSpec.Load(dlg.FileName);
+        if (v3.Valid && v3.Schema == PackSpec.SchemaV3)
+        {
+            var win = new PackImportWindow(_state.Launcher, dlg.FileName, v3, _state.SelectedInstance) { Owner = _win };
+            if (win.ShowDialog() == true && win.Installed is not null)
+            {
+                _state.Reload();
+                _win.Toast($"已导入 {v3.Name} {v3.Version}：{win.Summary}");
+                await RefreshPacksAsync();
+            }
+            return;
+        }
+
         // PackForge .dspack：走 compat 引擎（新实例 + overrides/home/bundles/deps），
         // 与原生 .pack.zip 的投影路径分开，不混装。
         if (LaunchPolicy.IsDspackDrop(dlg.FileName))
@@ -934,7 +948,10 @@ public partial class VersionsView : UserControl, IRefreshable
         }
     }
 
-    /// <summary>点容器 = 选中（学 PCL）。实例自带的启动配置顺手选中实例；探测到的容器只选中，不搞「收编」。</summary>
+    /// <summary>
+    /// 点容器 = 选中（学 PCL）：只决定「启动页按哪个容器启动」，不启动。
+    /// 探测到的行（TUI / 桌面端）也进选中，这样启动页按它启动时就走它自己的入口。
+    /// </summary>
     void ContainerList_Sel(object sender, SelectionChangedEventArgs e)
     {
         if (_containerSync) return;
@@ -943,6 +960,7 @@ public partial class VersionsView : UserControl, IRefreshable
         {
             _state.SelectedInstance = vm.Instance;
             _state.SelectedProfile = _state.Launchables.FirstOrDefault(p => p.Name == vm.Name) ?? vm;
+            _state.SelectedContainer = vm;
             _state.SaveSelection();
             return;
         }
@@ -950,8 +968,10 @@ public partial class VersionsView : UserControl, IRefreshable
         var matched = _state.Instances.FirstOrDefault(i =>
             string.Equals(NormHome(i.Home), NormHome(vm.DetectedHome), StringComparison.OrdinalIgnoreCase));
         if (matched is null) return;
+        // 先切实例，再记容器：切实例会把「上一个实例选中的容器」清掉。
         _state.SelectedInstance = matched;
         InstanceList.SelectedItem = matched;
+        _state.SelectedContainer = vm;
     }
 
     /// <summary>行右侧只有设置：实例 → 版本设置页；探测到的容器 → 容器设置卡片（只读信息）。</summary>
@@ -1147,6 +1167,19 @@ public partial class VersionsView : UserControl, IRefreshable
         Reveal.Path(_state.Launcher.ProjectionDir(inst));
     }
 
+    /// <summary>导出 v3 整合包（新链路）；pinst.zip 仍走 Export_Click。</summary>
+    void ExportPackV3_Click(object sender, RoutedEventArgs e)
+    {
+        var inst = _state.SelectedInstance;
+        if (inst is null)
+        {
+            _win.Toast("先在左边选一个实例", bad: true);
+            return;
+        }
+        var win = new PackExportWindow(_state.Launcher, inst) { Owner = _win };
+        if (win.ShowDialog() != true || win.OutputPath is null) return;
+        _win.Toast("已导出 " + System.IO.Path.GetFileName(win.OutputPath));
+    }
     void Export_Click(object sender, RoutedEventArgs e)
     {
         var inst = _state.SelectedInstance;
@@ -1275,7 +1308,16 @@ public partial class VersionsView : UserControl, IRefreshable
     void RebuildContainerRows()
     {
         if (ContainerList is null) return;
-        var rows = new List<ProfileVm>(_state.Launchables);
+        // 一行 = 一种 surface。profile 里装了两种 UI bundle 就拆成两行：
+        // 浏览器窗口和终端窗口是两种「怎么看见」，不是同一行的两种标签。
+        var rows = new List<ProfileVm>();
+        foreach (var p in _state.Launchables)
+        {
+            var surfaces = p.Profile.UiSurfaces;
+            if (surfaces.Count <= 1) { rows.Add(p); continue; }
+            foreach (var surface in surfaces)
+                rows.Add(new BundleRow(p.Instance, p.Profile, surface));
+        }
         if (_detected is not null)
         {
             var instanceHomes = new HashSet<string>(

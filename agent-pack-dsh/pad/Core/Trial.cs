@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Pad.Core;
@@ -236,27 +237,70 @@ public sealed class Trials(Launcher launcher)
         Forget(inst, rec);
     }
 
-    /// <summary>Uninstall through DSH's own plugin command, which forwards to pnpm.</summary>
+    /// <summary>Uninstall through DSH's own plugin command, which forwards to pnpm.
+    /// A <c>file:</c> dependency makes pnpm's remove fail (it re-uses the file: spec), so
+    /// fall back to stripping the dependency entry + package dir ourselves — a discard must
+    /// leave the profile exactly as it was.</summary>
     async Task Remove(Instance inst, string profile, string spec, IProgress<string>? log, CancellationToken ct)
     {
         var bin = _l.DshBin(inst.Dsh.Version);
-        if (!File.Exists(bin)) return;
-
-        // pnpm removes by package name; a version range or a local path is not one.
         var name = PackageName(spec);
-        var env = new Dictionary<string, string>
+        if (File.Exists(bin))
         {
-            ["DSH_HOME"] = inst.Home,
-            ["npm_config_ignore_workspace_root_check"] = "true",
-        };
-        log?.Report($"dsh plugin --profile {profile} remove {name}");
-        await Proc.Run("node", $"\"{bin}\" plugin --profile {profile} remove {name}",
-            inst.Workspace.Path, log, ct, env);
+            var env = new Dictionary<string, string>
+            {
+                ["DSH_HOME"] = inst.Home,
+                ["npm_config_ignore_workspace_root_check"] = "true",
+            };
+            log?.Report($"dsh plugin --profile {profile} remove {name}");
+            await Proc.Run("node", $"\"{bin}\" plugin --profile {profile} remove {name}",
+                inst.Workspace.Path, log, ct, env);
+        }
+
+        var pkgPath = ProfilePkg(inst, profile);
+        if (!HasDependency(pkgPath, name)) return;
+
+        // pnpm/DSH could not remove it; do the minimal equivalent: drop the dependency
+        // entry and the installed package. The bundle row was never written (trial).
+        log?.Report($"依赖仍在，直接摘掉 {name}（file: 依赖 pnpm 删不掉）");
+        StripDependency(pkgPath, name);
+        var profileDir = System.IO.Path.GetDirectoryName(pkgPath);
+        var installed = System.IO.Path.Combine(profileDir ?? "", "node_modules",
+            name.Replace('/', System.IO.Path.DirectorySeparatorChar));
+        try { if (Directory.Exists(installed)) Directory.Delete(installed, recursive: true); }
+        catch (Exception ex) { log?.Report("删除依赖目录失败: " + ex.Message); }
     }
 
-    /// <summary>Strip a version range from a spec, keeping the scope's leading @.</summary>
+    /// <summary>Remove one key from the profile's <c>dependencies</c>, leaving everything
+    /// else (dsh.profile.bundles, other deps) intact.</summary>
+    static void StripDependency(string pkgPath, string name)
+    {
+        if (!File.Exists(pkgPath)) return;
+        try
+        {
+            var node = JsonNode.Parse(File.ReadAllText(pkgPath)) as JsonObject;
+            if (node?["dependencies"] is JsonObject deps && deps.ContainsKey(name))
+            {
+                deps.Remove(name);
+                File.WriteAllText(pkgPath,
+                    node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine,
+                    new UTF8Encoding(false));
+            }
+        }
+        catch { /* unparsable package.json is reported by dump-config, not here */ }
+    }
+
+    /// <summary>Strip a version range from a spec, keeping the scope's leading @.
+    /// <c>file:</c> specs are local paths: pnpm/DSH remove by package name, so return the
+    /// directory name (a raw <c>file:E:/…</c> can never be removed by name).</summary>
     public static string PackageName(string spec)
     {
+        if (spec.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+        {
+            var path = spec[5..].TrimEnd('/', '\\');
+            var slash = path.LastIndexOfAny(['/', '\\']);
+            return slash >= 0 ? path[(slash + 1)..] : path;
+        }
         var at = spec.LastIndexOf('@');
         return at > 0 ? spec[..at] : spec;
     }

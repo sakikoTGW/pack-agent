@@ -190,7 +190,7 @@
                             BorderThickness="1" Visibility="Collapsed">
                       <Image x:Name="MsgPreview" Stretch="UniformToFill" />
                     </Border>
-                    <TextBox x:Name="MsgInput" Margin="7,0,7,12" Height="32"
+                    <TextBox x:Name="MsgInput" Margin="7,0,7,12" Height="32" PreviewKeyDown="MsgInput_PreviewKeyDown"
                              MinWidth="360" Visibility="Collapsed" />
                   </StackPanel>
                 </ScrollViewer>

@@ -28,18 +28,15 @@
         <StackPanel Grid.Row="0" VerticalAlignment="Center" Margin="25,0"
                     Visibility="{Binding CanLaunch, Converter={StaticResource B2V}}">
           <local:InstMark Width="58" Height="58" HorizontalAlignment="Center"
-                          DataContext="{Binding SelectedProfile}" />
-          <TextBlock Text="{Binding SelectedProfile.Name}" HorizontalAlignment="Center"
+                          DataContext="{Binding CurrentPick}" />
+          <TextBlock Text="{Binding CurrentPick.InstanceName}" HorizontalAlignment="Center"
                      Margin="0,15,0,0" FontSize="{StaticResource FsTitle}"
                      Foreground="{StaticResource TextPrimary}" TextTrimming="CharacterEllipsis" />
-          <TextBlock Text="{Binding SelectedProfile.InstanceName}" HorizontalAlignment="Center"
-                     Margin="0,4,0,0" FontSize="{StaticResource FsSmall}"
-                     Foreground="{StaticResource TextMuted}" TextTrimming="CharacterEllipsis" />
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
             <ContentControl Style="{StaticResource QuantMono}" v:Ico.Of="{StaticResource I.Gear}"
-                            Content="{Binding SelectedProfile.Release}" />
+                            Content="{Binding CurrentPick.Release}" />
             <ContentControl Style="{StaticResource Quant}" v:Ico.Of="{StaticResource I.Terminal}"
-                            Content="{Binding SelectedProfile.Kind}" />
+                            Content="{Binding CurrentPick.Kind}" />
             <ContentControl Style="{StaticResource Quant}" v:Ico.Of="{StaticResource I.Pack}"
                             Margin="0" Content="{Binding EnabledPackCount}"
                             ContentStringFormat="{}{0} 个整合包" />
@@ -111,11 +108,11 @@
       <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="40"
                   Visibility="{Binding CanLaunch, Converter={StaticResource B2V}}">
         <local:InstMark Width="88" Height="88" HorizontalAlignment="Center"
-                         DataContext="{Binding SelectedProfile}" />
-        <TextBlock Text="{Binding SelectedProfile.InstanceName}" HorizontalAlignment="Center"
+                         DataContext="{Binding CurrentPick}" />
+        <TextBlock Text="{Binding CurrentPick.InstanceName}" HorizontalAlignment="Center"
                    Margin="0,18,0,0" FontSize="{StaticResource FsSection}"
                    Foreground="{StaticResource TextPrimary}" TextTrimming="CharacterEllipsis" />
-        <TextBlock Text="{Binding SelectedProfile.Release}" HorizontalAlignment="Center"
+        <TextBlock Text="{Binding CurrentPick.Release}" HorizontalAlignment="Center"
                    Margin="0,6,0,0" Style="{StaticResource Mono}"
                    Foreground="{StaticResource TextMuted}" />
       </StackPanel>

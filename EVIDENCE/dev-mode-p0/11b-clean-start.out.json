@@ -1,0 +1,46 @@
+--- 16:46:12 pad cli 
+pad cli import <pack.zip>
+pad cli run <instance> [profile]
+pad cli script <instance> [profile]
+pad cli rewrite-scripts
+pad cli release  list | install <ver> | pin <bin.js> | remove <ver>
+pad cli instance list | create <name> <ver> | create --pack <id|path> [--name <n>] [--profile <p>]
+                 | pin <id> <ver> | clone <id> <name> | remove <id>
+pad cli instance workspace isolate <id> | share <id> <dir>
+pad cli profile  list <instance> | add <instance> <profile> <tui|web|gateway>
+pad cli plugin   list <instance> [profile] | add|remove|update <instance> <profile> <spec>
+pad cli market   plugin|tui|skill|host [text]
+pad cli trial    list <instance> | add <instance> <profile> <spec>
+pad cli dev      start <instance> [--profile p] | status|list <instance>
+                 | apply <instance> --spec <pkg> [--action add|remove]
+                 | verify <instance> | commit <instance> [--dry-run] [--force]
+                 | discard <instance>   (以上都可加 --json)
+pad cli checkpoint list <instance> | prune <instance> [--keep 20] [--yes]
+pad cli mcp serve
+pad cli session  ref <session> [--json] | open <instance> <session> [--surface <s>] [--no-exec] [--json]
+pad cli surface  list [--json] | validate [--json]
+                 | commit <instance> <profile> <spec> | drop <instance> <profile> <spec>
+pad cli pack     list | list <instance> | project <instance> <pack>
+                 | allow <instance> <pack-id> | deny <instance> <pack-id> | scan
+                 list 支持 --json / --out <path> / --roots <a;b> / --deep <dir>
+pad cli credentials list | has [instance] | get <name> | set <name> <file.yaml> | remove <name>
+pad cli task run <instance> --input <file> --out <file> [--timeout <seconds>]
+pad cli queue submit <instance> --input <file> --out <receipt.json>
+pad cli queue submit-mesh --url <peer> --input <file> --out <receipt.json>
+pad cli queue list --out <file> | status|cancel|retry <id> --out <file> | worker [--once]
+pad cli portable-export <dest> [instanceId]
+pad cli stop <instance> <profile>
+pad cli ps
+pad cli gateway <instance> [rpc-method]
+pad cli adopt [home] [version]
+pad cli crash <instance>
+pad cli update
+pad cli shortcut <instance> [profile]
+pad cli logs <instance>
+pad cli where
+pad cli sniff
+pad cli inspect [home] [--json] [--out <path>]
+pad cli surfaces
+pad cli experimental list | enable <id> | disable <id>
+pad cli system new <name>                 (experimental: layers)
+pad cli layer  list|open <system> <layer> (experimental: layers)

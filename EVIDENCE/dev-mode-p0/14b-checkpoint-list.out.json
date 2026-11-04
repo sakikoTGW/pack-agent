@@ -1,0 +1,116 @@
+[
+  {
+    "schema": "pad.checkpoint/v1",
+    "id": "20261104-084745-972",
+    "instance": "ev-hot",
+    "profile": "web",
+    "trigger": "dev commit dev-20261104-164734",
+    "createdAt": "2026-11-04T08:47:45.9835791\u002B00:00",
+    "files": [
+      {
+        "path": "instance.json",
+        "name": "00-instance.json"
+      },
+      {
+        "path": "trials.json",
+        "name": "01-trials.json"
+      },
+      {
+        "path": "home/profiles/web/package.json",
+        "name": "02-package.json"
+      },
+      {
+        "path": "home/profiles/web/cordis.patch.yml",
+        "name": "03-cordis.patch.yml"
+      }
+    ]
+  },
+  {
+    "schema": "pad.checkpoint/v1",
+    "id": "20261103-212700-960",
+    "instance": "ev-hot",
+    "profile": "web",
+    "trigger": "pre-restore 20261103-212522-490",
+    "createdAt": "2026-11-03T21:27:00.9669575\u002B00:00",
+    "files": [
+      {
+        "path": "instance.json",
+        "name": "00-instance.json"
+      },
+      {
+        "path": "home/profiles/web/package.json",
+        "name": "01-package.json"
+      },
+      {
+        "path": "home/profiles/web/cordis.patch.yml",
+        "name": "02-cordis.patch.yml"
+      }
+    ]
+  },
+  {
+    "schema": "pad.checkpoint/v1",
+    "id": "20261103-212620-318",
+    "instance": "ev-hot",
+    "profile": "web",
+    "trigger": "pre-restore 20261103-212541-940",
+    "createdAt": "2026-11-03T21:26:20.3238180\u002B00:00",
+    "files": [
+      {
+        "path": "instance.json",
+        "name": "00-instance.json"
+      },
+      {
+        "path": "home/profiles/web/package.json",
+        "name": "01-package.json"
+      },
+      {
+        "path": "home/profiles/web/cordis.patch.yml",
+        "name": "02-cordis.patch.yml"
+      }
+    ]
+  },
+  {
+    "schema": "pad.checkpoint/v1",
+    "id": "20261103-212541-940",
+    "instance": "ev-hot",
+    "profile": "web",
+    "trigger": "pre-restore 20261103-212522-490",
+    "createdAt": "2026-11-03T21:25:41.9589819\u002B00:00",
+    "files": [
+      {
+        "path": "instance.json",
+        "name": "00-instance.json"
+      },
+      {
+        "path": "home/profiles/web/package.json",
+        "name": "01-package.json"
+      },
+      {
+        "path": "home/profiles/web/cordis.patch.yml",
+        "name": "02-cordis.patch.yml"
+      }
+    ]
+  },
+  {
+    "schema": "pad.checkpoint/v1",
+    "id": "20261103-212522-490",
+    "instance": "ev-hot",
+    "profile": "web",
+    "trigger": "plugin add file:E:\\pack-agent\\.tmp\\lab-e2e\\plugins\\hot-bundle",
+    "createdAt": "2026-11-03T21:25:22.5040745\u002B00:00",
+    "files": [
+      {
+        "path": "instance.json",
+        "name": "00-instance.json"
+      },
+      {
+        "path": "home/profiles/web/package.json",
+        "name": "01-package.json"
+      },
+      {
+        "path": "home/profiles/web/cordis.patch.yml",
+        "name": "02-cordis.patch.yml"
+      }
+    ]
+  }
+]

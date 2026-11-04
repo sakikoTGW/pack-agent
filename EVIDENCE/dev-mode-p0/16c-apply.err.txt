@@ -1,0 +1,15 @@
+--- 16:48:15 pad cli dev apply ev-hot --profile web --action add --spec file:E:/pack-agent/.tmp/lab-e2e/plugins/hot-bundle --json
+检查 pnpm junction（relink node_modules，可能要几十秒）…
+relink 完成（0s）
+dsh plugin --profile web add file:E:/pack-agent/.tmp/lab-e2e/plugins/hot-bundle
+✓ Lockfile passes supply-chain policies (verified 4s ago)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+
+dependencies:
++ hot-bundle file:E:/pack-agent/.tmp/lab-e2e/plugins/hot-bundle
+
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+Done in 430ms using pnpm v11.7.0
+从 dsh.profile.bundles 摘回 hot-bundle，改由 --patch 只挂本次

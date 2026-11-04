@@ -202,6 +202,12 @@ public sealed class Runner(Launcher launcher)
         sb.AppendLine($"cd {ShQuote(inst.Workspace.Path)} || exit 1");
         if (!string.IsNullOrWhiteSpace(preCommand)) sb.AppendLine(preCommand);
 
+        // 记 pid：Terminal.app 里的 .sh 由 Terminal 拉起，父进程拿不到它的 pid，
+        // 所以脚本自己把 $$ 写下来，LaunchTerminal 读这个文件。
+        var pidFile = PidFile(inst, profile);
+        sb.AppendLine($"mkdir -p {ShQuote(Path.GetDirectoryName(pidFile)!)}");
+        sb.AppendLine($"echo $$ > {ShQuote(pidFile)}");
+
         var node = EmitNodeAbs(inst, settings);
         var nodeCmd = string.IsNullOrWhiteSpace(node) ? "node" : node;
         sb.AppendLine($"exec {ShQuote(nodeCmd)} {ShQuote(bin)} --profile {profile}{patch} \"$@\"");
@@ -220,6 +226,10 @@ public sealed class Runner(Launcher launcher)
 
     /// <summary>POSIX 单引号转义。</summary>
     internal static string ShQuote(string s) => "'" + (s ?? "").Replace("'", "'\\''") + "'";
+
+    /// <summary>启动脚本把 $$ 写到这里；LaunchTerminal 拿它当被跟踪的 pid。</summary>
+    string PidFile(Instance inst, string profile) =>
+        Path.Combine(_l.InstanceDir(inst.Id), ".pad", $"run-{profile}.pid");
 
     /// <summary>The console OEM code page, so cmd.exe reads the script the way it was written.</summary>
     static Encoding CmdEncoding()
@@ -339,19 +349,30 @@ public sealed class Runner(Launcher launcher)
             throw new PadError("PA025", "no terminal could be started", $"instance `{inst.Id}`",
                 settings.Terminal, ["到设置页换一个终端", "或填自定义命令行"]);
 
+        // macOS/Linux：Terminal.app（或终端模拟器）里跑的进程不是我们的子进程，
+        // pid 只能从脚本写下的 pid 文件里读；读不到就退回 open 的 pid。
+        var trackedPid = proc.Id;
+        if (!Platform.Current.IsWindows)
+        {
+            var pidPath = PidFile(inst, profile);
+            for (var i = 0; i < 40 && !File.Exists(pidPath); i++) Thread.Sleep(100);
+            if (File.Exists(pidPath) && int.TryParse(File.ReadAllText(pidPath).Trim(), out var written) && written > 0)
+                trackedPid = written;
+        }
         _l.TrackRun(new RunEntry
         {
             Instance = inst.Id,
             Profile = profile,
             Version = inst.Dsh.Version,
-            Pid = proc.Id,
+            Pid = trackedPid,
             StartedAt = DateTimeOffset.UtcNow.ToString("o"),
         });
 
         inst.LastProfile = profile;
         _l.SaveInstance(inst);
-        return new LaunchResult(proc.Id, script, null);
+        return new LaunchResult(trackedPid, script, null);
     }
+
 
     /// <summary>
     /// Web binds a port. PAD starts it hidden, reads the log for <c>dsh web: http</c>,

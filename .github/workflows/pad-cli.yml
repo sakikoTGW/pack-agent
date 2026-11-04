@@ -44,7 +44,7 @@ jobs:
         run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- selftest
 
   macos-e2e:
-    name: macOS end-to-end (install / instance / script)
+    name: macOS end-to-end (install / profile / run / stop / export)
     # workflow_dispatch 需要 workflow 在默认分支上；分支推送时用 ref 判断来跑同一套端到端。
     if: github.event_name == 'workflow_dispatch' || github.ref_name == 'pad-cli-macos'
     runs-on: macos-latest
@@ -76,3 +76,30 @@ jobs:
 
       - name: stop (nothing running yet)
         run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- ps
+
+      - name: add tui profile (dsh plugin add via pnpm)
+        timeout-minutes: 15
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- profile add smoke dsh-tui tui
+
+      - name: run (opens Terminal.app)
+        # 无 GUI 的 runner 上 Terminal.app 可能起不来；失败不阻断，下面用 ps 记录事实。
+        continue-on-error: true
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- run smoke
+
+      - name: ps after run
+        run: |
+          dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- ps | tee /tmp/ps.json
+          cat /tmp/ps.json
+
+      - name: stop if running
+        continue-on-error: true
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- stop smoke dsh-tui
+
+      - name: ps after stop
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- ps
+
+      - name: portable export
+        continue-on-error: true
+        run: |
+          dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- portable-export "$RUNNER_TEMP/pad-export" smoke
+          find "$RUNNER_TEMP/pad-export" -maxdepth 2 | head -20

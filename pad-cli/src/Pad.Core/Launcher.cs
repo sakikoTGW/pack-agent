@@ -1668,6 +1668,20 @@ public sealed class Launcher
 
     static void CopyHostExe(string destDir)
     {
+        if (!Platform.Current.IsWindows)
+        {
+            // macOS/Linux 没有单文件 PAD：把宿主目录整套复制过去（apphost + Pad.Core.dll + deps）。
+            var baseDir = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+            Directory.CreateDirectory(destDir);
+            foreach (var file in Directory.EnumerateFiles(baseDir))
+            {
+                var fileName = Path.GetFileName(file);
+                if (fileName.StartsWith("pad.log", StringComparison.OrdinalIgnoreCase)) continue;
+                File.Copy(file, Path.Combine(destDir, fileName), overwrite: true);
+            }
+            return;
+        }
+
         var name = HostExeName();
         var dest = Path.Combine(destDir, name);
         var candidates = new List<string>();

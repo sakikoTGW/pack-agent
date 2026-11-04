@@ -98,8 +98,9 @@ jobs:
       - name: ps after stop
         run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- ps
 
-      - name: portable export
-        continue-on-error: true
+      - name: portable export (host bundle + instance)
         run: |
           dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- portable-export "$RUNNER_TEMP/pad-export" smoke
-          find "$RUNNER_TEMP/pad-export" -maxdepth 2 | head -20
+          test -x "$RUNNER_TEMP/pad-export/pad"
+          test -d "$RUNNER_TEMP/pad-export/.pack-launcher/instances/smoke"
+          ls -la "$RUNNER_TEMP/pad-export" | head -10

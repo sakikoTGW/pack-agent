@@ -62,3 +62,5 @@ dotnet build pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release -r osx-x64
 
 `pad install / run / stop / export` 在 macOS 上可用。
 PAD 的 GUI 不在本项目的范围内（WPF 不能跨平台）。
+
+<!-- ci-probe -->

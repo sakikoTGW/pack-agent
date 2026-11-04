@@ -973,6 +973,12 @@ if (!read('Core/Models.cs').includes('"portable-export" =>')) fail('任务类型
 // 7-Zip 多线程压缩（自带 ~2.4MB），缺了退回 .NET；估算别被 junction 撑成虚数；任务可删除。
 if (!read('Core/SevenZip.cs').includes('Locate')) fail('没有找 7-Zip')
 if (!existsSync(join(pad, 'Assets/7z/7z.exe'))) fail('没有把 7z.exe 带在 PAD 里')
+// 单文件 PAD：packmaker/7z 嵌进 exe，不要求用户单独带文件。
+if (!read('Pad.csproj').includes('Pad.tools.packmaker.exe')) fail('packmaker 没嵌进 PAD')
+if (!read('Pad.csproj').includes('Pad.tools.7z.exe')) fail('7z 没嵌进 PAD')
+if (!read('Core/PackMaker.cs').includes('ExtractEmbedded')) fail('packmaker 没有释放逻辑')
+if (!read('Core/SevenZip.cs').includes('Pad.tools.7z.exe')) fail('7z 没有释放逻辑')
+if (!read('Core/Cli.cs').includes('packmaker = PackMaker.Locate()')) fail('pad cli where 没报 packmaker')
 if (!read('Views/PortableExport.cs').includes('-mmt=on')) fail('压缩没走 7-Zip 多线程')
 if (!read('Views/PortableExport.cs').includes('7-Zip 多线程')) fail('7-Zip 压缩没有进度文案')
 if (!read('Views/PortableExport.cs').includes('ReparsePoint')) fail('估算没跳过 junction（会估出 2.3GB 虚数）')

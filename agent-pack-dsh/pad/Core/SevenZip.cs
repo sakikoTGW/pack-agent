@@ -22,11 +22,48 @@ public static class SevenZip
         candidates.Add(Path.Combine(baseDir, "7z.exe"));
         candidates.Add(@"C:\Program Files\7-Zip\7z.exe");
         candidates.Add(@"C:\Program Files (x86)\7-Zip\7z.exe");
-        _cached = candidates.FirstOrDefault(p => p is not null && File.Exists(p)) ?? "";
+        var hit = candidates.FirstOrDefault(p => p is not null && File.Exists(p));
+        if (hit is null) hit = ExtractEmbedded();
+        _cached = hit ?? "";
         return _cached.Length == 0 ? null : _cached;
     }
 
     public static bool Found => Locate() is not null;
+
+    /// <summary>
+    /// 单文件 PAD：把内嵌的 7z.exe/7z.dll 释放到 LOCALAPPDATA\pack-agent-dsh\tools\7z\，
+    /// 两个文件必须同目录（7z.exe 加载同目录 7z.dll）。
+    /// </summary>
+    static string? ExtractEmbedded()
+    {
+        try
+        {
+            var asm = typeof(SevenZip).Assembly;
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "pack-agent-dsh", "tools", "7z");
+            var exe = Path.Combine(dir, "7z.exe");
+            var dll = Path.Combine(dir, "7z.dll");
+            using var exeStream = asm.GetManifestResourceStream("Pad.tools.7z.exe");
+            using var dllStream = asm.GetManifestResourceStream("Pad.tools.7z.dll");
+            if (exeStream is null || dllStream is null) return File.Exists(exe) ? exe : null;
+            Directory.CreateDirectory(dir);
+            if (!File.Exists(exe) || new FileInfo(exe).Length != exeStream.Length)
+            {
+                var tmp = exe + ".tmp";
+                using (var fs = File.Create(tmp)) exeStream.CopyTo(fs);
+                File.Move(tmp, exe, overwrite: true);
+            }
+            if (!File.Exists(dll) || new FileInfo(dll).Length != dllStream.Length)
+            {
+                var tmp = dll + ".tmp";
+                using (var fs = File.Create(tmp)) dllStream.CopyTo(fs);
+                File.Move(tmp, dll, overwrite: true);
+            }
+            return exe;
+        }
+        catch { return null; }
+    }
 
     static string? _sfx;
 

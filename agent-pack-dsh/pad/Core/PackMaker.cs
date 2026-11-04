@@ -101,7 +101,7 @@ public static class PackMaker
     public static Result Write(string launcherRoot, Request req) =>
         WriteTo(Path.Combine(launcherRoot, "library", "packs"), req);
 
-    /// <summary>packmaker.exe 可能的落点：env → PAD 旁边 → 仓库 agent-pack-dsh/packmaker/bin。</summary>
+    /// <summary>packmaker.exe 可能的落点：env → PAD 旁边 → PAD 内嵌（单文件发布）→ 仓库 packmaker/bin。</summary>
     public static string? Locate()
     {
         var env = Environment.GetEnvironmentVariable("PACKMAKER_EXE");
@@ -109,6 +109,10 @@ public static class PackMaker
 
         var beside = Path.Combine(AppContext.BaseDirectory, "packmaker.exe");
         if (File.Exists(beside)) return beside;
+
+        // 单文件发布：packmaker.exe 作为资源嵌在 PAD 里，第一次用的时候释放到 LOCALAPPDATA。
+        var embedded = ExtractEmbedded();
+        if (embedded is not null) return embedded;
 
         var repo = Environment.GetEnvironmentVariable("PACK_AGENT_REPO");
         if (!string.IsNullOrWhiteSpace(repo))
@@ -131,5 +135,31 @@ public static class PackMaker
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// 内嵌的 packmaker.exe（csproj 里 Pad.tools.packmaker.exe）：释放到
+    /// %LOCALAPPDATA%\pack-agent-dsh\tools\packmaker.exe，大小变了就覆盖（PAD 升级后同步）。
+    /// 没有内嵌资源（开发构建没先跑 go build）时返回 null，Locate 继续找仓库路径。
+    /// </summary>
+    static string? ExtractEmbedded()
+    {
+        try
+        {
+            using var stream = typeof(PackMaker).Assembly
+                .GetManifestResourceStream("Pad.tools.packmaker.exe");
+            if (stream is null) return null;
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "pack-agent-dsh", "tools");
+            Directory.CreateDirectory(dir);
+            var dest = Path.Combine(dir, "packmaker.exe");
+            if (File.Exists(dest) && new FileInfo(dest).Length == stream.Length) return dest;
+            var tmp = dest + ".tmp";
+            using (var fs = File.Create(tmp)) stream.CopyTo(fs);
+            File.Move(tmp, dest, overwrite: true);
+            return dest;
+        }
+        catch { return null; }
     }
 }

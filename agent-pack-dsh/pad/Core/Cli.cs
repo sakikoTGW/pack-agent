@@ -713,6 +713,8 @@ public static class Cli
                         root = launcher.Root,
                         settings = launcher.SettingsPath,
                         repo = new Packs(launcher).RepoRoot(),
+                        packmaker = PackMaker.Locate(),
+                        sevenZip = Core.SevenZip.Locate(),
                     });
                     return 0;
 

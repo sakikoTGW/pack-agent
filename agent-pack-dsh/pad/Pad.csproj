@@ -33,6 +33,14 @@
     <EmbeddedResource Include="..\modpack\registries\faq.json" LogicalName="Pad.registries.faq.json" />
     <EmbeddedResource Include="..\modpack\registries\pad-pages.json" LogicalName="Pad.registries.pad-pages.json" />
     <EmbeddedResource Include="..\modpack\registries\pa-codes.json" LogicalName="Pad.registries.pa-codes.json" />
+    <!-- 制作整合包的 Go 工具嵌进 PAD：单文件发布也只发一个 exe（首次用时释放到 LOCALAPPDATA）。 -->
+    <EmbeddedResource Include="..\packmaker\bin\packmaker.exe" LogicalName="Pad.tools.packmaker.exe"
+                      Condition="Exists('..\packmaker\bin\packmaker.exe')" />
+    <!-- 7-Zip 也嵌进去：单文件发布/便携包宿主只需要一个 PAD.exe（首次用时释放到 LOCALAPPDATA）。 -->
+    <EmbeddedResource Include="Assets\7z\7z.exe" LogicalName="Pad.tools.7z.exe"
+                      Condition="Exists('Assets\7z\7z.exe')" />
+    <EmbeddedResource Include="Assets\7z\7z.dll" LogicalName="Pad.tools.7z.dll"
+                      Condition="Exists('Assets\7z\7z.dll')" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,77 @@
+name: pad-cli
+
+on:
+  push:
+    paths:
+      - "pad-cli/**"
+      - ".github/workflows/pad-cli.yml"
+  pull_request:
+    paths:
+      - "pad-cli/**"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "DSH version for the macOS end-to-end job"
+        required: false
+        default: "0.2.1-rc.5"
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: restore + build
+        run: dotnet build pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release
+
+      # 平台契约测试：Windows 走 junction，macOS/Linux 走 symlink，断言完全相同。
+      - name: test (platform + pnpm links)
+        run: dotnet test pad-cli/tests/Pad.Core.Tests/Pad.Core.Tests.csproj -c Release
+
+      - name: smoke test
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- version
+
+      - name: selftest (links / shell / processes)
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- selftest
+
+  macos-e2e:
+    name: macOS end-to-end (install / instance / script)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: build
+        run: dotnet build pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release
+
+      - name: install DSH release
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- release install ${{ inputs.version }}
+
+      - name: create instance
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- instance create smoke ${{ inputs.version }}
+
+      - name: render launch script (POSIX .sh)
+        run: |
+          dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- script smoke
+          test -f "$(find . -name 'launch-*.sh' | head -n 1)" && echo "launch script: ok"
+
+      - name: stop (nothing running yet)
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- ps

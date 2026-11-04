@@ -63,13 +63,20 @@ public static class PnpmHeal
     public static int RelinkIfNeeded(string nodeModules) =>
         NeedsHeal(nodeModules) ? Relink(nodeModules) : 0;
 
+    /// <summary>链接判定：Windows 看 ReparsePoint；Linux 的目录符号链接不保证带 ReparsePoint，用 LinkTarget 兜底。</summary>
+    static bool IsLink(string path, FileAttributes attr)
+    {
+        if ((attr & FileAttributes.ReparsePoint) != 0) return true;
+        try { return new DirectoryInfo(path).LinkTarget is { Length: > 0 }; } catch { return false; }
+    }
+
     static bool UnhealthyLink(string link, string pnpm)
     {
         FileAttributes attr;
         try { attr = File.GetAttributes(link); }
         catch { return true; }
         // 顶层正常是 junction；真目录 = 从别处拷来的拷贝（D22 的病根）。
-        if ((attr & FileAttributes.ReparsePoint) == 0) return true;
+        if ((!IsLink(link, attr))) return true;
         return !LinkHealthy(link, pnpm);
     }
 
@@ -111,7 +118,7 @@ public static class PnpmHeal
         FileAttributes attr;
         try { attr = File.GetAttributes(entry); }
         catch { return true; }
-        if ((attr & FileAttributes.ReparsePoint) == 0) return false;
+        if ((!IsLink(entry, attr))) return false;
         return !LinkHealthy(entry, pnpm);
     }
 
@@ -148,7 +155,7 @@ public static class PnpmHeal
         // 重建 fallback，白等一轮启动时间；只有真目录（复制品）才需要清掉。
         try
         {
-            if ((File.GetAttributes(dir) & FileAttributes.ReparsePoint) != 0) return;
+            if ((IsLink(dir, File.GetAttributes(dir)))) return;
         }
         catch { return; }
         try
@@ -173,7 +180,7 @@ public static class PnpmHeal
         FileAttributes attr;
         try { attr = File.GetAttributes(link); }
         catch { return false; }
-        if ((attr & FileAttributes.ReparsePoint) == 0) return false;
+        if ((!IsLink(link, attr))) return false;
         string? target;
         try { target = new DirectoryInfo(link).LinkTarget; }
         catch { return false; }
@@ -227,7 +234,7 @@ public static class PnpmHeal
                 FileAttributes attr;
                 try { attr = File.GetAttributes(nested); }
                 catch { continue; }
-                if ((attr & FileAttributes.ReparsePoint) != 0) continue;
+                if ((IsLink(nested, attr))) continue;
                 n += RelinkChildren(pnpm, nested);
                 n += PromoteOrphans(pnpm, nested);
             }
@@ -245,14 +252,14 @@ public static class PnpmHeal
             FileAttributes attr;
             try { attr = File.GetAttributes(scoped); }
             catch { continue; }
-            if ((attr & FileAttributes.ReparsePoint) != 0) continue;
+            if ((IsLink(scoped, attr))) continue;
             if (name.StartsWith('@'))
             {
                 foreach (var pkg in Directory.EnumerateDirectories(scoped))
                 {
                     try { attr = File.GetAttributes(pkg); }
                     catch { continue; }
-                    if ((attr & FileAttributes.ReparsePoint) != 0) continue;
+                    if ((IsLink(pkg, attr))) continue;
                     yield return pkg;
                 }
             }
@@ -278,7 +285,7 @@ public static class PnpmHeal
                 FileAttributes attr;
                 try { attr = File.GetAttributes(nested); }
                 catch { continue; }
-                if ((attr & FileAttributes.ReparsePoint) != 0) continue;
+                if ((IsLink(nested, attr))) continue;
                 n += RelinkChildren(pnpm, nested);
                 n += PromoteOrphans(pnpm, nested);
             }
@@ -348,7 +355,7 @@ public static class PnpmHeal
                     if (Directory.Exists(link) || File.Exists(link))
                     {
                         var attr = File.GetAttributes(link);
-                        if ((attr & FileAttributes.ReparsePoint) == 0 && range is null)
+                        if ((!IsLink(link, attr)) && range is null)
                             continue;
                         DeleteNoFollow(link);
                     }
@@ -418,7 +425,7 @@ public static class PnpmHeal
             FileAttributes attr;
             try { attr = File.GetAttributes(path); }
             catch { return 0; }
-            if ((attr & FileAttributes.ReparsePoint) != 0)
+            if ((IsLink(path, attr)))
             {
                 try
                 {
@@ -539,7 +546,7 @@ public static class PnpmHeal
         try
         {
             var attr = File.GetAttributes(top);
-            if ((attr & FileAttributes.ReparsePoint) != 0)
+            if ((IsLink(top, attr)))
             {
                 if ((attr & FileAttributes.Directory) != 0) Directory.Delete(top);
                 else File.Delete(top);
@@ -554,7 +561,7 @@ public static class PnpmHeal
         FileAttributes attr;
         try { attr = File.GetAttributes(top); }
         catch { return 0; }
-        if ((attr & FileAttributes.ReparsePoint) != 0) return 0;
+        if ((IsLink(top, attr))) return 0;
         if ((attr & FileAttributes.Directory) == 0) return 0;
 
         var preferVer = ReadPkgVersion(Path.Combine(top, "package.json"));
@@ -667,7 +674,7 @@ public static class PnpmHeal
         FileAttributes attr;
         try { attr = File.GetAttributes(path); }
         catch { return null; }
-        if ((attr & FileAttributes.ReparsePoint) == 0)
+        if ((!IsLink(path, attr)))
             return Path.GetFullPath(path);
         string? target;
         try { target = new DirectoryInfo(path).LinkTarget; }
@@ -714,7 +721,7 @@ public static class PnpmHeal
         FileAttributes attr;
         try { attr = File.GetAttributes(path); }
         catch { return; }
-        if ((attr & FileAttributes.ReparsePoint) != 0)
+        if ((IsLink(path, attr)))
         {
             if ((attr & FileAttributes.Directory) != 0) Directory.Delete(path);
             else File.Delete(path);

@@ -208,10 +208,15 @@ public static class LaunchPolicy
         }
     }
 
+    /// <summary>Windows 路径不区分大小写；macOS/Linux 区分。</summary>
+    public static StringComparison PathCompare => Platform.Current.IsWindows
+        ? StringComparison.OrdinalIgnoreCase
+        : StringComparison.Ordinal;
+
     public static bool SamePath(string a, string b) =>
         string.Equals(Path.GetFullPath(a).TrimEnd('\\', '/'),
             Path.GetFullPath(b).TrimEnd('\\', '/'),
-            StringComparison.OrdinalIgnoreCase);
+            PathCompare);
 
     /// <summary>
     /// Existence that understands a packaged app: a path inside <c>…/app.asar/…</c> is
@@ -366,8 +371,10 @@ public static class LaunchPolicy
         if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(root)) return false;
         var a = Path.GetFullPath(path).TrimEnd('\\', '/');
         var b = Path.GetFullPath(root).TrimEnd('\\', '/');
-        return a.Equals(b, StringComparison.OrdinalIgnoreCase)
-            || a.StartsWith(b + "\\", StringComparison.OrdinalIgnoreCase);
+        if (a.Equals(b, PathCompare)) return true;
+        // 分隔符按平台取：Linux/macOS 是 '/'，Windows 是 '\'（'/' 也认）。
+        return a.StartsWith(b + Path.DirectorySeparatorChar, PathCompare)
+            || a.StartsWith(b + Path.AltDirectorySeparatorChar, PathCompare);
     }
 
     /// <summary>Owned-instance scripts resolve files from <c>%PAD_ROOT%</c>, not the packer drive.</summary>

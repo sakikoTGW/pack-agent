@@ -692,7 +692,7 @@ public static class PnpmHeal
         string.Equals(
             Path.GetFullPath(a).TrimEnd('\\', '/'),
             Path.GetFullPath(b).TrimEnd('\\', '/'),
-            StringComparison.OrdinalIgnoreCase);
+            LaunchPolicy.PathCompare);
 
     static string SafeVer(string? ver)
     {

@@ -64,10 +64,10 @@ jobs:
         run: dotnet build pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release
 
       - name: install DSH release
-        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- release install ${{ inputs.version || '0.2.1-rc.5' }}
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- release install ${{ github.event.inputs.version || '0.2.1-rc.5' }}
 
       - name: create instance
-        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- instance create smoke ${{ inputs.version || '0.2.1-rc.5' }}
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- instance create smoke ${{ github.event.inputs.version || '0.2.1-rc.5' }}
 
       - name: render launch script (POSIX .sh)
         run: |

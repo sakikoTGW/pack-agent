@@ -66,7 +66,7 @@ web 形态：
 
 ## 已知限制
 
-- `portable-export` 仍按 Windows 便携包生成 `.cmd`，mac 上用不到；
 - 没有 GUI：PAD 窗口是 WPF，mac 上只有 CLI；
 - 代码签名/公证没做；
-- `run` 依赖 `Terminal.app`；纯 SSH 无窗口环境请用 `pad script` + 自己起进程。
+- `run` 依赖 `Terminal.app`；纯 SSH 无窗口环境请用 `pad script` + 自己起进程；
+- 导出的宿主是框架依赖版（需要目标机有 .NET 9）；要免依赖请用 `--self-contained true` 自己 publish 一份。

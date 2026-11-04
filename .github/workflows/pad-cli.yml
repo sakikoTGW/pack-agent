@@ -45,7 +45,8 @@ jobs:
 
   macos-e2e:
     name: macOS end-to-end (install / instance / script)
-    if: github.event_name == 'workflow_dispatch'
+    # workflow_dispatch 需要 workflow 在默认分支上；分支推送时用 ref 判断来跑同一套端到端。
+    if: github.event_name == 'workflow_dispatch' || github.ref_name == 'pad-cli-macos'
     runs-on: macos-latest
     timeout-minutes: 40
     steps:
@@ -63,10 +64,10 @@ jobs:
         run: dotnet build pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release
 
       - name: install DSH release
-        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- release install ${{ inputs.version }}
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- release install ${{ inputs.version || '0.2.1-rc.5' }}
 
       - name: create instance
-        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- instance create smoke ${{ inputs.version }}
+        run: dotnet run --project pad-cli/src/Pad.Cli/Pad.Cli.csproj -c Release --no-build -- instance create smoke ${{ inputs.version || '0.2.1-rc.5' }}
 
       - name: render launch script (POSIX .sh)
         run: |

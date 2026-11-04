@@ -1311,3 +1311,19 @@ WebView2 是独立合成层，PrintWindow 截不到，证据用屏幕捕获。
 验证：build 0 警告 0 错误；`dotnet test` 219/219；真机 E2E（独立 dsh web 3126）验证 `pad/on/hotAllowed=true`、热 add 失败自动回滚且进程存活、直接 add 后 verify pass、undo 回到变更前。证据 `EVIDENCE/hot-reload-integration/`。
 
 未做/待决策：`--hot` 成功装官方 npm bundle 的样本；冷路径是否自动重启；lab 的 `--hot` 默认开；窗口插件行"热/待重启/已撤回"三态（属 UI，需按 frontend-spec 出预览）。
+## D110 补 · 2026-11-04 · 热重载 UI 落码（v1.1 词表）
+
+按前端规范 v1.1（`已热装 / 待重启 / 重启 / 撤销`）把 D110 接到窗口：插件行药丸 + 插件页单条状态条 + 窗口装/卸/更新改走 `HotReload.ApplyAsync(wantHot:true)`；状态存 `instances/<id>/hot-state.json`，靠运行账本 `startedAt` 消化。`hmr=config-only` 放宽为可热（profile manifest/patch 重组合不依赖模块监听）。真机截图 `EVIDENCE/hot-reload-integration/ui/`；build 0/0，219/219。
+## D110 补 2 · 2026-11-04 · 成功态不常驻（按 D109「能删就删」）
+
+用户质疑绿色条「已热装 X · 无需重启」+ 行药丸「已热装」是否必要。结论：不必要——热/冷是实现的区别，成功是终点；重启后药丸消失还会让人困惑。收掉：成功只留 3–5s Toast（`已生效 · 无需重启`），行保持「已启用」；常驻只保留「待重启」（唯一需要人做决定的状态）。撤销退出常驻 UI，保留 CLI `plugin undo`。规范 §1.2/§2/§7.2/§11 与集成方案 §12 同步。证据：`EVIDENCE/hot-reload-integration/ui/00-before-green-bar.png` vs `04-real-pad-hot-no-bar.png`。
+## D110 补 3 · 2026-11-04 · 图标走官方源（D109「禁止文字作图」）
+
+用户质疑「官方没有 icon 吗，为什么不走官方的」。核查：
+1. **插件/整合包图标**：DSH 每个插件包自带 `icon.svg`（如 `dsh-experimental-*`），PAD 的 `BundleIcon` / `NpmPackageIcon` 一直在读它，插件行左侧就是包自己的图标，界面不复刻。
+2. **界面操作图标**：官方源是 `pad/Theme/Icons.xaml`（填充 `I.*`，47 个）+ `LineIcons.xaml`（描边 `L.*`）。行内 star/info/folder/refresh/trash 用的都是这份。
+3. **错在哪**：`docs/frontend-spec/02-system.html` §B 手绘了 16 个 stroke SVG 当「统一图标表」，绕过了 `Icons.xaml`——规范自己也写着「建立 Icons.xaml 单一图标源」。已改：手册不再复制图标，改为「语义 → key」映射表 + 用真实 geometry 渲染预览；spec §2 明确唯一来源，新增图标必须先加进 `Icons.xaml`。
+4. 真机：`待重启` 条的「重启」按钮改用官方 `I.Refresh`（此前 `v:Ico.Of` 在 `BtnSm` 上不渲染，改为按钮内显式 `v:Ico`；`v:Ico.Of` 在基础 Btn 模板上疑似失效，另记）。
+## 修复 · 2026-11-04 · 插件行读官方 icon.svg
+
+官方插件图标在包根 `icon.svg`：`BundleIconFiles` 补 `icon.svg`；SVG 光栅器支持根 `fill="none"`、渐变 fill、stroke，并修掉“未关流读长度判失败”的 bug；光栅结果进 `library/plugins-meta` 缓存，不写 node_modules。回归 `BundleIconTests`（2 例），全量 221/221。证据 `EVIDENCE/hot-reload-integration/ui/05-*`。

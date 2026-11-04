@@ -323,6 +323,8 @@
     <Setter Property="Foreground" Value="{StaticResource AccentText}" />
   </Style>
 
+  <!-- v1.1 热重载：待重启 = 需注意；成功态不常驻（能删就删），因此没有成功药丸。 -->
+
   <!-- PCL Mod 管理 filter chips: 全部 / 可更新. Filled accent when selected. -->
   <Style x:Key="FilterTab" TargetType="RadioButton">
     <Setter Property="Height" Value="28" />

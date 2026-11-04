@@ -159,7 +159,7 @@ pad cli plugin undo <inst>                                    # 回到最近 che
 | 4 | 回滚失败 / 需人工（quarantine） |
 | PA2xx | 参数/环境/冲突错误（需登记 `pa-codes.json`） |
 
-窗口：插件行状态三态 `热·已生效` / `已写入·待重启` / `已撤回`；不新增页面，沿用现有插件页。
+窗口：成功只给 Toast；常驻只有「待重启」一条（+ 行药丸），不新增页面，沿用现有插件页。
 
 ---
 
@@ -227,3 +227,17 @@ pad cli plugin undo <inst>                                    # 回到最近 che
 4. `plugin status` 是否默认在插件页常驻显示"热/冷"徽标。
 
 > 落地后记 `DECISIONS.md` 新 D 编号 + `docs/README.md` 索引；本文先作为方案。
+
+## 12. UI（v1.1，已落码，已按「能删就删」收敛）
+
+插件页把热重载接进窗口（按 `frontend-spec.md` v1.1；token/图标全部复用现有 Theme，不新增颜色/图标）：
+
+- **成功不常驻**：热装成功后只给一条 3–5s Toast（`已生效 · 无需重启`）；行就是普通「已启用」。热/冷是实现细节，成功是终点，不占屏。
+- **只常驻「待重启」**：插件页顶部单条琥珀条（同一时刻最多一条）「{spec} 待重启生效」+ 重启按钮（`Runner.Stop + Launch`）；对应行显示 `待重启` 药丸。这是唯一需要人做决定的状态。
+- **失败**：红色 Toast + 插件日志原文，不常驻。
+- **撤销**：不在 UI 常驻（成功态已收掉），走 CLI `pad cli plugin undo <instance>`；后续可放进行「更多」菜单。
+- **状态来源**：`instances/<id>/hot-state.json`（`HotReload` 每次 apply 写入）+ 运行账本 `startedAt` 比较——进程在变更之后才启动则状态自然消化，不再显示。
+- **动作接线**：窗口里的装/卸/更新改为 `HotReload.ApplyAsync(wantHot: true)`；PAD 启动的实例默认走热路径，失败自动回滚并提示；外部壳/只读实例自动落回冷路径与「待重启」。
+- **能力放宽**：`hmr=config-only`（`root: []`，模块监听关闭）也算可热——官方 HMR 的 profile manifest/patch 重组合不依赖模块监听；只有改源码才需要 root。
+
+真机截图：`EVIDENCE/hot-reload-integration/ui/00-before-green-bar.png`（收敛前，绿条常驻）、`02-real-pad-pending.png`（待重启）、`04-real-pad-hot-no-bar.png`（收敛后：热装成功不占屏）。

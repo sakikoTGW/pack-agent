@@ -284,6 +284,23 @@
                     Click="PluginRemoveSel_Click" v:Ico.Of="{StaticResource I.Trash}" />
           </StackPanel>
 
+          <!-- 热重载状态条：同一时刻只有一条；一句话 + 主操作（D110 / v1.1）。 -->
+          <Border x:Name="HotBar" Visibility="Collapsed" CornerRadius="12"
+                  Padding="12,8" Margin="0,0,0,10">
+            <Grid>
+              <TextBlock x:Name="HotBarText" VerticalAlignment="Center"
+                         FontSize="{StaticResource FsBody}" FontWeight="SemiBold" />
+              <Button x:Name="HotBarBtn" Style="{StaticResource BtnSm}" HorizontalAlignment="Right"
+                      Click="HotBarBtn_Click">
+                <StackPanel Orientation="Horizontal">
+                  <v:Ico Glyph="{StaticResource I.Refresh}" Height="11" Margin="0,0,5,0"
+                         VerticalAlignment="Center" Foreground="{StaticResource WarningText}" />
+                  <TextBlock x:Name="HotBarBtnText" Text="重启" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+            </Grid>
+          </Border>
+
           <ItemsControl x:Name="PluginList">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
@@ -336,6 +353,9 @@
                         <ContentControl Style="{StaticResource PillAccent}" Content="{Binding PackOriginText}"
                                         ToolTip="{Binding PackOriginTip}" Margin="0,0,6,0"
                                         Visibility="{Binding HasPackOrigin, Converter={StaticResource B2V}}" />
+                        <ContentControl Style="{StaticResource PillWarn}" Content="待重启" Margin="0,0,6,0"
+                                        ToolTip="已写盘，当前进程仍是旧树"
+                                        Visibility="{Binding HotPending, Converter={StaticResource B2V}}" />
                         <ItemsControl ItemsSource="{Binding Tags}">
                           <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>

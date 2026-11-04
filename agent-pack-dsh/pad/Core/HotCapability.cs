@@ -32,16 +32,23 @@ public sealed class HotCapability
     [JsonPropertyName("checkedAt")] public string CheckedAt { get; init; } = "";
 
     /// <summary>Pure decision table; kept separate so tests can pin every branch.
-    /// Reports every blocker, not just the first, so a user sees the whole picture.</summary>
+    /// Reports every blocker, not just the first, so a user sees the whole picture.
+    /// <c>config-only</c> still counts as hot: the official HMR reconciles the profile
+    /// manifest/patch layers even with module watching off (<c>root: []</c>); only
+    /// source-code edits need the module roots.</summary>
     public static (bool Allowed, string Reason) Classify(string launchSource, string hmr, string manager)
     {
         var reasons = new List<string>();
         if (manager != "none") reasons.Add($"manager={manager}");
         if (hmr is "off" or "absent") reasons.Add($"hmr={hmr}");
-        else if (hmr == "config-only") reasons.Add("hmr=config-only: plugin bundles still need a restart");
         if (launchSource != "pad") reasons.Add($"launchSource={launchSource}");
         if (reasons.Count > 0) return (false, string.Join("; ", reasons));
-        return hmr == "on" ? (true, "hot") : (false, $"hmr={hmr}");
+        return hmr switch
+        {
+            "on" => (true, "hot"),
+            "config-only" => (true, "hot-config"),
+            _ => (false, $"hmr={hmr}"),
+        };
     }
 }
 

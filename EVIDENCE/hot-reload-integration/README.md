@@ -66,3 +66,33 @@ pad cli plugin undo ev-hot            -> error[PA203] no checkpoint to undo（ex
 ## 6. 产物
 
 `cli-plugin-status.json`、`job-plugin-add.log`、`runtime-ledger.json`、`checkpoint-20261103-*.json`、`profile-cordis.patch.yml`、`dsh-web.out.log`。
+
+## 7. UI（2026-11-04 落码后真机截图，含一次「能删就删」收敛）
+
+`--shot --shot-page instance-plugins --shot-exit` 在真实 PAD 窗口渲染：
+
+| 文件 | 状态 | 应看到 |
+|---|---|---|
+| `ui/00-before-green-bar.png` | 收敛前，hot-state mode=hot | ❌ 绿色条「已热装…无需重启」常驻 + 行药丸「已热装」——被用户否掉 |
+| `ui/02-real-pad-pending.png` | mode=cold | ✅ 琥珀条「hot-bundle 待重启生效」+ 重启；行药丸「待重启」 |
+| `ui/04-real-pad-hot-no-bar.png` | 收敛后，mode=hot | ✅ **不占屏**：无条、无药丸，行就是普通已装（成功只留 Toast） |
+| `ui/03-real-pad-bar-only.png` | 无插件行 | 条正常显示（行列表为空时） |
+
+结论（D109「能删就删」）：成功态不常驻——热/冷是实现细节，重启后药丸消失反而困惑用户；常驻只留给「待重启」（唯一需要人做决定的状态）。撤销退出常驻 UI，保留 CLI `plugin undo`。
+
+构建/测试（收敛后）：`dotnet build` 0 警告 0 错误；`dotnet test` 219/219。
+## 8. 插件行图标：官方 `icon.svg`（2026-11-04 修复）
+
+用户指出「这个插件有图标」——不是热重载的问题，是插件行没读官方图标。
+
+**三个退化点（都已修）**：
+
+1. `LaunchPolicy.BundleIconFiles` 没有 `icon.svg`。官方插件（`dsh-experimental-*`）把图标放包根 `icon.svg`，PAD 只认 icon.png/logo.*，于是有图标的插件也回落 Monogram。
+2. `BundleIcon.TryRasterizeSvg` 把根节点 `fill="none"` 当成“整棵子树不画”（官方 SVG 全是这种写法）→ 光栅成空白 png。现在 `fill="none"` 只表示本层不填，并支持 `<g transform>`、`fill="url(#grad)"` 渐变、`stroke` 描边、`fill/stdstroke-opacity`。
+3. `using var fs` 未关流就读 `FileInfo.Length`（缓冲未 flush 时为 0）→ 把成功当失败。改成 `using (...) { enc.Save(fs); }` 后再检查。
+
+**另外**：SVG 光栅结果写到 `library/plugins-meta/<spec>/icon.png` 缓存，不再往包的 node_modules 里写 `icon.png`。
+
+证据：`ui/05-row-icon-before-blank.png`（修复前，图标位空白）→ `ui/05-row-official-icon-after.png`（修复后，显示 `dsh-experimental-auto-review` 自带的蓝色盾牌图标）。
+
+回归测试：`pad.tests/BundleIconTests.cs`（2 例：官方样式 SVG 光栅后应有可见像素；Resolve 应返回缓存 png）。全量 221/221。

@@ -46,27 +46,40 @@
     </div>
   </div>
 
-  <h2><span class="n">B</span>一套图标（≤20 个）· 禁止文字作图</h2>
+  <h2><span class="n">B</span>唯一图标源：Theme/Icons.xaml · 禁止文字作图</h2>
   <div class="sec">
-    <div class="icons">
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>包<span class="use">包/整合包</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>安装<span class="use">装到实例/下载</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12a8 8 0 1 1 2.5 5.7M4 12H2m2 0l3-3"/></svg>修复<span class="use">重新应用/刷新</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg>卸载<span class="use">删除投影</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5l3 2"/></svg>停用<span class="use">停用/待机</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>可<span class="use">通过/已启用</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l9 16H3l9-16z"/><path d="M12 10v4M12 17v.5"/></svg>注意<span class="use">需授权/不完整</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 8l8 8M16 8l-8 8"/></svg>不可<span class="use">失败/下架</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></svg>未登记<span class="use">状态未知</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16M4 12h16M4 19h10"/></svg>列表<span class="use">包库</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg>搜索<span class="use">筛选</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>新建<span class="use">新建实例</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 20V4h9l3 3v13H6z"/><path d="M9 9h6M9 13h6"/></svg>报告<span class="use">安装报告</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16M14 6l6 6-6 6"/></svg>打开<span class="use">打开实例</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z"/></svg>安全<span class="use">风险/授权</span></div>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v6M12 14v6M4 12h6M14 12h6"/></svg>更多<span class="use">菜单/详情</span></div>
+    <div class="mini" style="margin-bottom:12px">
+      图标不复制、不重画。唯一来源：<code>agent-pack-dsh/pad/Theme/Icons.xaml</code>（填充 <code>I.*</code>）与
+      <code>LineIcons.xaml</code>（描边 <code>L.*</code>）。本手册只登记「语义 → key」。
+      插件/整合包行图标来自每个包自带的 <code>icon.svg</code>（<code>BundleIcon</code> / <code>NpmPackageIcon</code> 读取），界面不复刻。
     </div>
-    <div class="dont" style="margin-top:14px">✕ 禁止：用「包」「装」「安」这类文字块/RGB 方块当图标；同一个动作这页用 +、那页用 ⬇；不同含义复用同一个 icon（⚠ 不能同时表示"需授权"和"可装"）。</div>
+    <div class="icons">
+      <div class="icon"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M511 995a128 128 0 0 1-57-13L70 791a126 126 0 0 1-70-113V311a126 126 0 0 1 15-60V248c1-2 3-5 5-8a127 127 0 0 1 49-42L454 13a128 128 0 0 1 112 0l383 190a126 126 0 0 1 72 113v360a126 126 0 0 1-70 115L568 984c-17 7-37 11-57 11z m42-470v370l360-178c14-7 23-21 23-38v-335L554 524zM85 330v347a42 42 0 0 0 23 38l360 178V523L85 330zM135 260l375 189 137-65L286 188 135 260z m245-118l363 197 150-71-365-180a42 42 0 0 0-37 0l-111 53z"/></svg>包<span class="use">I.Pack</span></div>
+      <div class="icon"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M416 96h64v256h-64z M544 96h64v256h-64z M352 352h320v192c0 88-72 160-160 160s-160-72-160-160z M480 736h64v224h-64z"/></svg>插件<span class="use">I.Plug</span></div>
+      <div class="icon"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M955 610h-59c-15 0-29 13-29 29v196c0 15-13 29-29 29h-649c-15 0-29-13-29-29v-196c0-15-13-29-29-29h-59c-15 0-29 13-29 29V905c0 43 35 78 78 78h787c43 0 78-35 78-78V640c0-15-13-29-29-29zM492 740c11 11 29 11 41 0l265-265c11-11 11-29 0-41l-41-41c-11-11-29-11-41 0l-110 110c-11 11-33 3-33-13V68C571 53 555 39 541 39h-59c-15 0-29 13-29 29v417c0 17-21 25-33 13l-110-110c-11-11-29-11-41 0L226 433c-11 11-11 29 0 41L492 740z"/></svg>安装<span class="use">I.Download</span></div>
+      <div class="icon"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M512.0 838.3c-80.2 0-153.4-29.3-210.2-77.4l75.5-75.5c11.5-11.5 25.8-22.0 25.8-37.0a27.2 27.2 0 0 0-27.1-27.1H104.0c-27.1 0-27.1 23.9-27.1 27.1v271.9a27.1 27.1 0 0 0 27.1 27.1c15.0 0 27.8-16.6 42.5-31.2l77.9-77.9c76.6 67.7 177.1 108.9 287.4 108.9 221.7 0 404.5-166.0 431.2-380.6h-109.8c-25.9 154.2-159.7 271.9-321.3 271.9zM919.9 76.6c-15.0 0-27.8 16.6-42.5 31.3L799.5 185.8c-76.5-67.7-177.1-108.9-287.4-108.9-221.8 0-404.5 166.1-431.3 380.6H190.6c25.9-154.2 159.7-271.9 321.4-271.9 80.2 0 153.4 29.3 210.1 77.4l-75.5 75.5c-11.6 11.5-25.8 22.0-25.8 37.1a27.2 27.2 0 0 0 27.1 27.1h271.9c27.1 0 27.1-23.9 27.1-27.1V103.8a27.1 27.1 0 0 0-27.1-27.1z"/></svg>修复/重启<span class="use">I.Refresh</span></div>
+      <div class="icon"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M384 96h256l32 96h224v64H128V192h224l32-96zM192 320h640l-48 576H240L192 320zM384 400v416h64V400H384zm192 0v416h64V400H576z"/></svg>卸载<span class="use">I.Trash</span></div>
+      <div class="icon"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 0a512 512 0 1 0 512 512A512 512 0 0 0 512 0z m0 921.6a409.6 409.6 0 1 1 409.6-409.6 409.6 409.6 0 0 1-409.6 409.6z M716.8 339.968l-256 253.44L328.192 460.8A51.2 51.2 0 0 0 256 532.992l168.448 168.96a51.2 51.2 0 0 0 72.704 0l289.28-289.792A51.2 51.2 0 0 0 716.8 339.968z"/></svg>可/已启用<span class="use">I.Check</span></div>
+    </div>
+    <table class="tbl" style="margin-top:14px">
+      <tr><th>语义</th><th>key（Theme/Icons.xaml）</th><th>用在哪</th></tr>
+      <tr><td>包 / 整合包</td><td>I.Pack</td><td>包行、包库</td></tr>
+      <tr><td>插件</td><td>I.Plug</td><td>插件行</td></tr>
+      <tr><td>安装 / 下载</td><td>I.Download</td><td>安装按钮、下载页</td></tr>
+      <tr><td>修复 / 刷新</td><td>I.Refresh</td><td>修复、重启</td></tr>
+      <tr><td>卸载 / 删除</td><td>I.Trash</td><td>卸载、移除</td></tr>
+      <tr><td>停用</td><td>I.Pause</td><td>停用</td></tr>
+      <tr><td>通过 / 已启用</td><td>I.Check</td><td>校验行、已启用</td></tr>
+      <tr><td>失败 / 下架</td><td>I.Close</td><td>失败态</td></tr>
+      <tr><td>信息 / 未知</td><td>I.Info</td><td>详情、未登记</td></tr>
+      <tr><td>搜索</td><td>I.Search</td><td>搜索框</td></tr>
+      <tr><td>更多 / 菜单</td><td>I.More</td><td>行内菜单</td></tr>
+      <tr><td>报告</td><td>I.Log</td><td>安装报告、日志</td></tr>
+      <tr><td>打开</td><td>I.External</td><td>打开实例/页面</td></tr>
+      <tr><td>新建</td><td>I.Plus</td><td>新建实例</td></tr>
+      <tr><td>列表</td><td>I.Tasks</td><td>列表页</td></tr>
+    </table>
+    <div class="dont" style="margin-top:14px">✕ 禁止：文字块/字符当图标；同一动作两套 icon；同一 icon 两个含义；在规范或 mock 里重画一套（要新图标先加进 Icons.xaml 再引用）。</div>
   </div>
 
   <h2><span class="n">C</span>组件：行 / 药丸 / 弹窗 / 反馈</h2>

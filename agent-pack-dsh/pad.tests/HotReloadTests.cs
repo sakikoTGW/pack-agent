@@ -61,7 +61,7 @@ public sealed class HotReloadTests : IDisposable
 
     [Theory]
     [InlineData("pad", "on", "none", true)]
-    [InlineData("pad", "config-only", "none", false)]
+    [InlineData("pad", "config-only", "none", true)]
     [InlineData("pad", "off", "none", false)]
     [InlineData("pad", "absent", "none", false)]
     [InlineData("external", "on", "none", false)]

@@ -32,6 +32,9 @@ public sealed class PluginRow : Observable
     public bool Trial { get; init; }
     public TrialRecord? TrialRec { get; init; }
 
+    /// <summary>热重载：已写盘、当前进程仍是旧树（行药丸「待重启」）。成功态不常驻——热/冷是实现的区别，不是用户要看的状态。</summary>
+    public bool HotPending { get; set; }
+
     string _iconPath = "";
     public string IconPath
     {

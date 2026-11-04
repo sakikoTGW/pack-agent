@@ -541,9 +541,11 @@ public static class LaunchPolicy
     /// Files a package may ship as its mark. TUI publishes
     /// <c>docs/assets/logo.svg</c> on GitHub; the npm tarball often omits <c>docs/</c>.
     /// </summary>
+    /// <summary>官方插件把图标放在包根 <c>icon.svg</c>（如 <c>dsh-experimental-*</c>），
+    /// 所以这里必须含 <c>icon.svg</c>；光栅优先，SVG 由 <c>Skin.LoadBitmap</c> 光栅化。</summary>
     public static readonly string[] BundleIconFiles =
     [
-        "icon.png", "icon.jpg", "icon.webp", "logo.png", "logo.svg",
+        "icon.png", "icon.svg", "icon.jpg", "icon.webp", "logo.png", "logo.svg",
         "docs/assets/logo.png", "docs/assets/logo.svg",
     ];
 

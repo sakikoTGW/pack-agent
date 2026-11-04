@@ -43,7 +43,11 @@ public static class BundleIcon
         foreach (var name in LaunchPolicy.BundleIconFiles)
         {
             var p = Path.Combine(packageDir, name.Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(p)) return p;
+            if (!File.Exists(p)) continue;
+            // 官方插件图标是 SVG：光栅到 library 缓存再返回，别把 png 写进包目录。
+            return p.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
+                ? RasterizeToCache(launcherRoot, spec, p) ?? p
+                : p;
         }
         if (ResolvePackageIcon(launcherRoot, packageDir, spec) is { } npmIcon) return npmIcon;
         var cache = CacheDir(launcherRoot, spec);
@@ -53,6 +57,23 @@ public static class BundleIcon
             if (File.Exists(p)) return p;
         }
         return null;
+    }
+
+    static string? RasterizeToCache(string launcherRoot, string spec, string svgPath)
+    {
+        try
+        {
+            var cache = CacheDir(launcherRoot, spec);
+            Directory.CreateDirectory(cache);
+            var png = Path.Combine(cache, "icon.png");
+            if (File.Exists(png) &&
+                File.GetLastWriteTimeUtc(png) >= File.GetLastWriteTimeUtc(svgPath))
+                return png;
+            if (!TryRasterizeSvg(File.ReadAllText(svgPath), png, 128)) return null;
+            Notify();
+            return png;
+        }
+        catch { return null; }
     }
 
     /// <summary>
@@ -222,7 +243,10 @@ public static class BundleIcon
         catch { return null; }
     }
 
-    /// <summary>WPF cannot bind an SVG file. Draw the path fills onto a PNG. STA only.</summary>
+    /// <summary>WPF cannot bind an SVG file. Draw the path fills onto a PNG. STA only.
+    /// 光栅化失败时把原因留在 <see cref="LastRasterizeError"/>，便于回归测试和排障。</summary>
+    public static string LastRasterizeError { get; private set; } = "";
+
     public static bool TryRasterizeSvg(string svg, string pngPath, int size = 64)
     {
         try
@@ -254,11 +278,12 @@ public static class BundleIcon
                     vh = h;
             }
 
+            var gradients = SvgGradients(root);
             var drawing = new DrawingGroup
             {
                 ClipGeometry = new RectangleGeometry(new Rect(minX, minY, vw, vh)),
             };
-            drawing.Children.Add(WalkSvg(root, Colors.Black));
+            drawing.Children.Add(WalkSvg(root, Colors.Black, gradients));
 
             var side = Math.Max(vw, vh);
             var visual = new DrawingVisual();
@@ -276,60 +301,193 @@ public static class BundleIcon
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
             var enc = new PngBitmapEncoder();
             enc.Frames.Add(BitmapFrame.Create(rtb));
-            using var fs = File.Create(pngPath);
-            enc.Save(fs);
+            // 必须先关流再读长度：FileInfo.Length 在缓冲未 flush 时是 0，会把成功当失败。
+            using (var fs = File.Create(pngPath)) enc.Save(fs);
+            LastRasterizeError = "";
             return new FileInfo(pngPath).Length > 0;
         }
-        catch
+        catch (Exception ex)
         {
+            LastRasterizeError = ex.ToString();
             return false;
         }
     }
 
-    static DrawingGroup WalkSvg(XElement element, Color inherited)
+    /// <summary>
+    /// SVG → WPF 绘制树。官方插件图标（<c>dsh-experimental-*</c>）的常见写法必须过：
+    /// 根节点 <c>fill="none"</c>、<c>&lt;g transform&gt;</c>、<c>fill="url(#grad)"</c> 渐变、
+    /// 以及 <c>stroke</c> 描边。早期实现把根 <c>fill="none"</c> 当“整棵子树不画”，
+    /// 于是所有官方图标都被光栅成空白 png。
+    /// </summary>
+    static DrawingGroup WalkSvg(XElement element, Color inherited,
+        IReadOnlyDictionary<string, Brush> gradients)
     {
         var group = new DrawingGroup();
         if (SvgTransform((string?)element.Attribute("transform")) is { } transform)
             group.Transform = transform;
 
-        var fillText = (string?)element.Attribute("fill") ?? SvgStyle((string?)element.Attribute("style"), "fill");
-        var fill = fillText switch
-        {
-            null => inherited,
-            var t when t.Equals("none", StringComparison.OrdinalIgnoreCase) => Colors.Transparent,
-            var t when SvgColor(t) is { } c => c,
-            _ => inherited,
-        };
-        if (fillText is not null && fillText.Equals("none", StringComparison.OrdinalIgnoreCase))
-            return group; // 子树全部不画
+        var fillPaint = (string?)element.Attribute("fill")
+                        ?? SvgStyle((string?)element.Attribute("style"), "fill");
+        // fill="none" 只表示“本层不填”，子节点可各自覆盖；不能据此跳过子树。
+        var inheritedFill = fillPaint is null ? inherited : SvgPaintColor(fillPaint, inherited);
 
         foreach (var child in element.Elements())
         {
             var name = child.Name.LocalName;
             if (name is "g" or "svg")
             {
-                group.Children.Add(WalkSvg(child, fill));
+                group.Children.Add(WalkSvg(child, inheritedFill, gradients));
                 continue;
             }
+            if (name is "defs" or "linearGradient" or "radialGradient" or "stop"
+                or "clipPath" or "mask" or "filter" or "title" or "desc" or "style")
+                continue;
 
             var geometry = SvgGeometry(child);
             if (geometry is null) continue;
 
             var shapeFillText = (string?)child.Attribute("fill")
                                 ?? SvgStyle((string?)child.Attribute("style"), "fill");
-            var shapeFill = shapeFillText is null
-                ? fill
-                : shapeFillText.Equals("none", StringComparison.OrdinalIgnoreCase)
-                    ? Colors.Transparent
-                    : SvgColor(shapeFillText) ?? fill;
-            if (shapeFill == Colors.Transparent) continue;
+            var fill = shapeFillText is null
+                ? BrushOf(inheritedFill)
+                : SvgBrush(shapeFillText, gradients, inheritedFill, child, "fill-opacity");
+
+            var strokeText = (string?)child.Attribute("stroke")
+                             ?? SvgStyle((string?)child.Attribute("style"), "stroke");
+            var strokeBrush = SvgBrush(strokeText, gradients, inheritedFill, child, "stroke-opacity");
+            Pen? pen = null;
+            if (strokeBrush is not null)
+            {
+                pen = new Pen(strokeBrush, SvgNum(child, "stroke-width", 1))
+                {
+                    StartLineCap = PenLineCap.Round,
+                    EndLineCap = PenLineCap.Round,
+                    LineJoin = PenLineJoin.Round,
+                };
+                pen.Freeze();
+            }
+            if (fill is null && pen is null) continue;
 
             var shape = new DrawingGroup();
             if (SvgTransform((string?)child.Attribute("transform")) is { } st) shape.Transform = st;
-            shape.Children.Add(new GeometryDrawing(new SolidColorBrush(shapeFill), null, geometry));
+            shape.Children.Add(new GeometryDrawing(fill, pen, geometry));
             group.Children.Add(shape);
         }
         return group;
+    }
+
+    static Brush? BrushOf(Color color) =>
+        color == Colors.Transparent ? null : new SolidColorBrush(color);
+
+    /// <summary>SVG paint 文本 → 画刷：none/null、纯色、url(#id) 渐变。</summary>
+    static Brush? SvgBrush(string? paint, IReadOnlyDictionary<string, Brush> gradients,
+        Color inherited, XElement el, string opacityKey)
+    {
+        if (string.IsNullOrWhiteSpace(paint)) return BrushOf(inherited);
+        var t = paint.Trim();
+        if (t.Equals("none", StringComparison.OrdinalIgnoreCase)) return null;
+
+        var opacity = SvgNum(el, opacityKey, 1);
+        opacity = Math.Clamp(opacity, 0, 1);
+
+        if (t.StartsWith("url(", StringComparison.OrdinalIgnoreCase))
+        {
+            var id = t[(t.IndexOf('(') + 1)..t.LastIndexOf(')')].Trim().TrimStart('#');
+            if (gradients.TryGetValue(id, out var gradient))
+            {
+                if (opacity >= 0.999) return gradient;
+                var clone = (Brush)gradient.Clone();
+                clone.Opacity = opacity;
+                clone.Freeze();
+                return clone;
+            }
+            return BrushOf(inherited);
+        }
+
+        var color = SvgColor(t);
+        if (color is not Color baseColor) return BrushOf(inherited);
+        if (opacity < 0.999)
+            return new SolidColorBrush(Color.FromArgb((byte)Math.Round(opacity * 255),
+                baseColor.R, baseColor.G, baseColor.B));
+        return new SolidColorBrush(baseColor);
+    }
+
+    static Color SvgPaintColor(string paint, Color inherited)
+    {
+        var t = paint.Trim();
+        if (t.Equals("none", StringComparison.OrdinalIgnoreCase)) return Colors.Transparent;
+        return SvgColor(t) ?? inherited;
+    }
+
+    /// <summary>把 &lt;defs&gt; 里的 linear/radialGradient 收集成可复用画刷。</summary>
+    static IReadOnlyDictionary<string, Brush> SvgGradients(XElement root)
+    {
+        var map = new Dictionary<string, Brush>(StringComparer.Ordinal);
+        foreach (var el in root.Descendants())
+        {
+            var kind = el.Name.LocalName;
+            if (kind is not ("linearGradient" or "radialGradient")) continue;
+            var id = (string?)el.Attribute("id");
+            if (string.IsNullOrWhiteSpace(id)) continue;
+
+            var stops = new GradientStopCollection();
+            foreach (var stop in el.Elements().Where(e => e.Name.LocalName == "stop"))
+            {
+                var color = SvgColor((string?)stop.Attribute("stop-color") ?? "#000000") ?? Colors.Black;
+                var alpha = Math.Clamp(SvgNum(stop, "stop-opacity", 1), 0, 1);
+                stops.Add(new GradientStop(
+                    Color.FromArgb((byte)Math.Round(alpha * 255), color.R, color.G, color.B),
+                    ParseOffset((string?)stop.Attribute("offset"))));
+            }
+            if (stops.Count == 0) continue;
+
+            var absolute = ((string?)el.Attribute("gradientUnits") ?? "objectBoundingBox")
+                .Equals("userSpaceOnUse", StringComparison.OrdinalIgnoreCase);
+            Brush brush;
+            if (kind == "linearGradient")
+            {
+                var b = new LinearGradientBrush(stops);
+                if (absolute) b.MappingMode = BrushMappingMode.Absolute;
+                b.StartPoint = new Point(SvgNum(el, "x1"), SvgNum(el, "y1"));
+                b.EndPoint = new Point(SvgNum(el, "x2", 1), SvgNum(el, "y2"));
+                brush = b;
+            }
+            else
+            {
+                var cx = SvgNum(el, "cx", 0.5);
+                var cy = SvgNum(el, "cy", 0.5);
+                var r = SvgNum(el, "r", 0.5);
+                var b = new RadialGradientBrush(stops);
+                if (absolute)
+                {
+                    b.MappingMode = BrushMappingMode.Absolute;
+                    b.Center = new Point(cx, cy);
+                    b.GradientOrigin = new Point(cx, cy);
+                    b.RadiusX = b.RadiusY = r;
+                }
+                else
+                {
+                    b.Center = new Point(cx, cy);
+                    b.GradientOrigin = new Point(cx, cy);
+                    b.RadiusX = b.RadiusY = r;
+                }
+                brush = b;
+            }
+            brush.Freeze();
+            map[id] = brush;
+        }
+        return map;
+    }
+
+    static double ParseOffset(string? text)
+    {
+        var t = (text ?? "0").Trim();
+        if (t.EndsWith('%') &&
+            double.TryParse(t[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var pct))
+            return Math.Clamp(pct / 100, 0, 1);
+        return double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out var v)
+            ? Math.Clamp(v, 0, 1)
+            : 0;
     }
 
     static Geometry? SvgGeometry(XElement el) => el.Name.LocalName switch

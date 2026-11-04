@@ -26,6 +26,68 @@ public sealed class HotApplyResult
     [JsonPropertyName("message")] public string Message { get; init; } = "";
 }
 
+/// <summary>Last hot/cold apply for one instance: what the plugin page needs to show
+/// 「已热装 / 待重启」 without re-running the change.</summary>
+public sealed class HotState
+{
+    public const string SchemaName = "pad.hot-state/v1";
+
+    [JsonPropertyName("schema")] public string Schema { get; init; } = SchemaName;
+    [JsonPropertyName("instance")] public string Instance { get; init; } = "";
+    [JsonPropertyName("profile")] public string Profile { get; init; } = "";
+    [JsonPropertyName("spec")] public string Spec { get; init; } = "";
+    [JsonPropertyName("action")] public string Action { get; init; } = "";
+    /// <summary><c>hot</c> or <c>cold</c>.</summary>
+    [JsonPropertyName("mode")] public string Mode { get; init; } = "cold";
+    [JsonPropertyName("ok")] public bool Ok { get; init; }
+    [JsonPropertyName("at")] public string At { get; init; } = "";
+}
+
+public static class HotStates
+{
+    public const string FileName = "hot-state.json";
+
+    public static string PathOf(Launcher launcher, string instanceId) =>
+        Path.Combine(launcher.InstanceDir(instanceId), FileName);
+
+    public static HotState? Read(Launcher launcher, string instanceId)
+    {
+        try
+        {
+            var path = PathOf(launcher, instanceId);
+            if (!File.Exists(path)) return null;
+            var state = JsonSerializer.Deserialize<HotState>(File.ReadAllText(path));
+            return state?.Schema == HotState.SchemaName ? state : null;
+        }
+        catch { return null; }
+    }
+
+    public static void Save(Launcher launcher, Instance inst, HotApplyResult result)
+    {
+        try
+        {
+            var path = PathOf(launcher, inst.Id);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var state = new HotState
+            {
+                Instance = inst.Id,
+                Profile = result.Profile,
+                Spec = result.Spec,
+                Action = result.Action,
+                Mode = result.Mode,
+                Ok = result.Ok,
+                At = DateTimeOffset.UtcNow.ToString("o"),
+            };
+            var tmp = path + "." + Environment.ProcessId + ".tmp";
+            File.WriteAllText(tmp, JsonSerializer.Serialize(state, Pretty));
+            File.Move(tmp, path, overwrite: true);
+        }
+        catch { /* the state file is an affordance, never a reason to fail the change */ }
+    }
+
+    static readonly JsonSerializerOptions Pretty = new() { WriteIndented = true };
+}
+
 /// <summary>
 /// Drives the official DSH hot reload instead of reimplementing it: the default is
 /// cold (write + restart required), and the hot path only runs when the capability
@@ -53,7 +115,7 @@ public static class HotReload
 
         if (!useHot)
         {
-            return new HotApplyResult
+            return Save(launcher, inst, new HotApplyResult
             {
                 Action = action,
                 Instance = inst.Id,
@@ -67,7 +129,7 @@ public static class HotReload
                 HotReason = cap.Reason,
                 Checkpoint = checkpoint.Id,
                 Message = "已写入，重启后生效",
-            };
+            });
         }
 
         var expect = action == "remove" ? PluginExpect.Absent : PluginExpect.Present;
@@ -79,7 +141,7 @@ public static class HotReload
             inst.Status = "ready";
             launcher.SaveInstance(inst);
             log?.Report("hot path verified");
-            return new HotApplyResult
+            return Save(launcher, inst, new HotApplyResult
             {
                 Action = action,
                 Instance = inst.Id,
@@ -93,7 +155,7 @@ public static class HotReload
                 Checkpoint = checkpoint.Id,
                 Verify = verify,
                 Message = "已热生效",
-            };
+            });
         }
 
         log?.Report($"hot verify failed; restoring checkpoint {checkpoint.Id}");
@@ -115,7 +177,7 @@ public static class HotReload
                 expect == PluginExpect.Present ? PluginExpect.Absent : PluginExpect.Present, ct: ct);
         }
 
-        return new HotApplyResult
+        return Save(launcher, inst, new HotApplyResult
         {
             Action = action,
             Instance = inst.Id,
@@ -130,7 +192,13 @@ public static class HotReload
             Checkpoint = checkpoint.Id,
             Verify = verify,
             Message = rollbackOk ? "热验证失败，已自动回滚" : "热验证失败且回滚失败，需人工处理",
-        };
+        });
+    }
+
+    static HotApplyResult Save(Launcher launcher, Instance inst, HotApplyResult result)
+    {
+        HotStates.Save(launcher, inst, result);
+        return result;
     }
 
     /// <summary>Wait for the bundle roster to reach the expected state, then give the
